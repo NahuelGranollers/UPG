@@ -32,22 +32,44 @@
       align-items: center;X
     }
     .center-image {
-      width: 200px;   /* Puedes ajustar la medida */
+      width: 200px;
       height: 200px;
       object-fit: cover;
       margin-bottom: 40px;
+      /* Para que la rotación se vea bien */
+      display: block;
+      transition: transform 0.1s linear;
     }
     .coming-soon {
       color: #DE5A1A;
       font-family: 'Arial Black', Arial, sans-serif;
       font-size: 3em;
+      text-shadow: 8px 8px 0px #e99c2a;
       letter-spacing: 2px;
       text-align: center;
     }
   </style>
 </head>
 <body>
-  <img src="public/upg.png" alt="Logo" class="center-image" />
+  <img src="public/upg.png" alt="Logo" class="center-image" id="logo" />
   <div class="coming-soon">coming soon...</div>
+
+  <script>
+    // Rango de rotación: ±40 grados
+    const maxDeg = 40;
+    const speed = 1.5; // Ajusta la velocidad si quieres
+    let angle = 0;
+    let direction = 1;
+
+    function animateLogo() {
+      angle += speed * direction;
+      if (angle >= maxDeg || angle <= -maxDeg) {
+        direction *= -1; // Cambia de dirección al llegar al límite
+      }
+      document.getElementById('logo').style.transform = `rotate(${angle}deg)`;
+      requestAnimationFrame(animateLogo);
+    }
+    animateLogo();
+  </script>
 </body>
 </html>
