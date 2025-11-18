@@ -32,8 +32,8 @@
       align-items: center;
     }
     .center-image {
-      width: 200px;
-      height: 200px;
+      width: 400px;
+      height: 400px;
       object-fit: cover;
       margin-bottom: 40px;
       display: block;
@@ -43,7 +43,7 @@
       color: #ff4d0a;
       font-family: 'Arial Black', Arial, sans-serif;
       font-size: 3em;
-      text-shadow: 8px 8px 0px #ff9300;
+      text-shadow: 3px 3px 0px #ff9300;
       letter-spacing: 2px;
       text-align: center;
     }
@@ -51,13 +51,13 @@
     /* Adaptativo para móviles */
     @media (max-width: 600px) {
       .center-image {
-        width: 120px;
-        height: 120px;
+        width: 200px;
+        height: 200px;
         margin-bottom: 24px;
       }
       .coming-soon {
         font-size: 1.7em;
-        text-shadow: 4px 4px 0px #ff9300;
+        text-shadow: 2px 2px 0px #ff9300;
         letter-spacing: 1px;
       }
     }
@@ -70,7 +70,7 @@
   <script>
     const minDeg = -50;
     const maxDeg = 40;
-    const speed = 0.6; // Rotación lenta
+    const speed = 0.6;
     let angle = minDeg;
     let direction = 1;
 
