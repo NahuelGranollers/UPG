@@ -4,8 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Coming Soon</title>
-    <link rel="icon" type="image/png" href="public/upg.png" />
-	  <!-- Open Graph -->
+  <link rel="icon" type="image/png" href="public/upg.png" />
+
+  <!-- Open Graph -->
   <meta property="og:title" content="UPG" />
   <meta property="og:description" content="Coming soon..." />
   <meta property="og:image" content="unaspartidillas.online/public/upg.png" />
@@ -17,6 +18,7 @@
   <meta name="twitter:title" content="UPG" />
   <meta name="twitter:description" content="Coming soon..." />
   <meta name="twitter:image" content="unaspartidillas.online/public/upg.png" />
+
   <style>
     html, body {
       height: 100%;
@@ -29,14 +31,13 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
-      align-items: center;X
+      align-items: center;
     }
     .center-image {
       width: 200px;
       height: 200px;
       object-fit: cover;
       margin-bottom: 40px;
-      /* Para que la rotación se vea bien */
       display: block;
       transition: transform 0.1s linear;
     }
@@ -48,6 +49,20 @@
       letter-spacing: 2px;
       text-align: center;
     }
+
+    /* Adaptativo para móviles */
+    @media (max-width: 600px) {
+      .center-image {
+        width: 120px;
+        height: 120px;
+        margin-bottom: 24px;
+      }
+      .coming-soon {
+        font-size: 1.7em;
+        text-shadow: 4px 4px 0px #e99c2a;
+        letter-spacing: 1px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -55,17 +70,17 @@
   <div class="coming-soon">coming soon...</div>
 
   <script>
-    // Rango de rotación: ±40 grados
+    // Rango de rotación: -50° a +40°
+    const minDeg = -50;
     const maxDeg = 40;
-    const speed = 1.5; // Ajusta la velocidad si quieres
-    let angle = 0;
+    const speed = 0.6; // Más lento aquí
+    let angle = minDeg;
     let direction = 1;
 
     function animateLogo() {
       angle += speed * direction;
-      if (angle >= maxDeg || angle <= -maxDeg) {
-        direction *= -1; // Cambia de dirección al llegar al límite
-      }
+      if (angle >= maxDeg) direction = -1;
+      if (angle <= minDeg) direction = 1;
       document.getElementById('logo').style.transform = `rotate(${angle}deg)`;
       requestAnimationFrame(animateLogo);
     }
