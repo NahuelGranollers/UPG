@@ -1,28 +1,25 @@
 <!DOCTYPE html>
 <html lang="es">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/png" href="/upg.png" />
+      <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="/upg.png" />
+  <!-- Open Graph -->
+  <meta property="og:title" content="UPG" />
+  <meta property="og:description" content="Coming soon..." />
+  <meta property="og:image" content="https://unaspartidillas.online/upg.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="unaspartidillas.online" />
 
-    <!-- Open Graph -->
-    <meta property="og:title" content="UPG" />
-    <meta property="og:description" content="Coming soon..." />
-    <meta property="og:image" content="https://unaspartidillas.online/upg.png" />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="unaspartidillas.online" />
-
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="UPG" />
-    <meta name="twitter:description" content="Coming soon..." />
-    <meta name="twitter:image" content="https://unaspartidillas.online/upg.png" />
-
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="UPG" />
+  <meta name="twitter:description" content="Coming soon..." />
+  <meta name="twitter:image" content="https://unaspartidillas.online/upg.png" />
     <title>UPG Community</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
     <script>
       tailwind.config = {
         theme: {
@@ -67,100 +64,22 @@
         border-radius: 4px;
       }
     </style>
-
-    <!-- Mantengo tu importmap para otros recursos si los usas -->
-    <script type="importmap">
-    {
-      "imports": {
-        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
-        "recharts": "https://aistudiocdn.com/recharts@^3.4.1",
-        "react/": "https://aistudiocdn.com/react@^19.2.0/",
-        "react": "https://aistudiocdn.com/react@^19.2.0",
-        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-        "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0"
-      }
-    }
-    </script>
-    <link rel="stylesheet" href="/index.css">
-  </head>
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "recharts": "https://aistudiocdn.com/recharts@^3.4.1",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
   <body>
-    <div id="root">
-      <!-- Chat Real en General -->
-      <div id="chat" class="max-w-xl mx-auto mt-20 bg-[#232428] rounded-xl shadow-xl p-6">
-        <h2 class="text-2xl font-bold text-center mb-4">GENERAL 🔊</h2>
-        <div id="messages" class="p-2 mb-4 bg-[#24263b] rounded min-h-[200px] max-h-[320px] overflow-y-auto"></div>
-        <form id="form" class="flex gap-2">
-          <input id="input" autocomplete="off" placeholder="Escribe tu mensaje..." class="flex-1 px-3 py-2 rounded bg-[#313338] border border-[#2b2d31] text-white" />
-          <button class="bg-[#5865f2] text-white font-bold px-4 py-2 rounded">Enviar</button>
-        </form>
-      </div>
-    </div>
-    <script>
-      // Conexión Socket.IO Backend (actualiza URL si lo despliegas en otro host)
-      const socket = io('https://mensajeria-ksc7.onrender.com', { transports: ['websocket'] });
-
-      // Nombre random para el usuario
-      const user = 'Invitado' + Math.floor(Math.random() * 10000);
-
-      const messages = document.getElementById('messages');
-      const form = document.getElementById('form');
-      const input = document.getElementById('input');
-
-      // Recibir historial (si tu backend lo envía)
-      socket.on('channel:history', function(data) {
-        if (data && data.messages) {
-          data.messages.forEach(msg => {
-            addMessage(msg.username || 'Invitado', msg.content, msg.userId === user ? 'user' : 'bot');
-          });
-        }
-      });
-
-      // Mensajes nuevos en tiempo real
-      socket.on('message:received', function(msg) {
-        addMessage(msg.username || 'Invitado', msg.content, msg.userId === user ? 'user' : 'bot');
-      });
-
-      // Registrar usuario al conectar
-      socket.on('connect', function() {
-        addMessage('Bot', '✅ Te has conectado como ' + user, 'bot');
-        socket.emit('user:join', {
-          id: user,
-          username: user,
-          avatar: '',
-          status: 'online'
-        });
-        socket.emit('channel:join', { channelId: 'general', userId: user });
-      });
-
-      // Enviar mensaje en general
-      form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        if (input.value) {
-          socket.emit('message:send', {
-            channelId: 'general',
-            content: input.value,
-            userId: user,
-            username: user,
-            timestamp: new Date().toISOString()
-          });
-          input.value = '';
-        }
-      });
-
-      // Mostrar mensajes en pantalla
-      function addMessage(sender, msg, role='') {
-        const item = document.createElement('div');
-        item.className = 'msg ' + role + ' mb-2';
-        item.innerHTML = `<strong>${sender}</strong>: ${escapeHtml(msg)}`;
-        messages.appendChild(item);
-        messages.scrollTop = messages.scrollHeight;
-      }
-      function escapeHtml(text) {
-        var map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-      }
-    </script>
-    <!-- Si quieres cargar más scripts, aquí -->
-    <!-- <script type="module" src="/index.tsx"></script> -->
-  </body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
 </html>
