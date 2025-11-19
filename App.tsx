@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { io, Socket } from 'socket.io-client';
+
+// Componentes básicos, puedes adaptar la importación
 import Sidebar from './components/Sidebar';
 import ChannelList from './components/ChannelList';
 import ChatInterface from './components/ChatInterface';
@@ -7,7 +10,8 @@ import WhoWeAre from './components/WhoWeAre';
 import Voting from './components/Voting';
 import LockScreen from './components/LockScreen';
 import ErrorBoundary from './components/ErrorBoundary';
-import { User, AppView } from './types';
+
+import { User, AppView, Message } from './types';
 
 // Bot siempre presente
 const BOT_USER: User = {
@@ -19,239 +23,217 @@ const BOT_USER: User = {
   color: '#5865F2'
 };
 
-import { getOrCreateUser } from './utils/userGenerator';
-import { initFirebase, setUserOnline, subscribeToOnlineUsers, isFirebaseConfigured } from './services/firebaseService';
-import { getDiscordUsers, discordUserToAppUser, DISCORD_USER_IDS } from './services/discordService';
-
 export interface ChannelData {
   id: string;
   name: string;
   description: string;
 }
 
+// Usar variable de entorno o fallback
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://mensajeria-ksc7.onrender.com';
+
+let socket: Socket | null = null;
+
+function generateRandomUser(): User {
+  const randomId = Math.floor(Math.random() * 10000).toString();
+  const avatars = [
+    'https://picsum.photos/id/1012/200/200',
+    'https://picsum.photos/id/1025/200/200',
+    'https://picsum.photos/id/177/200/200',
+    'https://picsum.photos/id/237/200/200',
+    'https://picsum.photos/id/1062/200/200'
+  ];
+  return {
+    id: `user-${randomId}`,
+    username: `Guest${randomId}`,
+    avatar: avatars[Math.floor(Math.random() * avatars.length)],
+    status: 'online',
+    color: '#3ba55c'
+  };
+}
+
 function App() {
-  // Authentication State
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [isLoadingAuth, setIsLoadingAuth] = useState<boolean>(true);
+  // Auth State
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
+  // UI & Channels
   const [activeView, setActiveView] = useState<AppView>(AppView.CHAT);
-  const [currentChannel, setCurrentChannel] = useState<ChannelData>({ 
-    id: 'general', 
-    name: 'general', 
-    description: 'Chat general de UPG' 
-  });
-  
+  const [currentChannel, setCurrentChannel] = useState<ChannelData>({ id: 'general', name: 'general', description: 'Chat general' });
   const [currentUser, setCurrentUser] = useState<User>(() => {
-     return getOrCreateUser();
+    const saved = localStorage.getItem('upg_current_user');
+    return saved ? JSON.parse(saved) : generateRandomUser();
   });
 
-  // State for Discord users
-  const [discordUsers, setDiscordUsers] = useState<User[]>([]);
-  
-  // State for online users from Firebase
-  const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
-  
-  // Map of UserId -> ChannelName
+  // Estado de usuarios conectados
+  const [discoveredUsers, setDiscoveredUsers] = useState<User[]>([]);
   const [voiceStates, setVoiceStates] = useState<Record<string, string>>({});
-
-  // Active Voice Channel State (Local)
   const [activeVoiceChannel, setActiveVoiceChannel] = useState<string | null>(null);
-
-  // Mobile Menu State
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Check Authentication on Mount
+  // Mensajes por canal
+  const [messages, setMessages] = useState<Record<string, Message[]>>({});
+  const [isConnected, setIsConnected] = useState(false);
+
+  // Check Authentication
   useEffect(() => {
     const auth = localStorage.getItem('upg_access_token');
-    if (auth === 'granted') {
-      setIsAuthenticated(true);
-    }
+    if (auth === 'granted') setIsAuthenticated(true);
     setIsLoadingAuth(false);
   }, []);
-
   const handleUnlock = () => {
     localStorage.setItem('upg_access_token', 'granted');
     setIsAuthenticated(true);
   };
 
-  // Load Discord users on mount
-  useEffect(() => {
-    const loadDiscordUsers = async () => {
-      try {
-        const users = await getDiscordUsers();
-        const appUsers = users.map((user) => {
-          // El status ya viene de la configuración o del usuario de Discord
-          return discordUserToAppUser(user);
-        });
-        setDiscordUsers(appUsers);
-      } catch (error) {
-        console.error('Error cargando usuarios de Discord:', error);
-        // Si falla, usar usuarios por defecto basados en los IDs
-        const fallbackUsers: User[] = DISCORD_USER_IDS.map((id, index) => {
-          const statuses: ('online' | 'idle' | 'dnd' | 'offline')[] = ['online', 'idle', 'dnd', 'online', 'online', 'online', 'offline'];
-          const colors = ['#3ba55c', '#5865F2', '#faa61a', '#ed4245', '#eb459e', '#57f287', '#fee75c'];
-          return {
-            id,
-            username: `Usuario${index + 1}`,
-            avatar: `https://cdn.discordapp.com/embed/avatars/${index % 5}.png`,
-            status: statuses[index] || 'online',
-            color: colors[index % colors.length],
-          };
-        });
-        setDiscordUsers(fallbackUsers);
-      }
-    };
-
-    if (isAuthenticated) {
-      loadDiscordUsers();
-    }
-  }, [isAuthenticated]);
-
-  // Merge Discord users, Bot, Online users from Firebase, and Self
-  const allUsers = useMemo(() => {
-      const map = new Map<string, User>();
-      // Add Bot (siempre presente)
-      map.set(BOT_USER.id, BOT_USER);
-      // Add Discord users
-      discordUsers.forEach(u => map.set(u.id, u));
-      // Add Online users from Firebase
-      onlineUsers.forEach(u => map.set(u.id, u));
-      // Add Self (ensure latest status)
-      map.set(currentUser.id, currentUser);
-      
-      return Array.from(map.values());
-  }, [discordUsers, onlineUsers, currentUser]);
-
-  // Initialize Firebase and set user online
+  // Socket.IO Connection
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    // Inicializar Firebase
-    const firebase = initFirebase();
-    if (!firebase) {
-      console.warn('Firebase no configurado. El chat en tiempo real no funcionará.');
-      return;
-    }
-
-    // Marcar usuario como online
-    const disconnectUser = setUserOnline(currentUser);
-
-    // Suscribirse a usuarios online
-    const unsubscribeUsers = subscribeToOnlineUsers((users) => {
-      setOnlineUsers(users);
+    socket = io(SOCKET_URL, {
+      transports: ['websocket'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5
     });
 
-    return () => {
-      disconnectUser();
-      unsubscribeUsers();
-    };
-  }, [currentUser, isAuthenticated]);
+    socket.on('connect', () => {
+      console.log('🔌 Conectado a Socket.IO');
+      setIsConnected(true);
 
-  // ------------------------------------------------------------
-  // Voice Channel Synchronization (BroadcastChannel para sincronizar entre pestañas)
-  // ------------------------------------------------------------
-  useEffect(() => {
-    if (!isAuthenticated) return;
+      // Registrar usuario
+      socket?.emit('user:join', currentUser);
 
-    // Channel for synchronizing voice state between tabs
-    const bc = new BroadcastChannel('upg_voice_sync_v1');
-
-    const handleMessage = (e: MessageEvent) => {
-        const data = e.data;
-        
-        // Handle Voice Updates between tabs
-        if (data.type === 'VOICE_UPDATE') {
-            setVoiceStates(prev => {
-                const next = { ...prev };
-                if (data.channelName) {
-                    next[data.userId] = data.channelName;
-                } else {
-                    delete next[data.userId];
-                }
-                return next;
-            });
-        }
-    };
-
-    bc.addEventListener('message', handleMessage);
-
-    return () => {
-        bc.removeEventListener('message', handleMessage);
-        bc.close();
-    };
-  }, [isAuthenticated]); 
-
-  // ------------------------------------------------------------
-  // Broadcast Local Voice State Changes
-  // ------------------------------------------------------------
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    const bc = new BroadcastChannel('upg_global_sync_v1');
-    
-    // Broadcast change
-    bc.postMessage({
-        type: 'VOICE_UPDATE',
-        userId: currentUser.id,
-        channelName: activeVoiceChannel
+      // Unirse a canal actual
+      socket?.emit('channel:join', { channelId: currentChannel.id, userId: currentUser.id });
     });
 
-    // Update local map for immediate UI feedback
-    setVoiceStates(prev => {
+    socket.on('disconnect', () => {
+      console.log('⛔ Desconectado de Socket.IO');
+      setIsConnected(false);
+    });
+
+    socket.on('users:update', (users: User[]) => {
+      setDiscoveredUsers(users.filter(u => u.id !== currentUser.id));
+    });
+
+    socket.on('channel:history', ({ channelId, messages: history }) => {
+      setMessages(prev => ({
+        ...prev,
+        [channelId]: history
+      }));
+    });
+
+    socket.on('message:received', (message: Message) => {
+      setMessages(prev => ({
+        ...prev,
+        [message.channelId]: [...(prev[message.channelId] || []), message]
+      }));
+    });
+
+    // Voice event example
+    socket.on('voice:update', ({ userId, channelName, action }) => {
+      setVoiceStates(prev => {
         const next = { ...prev };
-        if (activeVoiceChannel) next[currentUser.id] = activeVoiceChannel;
-        else delete next[currentUser.id];
+        if (action === 'join' && channelName) {
+          next[userId] = channelName;
+        } else {
+          delete next[userId];
+        }
         return next;
+      });
     });
 
-    return () => bc.close();
-  }, [activeVoiceChannel, currentUser.id, isAuthenticated]);
+    socket.on('user:disconnect', ({ userId }) => {
+      setDiscoveredUsers(prev => prev.filter(u => u.id !== userId));
+    });
 
+    return () => {
+      socket?.disconnect();
+      socket = null;
+    };
+  }, [isAuthenticated, currentUser, currentChannel.id]);
+
+  // Voice Channel Updates
+  useEffect(() => {
+    if (!isAuthenticated || !socket) return;
+
+    if (activeVoiceChannel) {
+      socket.emit('voice:join', { channelName: activeVoiceChannel, userId: currentUser.id });
+    } else {
+      socket.emit('voice:leave', { channelName: activeVoiceChannel, userId: currentUser.id });
+    }
+
+    setVoiceStates(prev => {
+      const next = { ...prev };
+      if (activeVoiceChannel) next[currentUser.id] = activeVoiceChannel;
+      else delete next[currentUser.id];
+      return next;
+    });
+  }, [activeVoiceChannel, currentUser.id, isAuthenticated]);
 
   useEffect(() => {
     localStorage.setItem('upg_current_user', JSON.stringify(currentUser));
   }, [currentUser]);
 
+  const allUsers = useMemo(() => {
+    const map = new Map<string, User>();
+    map.set(BOT_USER.id, BOT_USER);
+    discoveredUsers.forEach(u => map.set(u.id, u));
+    map.set(currentUser.id, currentUser);
+    return Array.from(map.values());
+  }, [discoveredUsers, currentUser]);
+
   const handleChannelSelect = useCallback((view: AppView, channel?: ChannelData) => {
     setActiveView(view);
     if (channel) {
       setCurrentChannel(channel);
+
+      if (socket && isConnected) {
+        socket.emit('channel:join', { channelId: channel.id, userId: currentUser.id });
+      }
     }
     setMobileMenuOpen(false);
-  }, []);
+  }, [isConnected, currentUser.id]);
 
   const handleVoiceJoin = useCallback((channelName: string) => {
-      if (activeVoiceChannel === channelName) {
-          setActiveVoiceChannel(null); // Leave
-      } else {
-          setActiveVoiceChannel(channelName); // Join
-      }
+    if (activeVoiceChannel === channelName) setActiveVoiceChannel(null);
+    else setActiveVoiceChannel(channelName);
   }, [activeVoiceChannel]);
 
-  if (isLoadingAuth) return null;
+  const handleSendMessage = (content: string) => {
+    if (!socket || !isConnected) {
+      console.error('Socket no conectado');
+      return;
+    }
 
-  if (!isAuthenticated) {
-    return <LockScreen onUnlock={handleUnlock} />;
-  }
+    socket.emit('message:send', {
+      channelId: currentChannel.id,
+      content,
+      userId: currentUser.id,
+      username: currentUser.username,
+      avatar: currentUser.avatar,
+      timestamp: new Date().toISOString()
+    });
+  };
+
+  if (isLoadingAuth) return null;
+  if (!isAuthenticated) return <LockScreen onUnlock={handleUnlock} />;
 
   return (
     <ErrorBoundary>
       <div className="flex h-screen w-full bg-discord-dark font-sans antialiased overflow-hidden relative">
-      
-      {/* Mobile Overlay */}
-      {mobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
 
-      {/* Sidebar Container */}
-      <div className={`fixed inset-y-0 left-0 z-50 flex h-full transition-transform duration-300 md:relative md:translate-x-0 ${
+        <div className={`fixed inset-y-0 left-0 z-50 flex h-full transition-transform duration-300 md:relative md:translate-x-0 ${
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
-        <Sidebar />
-        <ChannelList 
+        }`}>
+          <Sidebar currentUser={currentUser} setCurrentUser={setCurrentUser} isConnected={isConnected} />
+          <ChannelList 
             activeView={activeView} 
             currentChannelId={currentChannel.id}
             onChannelSelect={handleChannelSelect}
@@ -260,48 +242,30 @@ function App() {
             onVoiceJoin={handleVoiceJoin}
             voiceStates={voiceStates}
             users={allUsers}
-        />
+          />
+        </div>
+        <div className="flex flex-1 min-w-0 relative">
+          {activeView === AppView.CHAT && (
+            <>
+              <ChatInterface
+                currentUser={currentUser}
+                users={allUsers}
+                currentChannel={currentChannel}
+                onSendMessage={handleSendMessage}
+                messages={messages[currentChannel.id] || []}
+                onMenuToggle={() => setMobileMenuOpen(true)}
+              />
+              <UserList users={allUsers} currentUserId={currentUser.id} />
+            </>
+          )}
+          {activeView === AppView.WHO_WE_ARE && (
+            <WhoWeAre onMenuToggle={() => setMobileMenuOpen(true)} />
+          )}
+          {activeView === AppView.VOTING && (
+            <Voting onMenuToggle={() => setMobileMenuOpen(true)} />
+          )}
+        </div>
       </div>
-
-      {/* Main Content */}
-      <div className="flex flex-1 min-w-0 relative">
-        {activeView === AppView.CHAT && (
-           <>
-            <ChatInterface 
-              currentUser={currentUser} 
-              users={allUsers} 
-              currentChannel={currentChannel}
-              onMobileMenuClick={() => setMobileMenuOpen(true)}
-            />
-            <UserList users={allUsers} />
-           </>
-        )}
-
-        {activeView === AppView.WHO_WE_ARE && (
-            <div className="flex-1 flex flex-col h-full relative">
-                 <div className="md:hidden h-12 bg-discord-chat flex items-center px-4 border-b border-gray-900/20 shrink-0 text-white">
-                    <button onClick={() => setMobileMenuOpen(true)} className="mr-4">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
-                    </button>
-                    <span className="font-bold">Quiénes Somos</span>
-                 </div>
-                 <WhoWeAre />
-            </div>
-        )}
-
-        {activeView === AppView.VOTING && (
-            <div className="flex-1 flex flex-col h-full relative">
-                <div className="md:hidden h-12 bg-discord-chat flex items-center px-4 border-b border-gray-900/20 shrink-0 text-white">
-                    <button onClick={() => setMobileMenuOpen(true)} className="mr-4">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
-                    </button>
-                     <span className="font-bold">Votaciones</span>
-                 </div>
-                <Voting />
-            </div>
-        )}
-      </div>
-    </div>
     </ErrorBoundary>
   );
 }
