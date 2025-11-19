@@ -19,7 +19,7 @@ class SocketService {
   private messageCallbacks: Map<string, Set<(msg: SocketMessage) => void>> = new Map();
   private connectionCallbacks: Set<(connected: boolean) => void> = new Set();
 
-  constructor(serverUrl: string = 'https://mensajeria-three.vercel.app/') {
+  constructor(serverUrl: string = 'https://mensajeria-ksc7.onrender.com') {
     this.serverUrl = serverUrl;
   }
 
