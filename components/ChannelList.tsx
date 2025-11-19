@@ -2,6 +2,7 @@ import React from 'react';
 import { Hash, Volume2, ChevronDown, Vote, Users, Mic, HeadphoneOff, Settings } from 'lucide-react';
 import { AppView, User } from '../types';
 import { ChannelData } from '../App';
+import SafeImage from './SafeImage';
 
 interface ChannelListProps {
   activeView: AppView;
@@ -78,10 +79,11 @@ const ChannelList: React.FC<ChannelListProps> = ({
             <div className="pl-8 pr-2 space-y-1 pb-1">
                 {usersInChannel.map(u => (
                     <div key={u.id} className="flex items-center group/user cursor-pointer py-0.5 rounded hover:bg-white/5">
-                        <img 
+                        <SafeImage 
                             src={u.avatar} 
                             alt={u.username} 
-                            className={`w-5 h-5 rounded-full mr-2 border border-[#2b2d31] ${u.status === 'online' ? 'ring-1 ring-green-500' : ''}`} 
+                            className={`w-5 h-5 rounded-full mr-2 border border-[#2b2d31] ${u.status === 'online' ? 'ring-1 ring-green-500' : ''}`}
+                            fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(u.username)}&background=5865F2&color=fff&size=128`}
                         />
                         <span className={`text-sm truncate ${u.id === currentUser.id ? 'font-bold text-white' : 'text-discord-text-muted group-hover/user:text-discord-text-normal'}`}>
                             {u.username}
@@ -195,7 +197,12 @@ const ChannelList: React.FC<ChannelListProps> = ({
         <div className="h-[52px] px-2 flex items-center">
             <div className="group flex items-center py-1 px-1 pl-0.5 rounded-md hover:bg-discord-hover cursor-pointer mr-auto min-w-[120px]">
                 <div className="relative w-8 h-8 mr-2 ml-1">
-                    <img src={currentUser.avatar} className="w-8 h-8 rounded-full object-cover" alt="User" />
+                    <SafeImage 
+                      src={currentUser.avatar} 
+                      className="w-8 h-8 rounded-full object-cover" 
+                      alt="User"
+                      fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.username)}&background=5865F2&color=fff&size=128`}
+                    />
                     <div className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-[#232428] rounded-full ${
                          currentUser.status === 'online' ? 'bg-green-500' : 'bg-yellow-500'
                     }`}></div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Home, Plus, Compass, Download } from 'lucide-react';
+import SafeImage from './SafeImage';
 
 const Sidebar: React.FC = () => {
   return (
@@ -18,7 +19,12 @@ const Sidebar: React.FC = () => {
       <div className="group relative">
         <div className="absolute left-0 bg-white rounded-r-md w-1 h-10 top-1/2 -translate-y-1/2 -ml-1" />
         <button className="w-12 h-12 overflow-hidden rounded-[16px] transition-all duration-200 relative group-active:translate-y-[1px]">
-           <img src="/upg.png" alt="UPG" className="object-cover w-full h-full" />
+           <SafeImage 
+             src="/upg.png" 
+             alt="UPG" 
+             className="object-cover w-full h-full"
+             fallbackSrc="https://ui-avatars.com/api/?name=UPG&background=ffcc17&color=ff4d0a&size=128"
+           />
         </button>
       </div>
 

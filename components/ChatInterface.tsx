@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Message, User } from '../types';
-import { Hash, Bell, Pin, Users, Search, Inbox, HelpCircle, PlusCircle, Gift, Smile, Sticker, Menu } from 'lucide-react';
+import { Hash, Bell, Pin, Users, Search, Inbox, HelpCircle, PlusCircle, Gift, Smile, Sticker, Menu, AlertCircle } from 'lucide-react';
 import { generateBotResponse } from '../services/geminiService';
 import { ChannelData } from '../App';
+import SafeImage from './SafeImage';
+import { formatMessage, getPlainText } from '../utils/messageFormatter';
 
 interface ChatInterfaceProps {
   currentUser: User;
@@ -28,10 +30,16 @@ const INITIAL_MESSAGES: Record<string, Message[]> = {
     ]
 };
 
+const MAX_MESSAGE_LENGTH = 2000;
+const MAX_MESSAGES_PER_MINUTE = 10;
+
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ currentUser, users, currentChannel, onMobileMenuClick }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [messageCount, setMessageCount] = useState(0);
+  const [lastMessageTime, setLastMessageTime] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Channel for cross-tab communication
@@ -92,64 +100,114 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ currentUser, users, curre
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Sanitize input - just trim, formatting will be done by formatter
+  const sanitizeInput = (text: string): string => {
+    return text.trim();
+  };
+
+  // Reset message count every minute
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMessageCount(0);
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim()) return;
-
-    const newMessage: Message = {
-      id: Date.now().toString() + Math.random().toString(36).substring(2),
-      userId: currentUser.id,
-      content: inputText,
-      timestamp: new Date(),
-    };
-
-    // Update local state
-    setMessages(prev => [...prev, newMessage]);
+    setError(null);
     
-    // Broadcast to other tabs (Real-time effect)
-    if (broadcastChannelRef.current) {
-        broadcastChannelRef.current.postMessage({
-            type: 'NEW_MESSAGE',
-            channelId: currentChannel.id,
-            message: newMessage
-        });
+    const trimmedText = inputText.trim();
+    
+    // Validation
+    if (!trimmedText) return;
+    
+    if (trimmedText.length > MAX_MESSAGE_LENGTH) {
+      setError(`El mensaje es demasiado largo (máximo ${MAX_MESSAGE_LENGTH} caracteres)`);
+      return;
     }
 
-    const userQuery = inputText;
-    setInputText('');
+    // Rate limiting
+    const now = Date.now();
+    if (now - lastMessageTime < 6000) { // 6 seconds minimum between messages
+      setError('Espera un momento antes de enviar otro mensaje');
+      return;
+    }
 
-    // Check for bot interaction
-    if ((currentChannel.id === 'general' || currentChannel.id === 'comandos' || userQuery.toLowerCase().startsWith('/ai')) && 
-       (userQuery.toLowerCase().includes('bot') || userQuery.toLowerCase().startsWith('/'))) {
-       
-       setIsTyping(true);
-       
-       const history = messages.slice(-5).map(m => ({
-           role: m.userId === currentUser.id ? 'user' : 'model',
-           content: m.content
-       }));
+    if (messageCount >= MAX_MESSAGES_PER_MINUTE) {
+      setError(`Has enviado demasiados mensajes. Espera un minuto.`);
+      return;
+    }
 
-       const responseText = await generateBotResponse(history, userQuery);
-       
-       const botMessage: Message = {
-           id: (Date.now() + 1).toString(),
-           userId: 'bot',
-           content: responseText,
-           timestamp: new Date()
-       };
+    try {
+      // Sanitize content
+      const sanitizedContent = sanitizeInput(trimmedText);
 
-       setMessages(prev => [...prev, botMessage]);
-       
-       // Broadcast Bot Message too
-       if (broadcastChannelRef.current) {
-            broadcastChannelRef.current.postMessage({
-                type: 'NEW_MESSAGE',
-                channelId: currentChannel.id,
-                message: botMessage
-            });
-       }
-       
-       setIsTyping(false);
+      const newMessage: Message = {
+        id: Date.now().toString() + Math.random().toString(36).substring(2),
+        userId: currentUser.id,
+        content: sanitizedContent, // Store raw content, format on display
+        timestamp: new Date(),
+      };
+
+      // Update local state
+      setMessages(prev => [...prev, newMessage]);
+      
+      // Broadcast to other tabs (Real-time effect)
+      if (broadcastChannelRef.current) {
+          broadcastChannelRef.current.postMessage({
+              type: 'NEW_MESSAGE',
+              channelId: currentChannel.id,
+              message: newMessage
+          });
+      }
+
+      const userQuery = trimmedText;
+      setInputText('');
+      setMessageCount(prev => prev + 1);
+      setLastMessageTime(now);
+
+      // Check for bot interaction
+      if ((currentChannel.id === 'general' || currentChannel.id === 'comandos' || userQuery.toLowerCase().startsWith('/ai')) && 
+         (userQuery.toLowerCase().includes('bot') || userQuery.toLowerCase().startsWith('/'))) {
+         
+         setIsTyping(true);
+         
+         try {
+           const history = messages.slice(-5).map(m => ({
+               role: m.userId === currentUser.id ? 'user' : 'model',
+               content: m.content
+           }));
+
+           const responseText = await generateBotResponse(history, userQuery);
+           
+           const botMessage: Message = {
+               id: (Date.now() + 1).toString(),
+               userId: 'bot',
+               content: responseText,
+               timestamp: new Date()
+           };
+
+           setMessages(prev => [...prev, botMessage]);
+           
+           // Broadcast Bot Message too
+           if (broadcastChannelRef.current) {
+                broadcastChannelRef.current.postMessage({
+                    type: 'NEW_MESSAGE',
+                    channelId: currentChannel.id,
+                    message: botMessage
+                });
+           }
+         } catch (error) {
+           console.error('Error generating bot response:', error);
+           setError('Error al generar respuesta del bot. Intenta más tarde.');
+         } finally {
+           setIsTyping(false);
+         }
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setError('Error al enviar el mensaje. Intenta de nuevo.');
     }
   };
 
@@ -164,10 +222,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ currentUser, users, curre
   return (
     <div className="flex-1 flex flex-col bg-discord-chat min-w-0">
       {/* Header */}
-      <div className="h-12 flex items-center justify-between px-4 shadow-sm border-b border-gray-900/20 shrink-0">
+      <div className="h-12 flex items-center justify-between px-4 shadow-sm border-b border-gray-900/20 shrink-0" role="banner">
         <div className="flex items-center text-discord-text-header font-bold truncate">
           {/* Mobile Hamburger Menu */}
-          <button onClick={onMobileMenuClick} className="md:hidden mr-3 text-discord-text-muted hover:text-white">
+          <button 
+            onClick={onMobileMenuClick} 
+            className="md:hidden mr-3 text-discord-text-muted hover:text-white"
+            aria-label="Abrir menú"
+            aria-expanded="false"
+          >
             <Menu size={24} />
           </button>
 
@@ -177,29 +240,40 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ currentUser, users, curre
           <span className="hidden md:block text-xs font-normal text-discord-text-muted truncate">{currentChannel.description}</span>
         </div>
         <div className="flex items-center space-x-3 md:space-x-4 text-discord-text-muted shrink-0">
-          <Bell size={24} className="hidden md:block hover:text-discord-text-header cursor-pointer" />
-          <Pin size={24} className="hover:text-discord-text-header cursor-pointer" />
-          <Users size={24} className="md:hidden hover:text-discord-text-header cursor-pointer" />
+          <button aria-label="Notificaciones" className="hidden md:block hover:text-discord-text-header cursor-pointer">
+            <Bell size={24} />
+          </button>
+          <button aria-label="Mensajes fijados" className="hover:text-discord-text-header cursor-pointer">
+            <Pin size={24} />
+          </button>
+          <button aria-label="Lista de usuarios" className="md:hidden hover:text-discord-text-header cursor-pointer">
+            <Users size={24} />
+          </button>
           <div className="relative hidden md:block">
             <input 
               type="text" 
               placeholder="Buscar" 
               className="bg-discord-dark text-sm text-discord-text-normal rounded-md px-2 py-1 w-24 lg:w-36 transition-all focus:w-60 outline-none"
+              aria-label="Buscar mensajes"
             />
-            <Search size={16} className="absolute right-2 top-1/2 -translate-y-1/2 text-discord-text-muted" />
+            <Search size={16} className="absolute right-2 top-1/2 -translate-y-1/2 text-discord-text-muted pointer-events-none" aria-hidden="true" />
           </div>
-          <Inbox size={24} className="hidden md:block hover:text-discord-text-header cursor-pointer" />
-          <HelpCircle size={24} className="hidden md:block hover:text-discord-text-header cursor-pointer" />
+          <button aria-label="Bandeja de entrada" className="hidden md:block hover:text-discord-text-header cursor-pointer">
+            <Inbox size={24} />
+          </button>
+          <button aria-label="Ayuda" className="hidden md:block hover:text-discord-text-header cursor-pointer">
+            <HelpCircle size={24} />
+          </button>
         </div>
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto px-4 pt-4 custom-scrollbar flex flex-col">
+      <div className="flex-1 overflow-y-auto px-4 pt-4 custom-scrollbar flex flex-col" role="log" aria-label={`Mensajes del canal ${currentChannel.name}`}>
         <div className="mt-auto"> {/* Push messages to bottom initially if few */}
             
             {/* Welcome Message */}
-            <div className="mb-8 mt-4">
-                <div className="w-16 h-16 bg-discord-text-muted/20 rounded-full flex items-center justify-center mb-4">
+            <div className="mb-8 mt-4" role="region" aria-label="Mensaje de bienvenida">
+                <div className="w-16 h-16 bg-discord-text-muted/20 rounded-full flex items-center justify-center mb-4" aria-hidden="true">
                     <Hash size={40} className="text-white" />
                 </div>
                 <h1 className="text-3xl font-bold text-white mb-2">¡Te damos la bienvenida a #{currentChannel.name}!</h1>
@@ -235,7 +309,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ currentUser, users, curre
                 <div key={msg.id} className={`group flex pr-4 ${isSameUser ? 'mt-0.5 py-0.5 hover:bg-[#2e3035]' : 'mt-4 py-0.5 hover:bg-[#2e3035]'}`}>
                     {!isSameUser ? (
                         <div className="w-10 h-10 rounded-full bg-gray-600 mr-4 mt-0.5 overflow-hidden shrink-0 cursor-pointer active:translate-y-[1px]">
-                           <img src={msgUser.avatar} alt={msgUser.username} className="w-full h-full object-cover" />
+                           <SafeImage 
+                             src={msgUser.avatar} 
+                             alt={msgUser.username} 
+                             className="w-full h-full object-cover"
+                             fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(msgUser.username)}&background=5865F2&color=fff&size=128`}
+                           />
                         </div>
                     ) : (
                         <div className="w-10 mr-4 shrink-0 flex justify-end opacity-0 group-hover:opacity-100 text-[10px] text-discord-text-muted pt-1">
@@ -258,18 +337,30 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ currentUser, users, curre
                             </div>
                         )}
                         {isGif ? (
-                            <img src={msg.content} alt="GIF" className="mt-1 rounded-lg max-w-[300px] border border-gray-800" />
+                            <SafeImage 
+                              src={msg.content} 
+                              alt="GIF" 
+                              className="mt-1 rounded-lg max-w-[300px] border border-gray-800"
+                              showFallbackIcon={false}
+                            />
                         ) : (
-                            <p className={`text-discord-text-normal whitespace-pre-wrap leading-[1.375rem]`}>
-                                {msg.content}
-                            </p>
+                            <p 
+                              className={`text-discord-text-normal whitespace-pre-wrap leading-[1.375rem]`}
+                              dangerouslySetInnerHTML={{ __html: formatMessage(msg.content) }}
+                              aria-label={getPlainText(msg.content)}
+                            />
                         )}
                     </div>
                 </div>
                 );
             })}
              {isTyping && (
-                <div className="ml-14 mt-2 text-discord-text-muted text-xs font-bold animate-pulse">
+                <div className="ml-14 mt-2 text-discord-text-muted text-xs font-bold flex items-center" role="status" aria-live="polite">
+                    <div className="flex space-x-1 mr-2">
+                        <div className="w-2 h-2 bg-discord-text-muted rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-2 h-2 bg-discord-text-muted rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-2 h-2 bg-discord-text-muted rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    </div>
                     UPG Bot está escribiendo...
                 </div>
             )}
@@ -279,23 +370,45 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ currentUser, users, curre
 
       {/* Input Area */}
       <div className="px-4 pb-6 pt-2 shrink-0">
+        {error && (
+          <div className="mb-2 px-3 py-2 bg-red-500/20 border border-red-500/50 rounded-md text-red-400 text-sm flex items-center">
+            <AlertCircle size={16} className="mr-2" />
+            {error}
+          </div>
+        )}
         <div className="bg-[#383a40] rounded-lg px-4 py-2.5 flex items-center">
-            <button className="text-discord-text-muted hover:text-discord-text-header mr-4 sticky hidden sm:block">
+            <button 
+              type="button"
+              className="text-discord-text-muted hover:text-discord-text-header mr-4 sticky hidden sm:block"
+              aria-label="Adjuntar archivo"
+            >
                 <PlusCircle size={24} className="bg-discord-text-muted rounded-full text-discord-chat p-0.5 hover:text-white transition-colors" />
             </button>
-            <form onSubmit={handleSendMessage} className="flex-1">
+            <form onSubmit={handleSendMessage} className="flex-1 flex items-center">
                 <input 
                     type="text" 
                     value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
+                    onChange={(e) => {
+                      if (e.target.value.length <= MAX_MESSAGE_LENGTH) {
+                        setInputText(e.target.value);
+                        setError(null);
+                      }
+                    }}
                     placeholder={`Enviar mensaje a #${currentChannel.name}`}
                     className="bg-transparent w-full text-discord-text-normal placeholder-discord-text-muted outline-none"
+                    maxLength={MAX_MESSAGE_LENGTH}
+                    aria-label="Escribir mensaje"
                 />
+                {inputText.length > MAX_MESSAGE_LENGTH * 0.9 && (
+                  <span className={`text-xs ml-2 ${inputText.length >= MAX_MESSAGE_LENGTH ? 'text-red-400' : 'text-discord-text-muted'}`}>
+                    {inputText.length}/{MAX_MESSAGE_LENGTH}
+                  </span>
+                )}
             </form>
             <div className="flex items-center space-x-3 text-discord-text-muted">
-                <Gift size={24} className="hover:text-discord-text-header cursor-pointer hidden sm:block" />
-                <Sticker size={24} className="hover:text-discord-text-header cursor-pointer hidden sm:block" />
-                <Smile size={24} className="hover:text-discord-text-header cursor-pointer" />
+                <Gift size={24} className="hover:text-discord-text-header cursor-pointer hidden sm:block" aria-label="Enviar regalo" />
+                <Sticker size={24} className="hover:text-discord-text-header cursor-pointer hidden sm:block" aria-label="Enviar sticker" />
+                <Smile size={24} className="hover:text-discord-text-header cursor-pointer" aria-label="Emoji" />
             </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Sidebar from './components/Sidebar';
 import ChannelList from './components/ChannelList';
 import ChatInterface from './components/ChatInterface';
@@ -6,13 +6,14 @@ import UserList from './components/UserList';
 import WhoWeAre from './components/WhoWeAre';
 import Voting from './components/Voting';
 import LockScreen from './components/LockScreen';
+import ErrorBoundary from './components/ErrorBoundary';
 import { User, AppView } from './types';
 
 const MOCK_USERS: User[] = [
   { id: '1', username: 'AdminZero', avatar: 'https://picsum.photos/id/1005/200/200', status: 'dnd', color: '#ed4245' },
   { id: '2', username: 'GamerPro99', avatar: 'https://picsum.photos/id/1011/200/200', status: 'online', color: '#3ba55c' },
   { id: '3', username: 'LunaSky', avatar: 'https://picsum.photos/id/1027/200/200', status: 'idle', color: '#faa61a' },
-  { id: 'bot', username: 'UPG Bot', avatar: 'public/upg.png', status: 'online', isBot: true, color: '#5865F2' },
+  { id: 'bot', username: 'UPG Bot', avatar: '/upg.png', status: 'online', isBot: true, color: '#5865F2' },
   { id: '4', username: 'NoobMaster', avatar: 'https://picsum.photos/id/338/200/200', status: 'offline', color: '#949ba4' },
   { id: '5', username: 'ChillGuy', avatar: 'https://picsum.photos/id/669/200/200', status: 'online', color: '#3ba55c' },
 ];
@@ -209,21 +210,21 @@ function App() {
     localStorage.setItem('upg_current_user', JSON.stringify(currentUser));
   }, [currentUser]);
 
-  const handleChannelSelect = (view: AppView, channel?: ChannelData) => {
+  const handleChannelSelect = useCallback((view: AppView, channel?: ChannelData) => {
     setActiveView(view);
     if (channel) {
       setCurrentChannel(channel);
     }
     setMobileMenuOpen(false);
-  };
+  }, []);
 
-  const handleVoiceJoin = (channelName: string) => {
+  const handleVoiceJoin = useCallback((channelName: string) => {
       if (activeVoiceChannel === channelName) {
           setActiveVoiceChannel(null); // Leave
       } else {
           setActiveVoiceChannel(channelName); // Join
       }
-  };
+  }, [activeVoiceChannel]);
 
   if (isLoadingAuth) return null;
 
@@ -232,7 +233,8 @@ function App() {
   }
 
   return (
-    <div className="flex h-screen w-full bg-discord-dark font-sans antialiased overflow-hidden relative">
+    <ErrorBoundary>
+      <div className="flex h-screen w-full bg-discord-dark font-sans antialiased overflow-hidden relative">
       
       {/* Mobile Overlay */}
       {mobileMenuOpen && (
@@ -298,6 +300,7 @@ function App() {
         )}
       </div>
     </div>
+    </ErrorBoundary>
   );
 }
 

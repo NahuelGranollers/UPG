@@ -76,7 +76,7 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
       {/* Animated Logo */}
       <img 
         ref={logoRef}
-        src="public/upg.png" 
+        src="/upg.png" 
         alt="UPG Logo" 
         className="object-cover mb-8 w-[150px] h-[150px] md:w-[300px] md:h-[300px] block"
         style={{ transition: 'transform 0.1s linear' }}
@@ -124,11 +124,21 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         <button 
           type="submit"
           disabled={loading}
-          className="mt-6 flex items-center justify-center px-8 py-3 border-transparent text-base font-black rounded-full text-white bg-[#ff4d0a] hover:bg-[#e03e00] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 shadow-[3px_3px_0px_#cc3300] active:translate-y-[2px] active:shadow-none transition-all"
+          className="mt-6 flex items-center justify-center px-8 py-3 border-transparent text-base font-black rounded-full text-white bg-[#ff4d0a] hover:bg-[#e03e00] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 shadow-[3px_3px_0px_#cc3300] active:translate-y-[2px] active:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"
           style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
+          aria-label={loading ? 'Verificando contraseña' : 'Acceder'}
         >
-          {loading ? 'VERIFICANDO...' : 'ACCEDER'}
-          {!loading && <ArrowRight size={20} className="ml-2" />}
+          {loading ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+              VERIFICANDO...
+            </>
+          ) : (
+            <>
+              ACCEDER
+              <ArrowRight size={20} className="ml-2" />
+            </>
+          )}
         </button>
       </form>
     </div>

@@ -1,14 +1,20 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { User } from '../types';
+import SafeImage from './SafeImage';
 
 interface UserListProps {
   users: User[];
 }
 
-const UserItem: React.FC<{ user: User }> = ({ user }) => (
+const UserItem: React.FC<{ user: User }> = memo(({ user }) => (
   <div className="flex items-center py-1.5 px-2 hover:bg-discord-hover rounded cursor-pointer group opacity-90 hover:opacity-100">
     <div className="relative mr-3">
-      <img src={user.avatar} alt={user.username} className={`w-8 h-8 rounded-full object-cover ${user.status === 'offline' ? 'grayscale opacity-70' : ''}`} />
+      <SafeImage 
+        src={user.avatar} 
+        alt={user.username} 
+        className={`w-8 h-8 rounded-full object-cover ${user.status === 'offline' ? 'grayscale opacity-70' : ''}`}
+        fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=5865F2&color=fff&size=128`}
+      />
       {user.status !== 'offline' && (
           <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-[3px] border-[#2b2d31] rounded-full ${
               user.status === 'online' ? 'bg-green-500' : 
@@ -33,9 +39,11 @@ const UserItem: React.FC<{ user: User }> = ({ user }) => (
       </div>
     </div>
   </div>
-);
+));
 
-const UserList: React.FC<UserListProps> = ({ users }) => {
+UserItem.displayName = 'UserItem';
+
+const UserList: React.FC<UserListProps> = memo(({ users }) => {
   const onlineUsers = users.filter(u => u.status !== 'offline' && !u.isBot);
   const bots = users.filter(u => u.isBot);
   const offlineUsers = users.filter(u => u.status === 'offline');
@@ -61,6 +69,8 @@ const UserList: React.FC<UserListProps> = ({ users }) => {
        </div>
     </div>
   );
-};
+});
+
+UserList.displayName = 'UserList';
 
 export default UserList;

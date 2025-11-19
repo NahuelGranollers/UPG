@@ -33,7 +33,7 @@ const Voting: React.FC = () => {
     <div className="flex-1 flex flex-col items-center justify-center overflow-hidden w-full h-full" style={{ backgroundColor: '#ffcc17' }}>
       <img 
         ref={logoRef}
-        src="public/upg.png" 
+        src="/upg.png" 
         alt="UPG Logo" 
         className="object-cover mb-6 md:mb-10 w-[200px] h-[200px] md:w-[400px] md:h-[400px] block"
         style={{ 
