@@ -1,6 +1,7 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
@@ -11,11 +12,15 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
       allowedHosts: [
         'upg-brp0.onrender.com',
-        '.onrender.com',  // Permite cualquier subdominio de Render
+		'unaspartidillas.online',
+        '.onrender.com',
         'localhost'
       ]
     },
-    plugins: [react()],
+    plugins: [
+      react(),
+      tailwindcss(),  // ← AÑADE ESTO
+    ],
     define: {
       'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
