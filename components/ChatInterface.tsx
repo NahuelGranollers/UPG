@@ -56,7 +56,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ currentUser, users, curre
     // Verificar si Socket.IO está disponible
     if (typeof window !== 'undefined' && (window as any).io) {
       try {
-        const socketService = initSocket('https://mensajeria-three.vercel.app/');
+        const socketService = initSocket('https://mensajeria-ksc7.onrender.com');
         socketServiceRef.current = socketService;
         setUseSocketIO(true);
 
