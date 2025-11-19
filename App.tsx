@@ -7,6 +7,8 @@ import WhoWeAre from './components/WhoWeAre';
 import Voting from './components/Voting';
 import LockScreen from './components/LockScreen';
 import { User, AppView } from './types';
+import AgoraRTC from "agora-rtc-sdk-ng";
+
 
 const MOCK_USERS: User[] = [
   { id: '1', username: 'AdminZero', avatar: 'https://picsum.photos/id/1005/200/200', status: 'dnd', color: '#ed4245' },
