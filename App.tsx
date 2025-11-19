@@ -9,33 +9,19 @@ import LockScreen from './components/LockScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import { User, AppView } from './types';
 
-const MOCK_USERS: User[] = [
-  { id: '1', username: 'AdminZero', avatar: 'https://picsum.photos/id/1005/200/200', status: 'dnd', color: '#ed4245' },
-  { id: '2', username: 'GamerPro99', avatar: 'https://picsum.photos/id/1011/200/200', status: 'online', color: '#3ba55c' },
-  { id: '3', username: 'LunaSky', avatar: 'https://picsum.photos/id/1027/200/200', status: 'idle', color: '#faa61a' },
-  { id: 'bot', username: 'UPG Bot', avatar: '/upg.png', status: 'online', isBot: true, color: '#5865F2' },
-  { id: '4', username: 'NoobMaster', avatar: 'https://picsum.photos/id/338/200/200', status: 'offline', color: '#949ba4' },
-  { id: '5', username: 'ChillGuy', avatar: 'https://picsum.photos/id/669/200/200', status: 'online', color: '#3ba55c' },
-];
-
-// Generate a random user for this session if not exists
-const generateRandomUser = (): User => {
-  const randomId = Math.floor(Math.random() * 10000).toString();
-  const avatars = [
-      'https://picsum.photos/id/1012/200/200',
-      'https://picsum.photos/id/1025/200/200',
-      'https://picsum.photos/id/177/200/200',
-      'https://picsum.photos/id/237/200/200',
-      'https://picsum.photos/id/1062/200/200'
-  ];
-  return {
-    id: `user-${randomId}`,
-    username: `Guest${randomId}`,
-    avatar: avatars[Math.floor(Math.random() * avatars.length)],
-    status: 'online',
-    color: '#3ba55c'
-  };
+// Bot siempre presente
+const BOT_USER: User = {
+  id: 'bot',
+  username: 'UPG Bot',
+  avatar: '/upg.png',
+  status: 'online',
+  isBot: true,
+  color: '#5865F2'
 };
+
+import { getOrCreateUser } from './utils/userGenerator';
+import { initFirebase, setUserOnline, subscribeToOnlineUsers, isFirebaseConfigured } from './services/firebaseService';
+import { getDiscordUsers, discordUserToAppUser, DISCORD_USER_IDS } from './services/discordService';
 
 export interface ChannelData {
   id: string;
@@ -56,12 +42,14 @@ function App() {
   });
   
   const [currentUser, setCurrentUser] = useState<User>(() => {
-     const saved = localStorage.getItem('upg_current_user');
-     return saved ? JSON.parse(saved) : generateRandomUser();
+     return getOrCreateUser();
   });
 
-  // State for mock users + detected online users from other tabs
-  const [discoveredUsers, setDiscoveredUsers] = useState<User[]>([]);
+  // State for Discord users
+  const [discordUsers, setDiscordUsers] = useState<User[]>([]);
+  
+  // State for online users from Firebase
+  const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
   
   // Map of UserId -> ChannelName
   const [voiceStates, setVoiceStates] = useState<Record<string, string>>({});
@@ -86,69 +74,92 @@ function App() {
     setIsAuthenticated(true);
   };
 
-  // Merge Mock users with Discovered users
+  // Load Discord users on mount
+  useEffect(() => {
+    const loadDiscordUsers = async () => {
+      try {
+        const users = await getDiscordUsers();
+        const appUsers = users.map((user) => {
+          // El status ya viene de la configuración o del usuario de Discord
+          return discordUserToAppUser(user);
+        });
+        setDiscordUsers(appUsers);
+      } catch (error) {
+        console.error('Error cargando usuarios de Discord:', error);
+        // Si falla, usar usuarios por defecto basados en los IDs
+        const fallbackUsers: User[] = DISCORD_USER_IDS.map((id, index) => {
+          const statuses: ('online' | 'idle' | 'dnd' | 'offline')[] = ['online', 'idle', 'dnd', 'online', 'online', 'online', 'offline'];
+          const colors = ['#3ba55c', '#5865F2', '#faa61a', '#ed4245', '#eb459e', '#57f287', '#fee75c'];
+          return {
+            id,
+            username: `Usuario${index + 1}`,
+            avatar: `https://cdn.discordapp.com/embed/avatars/${index % 5}.png`,
+            status: statuses[index] || 'online',
+            color: colors[index % colors.length],
+          };
+        });
+        setDiscordUsers(fallbackUsers);
+      }
+    };
+
+    if (isAuthenticated) {
+      loadDiscordUsers();
+    }
+  }, [isAuthenticated]);
+
+  // Merge Discord users, Bot, Online users from Firebase, and Self
   const allUsers = useMemo(() => {
       const map = new Map<string, User>();
-      // Add Mocks
-      MOCK_USERS.forEach(u => map.set(u.id, u));
-      // Add Discovered
-      discoveredUsers.forEach(u => map.set(u.id, u));
+      // Add Bot (siempre presente)
+      map.set(BOT_USER.id, BOT_USER);
+      // Add Discord users
+      discordUsers.forEach(u => map.set(u.id, u));
+      // Add Online users from Firebase
+      onlineUsers.forEach(u => map.set(u.id, u));
       // Add Self (ensure latest status)
       map.set(currentUser.id, currentUser);
       
       return Array.from(map.values());
-  }, [discoveredUsers, currentUser]);
+  }, [discordUsers, onlineUsers, currentUser]);
+
+  // Initialize Firebase and set user online
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    // Inicializar Firebase
+    const firebase = initFirebase();
+    if (!firebase) {
+      console.warn('Firebase no configurado. El chat en tiempo real no funcionará.');
+      return;
+    }
+
+    // Marcar usuario como online
+    const disconnectUser = setUserOnline(currentUser);
+
+    // Suscribirse a usuarios online
+    const unsubscribeUsers = subscribeToOnlineUsers((users) => {
+      setOnlineUsers(users);
+    });
+
+    return () => {
+      disconnectUser();
+      unsubscribeUsers();
+    };
+  }, [currentUser, isAuthenticated]);
 
   // ------------------------------------------------------------
-  // Real-time Presence & Voice Synchronization
+  // Voice Channel Synchronization (BroadcastChannel para sincronizar entre pestañas)
   // ------------------------------------------------------------
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    // Channel for synchronizing user presence and voice state
-    const bc = new BroadcastChannel('upg_global_sync_v1');
+    // Channel for synchronizing voice state between tabs
+    const bc = new BroadcastChannel('upg_voice_sync_v1');
 
     const handleMessage = (e: MessageEvent) => {
         const data = e.data;
         
-        // 1. Handle User Presence (Hello/Welcome/Bye)
-        if (data.type === 'PRESENCE') {
-             const incomingUser = data.user as User;
-             if (incomingUser.id === currentUser.id) return; // Ignore self
-
-             if (data.subtype === 'HELLO') {
-                 // A new tab opened. Add them.
-                 setDiscoveredUsers(prev => {
-                     if (prev.find(u => u.id === incomingUser.id)) return prev;
-                     return [...prev, incomingUser];
-                 });
-                 // Respond to say "I am here too"
-                 bc.postMessage({ type: 'PRESENCE', subtype: 'WELCOME', user: currentUser });
-                 
-                 // Also tell them where I am if I'm in voice
-                 if (activeVoiceChannel) {
-                     bc.postMessage({ type: 'VOICE_UPDATE', userId: currentUser.id, channelName: activeVoiceChannel });
-                 }
-             } 
-             else if (data.subtype === 'WELCOME') {
-                 // Existing tab responded. Add them.
-                 setDiscoveredUsers(prev => {
-                     if (prev.find(u => u.id === incomingUser.id)) return prev;
-                     return [...prev, incomingUser];
-                 });
-             }
-             else if (data.subtype === 'BYE') {
-                 // Tab closed. Remove them.
-                 setDiscoveredUsers(prev => prev.filter(u => u.id !== incomingUser.id));
-                 setVoiceStates(prev => {
-                     const next = { ...prev };
-                     delete next[incomingUser.id];
-                     return next;
-                 });
-             }
-        }
-
-        // 2. Handle Voice Updates
+        // Handle Voice Updates between tabs
         if (data.type === 'VOICE_UPDATE') {
             setVoiceStates(prev => {
                 const next = { ...prev };
@@ -163,21 +174,12 @@ function App() {
     };
 
     bc.addEventListener('message', handleMessage);
-    
-    // Announce I am online
-    bc.postMessage({ type: 'PRESENCE', subtype: 'HELLO', user: currentUser });
-
-    const handleUnload = () => {
-        bc.postMessage({ type: 'PRESENCE', subtype: 'BYE', user: currentUser });
-    };
-    window.addEventListener('beforeunload', handleUnload);
 
     return () => {
         bc.removeEventListener('message', handleMessage);
-        window.removeEventListener('beforeunload', handleUnload);
         bc.close();
     };
-  }, [currentUser, isAuthenticated, activeVoiceChannel]); 
+  }, [isAuthenticated]); 
 
   // ------------------------------------------------------------
   // Broadcast Local Voice State Changes

@@ -11,6 +11,9 @@ export default defineConfig(({ mode }) => {
     // En GitHub Actions, las variables de entorno pueden venir con prefijo VITE_
     const geminiApiKey = env.VITE_GEMINI_API_KEY || env.GEMINI_API_KEY || '';
     
+    // Firebase config (las variables VITE_ se exponen automáticamente al cliente)
+    // No necesitamos definirlas aquí, Vite las expone automáticamente con import.meta.env
+    
     return {
       base,
       server: {

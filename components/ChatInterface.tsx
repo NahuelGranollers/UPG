@@ -5,6 +5,8 @@ import { generateBotResponse } from '../services/geminiService';
 import { ChannelData } from '../App';
 import SafeImage from './SafeImage';
 import { formatMessage, getPlainText } from '../utils/messageFormatter';
+import { sendMessage as sendFirebaseMessage, subscribeToMessages, isFirebaseConfigured } from '../services/firebaseService';
+import { initSocket, getSocketService } from '../services/socketService';
 
 interface ChatInterfaceProps {
   currentUser: User;
@@ -42,23 +44,96 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ currentUser, users, curre
   const [lastMessageTime, setLastMessageTime] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Channel for cross-tab communication
+  // Channel for cross-tab communication (fallback si Firebase/Socket.IO no está configurado)
   const broadcastChannelRef = useRef<BroadcastChannel | null>(null);
+  const socketServiceRef = useRef<any>(null);
+  const [useFirebase, setUseFirebase] = useState(false);
+  const [useSocketIO, setUseSocketIO] = useState(false);
+  const [socketConnected, setSocketConnected] = useState(false);
 
-  // Load messages from LocalStorage or Initial
+  // Initialize Socket.IO
   useEffect(() => {
+    // Verificar si Socket.IO está disponible
+    if (typeof window !== 'undefined' && (window as any).io) {
+      try {
+        const socketService = initSocket('https://unaspartidillas.online');
+        socketServiceRef.current = socketService;
+        setUseSocketIO(true);
+
+        // Suscribirse a cambios de conexión
+        const unsubscribeConnection = socketService.onConnectionChange((connected) => {
+          setSocketConnected(connected);
+        });
+
+        return () => {
+          unsubscribeConnection();
+          socketService.disconnect();
+        };
+      } catch (error) {
+        console.warn('Error inicializando Socket.IO:', error);
+        setUseSocketIO(false);
+      }
+    } else {
+      console.warn('Socket.IO no está disponible. Asegúrate de que el script esté cargado.');
+      setUseSocketIO(false);
+    }
+  }, []);
+
+  // Check if Firebase is configured
+  useEffect(() => {
+    setUseFirebase(isFirebaseConfigured());
+  }, []);
+
+  // Load messages from Socket.IO, Firebase, or LocalStorage
+  useEffect(() => {
+    if (useSocketIO && socketServiceRef.current) {
+      // Usar Socket.IO para chat en tiempo real
+      const socketService = socketServiceRef.current;
+      
+      const unsubscribe = socketService.subscribeToMessages(currentChannel.id, (socketMsg: any) => {
+        const message: Message = {
+          id: socketMsg.id,
+          userId: socketMsg.userId,
+          content: socketMsg.content,
+          timestamp: socketMsg.timestamp instanceof Date ? socketMsg.timestamp : new Date(socketMsg.timestamp),
+          attachments: socketMsg.attachments || [],
+        };
+
+        setMessages(prev => {
+          const exists = prev.find(p => p.id === message.id);
+          if (exists) return prev;
+          return [...prev, message];
+        });
+        scrollToBottom();
+      });
+
+      return () => {
+        unsubscribe();
+      };
+    } else if (useFirebase) {
+      // Usar Firebase para chat en tiempo real
+      const unsubscribe = subscribeToMessages(currentChannel.id, (firebaseMessages) => {
+        setMessages(firebaseMessages);
+        scrollToBottom();
+      });
+
+      return () => {
+        unsubscribe();
+      };
+    } else {
+      // Fallback: usar LocalStorage y BroadcastChannel
       const storageKey = `upg_messages_${currentChannel.id}`;
       const savedMessages = localStorage.getItem(storageKey);
       
       if (savedMessages) {
-          // Rehydrate dates from strings
-          const parsed = JSON.parse(savedMessages).map((m: any) => ({
-              ...m,
-              timestamp: new Date(m.timestamp)
-          }));
-          setMessages(parsed);
+        // Rehydrate dates from strings
+        const parsed = JSON.parse(savedMessages).map((m: any) => ({
+          ...m,
+          timestamp: new Date(m.timestamp)
+        }));
+        setMessages(parsed);
       } else {
-          setMessages(INITIAL_MESSAGES[currentChannel.id] || []);
+        setMessages(INITIAL_MESSAGES[currentChannel.id] || []);
       }
 
       // Setup BroadcastChannel for Real-Time effect across tabs
@@ -66,35 +141,36 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ currentUser, users, curre
       broadcastChannelRef.current = bc;
       
       bc.onmessage = (event) => {
-          if (event.data.type === 'NEW_MESSAGE' && event.data.channelId === currentChannel.id) {
-              const incomingMsg = {
-                  ...event.data.message,
-                  timestamp: new Date(event.data.message.timestamp)
-              };
-              setMessages(prev => {
-                  const exists = prev.find(p => p.id === incomingMsg.id);
-                  if (exists) return prev;
-                  const newHistory = [...prev, incomingMsg];
-                  // Save to local storage to keep sync
-                  localStorage.setItem(storageKey, JSON.stringify(newHistory));
-                  return newHistory;
-              });
-          }
+        if (event.data.type === 'NEW_MESSAGE' && event.data.channelId === currentChannel.id) {
+          const incomingMsg = {
+            ...event.data.message,
+            timestamp: new Date(event.data.message.timestamp)
+          };
+          setMessages(prev => {
+            const exists = prev.find(p => p.id === incomingMsg.id);
+            if (exists) return prev;
+            const newHistory = [...prev, incomingMsg];
+            // Save to local storage to keep sync
+            localStorage.setItem(storageKey, JSON.stringify(newHistory));
+            return newHistory;
+          });
+        }
       };
 
       return () => {
-          bc.close();
+        bc.close();
       };
-  }, [currentChannel.id]);
+    }
+  }, [currentChannel.id, useFirebase]);
 
-  // Save to local storage whenever messages change
+  // Save to local storage whenever messages change (solo si no usamos Firebase)
   useEffect(() => {
-      if (messages.length > 0) {
-        const storageKey = `upg_messages_${currentChannel.id}`;
-        localStorage.setItem(storageKey, JSON.stringify(messages));
-      }
-      scrollToBottom();
-  }, [messages, currentChannel.id]);
+    if (!useFirebase && messages.length > 0) {
+      const storageKey = `upg_messages_${currentChannel.id}`;
+      localStorage.setItem(storageKey, JSON.stringify(messages));
+    }
+    scrollToBottom();
+  }, [messages, currentChannel.id, useFirebase]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -143,29 +219,54 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ currentUser, users, curre
       // Sanitize content
       const sanitizedContent = sanitizeInput(trimmedText);
 
-      const newMessage: Message = {
-        id: Date.now().toString() + Math.random().toString(36).substring(2),
-        userId: currentUser.id,
-        content: sanitizedContent, // Store raw content, format on display
-        timestamp: new Date(),
-      };
-
-      // Update local state
-      setMessages(prev => [...prev, newMessage]);
-      
-      // Broadcast to other tabs (Real-time effect)
-      if (broadcastChannelRef.current) {
-          broadcastChannelRef.current.postMessage({
-              type: 'NEW_MESSAGE',
-              channelId: currentChannel.id,
-              message: newMessage
-          });
-      }
-
       const userQuery = trimmedText;
       setInputText('');
       setMessageCount(prev => prev + 1);
       setLastMessageTime(now);
+
+      // Enviar mensaje a Socket.IO, Firebase o BroadcastChannel
+      if (useSocketIO && socketServiceRef.current) {
+        // Enviar a Socket.IO
+        socketServiceRef.current.sendMessage(
+          currentChannel.id,
+          sanitizedContent,
+          currentUser.id,
+          currentUser.username,
+          currentUser.avatar
+        );
+      } else if (useFirebase) {
+        // Enviar a Firebase
+        try {
+          await sendFirebaseMessage(currentChannel.id, {
+            content: sanitizedContent,
+            attachments: [],
+          }, currentUser.id);
+        } catch (error) {
+          console.error('Error enviando mensaje a Firebase:', error);
+          setError('Error al enviar el mensaje. Intenta de nuevo.');
+          return;
+        }
+      } else {
+        // Fallback: usar estado local y BroadcastChannel
+        const newMessage: Message = {
+          id: Date.now().toString() + Math.random().toString(36).substring(2),
+          userId: currentUser.id,
+          content: sanitizedContent,
+          timestamp: new Date(),
+        };
+
+        // Update local state
+        setMessages(prev => [...prev, newMessage]);
+        
+        // Broadcast to other tabs (Real-time effect)
+        if (broadcastChannelRef.current) {
+          broadcastChannelRef.current.postMessage({
+            type: 'NEW_MESSAGE',
+            channelId: currentChannel.id,
+            message: newMessage
+          });
+        }
+      }
 
       // Check for bot interaction
       if ((currentChannel.id === 'general' || currentChannel.id === 'comandos' || userQuery.toLowerCase().startsWith('/ai')) && 
@@ -181,22 +282,43 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ currentUser, users, curre
 
            const responseText = await generateBotResponse(history, userQuery);
            
-           const botMessage: Message = {
+           // Enviar respuesta del bot
+           if (useSocketIO && socketServiceRef.current) {
+             socketServiceRef.current.sendMessage(
+               currentChannel.id,
+               responseText,
+               'bot',
+               'UPG Bot',
+               '/upg.png'
+             );
+           } else if (useFirebase) {
+             try {
+               await sendFirebaseMessage(currentChannel.id, {
+                 content: responseText,
+                 attachments: [],
+               }, 'bot');
+             } catch (error) {
+               console.error('Error enviando respuesta del bot a Firebase:', error);
+             }
+           } else {
+             // Fallback: estado local
+             const botMessage: Message = {
                id: (Date.now() + 1).toString(),
                userId: 'bot',
                content: responseText,
                timestamp: new Date()
-           };
+             };
 
-           setMessages(prev => [...prev, botMessage]);
-           
-           // Broadcast Bot Message too
-           if (broadcastChannelRef.current) {
-                broadcastChannelRef.current.postMessage({
-                    type: 'NEW_MESSAGE',
-                    channelId: currentChannel.id,
-                    message: botMessage
-                });
+             setMessages(prev => [...prev, botMessage]);
+             
+             // Broadcast Bot Message too
+             if (broadcastChannelRef.current) {
+               broadcastChannelRef.current.postMessage({
+                 type: 'NEW_MESSAGE',
+                 channelId: currentChannel.id,
+                 message: botMessage
+               });
+             }
            }
          } catch (error) {
            console.error('Error generating bot response:', error);
@@ -238,6 +360,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ currentUser, users, curre
           <span className="truncate">{currentChannel.name}</span>
           <div className="hidden md:block h-6 w-[1px] bg-discord-text-muted/30 mx-4 shrink-0"></div>
           <span className="hidden md:block text-xs font-normal text-discord-text-muted truncate">{currentChannel.description}</span>
+          {/* Connection Status Indicator */}
+          {useSocketIO && (
+            <div className="ml-2 flex items-center">
+              <div className={`w-2 h-2 rounded-full ${socketConnected ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} title={socketConnected ? 'Conectado' : 'Desconectado'}></div>
+            </div>
+          )}
         </div>
         <div className="flex items-center space-x-3 md:space-x-4 text-discord-text-muted shrink-0">
           <button aria-label="Notificaciones" className="hidden md:block hover:text-discord-text-header cursor-pointer">
