@@ -2,7 +2,7 @@
 export default {
   content: [
     "./index.html",
-    "./**/*.{js,ts,jsx,tsx}",
+    // Remove the broad "./**/*.{js,ts,jsx,tsx}" pattern
     "./components/**/*.{js,ts,jsx,tsx}",
     "./App.tsx",
     "./index.tsx",
@@ -18,6 +18,7 @@ export default {
           hover: '#3f4147',
           blurple: '#5865F2',
           green: '#23a559',
+		  yellow: '#ffcc17',
           red: '#da373c',
           text: {
             normal: '#dbdee1',

@@ -16,7 +16,7 @@ import { User, AppView, Message } from './types';
 // Bot siempre presente
 const BOT_USER: User = {
   id: 'bot',
-  username: 'UPG Bot',
+  username: 'UPG',
   avatar: '/upg.png',
   status: 'online',
   isBot: true,

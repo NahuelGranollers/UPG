@@ -18,28 +18,13 @@ const Sidebar: React.FC = () => {
       {/* UPG Server (Active) */}
       <div className="group relative">
         <div className="absolute left-0 bg-white rounded-r-md w-1 h-10 top-1/2 -translate-y-1/2 -ml-1" />
-        <button className="w-12 h-12 overflow-hidden rounded-[16px] transition-all duration-200 relative group-active:translate-y-[1px]">
+        <button className="w-12 h-12 bg-discord-chat text-discord-green hover:bg-discord-yellow hover:text-white rounded-[24px] hover:rounded-[16px] transition-all duration-200 flex items-center justify-center">
            <SafeImage 
              src="/upg.png" 
              alt="UPG" 
              className="object-cover w-full h-full"
-             fallbackSrc="https://ui-avatars.com/api/?name=UPG&background=ffcc17&color=ff4d0a&size=128"
+             fallbackSrc="https://ui-avatars.com/api/?name=UPG&background=ffcc17&color=ffcc17&size=128"
            />
-        </button>
-      </div>
-
-      {/* Other Dummy Servers */}
-      <div className="group relative">
-         <div className="absolute left-0 bg-white rounded-r w-1 h-5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 -ml-1" />
-        <button className="w-12 h-12 bg-discord-chat hover:bg-discord-green hover:text-white text-discord-text-normal rounded-[24px] hover:rounded-[16px] transition-all duration-200 flex items-center justify-center">
-          <span className="font-bold">G</span>
-        </button>
-      </div>
-
-      <div className="group relative">
-         <div className="absolute left-0 bg-white rounded-r w-1 h-5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 -ml-1" />
-        <button className="w-12 h-12 bg-discord-chat hover:bg-yellow-600 hover:text-white text-discord-text-normal rounded-[24px] hover:rounded-[16px] transition-all duration-200 flex items-center justify-center">
-          <span className="font-bold">JS</span>
         </button>
       </div>
       

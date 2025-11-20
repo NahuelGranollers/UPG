@@ -148,16 +148,6 @@ const ChannelList: React.FC<ChannelListProps> = ({
             name="general" 
             description="Chat general de UPG"
           />
-          <TextChannelItem 
-            id="memes"
-            name="memes" 
-            description="Solo humor y shitpost"
-          />
-          <TextChannelItem 
-            id="comandos"
-            name="comandos" 
-            description="Interactúa con los bots"
-          />
         </div>
 
          {/* Category: Voice Channels */}
@@ -169,9 +159,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
             </div>
           </div>
           
-           <VoiceChannelItem name="Sala Principal" />
-           <VoiceChannelItem name="Gaming 1" />
-           <VoiceChannelItem name="Música" />
+           <VoiceChannelItem name="Plaza UPG" />
         </div>
 
       </div>
