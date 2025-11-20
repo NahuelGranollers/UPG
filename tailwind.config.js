@@ -3,6 +3,7 @@ export default {
   content: [
     "./index.html",
     // Remove the broad "./**/*.{js,ts,jsx,tsx}" pattern
+    "./src/**/*.{js,ts,jsx,tsx}",        // Add this line if your code is in a 'src' folder
     "./components/**/*.{js,ts,jsx,tsx}",
     "./App.tsx",
     "./index.tsx",
