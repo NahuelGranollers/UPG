@@ -98,27 +98,31 @@ function App() {
 
   // Check Discord Authentication
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuth = async () => {
       try {
-        // Primero verificar si hay usuario guardado localmente
-        const savedUser = storage.loadUserData();
-        
-        // Verificar si viene de Discord OAuth callback con datos de usuario
+        // Verificar si viene del callback de Discord
         const urlParams = new URLSearchParams(window.location.search);
-        console.log('🔍 Checking URL params:', window.location.search);
+        const isCallback = urlParams.get('auth') === 'success';
         
-        if (urlParams.get('auth') === 'success' && urlParams.get('user')) {
-          console.log('✅ Received Discord OAuth callback');
+        if (isCallback) {
+          console.log('✅ Received Discord OAuth callback, fetching user from backend...');
           
-          // Decodificar datos del usuario desde la URL
-          const userDataEncoded = urlParams.get('user')!;
-          console.log('📦 Encoded user data length:', userDataEncoded.length);
-          
-          const userDataString = atob(userDataEncoded);
-          console.log('📄 Decoded user data:', userDataString);
-          
-          const discordUser = JSON.parse(userDataString);
-          console.log('👤 Parsed Discord user:', discordUser);
+          // Limpiar URL
+          window.history.replaceState({}, document.title, '/');
+        }
+        
+        // Consultar al backend si hay sesión activa
+        console.log('🔍 Checking session with backend...');
+        const response = await fetch(`${API_URL}/auth/user`, {
+          credentials: 'include', // Importante para enviar cookies de sesión
+          headers: {
+            'Accept': 'application/json',
+          }
+        });
+
+        if (response.ok) {
+          const discordUser = await response.json();
+          console.log('✅ User session found:', discordUser);
           
           // Crear User desde Discord
           const newUser: User = {
@@ -136,30 +140,39 @@ function App() {
           storage.saveUserData(newUser);
           setIsAuthenticated(true);
           
-          // Limpiar URL
-          window.history.replaceState({}, document.title, '/');
-          
-          console.log('✅ Usuario autenticado con Discord:', newUser.username);
-        } else if (savedUser && savedUser.id && !savedUser.username.startsWith('Guest')) {
-          // Si ya hay usuario guardado, usarlo
-          setCurrentUser(savedUser);
-          setIsAuthenticated(true);
-          console.log('✅ Usuario cargado desde localStorage:', savedUser.username);
+          console.log('✅ Usuario autenticado:', newUser.username);
         } else {
-          // No hay usuario, mostrar Discord login
-          setIsAuthenticated(false);
-          console.log('❌ No hay usuario autenticado');
+          console.log('❌ No active session found');
+          
+          // Verificar si hay usuario guardado localmente (fallback)
+          const savedUser = storage.loadUserData();
+          if (savedUser && savedUser.id && !savedUser.username.startsWith('Guest')) {
+            console.log('📦 Using cached user from localStorage:', savedUser.username);
+            setCurrentUser(savedUser);
+            setIsAuthenticated(true);
+          } else {
+            setIsAuthenticated(false);
+          }
         }
       } catch (error) {
-        console.error('Error checking auth:', error);
-        setIsAuthenticated(false);
+        console.error('❌ Error checking auth:', error);
+        
+        // Fallback a localStorage si el backend falla
+        const savedUser = storage.loadUserData();
+        if (savedUser && savedUser.id && !savedUser.username.startsWith('Guest')) {
+          console.log('📦 Backend unavailable, using localStorage:', savedUser.username);
+          setCurrentUser(savedUser);
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
       } finally {
         setIsLoadingAuth(false);
       }
     };
 
     checkAuth();
-  }, []);
+  }, [API_URL]);
 
   const handleUnlock = useCallback(() => {
     // Después de desbloquear con contraseña, marcar que pasó el LockScreen
