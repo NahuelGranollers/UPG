@@ -455,11 +455,13 @@ function App() {
       }
       return next;
     });
-  }, [activeVoiceChannel, currentUser.id, isAuthenticated]);
+  }, [activeVoiceChannel, currentUser, isAuthenticated]);
 
   // Persistir usuario actual usando servicio de storage
   useEffect(() => {
-    storage.saveUserData(currentUser);
+    if (currentUser) {
+      storage.saveUserData(currentUser);
+    }
   }, [currentUser]);
 
   // Memoizar lista de todos los usuarios
