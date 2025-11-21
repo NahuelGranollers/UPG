@@ -450,10 +450,28 @@ function App() {
       alert(message);
     });
 
-    // Ô£à Usuario registrado confirmado por servidor (puede incluir datos recuperados)
+    // ✅ Usuario registrado confirmado por servidor (puede incluir datos recuperados)
     socket.on('user:registered', (userData: User) => {
-      console.log('Ô£à Registro confirmado por servidor:', userData);
-      // Actualizar usuario con datos del servidor (incluye rol, etc.)
+      console.log('✅ Registro confirmado por servidor:', userData);
+      
+      // 🔐 PROTECCIÓN: Si ya estamos autenticados con Discord, NO aceptar cambio de usuario desde el servidor
+      // Solo actualizar el rol, pero mantener identidad Discord
+      if (isDiscordUser && currentUser && !currentUser.isGuest) {
+        console.log('🔒 Usuario Discord protegido, solo actualizando rol:', userData.role);
+        setCurrentUser(prev => ({
+          ...prev,
+          role: userData.role,
+          color: userData.role === UserRole.ADMIN ? '#ff4d0a' : '#3ba55c'
+        }));
+        // Guardar con identidad Discord pero rol actualizado
+        storage.saveUserData({
+          ...currentUser,
+          role: userData.role
+        });
+        return;
+      }
+      
+      // Si es invitado, permitir actualización completa
       setCurrentUser(prev => ({
         ...prev,
         ...userData,

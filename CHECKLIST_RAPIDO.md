@@ -3,9 +3,27 @@
 ## 🎯 Lo que se arregló
 
 ✅ Usuario Discord ya **NO vuelve a invitado** al recargar la página
+✅ **Backend ya NO sobrescribe** usuario Discord con invitado por IP ⭐ **FIX CRÍTICO**
+✅ **Frontend protege** identidad Discord contra cambios del socket ⭐ **FIX CRÍTICO**
 ✅ Logs muy claros en consola para debugging
 ✅ Fallback inteligente: usa `localStorage` si la cookie falla
 ✅ CORS mejorado para evitar errores de preflight
+
+## 🔍 Problema raíz descubierto
+
+**ANTES**: 
+1. Login Discord funciona → `popogamer3` ✅
+2. Socket.IO conecta → Backend busca usuario por IP
+3. Backend no encuentra nada (primera vez) → Crea `Invitado7139`
+4. Backend envía `user:registered` con `Invitado7139`
+5. Frontend **sobrescribe** `popogamer3` → Aparece `Invitado7139` ❌
+
+**AHORA**:
+1. Login Discord funciona → `popogamer3` ✅
+2. Socket.IO conecta → Backend **detecta** que es usuario Discord
+3. Backend **usa** `popogamer3`, NO crea invitado ✅
+4. Frontend **rechaza** cambios de identidad si ya es Discord ✅
+5. Resultado: Sigue apareciendo `popogamer3` ✅
 
 ---
 

@@ -3,7 +3,8 @@
 ## 📦 Archivos modificados
 
 ### 1. `App.tsx` (Frontend)
-**Problema**: El usuario volvía a "Invitado" después de hacer login con Discord.
+**Problema original**: El usuario volvía a "Invitado" después de hacer login con Discord.
+**Problema descubierto**: El backend sobrescribía el usuario Discord con invitado al conectar Socket.IO.
 
 **Cambios implementados**:
 
@@ -40,9 +41,30 @@ if (response not ok) {
 
 Esto significa que **incluso si la cookie falla**, el usuario puede seguir usando su cuenta Discord desde `localStorage`.
 
+#### d) Protección de usuario Discord en `user:registered` ⭐ **CRÍTICO**
+**ANTES**: El socket devolvía `user:registered` con datos del servidor → **sobrescribía** usuario Discord con invitado
+
+**AHORA**:
+```typescript
+socket.on('user:registered', (userData: User) => {
+  // Si ya estamos autenticados con Discord
+  if (isDiscordUser && !currentUser.isGuest) {
+    // Solo actualizar rol, NO cambiar identidad
+    setCurrentUser(prev => ({ ...prev, role: userData.role }));
+    return; // ✅ Proteger identidad Discord
+  }
+  // Si es invitado, permitir actualización completa
+  setCurrentUser(userData);
+});
+```
+
+Esto **previene** que el backend sobrescriba tu usuario Discord con un invitado generado por IP.
+
 ---
 
 ### 2. `server/index.js` (Backend)
+
+**Problema crítico descubierto**: El servidor usaba solo la IP para identificar usuarios, lo que causaba que usuarios Discord fueran sobrescritos con invitados generados por IP.
 
 **Cambios implementados**:
 
@@ -55,7 +77,44 @@ if (req.method === 'OPTIONS') {
 ```
 Esto previene errores de CORS con peticiones OPTIONS antes de GET/POST.
 
-#### b) Log mejorado en `/auth/user`
+#### b) Detección de usuarios Discord en `user:join` ⭐ **CRÍTICO**
+**ANTES**: Todos los usuarios se identificaban por IP → usuarios Discord eran reemplazados por invitados
+
+**AHORA**:
+```javascript
+socket.on("user:join", (userData) => {
+  // Detectar si es usuario Discord (no guest-XXXX)
+  const isDiscordUser = userData.id && !userData.id.startsWith('guest-') 
+                        && !userData.username.startsWith('Invitado');
+  
+  if (isDiscordUser) {
+    // Usuario Discord - usar sus datos directamente
+    finalUserData = { ...userData, role, socketId, ... };
+    // NO buscar por IP, NO sobrescribir
+  } else {
+    // Usuario invitado - sistema de IP como antes
+    const existingUser = getUserByIP(ipHash);
+    ...
+  }
+});
+```
+
+Esto **previene** que el servidor cree un nuevo invitado para usuarios Discord.
+
+#### c) No registrar usuarios Discord por IP
+**ANTES**: Todos los usuarios se registraban en `registeredUsers` por IP
+
+**AHORA**:
+```javascript
+// Solo registrar por IP si es usuario invitado (no Discord)
+if (!isDiscordUser) {
+  registerUser(ipHash, { ... });
+}
+```
+
+Los usuarios Discord mantienen su identidad única, no dependen de la IP.
+
+#### d) Log mejorado en `/auth/user`
 **ANTES**: 
 ```javascript
 logger.info(`✅ Discord user session found: ${req.session.discordUser.username}`);
@@ -68,7 +127,7 @@ logger.info(`✅ Discord user session found (ID: ${req.session.discordUser.id}, 
 
 Ahora incluye el ID para mejor debugging.
 
-#### c) Configuración de sesión verificada
+#### e) Configuración de sesión verificada
 ✅ Sin `domain` en cookie (permite cross-domain)
 ✅ `sameSite: 'none'` en producción (permite cross-domain con HTTPS)
 ✅ `secure: true` en producción (solo HTTPS)
@@ -80,14 +139,19 @@ Ahora incluye el ID para mejor debugging.
 
 ### Antes de los cambios:
 1. Usuario hace login con Discord ✅
-2. Vuelve a la web → Muestra "Invitado1234" ❌
-3. Logs en consola: confusos, sin detalles ❌
+2. Socket.IO se conecta → Backend crea "Invitado7139" por IP ❌
+3. Frontend recibe `user:registered` → Sobrescribe "popogamer3" con "Invitado7139" ❌
+4. Resultado: Vuelve a mostrar "Invitado1234" ❌
+5. Logs en consola: confusos, sin detalles ❌
 
 ### Después de los cambios:
-1. Usuario hace login con Discord ✅
-2. Vuelve a la web → Muestra su nombre y avatar de Discord ✅
-3. Usuario recarga (F5) → Sigue mostrando su cuenta Discord ✅
-4. Logs en consola: muy claros, fácil diagnosticar problemas ✅
+1. Usuario hace login con Discord → `popogamer3` ✅
+2. Socket.IO se conecta → Backend **reconoce** usuario Discord ✅
+3. Backend mantiene "popogamer3", NO crea invitado ✅
+4. Frontend **rechaza** cambios de identidad desde socket ✅
+5. Resultado: Muestra "popogamer3" con su avatar ✅
+6. Usuario recarga (F5) → Sigue mostrando "popogamer3" ✅
+7. Logs en consola: muy claros, fácil diagnosticar problemas ✅
 
 ---
 
