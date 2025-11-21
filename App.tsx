@@ -201,6 +201,9 @@ function App() {
       (window as any).socketInstance = socket;
     }
 
+    // Remover todos los listeners anteriores para evitar duplicados
+    socket.removeAllListeners();
+
     // ✅ Conexión establecida
     socket.on('connect', () => {
       console.log('🔌 Conectado a Socket.IO - ID:', socket.id);
@@ -364,11 +367,15 @@ function App() {
       console.error('❌ Error de conexión:', error.message);
     });
 
-    // Cleanup
+    // Cleanup: solo remover listeners, NO desconectar el socket si se va a reutilizar
     return () => {
-      socket.disconnect();
-      socketRef.current = null;
-      console.log('🔌 Socket desconectado y limpiado');
+      socket.removeAllListeners();
+      // Solo desconectar si el componente se desmonta completamente
+      if (!isAuthenticated || !currentUser) {
+        socket.disconnect();
+        socketRef.current = null;
+        console.log('🔌 Socket desconectado y limpiado');
+      }
     };
   }, [isAuthenticated, currentUser, currentChannel.id]);
 
