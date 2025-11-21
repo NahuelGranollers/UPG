@@ -11,9 +11,11 @@ import Voting from './components/Voting';
 import LockScreen from './components/LockScreen';
 import UserSetup from './components/UserSetup';
 import ErrorBoundary from './components/ErrorBoundary';
+import MobileTabBar from './components/MobileTabBar';
 
 import { User, AppView, Message, UserRole } from './types';
 import * as storage from './utils/storageService';
+import { useSwipe } from './hooks/useSwipe';
 
 // Bot siempre presente
 const BOT_USER: User = {
@@ -110,6 +112,9 @@ function App() {
   const [voiceStates, setVoiceStates] = useState<Record<string, string>>({});
   const [activeVoiceChannel, setActiveVoiceChannel] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // Mobile tabs state
+  const [mobileActiveTab, setMobileActiveTab] = useState<'channels' | 'chat' | 'users'>('chat');
 
   // Mensajes por canal
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
@@ -327,10 +332,44 @@ function App() {
       window.location.reload();
     });
 
+    socket.on('kicked', ({ reason }: { reason: string }) => {
+      alert(`${reason}`);
+      window.location.reload();
+    });
+
     socket.on('username:taken', ({ message }: { message: string }) => {
       alert(message);
       storage.clearUserData();
       setShowUserSetup(true);
+    });
+
+    // Admin events
+    socket.on('admin:action-success', ({ action, message }: { action: string; message: string }) => {
+      console.log(`✅ Admin action ${action}: ${message}`);
+      alert(`✅ ${message}`);
+    });
+
+    socket.on('admin:notification', ({ message }: { message: string }) => {
+      console.log(`📢 Admin notification: ${message}`);
+    });
+
+    socket.on('admin:export-data-result', ({ data }: { data: any }) => {
+      // Create download
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `upg-server-backup-${new Date().toISOString()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      alert('✅ Backup descargado correctamente');
+    });
+
+    socket.on('server:restarting', ({ message }: { message: string }) => {
+      console.log(`🔄 ${message}`);
+      alert(message);
     });
 
     // ✅ Usuario registrado confirmado por servidor (puede incluir datos recuperados)
@@ -500,6 +539,26 @@ function App() {
     setMobileMenuOpen(false);
   }, []);
 
+  const handleMobileTabChange = useCallback((tab: 'channels' | 'chat' | 'users') => {
+    setMobileActiveTab(tab);
+  }, []);
+
+  // Swipe gestures for mobile
+  useSwipe({
+    onSwipeLeft: () => {
+      if (window.innerWidth < 768) { // Only on mobile
+        if (mobileActiveTab === 'channels') setMobileActiveTab('chat');
+        else if (mobileActiveTab === 'chat') setMobileActiveTab('users');
+      }
+    },
+    onSwipeRight: () => {
+      if (window.innerWidth < 768) { // Only on mobile
+        if (mobileActiveTab === 'users') setMobileActiveTab('chat');
+        else if (mobileActiveTab === 'chat') setMobileActiveTab('channels');
+      }
+    }
+  });
+
   if (isLoadingAuth) return null;
   if (!isAuthenticated) return <LockScreen onUnlock={handleUnlock} />;
   if (showUserSetup) return <UserSetup onComplete={handleUserSetupComplete} />;
@@ -507,18 +566,8 @@ function App() {
   return (
     <ErrorBoundary>
       <div className="flex h-screen w-full bg-discord-dark font-sans antialiased overflow-hidden relative">
-        {mobileMenuOpen && (
-          <div 
-            className="fixed inset-0 bg-black/50 z-40 md:hidden"
-            onClick={handleMenuClose}
-            role="button"
-            aria-label="Cerrar menú"
-          />
-        )}
-
-        <div className={`fixed inset-y-0 left-0 z-50 flex h-full transition-transform duration-300 md:relative md:translate-x-0 ${
-          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}>
+        {/* Desktop Layout */}
+        <div className="hidden md:flex h-full w-full">
           <Sidebar 
             currentUser={currentUser} 
             setCurrentUser={setCurrentUser} 
@@ -534,28 +583,108 @@ function App() {
             voiceStates={voiceStates}
             users={allUsers}
           />
+          
+          <div className="flex flex-1 min-w-0 relative">
+            {activeView === AppView.CHAT && (
+              <>
+                <ChatInterface
+                  currentUser={currentUser}
+                  users={allUsers}
+                  currentChannel={currentChannel}
+                  onSendMessage={handleSendMessage}
+                  messages={currentChannelMessages}
+                  onMenuToggle={handleMenuToggle}
+                />
+                <UserList users={allUsers} currentUserId={currentUser.id} />
+              </>
+            )}
+            {activeView === AppView.WHO_WE_ARE && (
+              <WhoWeAre onMenuToggle={handleMenuToggle} />
+            )}
+            {activeView === AppView.VOTING && (
+              <Voting onMenuToggle={handleMenuToggle} />
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-1 min-w-0 relative">
-          {activeView === AppView.CHAT && (
-            <>
-              <ChatInterface
-                currentUser={currentUser}
-                users={allUsers}
-                currentChannel={currentChannel}
-                onSendMessage={handleSendMessage}
-                messages={currentChannelMessages}
-                onMenuToggle={handleMenuToggle}
+        {/* Mobile Layout */}
+        <div className="flex md:hidden h-full w-full flex-col pb-16 relative overflow-hidden">
+          {/* Channels Tab */}
+          <div 
+            className={`absolute inset-0 transition-all duration-300 ease-out pb-16 ${
+              mobileActiveTab === 'channels' 
+                ? 'opacity-100 translate-x-0 pointer-events-auto' 
+                : 'opacity-0 -translate-x-full pointer-events-none'
+            }`}
+          >
+            <div className="flex h-full w-full overflow-hidden">
+              <Sidebar 
+                currentUser={currentUser} 
+                setCurrentUser={setCurrentUser} 
+                isConnected={isConnected} 
               />
-              <UserList users={allUsers} currentUserId={currentUser.id} />
-            </>
-          )}
-          {activeView === AppView.WHO_WE_ARE && (
-            <WhoWeAre onMenuToggle={handleMenuToggle} />
-          )}
-          {activeView === AppView.VOTING && (
-            <Voting onMenuToggle={handleMenuToggle} />
-          )}
+              <ChannelList 
+                activeView={activeView} 
+                currentChannelId={currentChannel.id}
+                onChannelSelect={(view, channel) => {
+                  handleChannelSelect(view, channel);
+                  setMobileActiveTab('chat');
+                }}
+                currentUser={currentUser}
+                activeVoiceChannel={activeVoiceChannel}
+                onVoiceJoin={handleVoiceJoin}
+                voiceStates={voiceStates}
+                users={allUsers}
+              />
+            </div>
+          </div>
+
+          {/* Chat Tab */}
+          <div 
+            className={`absolute inset-0 transition-all duration-300 ease-out pb-16 ${
+              mobileActiveTab === 'chat' 
+                ? 'opacity-100 translate-x-0 pointer-events-auto' 
+                : 'opacity-0 translate-x-full pointer-events-none'
+            }`}
+          >
+            <div className="flex flex-1 min-w-0 relative h-full">
+              {activeView === AppView.CHAT && (
+                <ChatInterface
+                  currentUser={currentUser}
+                  users={allUsers}
+                  currentChannel={currentChannel}
+                  onSendMessage={handleSendMessage}
+                  messages={currentChannelMessages}
+                  onMenuToggle={() => setMobileActiveTab('channels')}
+                />
+              )}
+              {activeView === AppView.WHO_WE_ARE && (
+                <WhoWeAre onMenuToggle={() => setMobileActiveTab('channels')} />
+              )}
+              {activeView === AppView.VOTING && (
+                <Voting onMenuToggle={() => setMobileActiveTab('channels')} />
+              )}
+            </div>
+          </div>
+
+          {/* Users Tab */}
+          <div 
+            className={`absolute inset-0 transition-all duration-300 ease-out pb-16 ${
+              mobileActiveTab === 'users' 
+                ? 'opacity-100 translate-x-0 pointer-events-auto' 
+                : 'opacity-0 translate-x-full pointer-events-none'
+            }`}
+          >
+            <div className="h-full w-full overflow-hidden">
+              <UserList users={allUsers} currentUserId={currentUser.id} isMobileView={true} />
+            </div>
+          </div>
+
+          {/* Mobile Tab Bar */}
+          <MobileTabBar 
+            activeTab={mobileActiveTab} 
+            onTabChange={handleMobileTabChange}
+          />
         </div>
       </div>
     </ErrorBoundary>

@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top);
+  --safe-area-inset-right: env(safe-area-inset-right);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom);
+  --safe-area-inset-left: env(safe-area-inset-left);
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -9,11 +16,65 @@ body {
   background-color: #1a1a1e;
   color: #dbdee1;
   overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+  -webkit-tap-highlight-color: transparent;
 }
 
 #root {
   width: 100vw;
   height: 100vh;
+  height: 100dvh; /* Dynamic viewport height for mobile */
+}
+
+/* Prevent pull-to-refresh on mobile */
+body {
+  overscroll-behavior-y: contain;
+}
+
+/* Safe area support for devices with notch */
+.safe-area-top {
+  padding-top: var(--safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: var(--safe-area-inset-bottom);
+}
+
+.safe-area-left {
+  padding-left: var(--safe-area-inset-left);
+}
+
+.safe-area-right {
+  padding-right: var(--safe-area-inset-right);
+}
+
+/* Smooth transitions for mobile tabs */
+.mobile-tab-content {
+  transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+
+.mobile-tab-enter {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.mobile-tab-exit {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+/* Prevent text selection on mobile when swiping */
+@media (max-width: 768px) {
+  * {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  input, textarea {
+    -webkit-user-select: text;
+    user-select: text;
+  }
 }
 
 @keyframes fadeIn {

@@ -4,6 +4,8 @@ import SafeImage from './SafeImage';
 
 interface UserListProps {
   users: User[];
+  currentUserId?: string;
+  isMobileView?: boolean;
 }
 
 const UserItem: React.FC<{ user: User }> = memo(({ user }) => {
@@ -48,14 +50,18 @@ const UserItem: React.FC<{ user: User }> = memo(({ user }) => {
 
 UserItem.displayName = 'UserItem';
 
-const UserList: React.FC<UserListProps> = memo(({ users }) => {
-  // Filtrar usuarios por estado de conexión (online = true)
-  const onlineUsers = users.filter(u => u.online !== false && !u.isBot && u.status !== 'offline');
+const UserList: React.FC<UserListProps> = memo(({ users, currentUserId, isMobileView = false }) => {
+  // Filtrar usuarios por estado de conexión (online = true) y excluir el usuario actual
+  const onlineUsers = users.filter(u => u.online !== false && !u.isBot && u.status !== 'offline' && u.id !== currentUserId);
   const bots = users.filter(u => u.isBot);
-  const offlineUsers = users.filter(u => (u.online === false || u.status === 'offline') && !u.isBot);
+  const offlineUsers = users.filter(u => (u.online === false || u.status === 'offline') && !u.isBot && u.id !== currentUserId);
 
   return (
-    <div className="w-60 bg-discord-sidebar shrink-0 flex flex-col p-3 overflow-y-auto custom-scrollbar h-full border-l border-gray-900/20 hidden lg:flex">
+    <div className={`${
+      isMobileView 
+        ? 'w-full bg-discord-dark h-full' 
+        : 'w-60 bg-discord-sidebar shrink-0 hidden lg:flex'
+    } flex flex-col p-3 overflow-y-auto custom-scrollbar border-l border-gray-900/20`}>
        {/* Online Category */}
        <div className="mb-6">
          <h2 className="text-xs font-bold text-discord-text-muted uppercase mb-2 px-2">Disponible — {onlineUsers.length}</h2>
