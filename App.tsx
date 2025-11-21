@@ -91,7 +91,10 @@ function App() {
   // useRef para mantener referencia estable del socket
   const socketRef = useRef<Socket | null>(null);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  // Usar producción por defecto, localhost solo en desarrollo
+  const API_URL = import.meta.env.DEV 
+    ? 'http://localhost:3000'
+    : 'https://mensajeria-ksc7.onrender.com';
 
   // Check Discord Authentication
   useEffect(() => {

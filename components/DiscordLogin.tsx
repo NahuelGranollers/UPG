@@ -1,9 +1,12 @@
 import React from 'react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
 const DiscordLogin: React.FC = () => {
   const handleLogin = () => {
+    // Usar producción por defecto, localhost solo en desarrollo
+    const API_URL = import.meta.env.DEV 
+      ? 'http://localhost:3000'
+      : 'https://mensajeria-ksc7.onrender.com';
+    
     // Redirige al endpoint del backend que inicia el flujo OAuth
     window.location.href = `${API_URL}/auth/discord`;
   };
