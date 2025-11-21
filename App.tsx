@@ -9,12 +9,9 @@ import UserList from './components/UserList';
 import WhoWeAre from './components/WhoWeAre';
 import Voting from './components/Voting';
 import LockScreen from './components/LockScreen';
-import DiscordLogin from './components/DiscordLogin';
+import UserSetup from './components/UserSetup';
 import ErrorBoundary from './components/ErrorBoundary';
 import MobileTabBar from './components/MobileTabBar';
-
-// Discord OAuth
-import * as discordAuth from './services/discordAuth';
 
 import { User, AppView, Message, UserRole } from './types';
 import * as storage from './utils/storageService';
@@ -53,6 +50,7 @@ function App() {
   // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [showUserSetup, setShowUserSetup] = useState(false);
 
   // UI & Channels
   const [activeView, setActiveView] = useState<AppView>(AppView.CHAT);
@@ -61,8 +59,22 @@ function App() {
     name: 'general', 
     description: 'Chat general' 
   });
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isLoadingDiscord, setIsLoadingDiscord] = useState(true);
+  const [currentUser, setCurrentUser] = useState<User>(() => {
+    const saved = storage.loadUserData();
+    if (saved) {
+      return { ...saved, online: true, status: 'online' };
+    }
+    // Usuario temporal
+    const randomId = Math.floor(Math.random() * 10000).toString();
+    return {
+      id: `user-${randomId}`,
+      username: `Guest${randomId}`,
+      avatar: 'https://ui-avatars.com/api/?name=G&background=5865F2&color=fff&size=200',
+      status: 'online',
+      online: true,
+      color: '#3ba55c'
+    };
+  });
 
   // Estado de usuarios conectados
   const [discoveredUsers, setDiscoveredUsers] = useState<User[]>([]);
@@ -80,83 +92,47 @@ function App() {
   // useRef para mantener referencia estable del socket
   const socketRef = useRef<Socket | null>(null);
 
-  // Check Discord Authentication
+  // Check Authentication simple
   useEffect(() => {
-    const initAuth = async () => {
-      console.log('🔑 Iniciando autenticación Discord...');
-      
-      // Verificar si hay callback de Discord
-      const token = discordAuth.handleDiscordCallback();
-      
-      if (token) {
-        console.log('✅ Token de Discord recibido');
-        try {
-          // Obtener datos del usuario desde Discord
-          const discordUser = await discordAuth.getDiscordUser(token);
-          console.log('👤 Usuario Discord obtenido:', {
-            id: discordUser.id,
-            username: discordUser.username,
-            global_name: discordUser.global_name
-          });
-          
-          discordAuth.saveDiscordToken(token);
-          localStorage.setItem('discord_user', JSON.stringify(discordUser));
-          
-          // Crear usuario para la app con prefijo discord-
-          const user: User = {
-            id: `discord-${discordUser.id}`,
-            username: discordUser.global_name || discordUser.username,
-            avatar: discordAuth.getDiscordAvatarUrl(discordUser.id, discordUser.avatar, 128),
-            status: 'online',
-            online: true,
-            color: '#3ba55c',
-            role: UserRole.USER
-          };
-          
-          console.log('✅ Usuario creado para la app:', user);
-          setCurrentUser(user);
-          storage.saveUserData(user);
-          storage.setAuthentication(true);
-          setIsAuthenticated(true);
-        } catch (error) {
-          console.error('❌ Error obteniendo datos de Discord:', error);
-          discordAuth.clearDiscordToken();
-        }
-      } else if (discordAuth.hasActiveSession()) {
-        console.log('🔄 Sesión activa encontrada, cargando usuario...');
-        // Ya hay sesión activa, cargar usuario
-        const savedUser = storage.loadUserData();
-        if (savedUser) {
-          console.log('✅ Usuario cargado:', savedUser.username);
-          setCurrentUser(savedUser);
-          storage.setAuthentication(true);
-          setIsAuthenticated(true);
-        } else {
-          console.warn('⚠️ Token existe pero no hay datos guardados, reautenticando...');
-          // Token existe pero no hay datos guardados, reautenticar
-          discordAuth.clearDiscordToken();
-          localStorage.removeItem('discord_user');
-        }
-      } else {
-        console.log('🚪 No hay sesión activa, mostrar login');
+    if (storage.isAuthenticated()) {
+      setIsAuthenticated(true);
+      // Verificar si tiene usuario válido
+      const userData = storage.loadUserData();
+      if (!userData || userData.username.startsWith('Guest')) {
+        setShowUserSetup(true);
       }
-      
-      setIsLoadingAuth(false);
-      setIsLoadingDiscord(false);
-    };
-    
-    initAuth();
+    }
+    setIsLoadingAuth(false);
   }, []);
 
-  const handleLogout = useCallback(() => {
-    console.log('🚪 Cerrando sesión...');
-    discordAuth.clearDiscordToken();
-    localStorage.removeItem('discord_user');
-    storage.clearUserData();
-    storage.setAuthentication(false);
-    setCurrentUser(null);
-    setIsAuthenticated(false);
-    window.location.reload();
+  const handleUnlock = useCallback(() => {
+    storage.setAuthentication(true);
+    setIsAuthenticated(true);
+    
+    const userData = storage.loadUserData();
+    if (!userData || userData.username.startsWith('Guest')) {
+      setShowUserSetup(true);
+    } else {
+      setCurrentUser(userData);
+    }
+  }, []);
+
+  const handleUserSetupComplete = useCallback((username: string, avatar: string) => {
+    const userId = `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    
+    const newUser: User = {
+      id: userId,
+      username,
+      avatar,
+      status: 'online',
+      online: true,
+      color: '#3ba55c',
+      role: UserRole.USER
+    };
+    
+    storage.saveUserData(newUser);
+    setCurrentUser(newUser);
+    setShowUserSetup(false);
   }, []);
 
   // Socket.IO Connection - ACTUALIZADO CON GESTIÓN DE USUARIOS
@@ -319,8 +295,9 @@ function App() {
     });
 
     socket.on('username:taken', ({ message }: { message: string }) => {
-      alert(message + ' Por favor, inicia sesi\u00f3n con otra cuenta de Discord.');
-      handleLogout();
+      alert(message);
+      storage.clearUserData();
+      setShowUserSetup(true);
     });
 
     // Admin events
@@ -543,25 +520,9 @@ function App() {
     }
   });
 
-  if (isLoadingAuth || isLoadingDiscord) {
-    return <div className="flex items-center justify-center h-screen bg-discord-dark text-white">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-discord-blurple"></div>
-    </div>;
-  }
-  
-  if (!isAuthenticated || !currentUser) {
-    return <DiscordLogin />;
-  }
-
-  // Triple verificación que currentUser tiene todas las propiedades necesarias
-  if (!currentUser.id || !currentUser.username || !currentUser.avatar) {
-    console.error('❌ currentUser incompleto:', currentUser);
-    handleLogout();
-    return null;
-  }
-
-  // Asegurar que currentUser no es null en este punto
-  const safeCurrentUser = currentUser;
+  if (isLoadingAuth) return null;
+  if (!isAuthenticated) return <LockScreen onUnlock={handleUnlock} />;
+  if (showUserSetup) return <UserSetup onComplete={handleUserSetupComplete} />;
 
   return (
     <ErrorBoundary>
@@ -569,7 +530,7 @@ function App() {
         {/* Desktop Layout */}
         <div className="hidden md:flex h-full w-full">
           <Sidebar 
-            currentUser={safeCurrentUser} 
+            currentUser={currentUser} 
             setCurrentUser={setCurrentUser} 
             isConnected={isConnected} 
           />
@@ -577,7 +538,7 @@ function App() {
             activeView={activeView} 
             currentChannelId={currentChannel.id}
             onChannelSelect={handleChannelSelect}
-            currentUser={safeCurrentUser}
+            currentUser={currentUser}
             activeVoiceChannel={activeVoiceChannel}
             onVoiceJoin={handleVoiceJoin}
             voiceStates={voiceStates}
@@ -588,14 +549,14 @@ function App() {
             {activeView === AppView.CHAT && (
               <>
                 <ChatInterface
-                  currentUser={safeCurrentUser}
+                  currentUser={currentUser}
                   users={allUsers}
                   currentChannel={currentChannel}
                   onSendMessage={handleSendMessage}
                   messages={currentChannelMessages}
                   onMenuToggle={handleMenuToggle}
                 />
-                <UserList users={allUsers} currentUserId={safeCurrentUser.id} />
+                <UserList users={allUsers} currentUserId={currentUser.id} />
               </>
             )}
             {activeView === AppView.WHO_WE_ARE && (
@@ -619,7 +580,7 @@ function App() {
           >
             <div className="flex h-full w-full overflow-hidden">
               <Sidebar 
-                currentUser={safeCurrentUser} 
+                currentUser={currentUser} 
                 setCurrentUser={setCurrentUser} 
                 isConnected={isConnected} 
               />
@@ -630,7 +591,7 @@ function App() {
                   handleChannelSelect(view, channel);
                   setMobileActiveTab('chat');
                 }}
-                currentUser={safeCurrentUser}
+                currentUser={currentUser}
                 activeVoiceChannel={activeVoiceChannel}
                 onVoiceJoin={handleVoiceJoin}
                 voiceStates={voiceStates}
@@ -650,7 +611,7 @@ function App() {
             <div className="flex flex-1 min-w-0 relative h-full">
               {activeView === AppView.CHAT && (
                 <ChatInterface
-                  currentUser={safeCurrentUser}
+                  currentUser={currentUser}
                   users={allUsers}
                   currentChannel={currentChannel}
                   onSendMessage={handleSendMessage}
@@ -676,7 +637,7 @@ function App() {
             }`}
           >
             <div className="h-full w-full overflow-hidden">
-              <UserList users={allUsers} currentUserId={safeCurrentUser.id} isMobileView={true} />
+              <UserList users={allUsers} currentUserId={currentUser.id} isMobileView={true} />
             </div>
           </div>
 
