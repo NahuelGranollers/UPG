@@ -1,16 +1,16 @@
 import React, { useState, useRef } from 'react';
 import { User, Check, RefreshCw, Upload, X } from 'lucide-react';
-import { uploadProfileImage, validateImageFile } from '../services/firebaseService';
+import { uploadImageToImgur, validateImageFile } from '../services/imageUploadService';
 
 const AVATARS = [
-  'https://picsum.photos/id/1012/200/200',
-  'https://picsum.photos/id/1025/200/200',
-  'https://picsum.photos/id/177/200/200',
-  'https://picsum.photos/id/237/200/200',
-  'https://picsum.photos/id/1062/200/200',
-  'https://picsum.photos/id/1011/200/200',
-  'https://picsum.photos/id/1027/200/200',
-  'https://picsum.photos/id/169/200/200'
+  'https://ui-avatars.com/api/?name=A&background=5865F2&color=fff&size=200',
+  'https://ui-avatars.com/api/?name=B&background=57F287&color=fff&size=200',
+  'https://ui-avatars.com/api/?name=C&background=FEE75C&color=000&size=200',
+  'https://ui-avatars.com/api/?name=D&background=EB459E&color=fff&size=200',
+  'https://ui-avatars.com/api/?name=E&background=ED4245&color=fff&size=200',
+  'https://ui-avatars.com/api/?name=F&background=9B59B6&color=fff&size=200',
+  'https://ui-avatars.com/api/?name=G&background=3498DB&color=fff&size=200',
+  'https://ui-avatars.com/api/?name=H&background=E67E22&color=fff&size=200'
 ] as const;
 
 interface UserSetupProps {
@@ -47,17 +47,30 @@ const UserSetup: React.FC<UserSetupProps> = ({ onComplete }) => {
     setError('');
 
     try {
-      // Generar ID temporal para la subida
-      const tempUserId = `temp-${Date.now()}`;
-      const downloadURL = await uploadProfileImage(file, tempUserId);
+      // Subir imagen a Imgur (servicio gratuito)
+      const result = await uploadImageToImgur(file);
       
-      setCustomAvatar(downloadURL);
-      setSelectedAvatar(downloadURL as any); // Usar la URL personalizada
-    } catch (err) {
+      setCustomAvatar(result.url);
+      setSelectedAvatar(result.url as any); // Usar la URL personalizada
+      
+      console.log('✅ Imagen subida exitosamente a Imgur');
+    } catch (err: any) {
       console.error('Error subiendo imagen:', err);
-      setError('Error subiendo la imagen. Intenta de nuevo.');
+      
+      // Mensaje de error más específico
+      if (err.message?.includes('429')) {
+        setError('Límite de subidas alcanzado. Intenta de nuevo en unos minutos.');
+      } else if (err.message?.includes('Network')) {
+        setError('Error de conexión. Verifica tu internet.');
+      } else {
+        setError('Error subiendo la imagen. Intenta de nuevo.');
+      }
     } finally {
       setUploadingImage(false);
+      // Limpiar el input para permitir seleccionar el mismo archivo de nuevo
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 

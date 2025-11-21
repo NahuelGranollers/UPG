@@ -43,11 +43,11 @@ const SOCKET_CONFIG = {
 };
 
 const AVATARS = [
-  'https://picsum.photos/id/1012/200/200',
-  'https://picsum.photos/id/1025/200/200',
-  'https://picsum.photos/id/177/200/200',
-  'https://picsum.photos/id/237/200/200',
-  'https://picsum.photos/id/1062/200/200'
+  'https://ui-avatars.com/api/?name=A&background=5865F2&color=fff&size=200',
+  'https://ui-avatars.com/api/?name=B&background=57F287&color=fff&size=200',
+  'https://ui-avatars.com/api/?name=C&background=FEE75C&color=000&size=200',
+  'https://ui-avatars.com/api/?name=D&background=EB459E&color=fff&size=200',
+  'https://ui-avatars.com/api/?name=E&background=ED4245&color=fff&size=200'
 ] as const;
 
 function generateRandomUser(): User {
