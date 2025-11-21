@@ -2,111 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --safe-area-inset-top: env(safe-area-inset-top);
-  --safe-area-inset-right: env(safe-area-inset-right);
-  --safe-area-inset-bottom: env(safe-area-inset-bottom);
-  --safe-area-inset-left: env(safe-area-inset-left);
-}
-
 body {
   margin: 0;
   padding: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: #1a1a1e;
+  background-color: #313338;
   color: #dbdee1;
   overflow: hidden;
-  overscroll-behavior: none;
-  -webkit-overflow-scrolling: touch;
-  -webkit-tap-highlight-color: transparent;
 }
 
 #root {
   width: 100vw;
-  height: 100vh; /* Fallback */
-  height: 100dvh; /* Dynamic viewport height for mobile */
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  overflow: hidden;
-}
-
-/* Prevent pull-to-refresh on mobile */
-body {
-  overscroll-behavior-y: contain;
-}
-
-/* Safe area support for devices with notch */
-.safe-area-top {
-  padding-top: var(--safe-area-inset-top);
-}
-
-.safe-area-bottom {
-  padding-bottom: var(--safe-area-inset-bottom);
-}
-
-.safe-area-left {
-  padding-left: var(--safe-area-inset-left);
-}
-
-.safe-area-right {
-  padding-right: var(--safe-area-inset-right);
-}
-
-/* Smooth transitions for mobile tabs */
-.mobile-tab-content {
-  transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
-}
-
-.mobile-tab-enter {
-  opacity: 0;
-  transform: translateX(20px);
-}
-
-.mobile-tab-exit {
-  opacity: 0;
-  transform: translateX(-20px);
-}
-
-/* Prevent text selection on mobile when swiping */
-@media (max-width: 768px) {
-  * {
-    -webkit-user-select: none;
-    user-select: none;
-  }
-  
-  input, textarea {
-    -webkit-user-select: text;
-    user-select: text;
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-out;
-}
-
-.animate-scaleIn {
-  animation: scaleIn 0.3s ease-out;
+  height: 100vh;
 }

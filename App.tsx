@@ -549,11 +549,7 @@ function App() {
       <div className="flex h-screen w-full bg-discord-dark font-sans antialiased overflow-hidden relative">
         {/* Desktop Layout */}
         <div className="hidden md:flex h-full w-full">
-          <Sidebar 
-            currentUser={currentUser} 
-            setCurrentUser={setCurrentUser} 
-            isConnected={isConnected} 
-          />
+          <Sidebar />
           <ChannelList 
             activeView={activeView} 
             currentChannelId={currentChannel.id}
@@ -576,11 +572,7 @@ function App() {
                   messages={currentChannelMessages}
                   onMenuToggle={handleMenuToggle}
                 />
-                <UserList 
-                  users={allUsers} 
-                  currentUserId={currentUser.id}
-                  onLoginWithDiscord={handleLoginWithDiscord}
-                />
+                <UserList users={allUsers} />
               </>
             )}
             {activeView === AppView.WHO_WE_ARE && (
@@ -603,11 +595,7 @@ function App() {
             }`}
           >
             <div className="flex h-full w-full overflow-hidden">
-              <Sidebar 
-                currentUser={currentUser} 
-                setCurrentUser={setCurrentUser} 
-                isConnected={isConnected} 
-              />
+              <Sidebar />
               <ChannelList 
                 activeView={activeView} 
                 currentChannelId={currentChannel.id}
@@ -661,12 +649,7 @@ function App() {
             }`}
           >
             <div className="h-full w-full overflow-hidden">
-              <UserList 
-                users={allUsers} 
-                currentUserId={currentUser.id} 
-                isMobileView={true}
-                onLoginWithDiscord={handleLoginWithDiscord}
-              />
+              <UserList users={allUsers} />
             </div>
           </div>
 
