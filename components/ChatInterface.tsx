@@ -42,14 +42,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const mentionableUsers = useMemo(() => {
     const botUser = { id: 'bot', username: 'UPG', avatar: '/upg.png', color: '#5865F2', online: true };
     // Incluir TODOS los usuarios (online, offline, y el usuario actual)
-    return [botUser, ...users];
+    const allUsers = [botUser, ...users];
+    console.log('👥 Usuarios mencionables:', allUsers.length, allUsers);
+    return allUsers;
   }, [users]);
 
   // Filtrar sugerencias de menciones
   const mentionSuggestions = useMemo(() => {
-    if (!mentionSearch) return mentionableUsers;
+    if (!mentionSearch) {
+      console.log('🔎 Sin búsqueda, mostrando todos:', mentionableUsers.length);
+      return mentionableUsers;
+    }
     const search = mentionSearch.toLowerCase();
-    return mentionableUsers.filter(u => u.username.toLowerCase().includes(search));
+    const filtered = mentionableUsers.filter(u => u.username.toLowerCase().includes(search));
+    console.log('🔎 Filtrado con:', mentionSearch, '→', filtered.length, 'resultados');
+    return filtered;
   }, [mentionSearch, mentionableUsers]);
 
   // Auto scroll
@@ -68,17 +75,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const textBeforeCursor = text.slice(0, cursorPos);
     const lastAtIndex = textBeforeCursor.lastIndexOf('@');
     
+    console.log('🔍 Input:', text, 'Cursor:', cursorPos, 'lastAtIndex:', lastAtIndex);
+    
     if (lastAtIndex !== -1) {
       // Hay un @ antes del cursor
       const textAfterAt = textBeforeCursor.slice(lastAtIndex + 1);
       
+      console.log('✅ @ encontrado! textAfterAt:', textAfterAt);
+      
       // Solo mostrar si no hay espacios después del @ y está cerca del cursor
       if (!textAfterAt.includes(' ') && (cursorPos - lastAtIndex) <= 20) {
+        console.log('🎯 Mostrando panel de menciones');
         setShowMentionSuggestions(true);
         setMentionSearch(textAfterAt);
         setMentionStartPos(lastAtIndex);
         setSelectedSuggestionIndex(0);
       } else if (textAfterAt.includes(' ')) {
+        console.log('❌ Hay espacio después de @, ocultando panel');
         setShowMentionSuggestions(false);
       }
     } else {
@@ -411,6 +424,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {/* Input */}
       <div className="px-3 sm:px-4 pt-2 shrink-0 relative" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
         {/* Sugerencias de menciones */}
+        {(() => {
+          console.log('🎨 Renderizando panel - showMentionSuggestions:', showMentionSuggestions, 'mentionSuggestions.length:', mentionSuggestions.length);
+          return null;
+        })()}
         {showMentionSuggestions && mentionSuggestions.length > 0 && (
           <div className="absolute bottom-full left-3 sm:left-4 right-3 sm:right-4 mb-2 bg-[#2f3136] rounded-lg shadow-2xl border border-gray-800 overflow-hidden max-h-64 overflow-y-auto z-50 animate-in fade-in slide-in-from-bottom-2 duration-150">
             <div className="py-2">
