@@ -48,8 +48,9 @@ const SOCKET_CONFIG = {
 
 function App() {
   // Auth State
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(true); // Siempre autenticado como invitado
+  const [isLoadingAuth, setIsLoadingAuth] = useState(false);
+  const [isDiscordUser, setIsDiscordUser] = useState(false); // Track if logged in with Discord
 
   // UI & Channels
   const [activeView, setActiveView] = useState<AppView>(AppView.CHAT);
@@ -60,19 +61,23 @@ function App() {
   });
   const [currentUser, setCurrentUser] = useState<User>(() => {
     const saved = storage.loadUserData();
-    if (saved) {
+    if (saved && saved.id && !saved.username.startsWith('Guest')) {
+      // Usuario de Discord guardado
       return { ...saved, online: true, status: 'online' };
     }
-    // Usuario temporal
+    // Usuario invitado por defecto
     const randomId = Math.floor(Math.random() * 10000).toString();
-    return {
-      id: `user-${randomId}`,
-      username: `Guest${randomId}`,
-      avatar: 'https://ui-avatars.com/api/?name=G&background=5865F2&color=fff&size=200',
-      status: 'online',
+    const guestUser = {
+      id: `guest-${randomId}`,
+      username: `Invitado${randomId}`,
+      avatar: `https://ui-avatars.com/api/?name=I${randomId.charAt(0)}&background=gray&color=fff&size=200`,
+      status: 'online' as const,
       online: true,
-      color: '#3ba55c'
+      color: '#808080',
+      isGuest: true
     };
+    storage.saveUserData(guestUser);
+    return guestUser;
   });
 
   // Estado de usuarios conectados
@@ -111,75 +116,56 @@ function App() {
           console.error('❌ Discord OAuth error:', errorCode, errorDescription);
           alert(`Error de autenticación: ${decodeURIComponent(errorDescription || 'Error desconocido')}`);
           window.history.replaceState({}, document.title, '/');
-          setIsAuthenticated(false);
-          setIsLoadingAuth(false);
           return;
         }
         
         if (authStatus === 'success') {
           console.log('✅ Received Discord OAuth callback, fetching user from backend...');
-          
-          // Limpiar URL
           window.history.replaceState({}, document.title, '/');
+          
+          // Consultar al backend por el usuario de Discord
+          const response = await fetch(`${API_URL}/auth/user`, {
+            credentials: 'include',
+            headers: { 'Accept': 'application/json' }
+          });
+
+          if (response.ok) {
+            const discordUser = await response.json();
+            console.log('✅ Discord user session found:', discordUser);
+            
+            // Crear User desde Discord
+            const newUser: User = {
+              id: discordUser.id,
+              username: discordUser.username,
+              avatar: discordUser.avatar 
+                ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
+                : `https://ui-avatars.com/api/?name=${discordUser.username.charAt(0)}&background=5865F2&color=fff&size=200`,
+              status: 'online',
+              online: true,
+              color: '#5865F2',
+              isGuest: false
+            };
+
+            setCurrentUser(newUser);
+            storage.saveUserData(newUser);
+            setIsDiscordUser(true);
+            console.log('✅ Usuario Discord autenticado:', newUser.username);
+            return;
+          }
         }
         
-        // Consultar al backend si hay sesión activa
-        console.log('🔍 Checking session with backend...');
-        const response = await fetch(`${API_URL}/auth/user`, {
-          credentials: 'include', // Importante para enviar cookies de sesión
-          headers: {
-            'Accept': 'application/json',
-          }
-        });
-
-        if (response.ok) {
-          const discordUser = await response.json();
-          console.log('✅ User session found:', discordUser);
-          
-          // Crear User desde Discord
-          const newUser: User = {
-            id: discordUser.id,
-            username: discordUser.username,
-            avatar: discordUser.avatar 
-              ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
-              : `https://ui-avatars.com/api/?name=${discordUser.username.charAt(0)}&background=5865F2&color=fff&size=200`,
-            status: 'online',
-            online: true,
-            color: '#5865F2'
-          };
-
-          setCurrentUser(newUser);
-          storage.saveUserData(newUser);
-          setIsAuthenticated(true);
-          
-          console.log('✅ Usuario autenticado:', newUser.username);
+        // Verificar si hay usuario de Discord guardado localmente
+        const savedUser = storage.loadUserData();
+        if (savedUser && savedUser.id && !savedUser.username.startsWith('Invitado') && !savedUser.id.startsWith('guest-')) {
+          console.log('📦 Using cached Discord user from localStorage:', savedUser.username);
+          setCurrentUser(savedUser);
+          setIsDiscordUser(true);
         } else {
-          console.log('❌ No active session found');
-          
-          // Verificar si hay usuario guardado localmente (fallback)
-          const savedUser = storage.loadUserData();
-          if (savedUser && savedUser.id && !savedUser.username.startsWith('Guest')) {
-            console.log('📦 Using cached user from localStorage:', savedUser.username);
-            setCurrentUser(savedUser);
-            setIsAuthenticated(true);
-          } else {
-            setIsAuthenticated(false);
-          }
+          console.log('👤 Entrando como invitado');
+          setIsDiscordUser(false);
         }
       } catch (error) {
         console.error('❌ Error checking auth:', error);
-        
-        // Fallback a localStorage si el backend falla
-        const savedUser = storage.loadUserData();
-        if (savedUser && savedUser.id && !savedUser.username.startsWith('Guest')) {
-          console.log('📦 Backend unavailable, using localStorage:', savedUser.username);
-          setCurrentUser(savedUser);
-          setIsAuthenticated(true);
-        } else {
-          setIsAuthenticated(false);
-        }
-      } finally {
-        setIsLoadingAuth(false);
       }
     };
 
@@ -187,9 +173,7 @@ function App() {
   }, [API_URL]);
 
   const handleUnlock = useCallback(() => {
-    // Después de desbloquear con contraseña, marcar que pasó el LockScreen
     storage.setAuthentication(true);
-    setIsLoadingAuth(false);
   }, []);
 
   // Socket.IO Connection - ACTUALIZADO CON GESTIÓN DE USUARIOS
@@ -562,6 +546,11 @@ function App() {
     setMobileActiveTab(tab);
   }, []);
 
+  const handleLoginWithDiscord = useCallback(() => {
+    // Redirigir a la ruta de Discord OAuth del backend
+    window.location.href = `${API_URL}/auth/discord`;
+  }, [API_URL]);
+
   // Swipe gestures for mobile
   useSwipe({
     onSwipeLeft: () => {
@@ -581,13 +570,8 @@ function App() {
   // Primero verificar LockScreen
   const hasPassedLock = storage.isAuthenticated();
   
-  if (isLoadingAuth) return null;
-  
   // Si no pasó el LockScreen, mostrarlo primero
   if (!hasPassedLock) return <LockScreen onUnlock={handleUnlock} />;
-  
-  // Si pasó el LockScreen pero no tiene usuario de Discord, mostrar DiscordLogin
-  if (!isAuthenticated) return <DiscordLogin />;
 
   return (
     <ErrorBoundary>
@@ -621,7 +605,11 @@ function App() {
                   messages={currentChannelMessages}
                   onMenuToggle={handleMenuToggle}
                 />
-                <UserList users={allUsers} currentUserId={currentUser.id} />
+                <UserList 
+                  users={allUsers} 
+                  currentUserId={currentUser.id}
+                  onLoginWithDiscord={handleLoginWithDiscord}
+                />
               </>
             )}
             {activeView === AppView.WHO_WE_ARE && (
@@ -702,7 +690,12 @@ function App() {
             }`}
           >
             <div className="h-full w-full overflow-hidden">
-              <UserList users={allUsers} currentUserId={currentUser.id} isMobileView={true} />
+              <UserList 
+                users={allUsers} 
+                currentUserId={currentUser.id} 
+                isMobileView={true}
+                onLoginWithDiscord={handleLoginWithDiscord}
+              />
             </div>
           </div>
 

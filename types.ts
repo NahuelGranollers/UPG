@@ -20,6 +20,7 @@ export interface User {
   online?: boolean; // Estado de conexión (true = conectado, false = registrado pero desconectado)
   lastSeen?: string; // ISO timestamp de última conexión
   socketId?: string; // ID de socket actual (solo si está online)
+  isGuest?: boolean; // Indica si es un usuario invitado (no autenticado con Discord)
 }
 
 export interface Message {
