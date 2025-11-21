@@ -100,6 +100,9 @@ function App() {
   useEffect(() => {
     const checkAuth = () => {
       try {
+        // Primero verificar si hay usuario guardado localmente
+        const savedUser = storage.loadUserData();
+        
         // Verificar si viene de Discord OAuth callback con datos de usuario
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('auth') === 'success' && urlParams.get('user')) {
@@ -126,16 +129,17 @@ function App() {
           
           // Limpiar URL
           window.history.replaceState({}, document.title, '/');
-        } else {
-          // Verificar si hay usuario Discord guardado localmente
-          const savedUser = storage.loadUserData();
           
-          if (savedUser && savedUser.id && !savedUser.username.startsWith('Guest')) {
-            setCurrentUser(savedUser);
-            setIsAuthenticated(true);
-          } else {
-            setIsAuthenticated(false);
-          }
+          console.log('✅ Usuario autenticado con Discord:', newUser.username);
+        } else if (savedUser && savedUser.id && !savedUser.username.startsWith('Guest')) {
+          // Si ya hay usuario guardado, usarlo
+          setCurrentUser(savedUser);
+          setIsAuthenticated(true);
+          console.log('✅ Usuario cargado desde localStorage:', savedUser.username);
+        } else {
+          // No hay usuario, mostrar Discord login
+          setIsAuthenticated(false);
+          console.log('❌ No hay usuario autenticado');
         }
       } catch (error) {
         console.error('Error checking auth:', error);
@@ -540,12 +544,15 @@ function App() {
     }
   });
 
+  // Primero verificar LockScreen
+  const hasPassedLock = storage.isAuthenticated();
+  
   if (isLoadingAuth) return null;
   
-  // Si no está autenticado, primero mostrar LockScreen
-  if (!storage.isAuthenticated()) return <LockScreen onUnlock={handleUnlock} />;
+  // Si no pasó el LockScreen, mostrarlo primero
+  if (!hasPassedLock) return <LockScreen onUnlock={handleUnlock} />;
   
-  // Si pasó el LockScreen pero no tiene Discord, mostrar DiscordLogin
+  // Si pasó el LockScreen pero no tiene usuario de Discord, mostrar DiscordLogin
   if (!isAuthenticated) return <DiscordLogin />;
 
   return (
