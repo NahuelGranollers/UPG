@@ -156,8 +156,8 @@ function App() {
   }, []);
 
   const handleUnlock = useCallback(() => {
-    // Esta función ya no se usa con Discord OAuth
-    console.log('handleUnlock deprecated - use Discord OAuth instead');
+    // Después de desbloquear con contraseña, permitir login con Discord
+    storage.setAuthentication(true);
   }, []);
 
   // Socket.IO Connection - ACTUALIZADO CON GESTIÓN DE USUARIOS
@@ -547,6 +547,11 @@ function App() {
   });
 
   if (isLoadingAuth) return null;
+  
+  // Si no está autenticado, primero mostrar LockScreen
+  if (!storage.isAuthenticated()) return <LockScreen onUnlock={handleUnlock} />;
+  
+  // Si pasó el LockScreen pero no tiene Discord, mostrar DiscordLogin
   if (!isAuthenticated) return <DiscordLogin />;
 
   return (
