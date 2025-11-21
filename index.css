@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Optimizaciones globales para móvil */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+html {
+  /* Prevenir zoom en inputs en iOS */
+  -webkit-text-size-adjust: 100%;
+  /* Scroll suave */
+  scroll-behavior: smooth;
+  /* Altura dinámica para móviles (considera barra de URL) */
+  height: -webkit-fill-available;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -9,9 +24,58 @@ body {
   background-color: #313338;
   color: #dbdee1;
   overflow: hidden;
+  /* Altura dinámica para móviles */
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  /* Prevenir overscroll bounce en iOS */
+  overscroll-behavior: none;
+  /* Mejorar rendimiento en móvil */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
   width: 100vw;
+  width: 100dvw; /* Dynamic viewport width */
   height: 100vh;
+  height: 100dvh; /* Dynamic viewport height */
+  /* Prevenir selección accidental de texto en móvil */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Permitir selección solo en inputs y áreas de texto */
+input, textarea, [contenteditable] {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Optimizar scrollbars para móvil */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  
+  /* Ocultar scrollbars en móvil pero mantener funcionalidad */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 2px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Touch-friendly buttons */
+@media (max-width: 768px) {
+  button, a, [role="button"] {
+    min-height: 44px; /* iOS touch target recomendado */
+    min-width: 44px;
+  }
 }

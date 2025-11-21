@@ -11,24 +11,37 @@ interface DiscordUser {
   bot?: boolean;
 }
 
+// Cache para usuarios Discord (evitar múltiples requests)
+const userCache = new Map<string, { user: DiscordUser; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
 // IDs de usuarios de Discord (para compatibilidad)
 export const DISCORD_USER_IDS = DISCORD_USERS_CONFIG.map(u => u.id);
 
 // Obtener información de un usuario de Discord (con token, opcional)
 export const getDiscordUser = async (userId: string): Promise<DiscordUser | null> => {
+  // Verificar cache primero
+  const cached = userCache.get(userId);
+  if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+    return cached.user;
+  }
+  
   const botToken = (import.meta as any).env?.VITE_DISCORD_BOT_TOKEN || (process as any).env?.VITE_DISCORD_BOT_TOKEN;
   
   // Si no hay token, usar configuración manual
   if (!botToken) {
     const config = DISCORD_USERS_CONFIG.find(u => u.id === userId);
     if (config) {
-      return {
+      const user = {
         id: config.id,
         username: config.username,
         discriminator: '0',
         avatar: config.avatarHash || null,
         bot: false,
       };
+      // Guardar en cache
+      userCache.set(userId, { user, timestamp: Date.now() });
+      return user;
     }
     return null;
   }
@@ -58,13 +71,16 @@ export const getDiscordUser = async (userId: string): Promise<DiscordUser | null
     }
 
     const data = await response.json();
-    return {
+    const user = {
       id: data.id,
       username: data.username,
       discriminator: data.discriminator || '0',
       avatar: data.avatar,
       bot: data.bot || false,
     };
+    // Guardar en cache
+    userCache.set(userId, { user, timestamp: Date.now() });
+    return user;
   } catch (error) {
     // Si hay error, usar configuración manual
     const config = DISCORD_USERS_CONFIG.find(u => u.id === userId);

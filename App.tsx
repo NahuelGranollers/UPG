@@ -1,17 +1,19 @@
-﻿import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+﻿import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-// Componentes b├ísicos, puedes adaptar la importaci├│n
-import Sidebar from './components/Sidebar';
-import ChannelList from './components/ChannelList';
-import ChatInterface from './components/ChatInterface';
-import UserList from './components/UserList';
-import WhoWeAre from './components/WhoWeAre';
-import Voting from './components/Voting';
+// Componentes críticos (carga inmediata)
 import LockScreen from './components/LockScreen';
-import DiscordLogin from './components/DiscordLogin';
 import ErrorBoundary from './components/ErrorBoundary';
 import MobileTabBar from './components/MobileTabBar';
+
+// Componentes no críticos (lazy loading)
+const Sidebar = lazy(() => import('./components/Sidebar'));
+const ChannelList = lazy(() => import('./components/ChannelList'));
+const ChatInterface = lazy(() => import('./components/ChatInterface'));
+const UserList = lazy(() => import('./components/UserList'));
+const WhoWeAre = lazy(() => import('./components/WhoWeAre'));
+const Voting = lazy(() => import('./components/Voting'));
+const DiscordLogin = lazy(() => import('./components/DiscordLogin'));
 
 import { User, AppView, Message, UserRole } from './types';
 import * as storage from './utils/storageService';
@@ -247,6 +249,7 @@ function App() {
   }, [API_URL]);
 
   const handleUnlock = useCallback(() => {
+    setIsAuthenticated(true);
     storage.setAuthentication(true);
   }, []);
 
@@ -713,10 +716,18 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div className="flex h-screen w-full bg-discord-dark font-sans antialiased overflow-hidden relative">
-        {/* Desktop Layout */}
-        <div className="hidden md:flex h-full w-full">
-          <Sidebar 
+      <Suspense fallback={
+        <div className="flex h-screen w-full bg-discord-dark items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-16 h-16 border-4 border-discord-blurple border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-discord-text-muted">Cargando...</p>
+          </div>
+        </div>
+      }>
+        <div className="flex h-screen w-full bg-discord-dark font-sans antialiased overflow-hidden relative">
+          {/* Desktop Layout */}
+          <div className="hidden md:flex h-full w-full">
+            <Sidebar 
             currentUser={currentUser} 
             setCurrentUser={setCurrentUser} 
             isConnected={isConnected} 
@@ -846,6 +857,7 @@ function App() {
           />
         </div>
       </div>
+      </Suspense>
     </ErrorBoundary>
   );
 }

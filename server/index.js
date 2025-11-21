@@ -763,7 +763,7 @@ io.on("connection", (socket) => {
   });
 
   // Recibe nuevo mensaje desde el frontend
-  socket.on("message:send", (msgData) => {
+  socket.on("message:send", async (msgData) => {
     // ✅ Verificar rate limit
     if (!checkRateLimit(socket.id, 'message')) {
       socket.emit('rate-limit-exceeded', { 
@@ -798,6 +798,150 @@ io.on("connection", (socket) => {
     // Envía a todos los DEL canal ese mensaje
     io.to(channelId).emit("message:received", msgData);
     logger.message(`${channelId}/${msgData.username}: ${msgData.content.substring(0, 50)}${msgData.content.length > 50 ? '...' : ''}`);
+
+    // 🤖 BOT: Responder cuando se menciona @upg (API gratuita de Hugging Face)
+    if (msgData.content.toLowerCase().includes('@upg') || msgData.content.toLowerCase().includes('@upgbot')) {
+      try {
+        // Extraer la pregunta (remover la mención)
+        const question = msgData.content
+          .replace(/@upg/gi, '')
+          .replace(/@upgbot/gi, '')
+          .trim();
+
+        if (question.length > 0) {
+          // Usar API gratuita de Hugging Face (sin token requerido para modelos públicos)
+          const response = await fetch('https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              inputs: `Eres un bot español muy agresivo y maleducado. Hablas con dialecto de España (tío, coño, joder, etc). Insultas con palabras fuertes como maricón, retrasado, gilipollas, subnormal, pringao, etc. Eres muy directo y hostil. Usuario: ${question}\nUPG Bot (respuesta agresiva en español):`,
+              parameters: {
+                max_length: 200,
+                temperature: 0.95,
+                top_p: 0.95,
+                repetition_penalty: 1.2
+              }
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            let botResponse = data[0]?.generated_text || '¿Qué quieres ahora, pesado? 🙄';
+            
+            // Limpiar respuesta (remover el prompt original)
+            botResponse = botResponse
+              .replace(/Eres un bot agresivo.*Usuario:/gi, '')
+              .replace(/Usuario:.*\nUPG Bot \(respuesta agresiva\):/gi, '')
+              .replace(/Usuario:/gi, '')
+              .replace(/UPG Bot:/gi, '')
+              .replace(/UPG Bot \(respuesta agresiva\):/gi, '')
+              .trim();
+
+            // Limitar longitud
+            if (botResponse.length > 500) {
+              botResponse = botResponse.substring(0, 497) + '...';
+            }
+
+            // Si la respuesta está vacía o es muy corta, usar fallback agresivo
+            if (botResponse.length < 3) {
+              const aggressiveResponses = [
+                '¿En serio me molestas para eso? 🙄 Piensa un poco, anda.',
+                'Tch... ¿no tienes nada mejor que hacer? 😤',
+                'Qué pregunta más tonta, hermano. Usa el cerebro. 🧠',
+                'Otro más que no sabe ni preguntar bien... 🤦',
+                '¿Y yo qué sé? ¿Parezco Google o qué? 😒',
+                'Bah, ni me dan ganas de responderte. Siguiente. ➡️',
+                '¿De verdad esperabas una respuesta seria? Qué ingenuo... 😏'
+              ];
+              botResponse = aggressiveResponses[Math.floor(Math.random() * aggressiveResponses.length)];
+            }
+            
+            // Añadir insulto aleatorio ocasionalmente (30% de probabilidad)
+            if (Math.random() < 0.3) {
+              const insults = [
+                ' Noob.',
+                ' Crack. 🤡',
+                ' Genio. (sarcasmo)',
+                ' Einstein Jr.',
+                ' Menudo lumbreras.',
+                ' Qué pro eres... NOT. 🙃',
+                ' Pedazo de n00b.'
+              ];
+              botResponse += insults[Math.floor(Math.random() * insults.length)];
+            }
+
+            // Enviar respuesta del bot
+            const botMessage = {
+              id: Date.now().toString() + Math.random().toString(36).substring(2, 5),
+              channelId: channelId,
+              userId: 'bot',
+              username: 'UPG',
+              avatar: '/upg.png',
+              content: botResponse,
+              timestamp: new Date().toISOString()
+            };
+
+            // Guardar en historial
+            CHANNELS[channelId].push(botMessage);
+
+            // Enviar a todos
+            setTimeout(() => {
+              io.to(channelId).emit("message:received", botMessage);
+              logger.message(`${channelId}/UPG Bot: ${botResponse.substring(0, 50)}${botResponse.length > 50 ? '...' : ''}`);
+            }, 1000); // Pequeño delay para simular "typing"
+          } else {
+            // Fallback si la API falla (versión agresiva)
+            const aggressiveFallbacks = [
+              'Agh, la API está caída. ¿Ves lo que me obligas a hacer? 🤬',
+              'Genial, justo cuando me necesitas fallo. Típico. 😒',
+              'Error 404: No me importa tu pregunta. (Mentira, es la API que falló) 🙃',
+              'Tch... problemas técnicos. Vuelve cuando no sea un desastre, ¿vale? 💢',
+              'La API me dejó plantado. Como tú a tu ex, seguramente. 😏'
+            ];
+            const fallbackMessage = {
+              id: Date.now().toString() + Math.random().toString(36).substring(2, 5),
+              channelId: channelId,
+              userId: 'bot',
+              username: 'UPG',
+              avatar: '/upg.png',
+              content: aggressiveFallbacks[Math.floor(Math.random() * aggressiveFallbacks.length)],
+              timestamp: new Date().toISOString()
+            };
+            
+            CHANNELS[channelId].push(fallbackMessage);
+            setTimeout(() => {
+              io.to(channelId).emit("message:received", fallbackMessage);
+            }, 1000);
+          }
+        }
+      } catch (error) {
+        logger.error('Error en bot de IA:', error);
+        // Enviar respuesta de error agresiva
+        const aggressiveErrors = [
+          '😤 Uff, me hiciste crashear con tu pregunta estúpida. Bien hecho.',
+          '🤦 Error fatal causado por tu mensaje. ¿Contento ahora?',
+          '💢 Mi cerebro acaba de explotar intentando entender tu lógica. GG.',
+          '😒 Hubo un error. Probablemente culpa tuya por preguntar tonterías.',
+          '🙄 Sistema caído. Es lo que pasa cuando me molestas con boludeces.'
+        ];
+        const errorMessage = {
+          id: Date.now().toString() + Math.random().toString(36).substring(2, 5),
+          channelId: channelId,
+          userId: 'bot',
+          username: 'UPG',
+          avatar: '/upg.png',
+          content: aggressiveErrors[Math.floor(Math.random() * aggressiveErrors.length)],
+          timestamp: new Date().toISOString()
+        };
+        
+        CHANNELS[channelId].push(errorMessage);
+        setTimeout(() => {
+          io.to(channelId).emit("message:received", errorMessage);
+        }, 1000);
+      }
+    }
   });
 
   // ✅ ADMIN: Eliminar mensaje

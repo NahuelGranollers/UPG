@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, memo } from 'react';
 
 const Voting: React.FC = () => {
   const logoRef = useRef<HTMLImageElement>(null);
@@ -30,12 +30,12 @@ const Voting: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center overflow-hidden w-full h-full" style={{ backgroundColor: '#ffcc17' }}>
+    <div className="flex-1 flex flex-col items-center justify-center overflow-hidden w-full h-full px-4" style={{ backgroundColor: '#ffcc17' }}>
       <img 
         ref={logoRef}
         src="/upg.png" 
         alt="UPG Logo" 
-        className="object-cover mb-6 md:mb-10 w-[200px] h-[200px] md:w-[400px] md:h-[400px] block"
+        className="object-cover mb-6 sm:mb-8 md:mb-10 w-[150px] h-[150px] sm:w-[200px] sm:h-[200px] md:w-[300px] md:h-[300px] lg:w-[400px] lg:h-[400px] block"
         style={{ 
             transition: 'transform 0.1s linear'
         }}
@@ -51,18 +51,18 @@ const Voting: React.FC = () => {
       <div 
         id="logo-fallback"
         ref={logoRef as any} // Apply animation here too if img fails
-        className="hidden w-[200px] h-[200px] md:w-[400px] md:h-[400px] bg-orange-500 rounded-full items-center justify-center mb-6 md:mb-10 border-4 border-white text-white font-bold text-2xl"
+        className="hidden w-[150px] h-[150px] sm:w-[200px] sm:h-[200px] md:w-[300px] md:h-[300px] lg:w-[400px] lg:h-[400px] bg-orange-500 rounded-full items-center justify-center mb-6 sm:mb-8 md:mb-10 border-4 border-white text-white font-bold text-xl sm:text-2xl"
       >
         UPG
       </div>
 
       <div 
-        className="font-black text-center text-[1.7em] md:text-[3em]" 
+        className="font-black text-center text-[1.5em] sm:text-[1.7em] md:text-[2.5em] lg:text-[3em]" 
         style={{ 
           color: '#ff4d0a', 
           fontFamily: '"Arial Black", Arial, sans-serif',
-          textShadow: '3px 3px 0px #ff9300', // Mobile shadow
-          letterSpacing: '2px'
+          textShadow: '2px 2px 0px #ff9300',
+          letterSpacing: '1px'
       }}>
          coming soon...
       </div>
@@ -80,4 +80,4 @@ const Voting: React.FC = () => {
   );
 };
 
-export default Voting;
+export default memo(Voting);

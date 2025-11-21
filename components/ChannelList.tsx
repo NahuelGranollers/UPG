@@ -30,7 +30,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
   onLogoutDiscord
 }) => {
   
-  const TextChannelItem = ({ 
+  const TextChannelItem = React.memo(({ 
     id,
     name, 
     description,
@@ -48,58 +48,61 @@ const ChannelList: React.FC<ChannelListProps> = ({
     return (
       <button
         onClick={() => onChannelSelect(view, view === AppView.CHAT ? { id, name, description } : undefined)}
-        className={`w-full flex items-center px-2 py-[6px] rounded-md mb-[2px] group transition-colors ${
+        className={`w-full flex items-center px-2 py-2 sm:py-[6px] rounded-md mb-[2px] group transition-colors min-h-[44px] sm:min-h-0 ${
           isActive 
             ? 'bg-discord-hover text-discord-text-header' 
             : 'text-discord-text-muted hover:bg-discord-hover hover:text-discord-text-normal'
         }`}
       >
-        <Icon size={20} className="mr-1.5 text-gray-400" />
-        <span className={`font-medium truncate ${isActive ? 'text-white' : ''}`}>{name}</span>
+        <Icon size={20} className="mr-2 sm:mr-1.5 text-gray-400 shrink-0" />
+        <span className={`font-medium text-sm sm:text-[15px] truncate ${isActive ? 'text-white' : ''}`}>{name}</span>
       </button>
     );
-  };
+  });
 
-  const VoiceChannelItem = ({ name }: { name: string }) => {
+  const VoiceChannelItem = React.memo(({ name }: { name: string }) => {
     const isConnected = activeVoiceChannel === name;
-    // Filter users who are in this specific channel
-    const usersInChannel = users.filter(u => voiceStates[u.id] === name);
+    // Filter users who are in this specific channel (memoizado)
+    const usersInChannel = React.useMemo(
+      () => users.filter(u => voiceStates[u.id] === name),
+      [users, voiceStates, name]
+    );
 
     return (
       <div className="mb-1">
         <div 
             onClick={() => onVoiceJoin(name)}
-            className={`w-full flex items-center px-2 py-[6px] rounded-md group transition-colors cursor-pointer ${
+            className={`w-full flex items-center px-2 py-2 sm:py-[6px] rounded-md group transition-colors cursor-pointer min-h-[44px] sm:min-h-0 ${
                 isConnected 
                 ? 'bg-discord-hover text-white'
                 : 'text-discord-text-muted hover:bg-discord-hover hover:text-discord-text-normal'
             }`}
         >
-            <Volume2 size={20} className={`mr-1.5 ${isConnected ? 'text-green-500' : 'text-gray-400'}`} />
-            <span className="font-medium truncate flex-1">{name}</span>
+            <Volume2 size={20} className={`mr-2 sm:mr-1.5 shrink-0 ${isConnected ? 'text-green-500' : 'text-gray-400'}`} />
+            <span className="font-medium text-sm sm:text-[15px] truncate flex-1">{name}</span>
         </div>
         {/* Render Users Inside Channel */}
         {usersInChannel.length > 0 && (
-            <div className="pl-8 pr-2 space-y-1 pb-1">
+            <div className="pl-8 sm:pl-7 pr-2 space-y-1 pb-1">
                 {usersInChannel.map(u => (
-                    <div key={u.id} className="flex items-center group/user cursor-pointer py-0.5 rounded hover:bg-white/5">
+                    <div key={u.id} className="flex items-center group/user cursor-pointer py-1 sm:py-0.5 rounded hover:bg-white/5 min-h-[36px] sm:min-h-0">
                         <SafeImage 
                             src={u.avatar} 
                             alt={u.username} 
-                            className={`w-5 h-5 rounded-full mr-2 border border-[#2b2d31] ${u.status === 'online' ? 'ring-1 ring-green-500' : ''}`}
+                            className={`w-6 h-6 sm:w-5 sm:h-5 rounded-full mr-2 border border-[#2b2d31] ${u.status === 'online' ? 'ring-1 ring-green-500' : ''}`}
                             fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(u.username)}&background=5865F2&color=fff&size=128`}
                         />
-                        <span className={`text-sm truncate ${u.id === currentUser?.id ? 'font-bold text-white' : 'text-discord-text-muted group-hover/user:text-discord-text-normal'}`}>
+                        <span className={`text-sm sm:text-[13px] truncate ${u.id === currentUser?.id ? 'font-bold text-white' : 'text-discord-text-muted group-hover/user:text-discord-text-normal'}`}>
                             {u.username}
                         </span>
-                        {u.isBot && <span className="ml-1 text-[9px] bg-discord-blurple text-white px-1 rounded">BOT</span>}
+                        {u.isBot && <span className="ml-1 text-[9px] sm:text-[8px] bg-discord-blurple text-white px-1 rounded">BOT</span>}
                     </div>
                 ))}
             </div>
         )}
       </div>
     );
-  };
+  });
 
   return (
     <div className="w-60 bg-discord-sidebar flex flex-col shrink-0 relative">
@@ -186,12 +189,12 @@ const ChannelList: React.FC<ChannelListProps> = ({
 
       {/* Bottom Controls (User) */}
       <div className="bg-[#232428] shrink-0 flex flex-col z-10">
-        <div className="h-[52px] px-2 flex items-center">
-            <div className="group flex items-center py-1 px-1 pl-0.5 rounded-md hover:bg-discord-hover cursor-pointer mr-auto min-w-[120px]">
-                <div className="relative w-8 h-8 mr-2 ml-1">
+        <div className="h-[60px] sm:h-[52px] px-2 flex items-center">
+            <div className="group flex items-center py-1 px-1 pl-0.5 rounded-md hover:bg-discord-hover cursor-pointer mr-auto min-w-[120px] flex-1 max-w-[140px]">
+                <div className="relative w-9 h-9 sm:w-8 sm:h-8 mr-2 ml-1 shrink-0">
                     <SafeImage 
                       src={currentUser?.avatar || ''} 
-                      className="w-8 h-8 rounded-full object-cover" 
+                      className="w-9 h-9 sm:w-8 sm:h-8 rounded-full object-cover" 
                       alt="User"
                       fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.username || 'U')}&background=5865F2&color=fff&size=128`}
                     />
@@ -199,17 +202,17 @@ const ChannelList: React.FC<ChannelListProps> = ({
                          currentUser?.status === 'online' ? 'bg-green-500' : 'bg-yellow-500'
                     }`}></div>
                 </div>
-                <div className="text-sm min-w-0">
-                    <div className="font-semibold text-white text-xs truncate w-20">{currentUser?.username || 'User'}</div>
+                <div className="text-sm min-w-0 flex-1">
+                    <div className="font-semibold text-white text-xs truncate">{currentUser?.username || 'User'}</div>
                     <div className="text-[10px] text-gray-400 truncate">#{currentUser?.id?.substring(0,4) || '0000'}</div>
                 </div>
             </div>
             
-            <div className="flex items-center">
+            <div className="flex items-center gap-0.5">
                 {currentUser?.isGuest && onLoginWithDiscord && (
                   <button 
                     onClick={onLoginWithDiscord}
-                    className="p-1.5 rounded hover:bg-discord-blurple text-discord-blurple hover:text-white transition-colors"
+                    className="p-2 sm:p-1.5 rounded hover:bg-discord-blurple text-discord-blurple hover:text-white transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
                     title="Iniciar sesión con Discord"
                   >
                     <LogIn size={18} />
@@ -218,19 +221,19 @@ const ChannelList: React.FC<ChannelListProps> = ({
                 {!currentUser?.isGuest && onLogoutDiscord && (
                   <button 
                     onClick={onLogoutDiscord}
-                    className="p-1.5 rounded hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors"
+                    className="p-2 sm:p-1.5 rounded hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
                     title="Desconectar Discord (volver a invitado)"
                   >
                     <LogOut size={18} />
                   </button>
                 )}
-                <button className="p-1.5 rounded hover:bg-discord-hover text-discord-text-muted hover:text-discord-text-normal">
+                <button className="hidden sm:flex p-1.5 rounded hover:bg-discord-hover text-discord-text-muted hover:text-discord-text-normal">
                     <Mic size={18} />
                 </button>
-                <button className="p-1.5 rounded hover:bg-discord-hover text-discord-text-muted hover:text-discord-text-normal">
+                <button className="hidden sm:flex p-1.5 rounded hover:bg-discord-hover text-discord-text-muted hover:text-discord-text-normal">
                     <HeadphoneOff size={18} />
                 </button>
-                <button className="p-1.5 rounded hover:bg-discord-hover text-discord-text-muted hover:text-discord-text-normal">
+                <button className="p-2 sm:p-1.5 rounded hover:bg-discord-hover text-discord-text-muted hover:text-discord-text-normal min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center">
                     <Settings size={18} />
                 </button>
             </div>
