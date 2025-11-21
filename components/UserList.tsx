@@ -51,9 +51,9 @@ const UserItem: React.FC<{ user: User }> = memo(({ user }) => {
 UserItem.displayName = 'UserItem';
 
 const UserList: React.FC<UserListProps> = memo(({ users, currentUserId, isMobileView = false }) => {
-  // Filtrar usuarios por estado de conexión y excluir el usuario actual
+  // Filtrar usuarios por estado de conexión (incluir usuario actual)
   const onlineUsers = users.filter(u => {
-    if (u.isBot || u.id === currentUserId) return false;
+    if (u.isBot) return false;
     // Usuario está online si: online === true O (online no está definido Y status === 'online')
     return (u.online === true || (u.online === undefined && u.status === 'online'));
   });
@@ -61,7 +61,7 @@ const UserList: React.FC<UserListProps> = memo(({ users, currentUserId, isMobile
   const bots = users.filter(u => u.isBot);
   
   const offlineUsers = users.filter(u => {
-    if (u.isBot || u.id === currentUserId) return false;
+    if (u.isBot) return false;
     // Usuario está offline si: online === false O status === 'offline'
     return (u.online === false || u.status === 'offline');
   });

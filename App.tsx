@@ -152,12 +152,15 @@ function App() {
     storage.setAuthentication(true);
     setIsAuthenticated(true);
     
-    // Siempre verificar si hay datos de usuario válidos
+    // Verificar si hay datos de usuario válidos
     const userData = storage.loadUserData();
     
-    // Si no hay datos o el usuario tiene un nombre temporal (Guest), mostrar setup
-    if (!userData || userData.username.startsWith('Guest')) {
+    // Solo mostrar setup si NO hay datos o si el usuario es Guest Y no tiene avatar personalizado
+    if (!userData || (userData.username.startsWith('Guest') && !userData.avatar.includes('data:image'))) {
       setShowUserSetup(true);
+    } else {
+      // Si ya tiene datos, actualizar currentUser
+      setCurrentUser(userData);
     }
   }, []);
 
@@ -613,7 +616,7 @@ function App() {
         </div>
 
         {/* Mobile Layout */}
-        <div className="flex md:hidden h-full w-full flex-col pb-16 relative overflow-hidden">
+        <div className="flex md:hidden h-full w-full flex-col relative overflow-hidden" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
           {/* Channels Tab */}
           <div 
             className={`absolute inset-0 transition-all duration-300 ease-out pb-16 ${
