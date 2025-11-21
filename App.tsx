@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 // Componentes básicos, puedes adaptar la importación
@@ -32,21 +32,28 @@ export interface ChannelData {
 // Usar variable de entorno o fallback
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://mensajeria-ksc7.onrender.com';
 
-let socket: Socket | null = null;
+const SOCKET_CONFIG = {
+  transports: ['websocket', 'polling'],
+  reconnection: true,
+  reconnectionDelay: 1000,
+  reconnectionAttempts: 5,
+  timeout: 10000
+} as const;
+
+const AVATARS = [
+  'https://picsum.photos/id/1012/200/200',
+  'https://picsum.photos/id/1025/200/200',
+  'https://picsum.photos/id/177/200/200',
+  'https://picsum.photos/id/237/200/200',
+  'https://picsum.photos/id/1062/200/200'
+] as const;
 
 function generateRandomUser(): User {
   const randomId = Math.floor(Math.random() * 10000).toString();
-  const avatars = [
-    'https://picsum.photos/id/1012/200/200',
-    'https://picsum.photos/id/1025/200/200',
-    'https://picsum.photos/id/177/200/200',
-    'https://picsum.photos/id/237/200/200',
-    'https://picsum.photos/id/1062/200/200'
-  ];
   return {
     id: `user-${randomId}`,
     username: `Guest${randomId}`,
-    avatar: avatars[Math.floor(Math.random() * avatars.length)],
+    avatar: AVATARS[Math.floor(Math.random() * AVATARS.length)],
     status: 'online',
     color: '#3ba55c'
   };
@@ -59,7 +66,11 @@ function App() {
 
   // UI & Channels
   const [activeView, setActiveView] = useState<AppView>(AppView.CHAT);
-  const [currentChannel, setCurrentChannel] = useState<ChannelData>({ id: 'general', name: 'general', description: 'Chat general' });
+  const [currentChannel, setCurrentChannel] = useState<ChannelData>({ 
+    id: 'general', 
+    name: 'general', 
+    description: 'Chat general' 
+  });
   const [currentUser, setCurrentUser] = useState<User>(() => {
     const saved = localStorage.getItem('upg_current_user');
     return saved ? JSON.parse(saved) : generateRandomUser();
@@ -75,55 +86,101 @@ function App() {
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const [isConnected, setIsConnected] = useState(false);
 
+  // useRef para mantener referencia estable del socket
+  const socketRef = useRef<Socket | null>(null);
+
   // Check Authentication
   useEffect(() => {
     const auth = localStorage.getItem('upg_access_token');
     if (auth === 'granted') setIsAuthenticated(true);
     setIsLoadingAuth(false);
   }, []);
-  const handleUnlock = () => {
+
+  const handleUnlock = useCallback(() => {
     localStorage.setItem('upg_access_token', 'granted');
     setIsAuthenticated(true);
-  };
+  }, []);
 
-  // Socket.IO Connection
+  // Socket.IO Connection - ACTUALIZADO CON GESTIÓN DE USUARIOS
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    socket = io(SOCKET_URL, {
-      transports: ['websocket'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionAttempts: 5
-    });
+    const socket = io(SOCKET_URL, SOCKET_CONFIG);
+    socketRef.current = socket;
 
+    // ✅ Conexión establecida
     socket.on('connect', () => {
-      console.log('🔌 Conectado a Socket.IO');
+      console.log('🔌 Conectado a Socket.IO - ID:', socket.id);
       setIsConnected(true);
 
-      // Registrar usuario
-      socket?.emit('user:join', currentUser);
+      // Registrar usuario inmediatamente
+      socket.emit('user:join', {
+        ...currentUser,
+        socketId: socket.id
+      });
+
+      // Solicitar lista de usuarios conectados
+      socket.emit('users:request');
 
       // Unirse a canal actual
-      socket?.emit('channel:join', { channelId: currentChannel.id, userId: currentUser.id });
+      socket.emit('channel:join', { channelId: currentChannel.id, userId: currentUser.id });
     });
 
+    // ✅ Desconexión
     socket.on('disconnect', () => {
       console.log('⛔ Desconectado de Socket.IO');
       setIsConnected(false);
     });
 
-    socket.on('users:update', (users: User[]) => {
+    // ✅ Reconexión exitosa
+    socket.on('reconnect', (attemptNumber) => {
+      console.log(`✅ Reconectado después de ${attemptNumber} intentos`);
+      socket.emit('user:join', {
+        ...currentUser,
+        socketId: socket.id
+      });
+      socket.emit('users:request');
+    });
+
+    // ✅ Lista completa de usuarios (primera carga)
+    socket.on('users:list', (users: User[]) => {
+      console.log('📋 Lista de usuarios recibida:', users.length);
       setDiscoveredUsers(users.filter(u => u.id !== currentUser.id));
     });
 
-    socket.on('channel:history', ({ channelId, messages: history }) => {
+    // ✅ Actualización broadcast de usuarios
+    socket.on('users:update', (users: User[]) => {
+      console.log('🔄 Usuarios actualizados:', users.length);
+      setDiscoveredUsers(users.filter(u => u.id !== currentUser.id));
+    });
+
+    // ✅ Nuevo usuario se conectó
+    socket.on('user:joined', (user: User) => {
+      console.log('👋 Usuario conectado:', user.username);
+      if (user.id !== currentUser.id) {
+        setDiscoveredUsers(prev => {
+          // Evitar duplicados
+          if (prev.some(u => u.id === user.id)) return prev;
+          return [...prev, user];
+        });
+      }
+    });
+
+    // ✅ Usuario se desconectó
+    socket.on('user:left', ({ userId, username }: { userId: string; username: string }) => {
+      console.log('👋 Usuario desconectado:', username);
+      setDiscoveredUsers(prev => prev.filter(u => u.id !== userId));
+    });
+
+    // Historial de mensajes del canal
+    socket.on('channel:history', ({ channelId, messages: history }: { channelId: string; messages: Message[] }) => {
       setMessages(prev => ({
         ...prev,
         [channelId]: history
       }));
     });
 
+    // Nuevo mensaje recibido
     socket.on('message:received', (message: Message) => {
       setMessages(prev => ({
         ...prev,
@@ -131,8 +188,8 @@ function App() {
       }));
     });
 
-    // Voice event example
-    socket.on('voice:update', ({ userId, channelName, action }) => {
+    // Actualización de canales de voz
+    socket.on('voice:update', ({ userId, channelName, action }: { userId: string; channelName?: string; action: string }) => {
       setVoiceStates(prev => {
         const next = { ...prev };
         if (action === 'join' && channelName) {
@@ -144,38 +201,64 @@ function App() {
       });
     });
 
-    socket.on('user:disconnect', ({ userId }) => {
-      setDiscoveredUsers(prev => prev.filter(u => u.id !== userId));
+    // Error de conexión
+    socket.on('connect_error', (error) => {
+      console.error('❌ Error de conexión:', error.message);
     });
 
+    // Cleanup
     return () => {
-      socket?.disconnect();
-      socket = null;
+      socket.disconnect();
+      socketRef.current = null;
+      console.log('🔌 Socket desconectado y limpiado');
     };
   }, [isAuthenticated, currentUser, currentChannel.id]);
 
+  // ✅ Solicitar lista de usuarios periódicamente (fallback de sincronización)
+  useEffect(() => {
+    if (!isConnected || !socketRef.current) return;
+
+    const interval = setInterval(() => {
+      socketRef.current?.emit('users:request');
+      console.log('🔄 Solicitando actualización de usuarios...');
+    }, 30000); // Cada 30 segundos
+
+    return () => clearInterval(interval);
+  }, [isConnected]);
+
   // Voice Channel Updates
   useEffect(() => {
-    if (!isAuthenticated || !socket) return;
+    if (!isAuthenticated || !socketRef.current) return;
 
     if (activeVoiceChannel) {
-      socket.emit('voice:join', { channelName: activeVoiceChannel, userId: currentUser.id });
+      socketRef.current.emit('voice:join', { 
+        channelName: activeVoiceChannel, 
+        userId: currentUser.id 
+      });
     } else {
-      socket.emit('voice:leave', { channelName: activeVoiceChannel, userId: currentUser.id });
+      socketRef.current.emit('voice:leave', { 
+        channelName: null, 
+        userId: currentUser.id 
+      });
     }
 
     setVoiceStates(prev => {
       const next = { ...prev };
-      if (activeVoiceChannel) next[currentUser.id] = activeVoiceChannel;
-      else delete next[currentUser.id];
+      if (activeVoiceChannel) {
+        next[currentUser.id] = activeVoiceChannel;
+      } else {
+        delete next[currentUser.id];
+      }
       return next;
     });
   }, [activeVoiceChannel, currentUser.id, isAuthenticated]);
 
+  // Persistir usuario actual en localStorage
   useEffect(() => {
     localStorage.setItem('upg_current_user', JSON.stringify(currentUser));
   }, [currentUser]);
 
+  // Memoizar lista de todos los usuarios
   const allUsers = useMemo(() => {
     const map = new Map<string, User>();
     map.set(BOT_USER.id, BOT_USER);
@@ -184,30 +267,37 @@ function App() {
     return Array.from(map.values());
   }, [discoveredUsers, currentUser]);
 
+  // Memoizar mensajes del canal actual
+  const currentChannelMessages = useMemo(
+    () => messages[currentChannel.id] || [],
+    [messages, currentChannel.id]
+  );
+
   const handleChannelSelect = useCallback((view: AppView, channel?: ChannelData) => {
     setActiveView(view);
-    if (channel) {
+    if (channel && channel.id !== currentChannel.id) {
       setCurrentChannel(channel);
-
-      if (socket && isConnected) {
-        socket.emit('channel:join', { channelId: channel.id, userId: currentUser.id });
+      if (socketRef.current && isConnected) {
+        socketRef.current.emit('channel:join', { 
+          channelId: channel.id, 
+          userId: currentUser.id 
+        });
       }
     }
     setMobileMenuOpen(false);
-  }, [isConnected, currentUser.id]);
+  }, [isConnected, currentUser.id, currentChannel.id]);
 
   const handleVoiceJoin = useCallback((channelName: string) => {
-    if (activeVoiceChannel === channelName) setActiveVoiceChannel(null);
-    else setActiveVoiceChannel(channelName);
-  }, [activeVoiceChannel]);
+    setActiveVoiceChannel(prev => prev === channelName ? null : channelName);
+  }, []);
 
-  const handleSendMessage = (content: string) => {
-    if (!socket || !isConnected) {
-      console.error('Socket no conectado');
+  const handleSendMessage = useCallback((content: string) => {
+    if (!socketRef.current || !isConnected) {
+      console.error('❌ Socket no conectado');
       return;
     }
 
-    socket.emit('message:send', {
+    socketRef.current.emit('message:send', {
       channelId: currentChannel.id,
       content,
       userId: currentUser.id,
@@ -215,7 +305,15 @@ function App() {
       avatar: currentUser.avatar,
       timestamp: new Date().toISOString()
     });
-  };
+  }, [isConnected, currentChannel.id, currentUser]);
+
+  const handleMenuToggle = useCallback(() => {
+    setMobileMenuOpen(prev => !prev);
+  }, []);
+
+  const handleMenuClose = useCallback(() => {
+    setMobileMenuOpen(false);
+  }, []);
 
   if (isLoadingAuth) return null;
   if (!isAuthenticated) return <LockScreen onUnlock={handleUnlock} />;
@@ -224,15 +322,22 @@ function App() {
     <ErrorBoundary>
       <div className="flex h-screen w-full bg-discord-dark font-sans antialiased overflow-hidden relative">
         {mobileMenuOpen && (
-          <div className="fixed inset-0 bg-black/50 z-40 md:hidden"
-            onClick={() => setMobileMenuOpen(false)}
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={handleMenuClose}
+            role="button"
+            aria-label="Cerrar menú"
           />
         )}
 
         <div className={`fixed inset-y-0 left-0 z-50 flex h-full transition-transform duration-300 md:relative md:translate-x-0 ${
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}>
-          <Sidebar currentUser={currentUser} setCurrentUser={setCurrentUser} isConnected={isConnected} />
+          <Sidebar 
+            currentUser={currentUser} 
+            setCurrentUser={setCurrentUser} 
+            isConnected={isConnected} 
+          />
           <ChannelList 
             activeView={activeView} 
             currentChannelId={currentChannel.id}
@@ -244,6 +349,7 @@ function App() {
             users={allUsers}
           />
         </div>
+
         <div className="flex flex-1 min-w-0 relative">
           {activeView === AppView.CHAT && (
             <>
@@ -252,17 +358,17 @@ function App() {
                 users={allUsers}
                 currentChannel={currentChannel}
                 onSendMessage={handleSendMessage}
-                messages={messages[currentChannel.id] || []}
-                onMenuToggle={() => setMobileMenuOpen(true)}
+                messages={currentChannelMessages}
+                onMenuToggle={handleMenuToggle}
               />
               <UserList users={allUsers} currentUserId={currentUser.id} />
             </>
           )}
           {activeView === AppView.WHO_WE_ARE && (
-            <WhoWeAre onMenuToggle={() => setMobileMenuOpen(true)} />
+            <WhoWeAre onMenuToggle={handleMenuToggle} />
           )}
           {activeView === AppView.VOTING && (
-            <Voting onMenuToggle={() => setMobileMenuOpen(true)} />
+            <Voting onMenuToggle={handleMenuToggle} />
           )}
         </div>
       </div>
