@@ -67,22 +67,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const textBeforeCursor = text.slice(0, cursorPos);
     const lastAtIndex = textBeforeCursor.lastIndexOf('@');
     
-    if (lastAtIndex !== -1 && lastAtIndex === textBeforeCursor.length - 1) {
-      // @ recién escrito
-      setShowMentionSuggestions(true);
-      setMentionSearch('');
-      setMentionStartPos(lastAtIndex);
-      setSelectedSuggestionIndex(0);
-    } else if (lastAtIndex !== -1) {
-      // @ con texto después
+    if (lastAtIndex !== -1) {
+      // Hay un @ antes del cursor
       const textAfterAt = textBeforeCursor.slice(lastAtIndex + 1);
-      // Solo mostrar si no hay espacios después del @
-      if (!textAfterAt.includes(' ')) {
+      
+      // Solo mostrar si no hay espacios después del @ y está cerca del cursor
+      if (!textAfterAt.includes(' ') && (cursorPos - lastAtIndex) <= 20) {
         setShowMentionSuggestions(true);
         setMentionSearch(textAfterAt);
         setMentionStartPos(lastAtIndex);
         setSelectedSuggestionIndex(0);
-      } else {
+      } else if (textAfterAt.includes(' ')) {
         setShowMentionSuggestions(false);
       }
     } else {
@@ -136,8 +131,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     e.preventDefault();
     if (!inputText.trim()) return;
 
-    // Detectar si se menciona al bot
-    const mentionsBot = inputText.toLowerCase().includes('@upg') || inputText.toLowerCase().includes('@upgbot');
+    // Detectar si se menciona al bot (case insensitive)
+    const lowerInput = inputText.toLowerCase();
+    const mentionsBot = lowerInput.includes('@upg');
     
     onSendMessage(inputText);
     setInputText('');
