@@ -9,7 +9,7 @@ import UserList from './components/UserList';
 import WhoWeAre from './components/WhoWeAre';
 import Voting from './components/Voting';
 import LockScreen from './components/LockScreen';
-import UserSetup from './components/UserSetup';
+import DiscordLogin from './components/DiscordLogin';
 import ErrorBoundary from './components/ErrorBoundary';
 import MobileTabBar from './components/MobileTabBar';
 
@@ -50,7 +50,6 @@ function App() {
   // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const [showUserSetup, setShowUserSetup] = useState(false);
 
   // UI & Channels
   const [activeView, setActiveView] = useState<AppView>(AppView.CHAT);
@@ -92,47 +91,59 @@ function App() {
   // useRef para mantener referencia estable del socket
   const socketRef = useRef<Socket | null>(null);
 
-  // Check Authentication simple
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+  // Check Discord Authentication
   useEffect(() => {
-    if (storage.isAuthenticated()) {
-      setIsAuthenticated(true);
-      // Verificar si tiene usuario válido
-      const userData = storage.loadUserData();
-      if (!userData || userData.username.startsWith('Guest')) {
-        setShowUserSetup(true);
+    const checkAuth = async () => {
+      try {
+        const response = await fetch(`${API_URL}/auth/user`, {
+          credentials: 'include' // Importante para enviar cookies de sesión
+        });
+
+        if (response.ok) {
+          const discordUser = await response.json();
+          
+          // Crear User desde Discord
+          const newUser: User = {
+            id: discordUser.id,
+            username: discordUser.username,
+            avatar: discordUser.avatar 
+              ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
+              : `https://ui-avatars.com/api/?name=${discordUser.username.charAt(0)}&background=5865F2&color=fff&size=200`,
+            status: 'online',
+            online: true,
+            color: '#5865F2'
+          };
+
+          setCurrentUser(newUser);
+          storage.saveUserData(newUser);
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.error('Error checking auth:', error);
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoadingAuth(false);
       }
+    };
+
+    // Verificar si viene de Discord OAuth callback
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('auth') === 'success') {
+      // Limpiar URL
+      window.history.replaceState({}, document.title, '/');
+      checkAuth();
+    } else {
+      checkAuth();
     }
-    setIsLoadingAuth(false);
-  }, []);
+  }, [API_URL]);
 
   const handleUnlock = useCallback(() => {
-    storage.setAuthentication(true);
-    setIsAuthenticated(true);
-    
-    const userData = storage.loadUserData();
-    if (!userData || userData.username.startsWith('Guest')) {
-      setShowUserSetup(true);
-    } else {
-      setCurrentUser(userData);
-    }
-  }, []);
-
-  const handleUserSetupComplete = useCallback((username: string, avatar: string) => {
-    const userId = `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-    
-    const newUser: User = {
-      id: userId,
-      username,
-      avatar,
-      status: 'online',
-      online: true,
-      color: '#3ba55c',
-      role: UserRole.USER
-    };
-    
-    storage.saveUserData(newUser);
-    setCurrentUser(newUser);
-    setShowUserSetup(false);
+    // Esta función ya no se usa con Discord OAuth
+    console.log('handleUnlock deprecated - use Discord OAuth instead');
   }, []);
 
   // Socket.IO Connection - ACTUALIZADO CON GESTIÓN DE USUARIOS
@@ -297,7 +308,8 @@ function App() {
     socket.on('username:taken', ({ message }: { message: string }) => {
       alert(message);
       storage.clearUserData();
-      setShowUserSetup(true);
+      // Con Discord OAuth, esto no debería pasar ya que los IDs son únicos
+      window.location.reload();
     });
 
     // Admin events
@@ -521,8 +533,7 @@ function App() {
   });
 
   if (isLoadingAuth) return null;
-  if (!isAuthenticated) return <LockScreen onUnlock={handleUnlock} />;
-  if (showUserSetup) return <UserSetup onComplete={handleUserSetupComplete} />;
+  if (!isAuthenticated) return <DiscordLogin />;
 
   return (
     <ErrorBoundary>

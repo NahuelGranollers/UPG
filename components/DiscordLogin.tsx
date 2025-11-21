@@ -1,7 +1,13 @@
 import React from 'react';
-import { startDiscordAuth } from '../services/discordAuth';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const DiscordLogin: React.FC = () => {
+  const handleLogin = () => {
+    // Redirige al endpoint del backend que inicia el flujo OAuth
+    window.location.href = `${API_URL}/auth/discord`;
+  };
+
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center backdrop-blur-md bg-black/60 animate-fadeIn">
       <div className="bg-discord-sidebar rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 border-2 border-discord-blurple/20 animate-scaleIn">
@@ -21,7 +27,7 @@ const DiscordLogin: React.FC = () => {
 
         {/* Discord Login Button */}
         <button
-          onClick={startDiscordAuth}
+          onClick={handleLogin}
           className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-[#5865F2] hover:bg-[#4752C4] text-white font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
         >
           <svg width="24" height="24" viewBox="0 0 71 55" fill="none" xmlns="http://www.w3.org/2000/svg">
