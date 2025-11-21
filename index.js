@@ -318,11 +318,30 @@ setInterval(() => {
 // 🔐 Discord OAuth2 Routes (Authorization Code Flow)
 // ===============================================
 
+// Ruta 0: Debug - Verificar configuración (ELIMINAR EN PRODUCCIÓN)
+app.get("/auth/debug", (req, res) => {
+  res.json({
+    clientId: process.env.DISCORD_CLIENT_ID ? '✅ Configurado' : '❌ Faltante',
+    clientSecret: process.env.DISCORD_CLIENT_SECRET ? '✅ Configurado' : '❌ Faltante',
+    redirectUri: process.env.DISCORD_REDIRECT_URI || '❌ Faltante',
+    frontendUrl: process.env.FRONTEND_URL || '❌ Faltante',
+    nodeEnv: process.env.NODE_ENV || 'development'
+  });
+});
+
 // Ruta 1: Iniciar OAuth - Redirige al usuario a Discord
 app.get("/auth/discord", (req, res) => {
   const redirectUri = process.env.DISCORD_REDIRECT_URI;
   const clientId = process.env.DISCORD_CLIENT_ID;
   const scope = "identify";
+  
+  // Debug: Verificar que las variables están cargadas
+  if (!clientId || !redirectUri) {
+    logger.error("❌ Variables de entorno faltantes!");
+    logger.error(`CLIENT_ID: ${clientId ? 'OK' : 'UNDEFINED'}`);
+    logger.error(`REDIRECT_URI: ${redirectUri ? 'OK' : 'UNDEFINED'}`);
+    return res.status(500).send("Error de configuración del servidor. Variables de entorno no configuradas.");
+  }
   
   const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}`;
   
@@ -385,7 +404,12 @@ app.get("/auth/callback", async (req, res) => {
 
     // Redirigir al frontend con los datos del usuario
     const frontendUrl = process.env.FRONTEND_URL || 'https://unaspartidillas.online';
-    res.redirect(`${frontendUrl}/?auth=success&user=${userDataEncoded}`);
+    const redirectUrl = `${frontendUrl}/?auth=success&user=${userDataEncoded}`;
+    
+    logger.info(`🔄 Redirecting to frontend: ${frontendUrl}`);
+    logger.info(`👤 User data encoded (length): ${userDataEncoded.length} chars`);
+    
+    res.redirect(redirectUrl);
   } catch (error) {
     logger.error("❌ Discord OAuth error:", error.response?.data || error.message);
     res.status(500).send("Authentication failed");

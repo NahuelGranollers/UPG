@@ -105,11 +105,20 @@ function App() {
         
         // Verificar si viene de Discord OAuth callback con datos de usuario
         const urlParams = new URLSearchParams(window.location.search);
+        console.log('🔍 Checking URL params:', window.location.search);
+        
         if (urlParams.get('auth') === 'success' && urlParams.get('user')) {
+          console.log('✅ Received Discord OAuth callback');
+          
           // Decodificar datos del usuario desde la URL
           const userDataEncoded = urlParams.get('user')!;
+          console.log('📦 Encoded user data length:', userDataEncoded.length);
+          
           const userDataString = atob(userDataEncoded);
+          console.log('📄 Decoded user data:', userDataString);
+          
           const discordUser = JSON.parse(userDataString);
+          console.log('👤 Parsed Discord user:', discordUser);
           
           // Crear User desde Discord
           const newUser: User = {
