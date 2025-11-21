@@ -323,7 +323,12 @@ function App() {
     });
 
     socket.on('user:banned', ({ userId, username }: { userId: string; username: string }) => {
-      console.log(`­ƒö¿ Usuario ${username} ha sido baneado`);
+      console.log(`🔨 Usuario ${username} ha sido baneado`);
+      setDiscoveredUsers(prev => prev.filter(u => u.id !== userId));
+    });
+
+    socket.on('user:kicked', ({ userId, username }: { userId: string; username: string }) => {
+      console.log(`👢 Usuario ${username} ha sido expulsado`);
       setDiscoveredUsers(prev => prev.filter(u => u.id !== userId));
     });
 
@@ -554,6 +559,29 @@ function App() {
     window.location.href = `${API_URL}/auth/discord`;
   }, [API_URL]);
 
+  const handleLogoutDiscord = useCallback(async () => {
+    if (!confirm('¿Estás seguro de que quieres desconectar tu cuenta de Discord? Volverás a ser un usuario invitado.')) {
+      return;
+    }
+
+    try {
+      // Llamar al endpoint de logout del backend
+      await fetch(`${API_URL}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      // Limpiar datos locales
+      storage.clearUserData();
+      
+      // Recargar la página para crear un nuevo usuario invitado
+      window.location.reload();
+    } catch (error) {
+      console.error('Error al desconectar Discord:', error);
+      alert('Error al desconectar. Por favor, intenta de nuevo.');
+    }
+  }, [API_URL]);
+
   // Swipe gestures for mobile
   useSwipe({
     onSwipeLeft: () => {
@@ -596,6 +624,7 @@ function App() {
             voiceStates={voiceStates}
             users={allUsers}
             onLoginWithDiscord={handleLoginWithDiscord}
+            onLogoutDiscord={handleLogoutDiscord}
           />
           
           <div className="flex flex-1 min-w-0 relative">
@@ -653,6 +682,7 @@ function App() {
                 voiceStates={voiceStates}
                 users={allUsers}
                 onLoginWithDiscord={handleLoginWithDiscord}
+                onLogoutDiscord={handleLogoutDiscord}
               />
             </div>
           </div>

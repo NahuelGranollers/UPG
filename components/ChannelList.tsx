@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Hash, Volume2, ChevronDown, Vote, Users, Mic, HeadphoneOff, Settings, LogIn } from 'lucide-react';
+import { Hash, Volume2, ChevronDown, Vote, Users, Mic, HeadphoneOff, Settings, LogIn, LogOut } from 'lucide-react';
 import { AppView, User } from '../types';
 import { ChannelData } from '../App';
 import SafeImage from './SafeImage';
@@ -14,6 +14,7 @@ interface ChannelListProps {
   voiceStates: Record<string, string>;
   users: User[];
   onLoginWithDiscord?: () => void;
+  onLogoutDiscord?: () => void;
 }
 
 const ChannelList: React.FC<ChannelListProps> = ({ 
@@ -25,7 +26,8 @@ const ChannelList: React.FC<ChannelListProps> = ({
   onVoiceJoin,
   voiceStates,
   users,
-  onLoginWithDiscord
+  onLoginWithDiscord,
+  onLogoutDiscord
 }) => {
   
   const TextChannelItem = ({ 
@@ -211,6 +213,15 @@ const ChannelList: React.FC<ChannelListProps> = ({
                     title="Iniciar sesión con Discord"
                   >
                     <LogIn size={18} />
+                  </button>
+                )}
+                {!currentUser?.isGuest && onLogoutDiscord && (
+                  <button 
+                    onClick={onLogoutDiscord}
+                    className="p-1.5 rounded hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors"
+                    title="Desconectar Discord (volver a invitado)"
+                  >
+                    <LogOut size={18} />
                   </button>
                 )}
                 <button className="p-1.5 rounded hover:bg-discord-hover text-discord-text-muted hover:text-discord-text-normal">

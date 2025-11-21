@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect, useRef } from 'react';
 import { Message, User, UserRole } from '../types';
-import { Hash, Menu, Trash2, Shield, Ban } from 'lucide-react';
+import { Hash, Menu, Trash2, Shield, Ban, UserX } from 'lucide-react';
 import SafeImage from './SafeImage';
 import { ChannelData } from '../App';
 
@@ -76,10 +76,25 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const handleBanUser = (userId: string, username: string) => {
     if (!isAdmin || !currentUser || userId === currentUser.id) return;
     
-    if (confirm(`┬┐Est├ís seguro de que quieres banear a ${username}? Esta acci├│n tambi├®n bloquear├í su IP.`)) {
+    if (confirm(`¿Estás seguro de que quieres banear a ${username}? Esta acción también bloqueará su IP.`)) {
       const socket = getSocket();
       if (socket) {
         socket.emit('admin:ban-user', {
+          userId,
+          username,
+          adminId: currentUser.id
+        });
+      }
+    }
+  };
+
+  const handleKickUser = (userId: string, username: string) => {
+    if (!isAdmin || !currentUser || userId === currentUser.id) return;
+    
+    if (confirm(`¿Estás seguro de que quieres expulsar a ${username}?`)) {
+      const socket = getSocket();
+      if (socket) {
+        socket.emit('admin:kick-user', {
           userId,
           username,
           adminId: currentUser.id
@@ -167,6 +182,33 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   </div>
                   <p className="text-discord-text-normal whitespace-pre-wrap leading-[1.375rem]">{msg.content}</p>
                 </div>
+                
+                {/* Admin Actions */}
+                {isAdmin && hoveredMessageId === msg.id && msg.userId !== currentUser.id && (
+                  <div className="absolute right-4 top-1 bg-discord-sidebar rounded shadow-lg flex gap-1 p-1 border border-gray-700">
+                    <button
+                      onClick={() => handleDeleteMessage(msg.id)}
+                      className="p-1.5 hover:bg-red-500/20 rounded text-red-400 hover:text-red-300 transition-colors"
+                      title="Eliminar mensaje"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleKickUser(msg.userId, msg.username)}
+                      className="p-1.5 hover:bg-orange-500/20 rounded text-orange-400 hover:text-orange-300 transition-colors"
+                      title="Expulsar usuario"
+                    >
+                      <UserX size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleBanUser(msg.userId, msg.username)}
+                      className="p-1.5 hover:bg-red-500/20 rounded text-red-500 hover:text-red-400 transition-colors"
+                      title="Banear usuario y su IP"
+                    >
+                      <Ban size={14} />
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
