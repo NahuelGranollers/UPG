@@ -122,22 +122,30 @@ function App() {
 
           setCurrentUser(newUser);
           storage.saveUserData(newUser);
+          storage.setAuthentication(true);
           setIsAuthenticated(true);
           
           // Limpiar URL
           window.history.replaceState({}, document.title, '/');
         } else {
-          // Verificar si hay usuario guardado localmente
+          // Verificar si hay usuario guardado localmente con autenticación válida
+          const isAuth = storage.isAuthenticated();
           const savedUser = storage.loadUserData();
-          if (savedUser && !savedUser.username.startsWith('Guest')) {
+          
+          if (isAuth && savedUser && savedUser.id && !savedUser.username.startsWith('Guest')) {
             setCurrentUser(savedUser);
             setIsAuthenticated(true);
           } else {
+            // Limpiar datos inválidos
+            storage.clearUserData();
+            storage.setAuthentication(false);
             setIsAuthenticated(false);
           }
         }
       } catch (error) {
         console.error('Error checking auth:', error);
+        storage.clearUserData();
+        storage.setAuthentication(false);
         setIsAuthenticated(false);
       } finally {
         setIsLoadingAuth(false);
