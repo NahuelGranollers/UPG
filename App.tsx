@@ -151,6 +151,9 @@ function App() {
             setIsDiscordUser(true);
             console.log('Ô£à Usuario Discord autenticado:', newUser.username);
             return;
+          } else {
+            console.warn(`ÔÜá´ŞĆ Failed to fetch Discord user: ${response.status} ${response.statusText}`);
+            console.warn('ÔÜá´ŞĆ Session might not persist across domains. Falling back to guest mode.');
           }
         }
         
