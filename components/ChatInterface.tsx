@@ -196,6 +196,36 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     });
   }, [currentUser]);
 
+  // Renderizar preview del input con menciones destacadas en tiempo real
+  const renderInputPreview = useCallback((text: string) => {
+    if (!text) return null;
+    
+    const mentionRegex = /@(\w+)/g;
+    const parts = text.split(mentionRegex);
+    
+    return parts.map((part, index) => {
+      if (index % 2 === 1) {
+        // Es una mención
+        const user = mentionableUsers.find(u => 
+          u.username.toLowerCase() === part.toLowerCase()
+        );
+        return (
+          <span
+            key={index}
+            className={`${
+              user 
+                ? 'bg-blue-500/30 text-blue-300' 
+                : 'bg-gray-600/30 text-gray-400'
+            } font-semibold px-1 rounded`}
+          >
+            @{part}
+          </span>
+        );
+      }
+      return <span key={index}>{part}</span>;
+    });
+  }, [mentionableUsers]);
+
   // Funciones de administrador (memoizadas)
   const handleDeleteMessage = useCallback((messageId: string) => {
     if (!isAdmin || !currentUser) return;
@@ -478,9 +508,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </div>
         )}
 
-        <div className={`bg-[#383a40] rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 flex items-center transition-all duration-200 ${showMentionSuggestions ? 'ring-2 ring-discord-blurple shadow-lg shadow-discord-blurple/20' : ''
+        <div className={`bg-[#383a40] rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 flex items-center transition-all duration-200 relative ${showMentionSuggestions ? 'ring-2 ring-discord-blurple shadow-lg shadow-discord-blurple/20' : ''
           }`}>
-          <form onSubmit={handleSendMessage} className="flex-1 flex items-center">
+          <form onSubmit={handleSendMessage} className="flex-1 flex items-center relative">
+            {/* Preview layer - muestra texto con menciones destacadas */}
+            <div 
+              className="absolute inset-0 flex items-center pointer-events-none overflow-hidden whitespace-pre text-sm sm:text-base text-discord-text-normal"
+              aria-hidden="true"
+            >
+              {renderInputPreview(inputText)}
+            </div>
+            
+            {/* Input real - transparente cuando hay texto */}
             <input
               ref={inputRef}
               type="text"
@@ -488,7 +527,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               placeholder={`Enviar mensaje a #${currentChannel.name}`}
-              className="bg-transparent w-full text-sm sm:text-base text-discord-text-normal placeholder-discord-text-muted outline-none min-h-[44px] transition-all"
+              className={`relative z-10 bg-transparent w-full text-sm sm:text-base outline-none min-h-[44px] transition-all ${
+                inputText ? 'text-transparent caret-white' : 'text-discord-text-normal placeholder-discord-text-muted'
+              }`}
               aria-label="Escribir mensaje"
               maxLength={2000}
               autoComplete="off"
