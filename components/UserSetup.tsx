@@ -88,35 +88,67 @@ const UserSetup: React.FC<UserSetupProps> = ({ onComplete }) => {
 
     // Verificar si el username ya existe en el servidor
     setCheckingUsername(true);
+    setError('');
+    
     try {
       const socket = (window as any).socketInstance;
-      if (socket) {
-        // Emitir evento para verificar username
-        socket.emit('username:check', { username: trimmedUsername });
-        
-        // Esperar respuesta
-        await new Promise<void>((resolve, reject) => {
-          const timeout = setTimeout(() => {
-            reject(new Error('Timeout verificando username'));
-          }, 5000);
+      
+      if (!socket) {
+        console.warn('Socket no disponible aún, omitiendo verificación de username');
+        setCheckingUsername(false);
+        // Continuar sin verificación si el socket no está disponible
+      } else {
+        // Verificar si el socket está conectado
+        if (!socket.connected) {
+          console.log('Socket no conectado, esperando conexión...');
+          // Esperar a que se conecte (máximo 3 segundos)
+          await new Promise<void>((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              console.warn('Timeout esperando conexión, continuando sin verificación');
+              resolve(); // No rechazar, solo continuar
+            }, 3000);
 
-          socket.once('username:check-result', ({ available, message }: { available: boolean; message?: string }) => {
-            clearTimeout(timeout);
-            if (!available) {
-              setError(message || 'Este nombre de usuario ya está en uso');
-              reject(new Error('Username no disponible'));
-            } else {
+            if (socket.connected) {
+              clearTimeout(timeout);
               resolve();
+            } else {
+              socket.once('connect', () => {
+                clearTimeout(timeout);
+                resolve();
+              });
             }
           });
-        });
+        }
+
+        // Si está conectado, verificar username
+        if (socket.connected) {
+          socket.emit('username:check', { username: trimmedUsername });
+          
+          await new Promise<void>((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              console.warn('Timeout verificando username, continuando de todos modos');
+              resolve(); // No rechazar, permitir continuar
+            }, 5000);
+
+            socket.once('username:check-result', ({ available, message }: { available: boolean; message?: string }) => {
+              clearTimeout(timeout);
+              if (!available) {
+                setError(message || 'Este nombre de usuario ya está en uso');
+                reject(new Error('Username no disponible'));
+              } else {
+                resolve();
+              }
+            });
+          });
+        }
+        
+        setCheckingUsername(false);
       }
     } catch (err) {
       console.error('Error verificando username:', err);
       setCheckingUsername(false);
       return;
     }
-    setCheckingUsername(false);
 
     // Usar avatar personalizado o el seleccionado
     const finalAvatar = customAvatar || selectedAvatar;

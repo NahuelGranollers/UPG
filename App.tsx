@@ -117,10 +117,24 @@ function App() {
   // useRef para mantener referencia estable del socket
   const socketRef = useRef<Socket | null>(null);
 
-  // Check Authentication
+  // Check Authentication y crear socket temprano
   useEffect(() => {
     const auth = localStorage.getItem('upg_access_token');
-    if (auth === 'granted') setIsAuthenticated(true);
+    if (auth === 'granted') {
+      setIsAuthenticated(true);
+      
+      // Crear socket inmediatamente después de autenticar
+      // Esto permite verificar username antes de completar el setup
+      if (!socketRef.current) {
+        const socket = io(SOCKET_URL, SOCKET_CONFIG);
+        socketRef.current = socket;
+        (window as any).socketInstance = socket;
+        
+        socket.on('connect', () => {
+          console.log('🔌 Socket pre-conectado para verificación - ID:', socket.id);
+        });
+      }
+    }
     setIsLoadingAuth(false);
   }, []);
 
@@ -176,13 +190,16 @@ function App() {
 
   // Socket.IO Connection - ACTUALIZADO CON GESTIÓN DE USUARIOS
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !currentUser) return;
 
-    const socket = io(SOCKET_URL, SOCKET_CONFIG);
-    socketRef.current = socket;
-    
-    // Exponer socket globalmente para componentes hijos
-    (window as any).socketInstance = socket;
+    // Si el socket ya existe (creado en autenticación), reutilizarlo
+    // Si no, crearlo ahora
+    let socket = socketRef.current;
+    if (!socket) {
+      socket = io(SOCKET_URL, SOCKET_CONFIG);
+      socketRef.current = socket;
+      (window as any).socketInstance = socket;
+    }
 
     // ✅ Conexión establecida
     socket.on('connect', () => {
