@@ -30,7 +30,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [isBotTyping, setIsBotTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  
+
   const isAdmin = useMemo(() => currentUser?.role === UserRole.ADMIN, [currentUser?.role]);
 
   // Socket.IO reference - Obtener instancia global del socket (memoizado)
@@ -43,19 +43,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const botUser = { id: 'bot', username: 'UPG', avatar: '/upg.png', color: '#5865F2', online: true };
     // Incluir TODOS los usuarios (online, offline, y el usuario actual)
     const allUsers = [botUser, ...users];
-    console.log('👥 Usuarios mencionables:', allUsers.length, allUsers);
     return allUsers;
   }, [users]);
 
   // Filtrar sugerencias de menciones
   const mentionSuggestions = useMemo(() => {
     if (!mentionSearch) {
-      console.log('🔎 Sin búsqueda, mostrando todos:', mentionableUsers.length);
       return mentionableUsers;
     }
     const search = mentionSearch.toLowerCase();
     const filtered = mentionableUsers.filter(u => u.username.toLowerCase().includes(search));
-    console.log('🔎 Filtrado con:', mentionSearch, '→', filtered.length, 'resultados');
     return filtered;
   }, [mentionSearch, mentionableUsers]);
 
@@ -68,30 +65,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const text = e.target.value;
     const cursorPos = e.target.selectionStart || 0;
-    
+
     setInputText(text);
 
     // Buscar @ antes del cursor
     const textBeforeCursor = text.slice(0, cursorPos);
     const lastAtIndex = textBeforeCursor.lastIndexOf('@');
-    
-    console.log('🔍 Input:', text, 'Cursor:', cursorPos, 'lastAtIndex:', lastAtIndex);
-    
+
     if (lastAtIndex !== -1) {
       // Hay un @ antes del cursor
       const textAfterAt = textBeforeCursor.slice(lastAtIndex + 1);
-      
-      console.log('✅ @ encontrado! textAfterAt:', textAfterAt);
-      
+
       // Solo mostrar si no hay espacios después del @ y está cerca del cursor
       if (!textAfterAt.includes(' ') && (cursorPos - lastAtIndex) <= 20) {
-        console.log('🎯 Mostrando panel de menciones');
         setShowMentionSuggestions(true);
         setMentionSearch(textAfterAt);
         setMentionStartPos(lastAtIndex);
         setSelectedSuggestionIndex(0);
       } else if (textAfterAt.includes(' ')) {
-        console.log('❌ Hay espacio después de @, ocultando panel');
         setShowMentionSuggestions(false);
       }
     } else {
@@ -104,12 +95,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     if (showMentionSuggestions && mentionSuggestions.length > 0) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        setSelectedSuggestionIndex(prev => 
+        setSelectedSuggestionIndex(prev =>
           prev < mentionSuggestions.length - 1 ? prev + 1 : 0
         );
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
-        setSelectedSuggestionIndex(prev => 
+        setSelectedSuggestionIndex(prev =>
           prev > 0 ? prev - 1 : mentionSuggestions.length - 1
         );
       } else if (e.key === 'Tab' || e.key === 'Enter') {
@@ -128,11 +119,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const before = inputText.slice(0, mentionStartPos);
     const after = inputText.slice(inputRef.current?.selectionStart || inputText.length);
     const newText = `${before}@${user.username} ${after}`;
-    
+
     setInputText(newText);
     setShowMentionSuggestions(false);
     setMentionSearch('');
-    
+
     // Mover cursor después de la mención
     setTimeout(() => {
       const newCursorPos = before.length + user.username.length + 2; // +2 por @ y espacio
@@ -148,11 +139,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     // Detectar si se menciona al bot (case insensitive)
     const lowerInput = inputText.toLowerCase();
     const mentionsBot = lowerInput.includes('@upg');
-    
+
     onSendMessage(inputText);
     setInputText('');
     setShowMentionSuggestions(false);
-    
+
     // Mostrar feedback de "bot escribiendo" si se menciona al bot
     if (mentionsBot) {
       setIsBotTyping(true);
@@ -180,11 +171,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   // Función para resaltar menciones en el texto del mensaje
   const highlightMentions = useCallback((text: string) => {
     if (!text) return text;
-    
+
     // Buscar todas las menciones (@username)
     const mentionRegex = /@(\w+)/g;
     const parts = text.split(mentionRegex);
-    
+
     return parts.map((part, index) => {
       // Si es índice impar, es un username mencionado
       if (index % 2 === 1) {
@@ -192,11 +183,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         return (
           <span
             key={index}
-            className={`font-semibold ${
-              isMentioningCurrentUser 
-                ? 'text-blue-400 bg-blue-500/20 px-1 rounded' 
+            className={`font-semibold ${isMentioningCurrentUser
+                ? 'text-blue-400 bg-blue-500/20 px-1 rounded'
                 : 'text-blue-300 hover:underline cursor-pointer'
-            }`}
+              }`}
           >
             @{part}
           </span>
@@ -209,11 +199,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   // Funciones de administrador (memoizadas)
   const handleDeleteMessage = useCallback((messageId: string) => {
     if (!isAdmin || !currentUser) return;
-    
+
     const socket = (window as any).socketInstance;
     if (socket) {
-      socket.emit('admin:delete-message', { 
-        messageId, 
+      socket.emit('admin:delete-message', {
+        messageId,
         channelId: currentChannel.id,
         adminId: currentUser.id
       });
@@ -222,7 +212,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const handleClearChannel = useCallback(() => {
     if (!isAdmin) return;
-    
+
     if (confirm(`¿Estás seguro de que quieres eliminar todos los mensajes de #${currentChannel.name}?`)) {
       const socket = getSocket();
       if (socket) {
@@ -236,7 +226,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const handleBanUser = useCallback((userId: string, username: string) => {
     if (!isAdmin || !currentUser || userId === currentUser.id) return;
-    
+
     if (confirm(`¿Estás seguro de que quieres banear a ${username}? Esta acción también bloqueará su IP.`)) {
       const socket = getSocket();
       if (socket) {
@@ -251,7 +241,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const handleKickUser = useCallback((userId: string, username: string) => {
     if (!isAdmin || !currentUser || userId === currentUser.id) return;
-    
+
     if (confirm(`¿Estás seguro de que quieres expulsar a ${username}?`)) {
       const socket = getSocket();
       if (socket) {
@@ -270,7 +260,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {/* Header */}
       <div className="h-12 flex items-center justify-between px-4 shadow-sm border-b border-gray-900/20 shrink-0">
         <div className="flex items-center text-discord-text-header font-bold truncate">
-          <button 
+          <button
             onClick={onMenuToggle}
             className="md:hidden mr-3 text-discord-text-muted hover:text-white"
             aria-label="Abrir men├║"
@@ -312,24 +302,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             const msgUser = users.find(u => u.id === msg.userId);
             const msgTimestamp = typeof msg.timestamp === 'string' ? new Date(msg.timestamp) : msg.timestamp;
             const mentioned = isMentioned(msg.content);
-            
+
             return (
-              <div 
-                key={msg.id} 
-                className={`group flex pr-2 sm:pr-4 mt-3 sm:mt-4 py-0.5 relative transition-all ${
-                  mentioned 
-                    ? 'bg-yellow-500/10 border-l-4 border-yellow-500 pl-2 -ml-1 hover:bg-yellow-500/15' 
+              <div
+                key={msg.id}
+                className={`group flex pr-2 sm:pr-4 mt-3 sm:mt-4 py-0.5 relative transition-all ${mentioned
+                    ? 'bg-yellow-500/10 border-l-4 border-yellow-500 pl-2 -ml-1 hover:bg-yellow-500/15'
                     : 'hover:bg-[#2e3035]'
-                }`}
+                  }`}
                 onMouseEnter={() => setHoveredMessageId(msg.id)}
                 onMouseLeave={() => setHoveredMessageId(null)}
               >
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-600 mr-3 sm:mr-4 mt-0.5 overflow-hidden shrink-0 cursor-pointer">
-                  <SafeImage 
-                    src={msg.avatar || msgUser?.avatar || ''} 
-                    alt={msg.username || msgUser?.username || ''} 
-                    className="w-full h-full object-cover" 
-                    fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(msg.username || msgUser?.username || '')}&background=5865F2&color=fff&size=128`} 
+                  <SafeImage
+                    src={msg.avatar || msgUser?.avatar || ''}
+                    alt={msg.username || msgUser?.username || ''}
+                    className="w-full h-full object-cover"
+                    fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(msg.username || msgUser?.username || '')}&background=5865F2&color=fff&size=128`}
                   />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -355,7 +344,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     {highlightMentions(msg.content)}
                   </p>
                 </div>
-                
+
                 {/* Admin Actions */}
                 {isAdmin && hoveredMessageId === msg.id && msg.userId !== currentUser.id && (
                   <div className="absolute right-2 sm:right-4 top-1 bg-discord-sidebar rounded shadow-lg flex gap-0.5 sm:gap-1 p-1 border border-gray-700">
@@ -385,16 +374,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               </div>
             );
           })}
-          
+
           {/* Indicador de "bot escribiendo" */}
           {isBotTyping && (
             <div className="flex pr-2 sm:pr-4 mt-3 sm:mt-4 py-0.5">
               <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-600 mr-3 sm:mr-4 mt-0.5 overflow-hidden shrink-0">
-                <SafeImage 
-                  src="/upg.png" 
-                  alt="UPG" 
-                  className="w-full h-full object-cover" 
-                  fallbackSrc="https://ui-avatars.com/api/?name=UPG&background=5865F2&color=fff&size=128" 
+                <SafeImage
+                  src="/upg.png"
+                  alt="UPG"
+                  className="w-full h-full object-cover"
+                  fallbackSrc="https://ui-avatars.com/api/?name=UPG&background=5865F2&color=fff&size=128"
                 />
               </div>
               <div className="flex-1 min-w-0">
@@ -417,17 +406,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               </div>
             </div>
           )}
-          
+
           <div ref={messagesEndRef} />
         </div>
       </div>
       {/* Input */}
       <div className="px-3 sm:px-4 pt-2 shrink-0 relative" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
         {/* Sugerencias de menciones */}
-        {(() => {
-          console.log('🎨 Renderizando panel - showMentionSuggestions:', showMentionSuggestions, 'mentionSuggestions.length:', mentionSuggestions.length);
-          return null;
-        })()}
         {showMentionSuggestions && mentionSuggestions.length > 0 && (
           <div className="absolute bottom-full left-3 sm:left-4 right-3 sm:right-4 mb-2 bg-[#2f3136] rounded-lg shadow-2xl border border-gray-800 overflow-hidden max-h-64 overflow-y-auto z-50 animate-in fade-in slide-in-from-bottom-2 duration-150">
             <div className="py-2">
@@ -439,24 +424,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   key={user.id}
                   onClick={() => completeMention(user)}
                   onMouseEnter={() => setSelectedSuggestionIndex(index)}
-                  className={`w-full px-3 py-2 flex items-center gap-3 transition-all duration-150 ${
-                    index === selectedSuggestionIndex 
-                      ? 'bg-discord-blurple scale-[1.02] shadow-lg' 
+                  className={`w-full px-3 py-2 flex items-center gap-3 transition-all duration-150 ${index === selectedSuggestionIndex
+                      ? 'bg-discord-blurple scale-[1.02] shadow-lg'
                       : 'hover:bg-[#36373d] hover:scale-[1.01]'
-                  }`}
+                    }`}
                 >
                   <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 bg-gray-600">
-                    <SafeImage 
-                      src={user.avatar || ''} 
-                      alt={user.username} 
-                      className="w-full h-full object-cover" 
-                      fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=5865F2&color=fff&size=128`} 
+                    <SafeImage
+                      src={user.avatar || ''}
+                      alt={user.username}
+                      className="w-full h-full object-cover"
+                      fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=5865F2&color=fff&size=128`}
                     />
                     {/* Indicador de estado online/offline */}
                     {'online' in user && (
-                      <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#2f3136] ${
-                        user.online ? 'bg-green-500' : 'bg-gray-500'
-                      }`} />
+                      <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#2f3136] ${user.online ? 'bg-green-500' : 'bg-gray-500'
+                        }`} />
                     )}
                   </div>
                   <div className="flex-1 text-left">
@@ -494,10 +477,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </div>
           </div>
         )}
-        
-        <div className={`bg-[#383a40] rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 flex items-center transition-all duration-200 ${
-          showMentionSuggestions ? 'ring-2 ring-discord-blurple shadow-lg shadow-discord-blurple/20' : ''
-        }`}>
+
+        <div className={`bg-[#383a40] rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 flex items-center transition-all duration-200 ${showMentionSuggestions ? 'ring-2 ring-discord-blurple shadow-lg shadow-discord-blurple/20' : ''
+          }`}>
           <form onSubmit={handleSendMessage} className="flex-1 flex items-center">
             <input
               ref={inputRef}

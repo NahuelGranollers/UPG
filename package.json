@@ -7,11 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "copy-dist": "node -e \"require('fs').cpSync('dist/index.html', 'index.html'); require('fs').cpSync('dist/assets', 'assets', {recursive: true})\"",
-    "copy-server": "node -e \"require('fs').cpSync('server', 'C:/Users/nahue/Documents/GitHub/Mensajeria', {recursive: true})\"",
+    "copy-server": "node -e \"const fs = require('fs'); fs.cpSync('server', 'C:/Users/nahue/Documents/GitHub/Mensajeria', {recursive: true}); fs.copyFileSync('package.json', 'C:/Users/nahue/Documents/GitHub/Mensajeria/package.json');\"",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@google/genai": "^1.30.0",
+    "@google/generative-ai": "^0.21.0",
     "@tailwindcss/vite": "^4.1.17",
     "axios": "^1.13.2",
     "better-sqlite3": "^12.4.5",
