@@ -47,7 +47,7 @@ const DiscordLogin: React.FC = () => {
         <div className="mt-6 p-4 bg-discord-chat rounded-lg border border-gray-700">
           <p className="text-xs text-gray-400 text-center">
             Al iniciar sesión, usaremos tu nombre de usuario y foto de perfil de Discord.
-            No almacenamos tu avatar, se carga directamente desde Discord.
+            No almacenamos tus datos, se cargan directamente desde Discord.
           </p>
         </div>
 
