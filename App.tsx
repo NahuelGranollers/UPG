@@ -9,9 +9,12 @@ import UserList from './components/UserList';
 import WhoWeAre from './components/WhoWeAre';
 import Voting from './components/Voting';
 import LockScreen from './components/LockScreen';
-import UserSetup from './components/UserSetup';
+import DiscordLogin from './components/DiscordLogin';
 import ErrorBoundary from './components/ErrorBoundary';
 import MobileTabBar from './components/MobileTabBar';
+
+// Discord OAuth
+import * as discordAuth from './services/discordAuth';
 
 import { User, AppView, Message, UserRole } from './types';
 import * as storage from './utils/storageService';
@@ -44,31 +47,12 @@ const SOCKET_CONFIG = {
   timeout: 10000
 };
 
-const AVATARS = [
-  'https://ui-avatars.com/api/?name=A&background=5865F2&color=fff&size=200',
-  'https://ui-avatars.com/api/?name=B&background=57F287&color=fff&size=200',
-  'https://ui-avatars.com/api/?name=C&background=FEE75C&color=000&size=200',
-  'https://ui-avatars.com/api/?name=D&background=EB459E&color=fff&size=200',
-  'https://ui-avatars.com/api/?name=E&background=ED4245&color=fff&size=200'
-] as const;
 
-function generateRandomUser(): User {
-  const randomId = Math.floor(Math.random() * 10000).toString();
-  return {
-    id: `user-${randomId}`,
-    username: `Guest${randomId}`,
-    avatar: AVATARS[Math.floor(Math.random() * AVATARS.length)],
-    status: 'online',
-    online: true,
-    color: '#3ba55c'
-  };
-}
 
 function App() {
   // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const [showUserSetup, setShowUserSetup] = useState(false);
 
   // UI & Channels
   const [activeView, setActiveView] = useState<AppView>(AppView.CHAT);
@@ -77,40 +61,8 @@ function App() {
     name: 'general', 
     description: 'Chat general' 
   });
-  const [currentUser, setCurrentUser] = useState<User>(() => {
-    // Intentar leer desde cookies primero
-    const cookies = document.cookie.split('; ').reduce((acc, cookie) => {
-      const [key, value] = cookie.split('=');
-      acc[key] = value;
-      return acc;
-    }, {} as Record<string, string>);
-
-    if (cookies.upg_username && cookies.upg_avatar) {
-      const username = decodeURIComponent(cookies.upg_username);
-      const role = (cookies.upg_role as UserRole) || UserRole.USER;
-      const isAdmin = role === UserRole.ADMIN;
-      
-      return {
-        id: cookies.upg_user_id || `user-${Date.now()}`,
-        username,
-        avatar: decodeURIComponent(cookies.upg_avatar),
-        status: 'online',
-        online: true,
-        color: isAdmin ? '#ff4d0a' : '#3ba55c', // Color basado en rol guardado
-        role
-      };
-    }
-
-    // Fallback a localStorage
-    const saved = localStorage.getItem('upg_current_user');
-    if (saved) {
-      const user = JSON.parse(saved);
-      return { ...user, online: true, status: 'online' };
-    }
-    
-    // Si no hay nada, retornar null y mostrar setup
-    return generateRandomUser();
-  });
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isLoadingDiscord, setIsLoadingDiscord] = useState(true);
 
   // Estado de usuarios conectados
   const [discoveredUsers, setDiscoveredUsers] = useState<User[]>([]);
@@ -128,71 +80,69 @@ function App() {
   // useRef para mantener referencia estable del socket
   const socketRef = useRef<Socket | null>(null);
 
-  // Check Authentication y crear socket temprano
+  // Check Discord Authentication
   useEffect(() => {
-    if (storage.isAuthenticated()) {
-      setIsAuthenticated(true);
+    const initAuth = async () => {
+      // Verificar si hay callback de Discord
+      const token = discordAuth.handleDiscordCallback();
       
-      // Crear socket inmediatamente después de autenticar
-      // Esto permite verificar username antes de completar el setup
-      if (!socketRef.current) {
-        const socket = io(SOCKET_URL, SOCKET_CONFIG);
-        socketRef.current = socket;
-        (window as any).socketInstance = socket;
-        
-        socket.on('connect', () => {
-          console.log('🔌 Socket pre-conectado para verificación - ID:', socket.id);
-        });
+      if (token) {
+        try {
+          // Obtener datos del usuario desde Discord
+          const discordUser = await discordAuth.getDiscordUser(token);
+          discordAuth.saveDiscordToken(token);
+          
+          // Crear usuario para la app
+          const user: User = {
+            id: discordUser.id,
+            username: discordUser.global_name || discordUser.username,
+            avatar: discordAuth.getDiscordAvatarUrl(discordUser.id, discordUser.avatar, 128),
+            status: 'online',
+            online: true,
+            color: '#3ba55c',
+            role: UserRole.USER
+          };
+          
+          setCurrentUser(user);
+          storage.saveUserData(user);
+          storage.setAuthentication(true);
+          setIsAuthenticated(true);
+        } catch (error) {
+          console.error('Error obteniendo datos de Discord:', error);
+          discordAuth.clearDiscordToken();
+        }
+      } else if (discordAuth.hasActiveSession()) {
+        // Ya hay sesión activa, cargar usuario
+        const savedUser = storage.loadUserData();
+        if (savedUser) {
+          setCurrentUser(savedUser);
+          storage.setAuthentication(true);
+          setIsAuthenticated(true);
+        } else {
+          // Token existe pero no hay datos guardados, reautenticar
+          discordAuth.clearDiscordToken();
+        }
       }
-    }
-    setIsLoadingAuth(false);
-  }, []);
-
-  const handleUnlock = useCallback(() => {
-    storage.setAuthentication(true);
-    setIsAuthenticated(true);
-    
-    // Verificar si hay datos de usuario válidos
-    const userData = storage.loadUserData();
-    
-    // Solo mostrar setup si NO hay datos o si el usuario es Guest Y no tiene avatar personalizado
-    if (!userData || (userData.username.startsWith('Guest') && !userData.avatar.includes('data:image'))) {
-      setShowUserSetup(true);
-    } else {
-      // Si ya tiene datos, actualizar currentUser
-      setCurrentUser(userData);
-    }
-  }, []);
-
-  const handleUserSetupComplete = useCallback((username: string, avatar: string) => {
-    const userId = `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-    
-    const newUser: User = {
-      id: userId,
-      username,
-      avatar,
-      status: 'online',
-      color: '#3ba55c',
-      role: UserRole.USER // El servidor actualizará el rol según IP
+      
+      setIsLoadingAuth(false);
+      setIsLoadingDiscord(false);
     };
     
-    // Usar servicio de storage centralizado
-    storage.saveUserData(newUser);
-    setCurrentUser(newUser);
-    setShowUserSetup(false);
+    initAuth();
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    discordAuth.clearDiscordToken();
+    storage.clearUserData();
+    storage.setAuthentication(false);
+    setCurrentUser(null);
+    setIsAuthenticated(false);
+    window.location.reload();
   }, []);
 
   // Socket.IO Connection - ACTUALIZADO CON GESTIÓN DE USUARIOS
   useEffect(() => {
-    if (!isAuthenticated) return;
-    
-    // Si el usuario actual es un Guest (generado automáticamente), mostrar UserSetup
-    if (currentUser.username.startsWith('Guest')) {
-      setShowUserSetup(true);
-      return;
-    }
-    
-    if (!currentUser) return;
+    if (!isAuthenticated || !currentUser) return;
 
     // Si el socket ya existe (creado en autenticación), reutilizarlo
     // Si no, crearlo ahora
@@ -346,9 +296,8 @@ function App() {
     });
 
     socket.on('username:taken', ({ message }: { message: string }) => {
-      alert(message);
-      storage.clearUserData();
-      setShowUserSetup(true);
+      alert(message + ' Por favor, inicia sesi\u00f3n con otra cuenta de Discord.');
+      handleLogout();
     });
 
     // Admin events
@@ -567,9 +516,8 @@ function App() {
     }
   });
 
-  if (isLoadingAuth) return null;
-  if (!isAuthenticated) return <LockScreen onUnlock={handleUnlock} />;
-  if (showUserSetup) return <UserSetup onComplete={handleUserSetupComplete} />;
+  if (isLoadingAuth || isLoadingDiscord) return null;
+  if (!isAuthenticated || !currentUser) return <DiscordLogin />;
 
   return (
     <ErrorBoundary>
