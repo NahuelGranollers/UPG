@@ -28,13 +28,13 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
       angle += speed * direction;
       if (angle >= maxDeg) direction = -1;
       if (angle <= minDeg) direction = 1;
-      
+
       if (logoRef.current) {
         logoRef.current.style.transform = `rotate(${angle}deg)`;
       }
       animationFrameId = requestAnimationFrame(animateLogo);
     };
-    
+
     animateLogo();
 
     return () => {
@@ -47,7 +47,7 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
     const encoder = new TextEncoder();
     const data = encoder.encode(input);
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    
+
     // Conversión optimizada a hex usando reduce (más rápido que map)
     const hashArray = new Uint8Array(hashBuffer);
     let hexString = '';
@@ -59,7 +59,7 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
 
   const handleLogin = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validación rápida: no procesar si está vacío
     if (!password.trim()) {
       setError(true);
@@ -75,10 +75,8 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
 
       // Comparación constante en tiempo para evitar timing attacks
       if (inputHash === TARGET_HASH) {
-        // Éxito - delay mínimo para UX
-        setTimeout(() => {
-          onUnlock();
-        }, 200);
+        // Éxito - Entrada instantánea sin delay
+        onUnlock();
       } else {
         // Fallo - delay artificial para prevenir ataques de fuerza bruta
         setTimeout(() => {
@@ -96,79 +94,79 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-y-auto w-full min-h-screen p-4 sm:p-6" style={{ backgroundColor: '#ffcc17' }}>
-      
+
       <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto my-auto">
         {/* Animated Logo */}
-        <img 
+        <img
           ref={logoRef}
-          src="/upg.png" 
-          alt="UPG Logo" 
+          src="/upg.png"
+          alt="UPG Logo"
           className="object-cover mb-4 sm:mb-6 md:mb-8 w-[100px] h-[100px] sm:w-[150px] sm:h-[150px] md:w-[200px] md:h-[200px] lg:w-[300px] lg:h-[300px] block flex-shrink-0"
           style={{ transition: 'transform 0.1s linear' }}
           onError={(e) => { e.currentTarget.style.display = 'none'; }}
         />
 
         {/* Work in Progress Text */}
-        <div 
-          className="font-black text-center text-[1.2em] xs:text-[1.5em] sm:text-[2em] md:text-[2.5em] lg:text-[3.5em] mb-4 sm:mb-6 md:mb-8 px-2 sm:px-4 leading-tight" 
-          style={{ 
-            color: '#ff4d0a', 
+        <div
+          className="font-black text-center text-[1.8rem] xs:text-[2.2rem] sm:text-[3rem] md:text-[3.5rem] lg:text-[4rem] mb-6 sm:mb-8 md:mb-10 px-2 sm:px-4 leading-none whitespace-nowrap"
+          style={{
+            color: '#ff4d0a',
             fontFamily: '"Arial Black", Arial, sans-serif',
             textShadow: '2px 2px 0px #ff9300',
-            letterSpacing: '0.5px'
-        }}>
-           WORK IN PROGRESS
+            letterSpacing: '-1px'
+          }}>
+          WORK IN PROGRESS
         </div>
 
         {/* Password Form */}
-        <form onSubmit={handleLogin} className="w-full max-w-xs flex flex-col items-center relative z-10 px-4 sm:px-0">
-        <div className="relative w-full">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Lock size={18} className="text-[#ff4d0a] sm:w-5 sm:h-5" />
-          </div>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => {
+        <form onSubmit={handleLogin} className="w-full max-w-md flex flex-col items-center relative z-10 px-4 sm:px-0">
+          <div className="relative w-full">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Lock size={20} className="text-[#ff4d0a] sm:w-6 sm:h-6" />
+            </div>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => {
                 setPassword(e.target.value);
-                if(error) setError(false);
-            }}
-            placeholder="Contraseña..."
-            autoFocus
-            autoComplete="off"
-            className="block w-full pl-9 sm:pl-10 pr-3 py-2.5 sm:py-3 border-3 sm:border-4 border-[#ff4d0a] rounded-lg sm:rounded-xl leading-5 bg-white placeholder-orange-300 focus:outline-none focus:ring-2 sm:focus:ring-4 focus:ring-orange-300/50 text-sm sm:text-base font-bold text-orange-600 shadow-lg"
-            style={{ fontFamily: '"Arial Black", Arial, sans-serif', fontSize: 'clamp(0.875rem, 2.5vw, 1rem)' }}
-            aria-label="Campo de contraseña"
-          />
-        </div>
-
-        {error && (
-          <div className="mt-2 sm:mt-3 flex items-center text-red-600 text-xs sm:text-sm font-bold bg-red-100 px-2 sm:px-3 py-1 rounded-full animate-bounce">
-            <AlertCircle size={14} className="mr-1 sm:mr-1.5 flex-shrink-0" />
-            <span className="whitespace-nowrap">Contraseña incorrecta</span>
+                if (error) setError(false);
+              }}
+              placeholder="Contraseña..."
+              autoFocus
+              autoComplete="off"
+              className="block w-full pl-12 sm:pl-16 pr-4 py-3 sm:py-4 border-4 sm:border-[5px] border-[#ff4d0a] rounded-xl sm:rounded-2xl leading-normal bg-white placeholder-orange-300 focus:outline-none focus:ring-4 focus:ring-orange-300/50 text-lg sm:text-xl font-bold text-orange-600 shadow-xl"
+              style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
+              aria-label="Campo de contraseña"
+            />
           </div>
-        )}
 
-        <button 
-          type="submit"
-          disabled={loading}
-          className="mt-4 sm:mt-6 flex items-center justify-center px-6 sm:px-8 py-2.5 sm:py-3 border-transparent text-sm sm:text-base font-black rounded-full text-white bg-[#ff4d0a] hover:bg-[#e03e00] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 shadow-[2px_2px_0px_#cc3300] sm:shadow-[3px_3px_0px_#cc3300] active:translate-y-[2px] active:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed w-full sm:w-auto"
-          style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
-          aria-label={loading ? 'Verificando contraseña' : 'Acceder'}
-        >
-          {loading ? (
-            <>
-              <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-              <span className="text-xs sm:text-base">VERIFICANDO...</span>
-            </>
-          ) : (
-            <>
-              <span className="text-sm sm:text-base">ACCEDER</span>
-              <ArrowRight size={18} className="ml-1.5 sm:ml-2 sm:w-5 sm:h-5" />
-            </>
+          {error && (
+            <div className="mt-3 sm:mt-4 flex items-center text-red-600 text-xs sm:text-sm font-bold bg-red-100 px-3 py-1.5 rounded-full animate-bounce">
+              <AlertCircle size={16} className="mr-1.5 flex-shrink-0" />
+              <span className="whitespace-nowrap">Contraseña incorrecta</span>
+            </div>
           )}
-        </button>
-      </form>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="mt-5 sm:mt-6 flex items-center justify-center px-6 sm:px-8 py-2.5 sm:py-3 border-transparent text-base sm:text-lg font-black rounded-full text-white bg-[#ff4d0a] hover:bg-[#e03e00] focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-orange-500 shadow-[2px_2px_0px_#cc3300] sm:shadow-[3px_3px_0px_#cc3300] active:translate-y-[2px] active:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed w-full sm:w-auto min-w-[160px]"
+            style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
+            aria-label={loading ? 'Verificando contraseña' : 'Acceder'}
+          >
+            {loading ? (
+              <>
+                <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                <span className="text-sm sm:text-base">VERIFICANDO...</span>
+              </>
+            ) : (
+              <>
+                <span className="text-base sm:text-lg tracking-wide">ACCEDER</span>
+                <ArrowRight size={20} className="ml-2 sm:ml-2.5 sm:w-5 sm:h-5" />
+              </>
+            )}
+          </button>
+        </form>
       </div>
     </div>
   );
