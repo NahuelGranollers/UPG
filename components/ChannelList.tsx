@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Hash, Volume2, ChevronDown, Vote, Users, Mic, HeadphoneOff, Settings } from 'lucide-react';
+import { Hash, Volume2, ChevronDown, Vote, Users, Mic, HeadphoneOff, Settings, LogIn } from 'lucide-react';
 import { AppView, User } from '../types';
 import { ChannelData } from '../App';
 import SafeImage from './SafeImage';
@@ -13,6 +13,7 @@ interface ChannelListProps {
   onVoiceJoin: (channelName: string) => void;
   voiceStates: Record<string, string>;
   users: User[];
+  onLoginWithDiscord?: () => void;
 }
 
 const ChannelList: React.FC<ChannelListProps> = ({ 
@@ -23,7 +24,8 @@ const ChannelList: React.FC<ChannelListProps> = ({
   activeVoiceChannel,
   onVoiceJoin,
   voiceStates,
-  users
+  users,
+  onLoginWithDiscord
 }) => {
   
   const TextChannelItem = ({ 
@@ -202,6 +204,15 @@ const ChannelList: React.FC<ChannelListProps> = ({
             </div>
             
             <div className="flex items-center">
+                {currentUser?.isGuest && onLoginWithDiscord && (
+                  <button 
+                    onClick={onLoginWithDiscord}
+                    className="p-1.5 rounded hover:bg-discord-blurple text-discord-blurple hover:text-white transition-colors"
+                    title="Iniciar sesión con Discord"
+                  >
+                    <LogIn size={18} />
+                  </button>
+                )}
                 <button className="p-1.5 rounded hover:bg-discord-hover text-discord-text-muted hover:text-discord-text-normal">
                     <Mic size={18} />
                 </button>

@@ -121,7 +121,7 @@ app.use(session({
     httpOnly: true,
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' para cross-domain
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 días
-    domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined // Allow subdomain cookies
+    // No establecer domain para permitir cookies cross-domain con diferentes dominios
   },
   proxy: true // Trust proxy headers (Render uses proxies)
 }));
@@ -490,11 +490,17 @@ app.get("/auth/callback", catchAsync(async (req, res) => {
 
 // Ruta 3: Obtener usuario autenticado
 app.get("/auth/user", (req, res) => {
+  logger.debug(`Auth check - Session ID: ${req.sessionID}`);
+  logger.debug(`Auth check - Cookies: ${JSON.stringify(req.cookies)}`);
+  logger.debug(`Auth check - Session exists: ${!!req.session}`);
+  logger.debug(`Auth check - Discord user in session: ${!!req.session?.discordUser}`);
+  
   if (!req.session.discordUser) {
+    logger.warning(`❌ No Discord user in session for session ID: ${req.sessionID}`);
     return res.status(401).json({ error: "Not authenticated" });
   }
   
-  logger.info(`Discord user session: ${req.session.discordUser.username}`);
+  logger.info(`✅ Discord user session found: ${req.session.discordUser.username}`);
   res.json(req.session.discordUser);
 });
 

@@ -595,6 +595,7 @@ function App() {
             onVoiceJoin={handleVoiceJoin}
             voiceStates={voiceStates}
             users={allUsers}
+            onLoginWithDiscord={handleLoginWithDiscord}
           />
           
           <div className="flex flex-1 min-w-0 relative">
@@ -611,7 +612,6 @@ function App() {
                 <UserList 
                   users={allUsers} 
                   currentUserId={currentUser.id}
-                  onLoginWithDiscord={handleLoginWithDiscord}
                 />
               </>
             )}
@@ -652,6 +652,7 @@ function App() {
                 onVoiceJoin={handleVoiceJoin}
                 voiceStates={voiceStates}
                 users={allUsers}
+                onLoginWithDiscord={handleLoginWithDiscord}
               />
             </div>
           </div>
@@ -697,7 +698,6 @@ function App() {
                 users={allUsers} 
                 currentUserId={currentUser.id} 
                 isMobileView={true}
-                onLoginWithDiscord={handleLoginWithDiscord}
               />
             </div>
           </div>

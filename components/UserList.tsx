@@ -1,16 +1,14 @@
-﻿import React, { memo, useState } from 'react';
+﻿import React, { memo } from 'react';
 import { User } from '../types';
 import SafeImage from './SafeImage';
-import UserProfileModal from './UserProfileModal';
 
 interface UserListProps {
   users: User[];
   currentUserId?: string;
   isMobileView?: boolean;
-  onLoginWithDiscord?: () => void;
 }
 
-const UserItem: React.FC<{ user: User; isCurrentUser?: boolean; onClick?: () => void }> = memo(({ user, isCurrentUser, onClick }) => {
+const UserItem: React.FC<{ user: User; isCurrentUser?: boolean }> = memo(({ user, isCurrentUser }) => {
   // Determinar si el usuario est├í offline
   const isOffline = user.online === false || user.status === 'offline';
   
@@ -19,7 +17,6 @@ const UserItem: React.FC<{ user: User; isCurrentUser?: boolean; onClick?: () => 
       className={`flex items-center py-1.5 px-2 hover:bg-discord-hover rounded cursor-pointer group opacity-90 hover:opacity-100 ${
         isCurrentUser ? 'bg-discord-hover/50 border border-discord-blurple/30' : ''
       }`}
-      onClick={onClick}
     >
       <div className="relative mr-3">
         <SafeImage 
@@ -57,10 +54,7 @@ const UserItem: React.FC<{ user: User; isCurrentUser?: boolean; onClick?: () => 
 
 UserItem.displayName = 'UserItem';
 
-const UserList: React.FC<UserListProps> = memo(({ users, currentUserId, isMobileView = false, onLoginWithDiscord }) => {
-  const [showProfileModal, setShowProfileModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-
+const UserList: React.FC<UserListProps> = memo(({ users, currentUserId, isMobileView = false }) => {
   // Filtrar usuarios por estado de conexi├│n (incluir usuario actual)
   const onlineUsers = users.filter(u => {
     if (u.isBot) return false;
@@ -76,71 +70,42 @@ const UserList: React.FC<UserListProps> = memo(({ users, currentUserId, isMobile
     return (u.online === false || u.status === 'offline');
   });
 
-  const handleUserClick = (user: User) => {
-    // Solo mostrar modal si es el usuario actual
-    if (user.id === currentUserId) {
-      setSelectedUser(user);
-      setShowProfileModal(true);
-    }
-  };
-
-  const handleLoginWithDiscord = () => {
-    setShowProfileModal(false);
-    if (onLoginWithDiscord) {
-      onLoginWithDiscord();
-    }
-  };
-
   return (
-    <>
-      <div className={`${
-        isMobileView 
-          ? 'w-full bg-discord-dark h-full' 
-          : 'w-60 bg-discord-sidebar shrink-0 hidden lg:flex'
-      } flex flex-col p-3 overflow-y-auto custom-scrollbar border-l border-gray-900/20`}>
-         {/* Online Category */}
-         <div className="mb-6">
-           <h2 className="text-xs font-bold text-discord-text-muted uppercase mb-2 px-2">Disponible ÔÇö {onlineUsers.length}</h2>
-           {onlineUsers.map(user => (
-             <UserItem 
-               key={user.id} 
-               user={user} 
-               isCurrentUser={user.id === currentUserId}
-               onClick={() => handleUserClick(user)}
-             />
-           ))}
-         </div>
+    <div className={`${
+      isMobileView 
+        ? 'w-full bg-discord-dark h-full' 
+        : 'w-60 bg-discord-sidebar shrink-0 hidden lg:flex'
+    } flex flex-col p-3 overflow-y-auto custom-scrollbar border-l border-gray-900/20`}>
+       {/* Online Category */}
+       <div className="mb-6">
+         <h2 className="text-xs font-bold text-discord-text-muted uppercase mb-2 px-2">Disponible ÔÇö {onlineUsers.length}</h2>
+         {onlineUsers.map(user => (
+           <UserItem 
+             key={user.id} 
+             user={user} 
+             isCurrentUser={user.id === currentUserId}
+           />
+         ))}
+       </div>
 
-         {/* Bots Category */}
-         <div className="mb-6">
-           <h2 className="text-xs font-bold text-discord-text-muted uppercase mb-2 px-2">Bots ÔÇö {bots.length}</h2>
-           {bots.map(user => <UserItem key={user.id} user={user} />)}
-         </div>
+       {/* Bots Category */}
+       <div className="mb-6">
+         <h2 className="text-xs font-bold text-discord-text-muted uppercase mb-2 px-2">Bots ÔÇö {bots.length}</h2>
+         {bots.map(user => <UserItem key={user.id} user={user} />)}
+       </div>
 
-         {/* Offline Category */}
-         <div>
-           <h2 className="text-xs font-bold text-discord-text-muted uppercase mb-2 px-2">Desconectado ÔÇö {offlineUsers.length}</h2>
-           {offlineUsers.map(user => (
-             <UserItem 
-               key={user.id} 
-               user={user}
-               isCurrentUser={user.id === currentUserId}
-               onClick={() => handleUserClick(user)}
-             />
-           ))}
-         </div>
-      </div>
-
-      {/* User Profile Modal */}
-      {selectedUser && (
-        <UserProfileModal
-          isOpen={showProfileModal}
-          onClose={() => setShowProfileModal(false)}
-          user={selectedUser}
-          onLoginWithDiscord={handleLoginWithDiscord}
-        />
-      )}
-    </>
+       {/* Offline Category */}
+       <div>
+         <h2 className="text-xs font-bold text-discord-text-muted uppercase mb-2 px-2">Desconectado ÔÇö {offlineUsers.length}</h2>
+         {offlineUsers.map(user => (
+           <UserItem 
+             key={user.id} 
+             user={user}
+             isCurrentUser={user.id === currentUserId}
+           />
+         ))}
+       </div>
+    </div>
   );
 });
 
