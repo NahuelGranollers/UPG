@@ -335,9 +335,9 @@ function App() {
       }
     });
 
-    // Ô£à Usuario se desconect├│ (cambiar a offline, no eliminar)
+    // ✅ Usuario se desconectó (cambiar a offline, no eliminar)
     socket.on('user:offline', ({ userId, username }: { userId: string; username: string }) => {
-      console.log('ÔÜ½ Usuario offline:', username);
+      console.log('⚫ Usuario offline:', username);
       setDiscoveredUsers(prev => {
         const index = prev.findIndex(u => u.id === userId);
         if (index !== -1) {
@@ -347,6 +347,12 @@ function App() {
         }
         return prev;
       });
+    });
+
+    // ✅ Usuario invitado eliminado completamente (no mantener en lista)
+    socket.on('user:removed', ({ userId, username }: { userId: string; username: string }) => {
+      console.log('🗑️ Usuario invitado eliminado:', username);
+      setDiscoveredUsers(prev => prev.filter(u => u.id !== userId));
     });
 
     // Historial de mensajes del canal
