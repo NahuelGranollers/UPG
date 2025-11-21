@@ -59,11 +59,16 @@ function App() {
     description: 'Chat general' 
   });
   const [currentUser, setCurrentUser] = useState<User>(() => {
+    console.log('🔍 [DEBUG] Inicializando currentUser...');
     const saved = storage.loadUserData();
+    console.log('🔍 [DEBUG] Usuario guardado en localStorage:', saved);
+    
     if (saved && saved.id && !saved.username.startsWith('Guest')) {
       // Usuario de Discord guardado
+      console.log('✅ [DEBUG] Usuario Discord detectado en localStorage:', saved.username);
       return { ...saved, online: true, status: 'online' };
     }
+    
     // Usuario invitado por defecto
     const randomId = Math.floor(Math.random() * 10000).toString();
     const guestUser = {
@@ -75,6 +80,7 @@ function App() {
       color: '#808080',
       isGuest: true
     };
+    console.log('👤 [DEBUG] Usuario invitado creado:', guestUser);
     storage.saveUserData(guestUser);
     return guestUser;
   });
@@ -103,12 +109,18 @@ function App() {
   // Check Discord Authentication
   useEffect(() => {
     const checkAuth = async () => {
+      console.log('🔍 [DEBUG] === INICIANDO checkAuth() ===');
+      console.log('🔍 [DEBUG] URL actual:', window.location.href);
+      console.log('🔍 [DEBUG] API_URL:', API_URL);
+      
       try {
         // Verificar si viene del callback de Discord
         const urlParams = new URLSearchParams(window.location.search);
         const authStatus = urlParams.get('auth');
         const errorCode = urlParams.get('error_code');
         const errorDescription = urlParams.get('error_description');
+        
+        console.log('🔍 [DEBUG] URL Params:', { authStatus, errorCode, errorDescription });
         
         // Handle OAuth errors from backend
         if (authStatus === 'error') {
@@ -119,18 +131,24 @@ function App() {
         }
         
         if (authStatus === 'success') {
-          console.log('✅ Received Discord OAuth callback, fetching user from backend...');
+          console.log('✅ [DEBUG] Discord OAuth callback detectado');
+          console.log('🔍 [DEBUG] Limpiando URL...');
           window.history.replaceState({}, document.title, '/');
+          console.log('🔍 [DEBUG] URL limpiada:', window.location.href);
           
           // Consultar al backend por el usuario de Discord
+          console.log('🔍 [DEBUG] Consultando backend en:', `${API_URL}/auth/user`);
           const response = await fetch(`${API_URL}/auth/user`, {
             credentials: 'include',
             headers: { 'Accept': 'application/json' }
           });
+          
+          console.log('🔍 [DEBUG] Response status:', response.status);
+          console.log('🔍 [DEBUG] Response headers:', Object.fromEntries(response.headers.entries()));
 
           if (response.ok) {
             const discordUser = await response.json();
-            console.log('✅ Discord user session found:', discordUser);
+            console.log('✅ [DEBUG] Discord user session encontrada:', discordUser);
             
             // Crear User desde Discord
             const newUser: User = {
@@ -144,23 +162,48 @@ function App() {
               color: '#5865F2',
               isGuest: false
             };
-
+            
+            console.log('👤 [DEBUG] Usuario Discord creado:', newUser);
+            console.log('💾 [DEBUG] Guardando en localStorage...');
+            
             setCurrentUser(newUser);
             storage.saveUserData(newUser);
             setIsDiscordUser(true);
-            console.log('✅ Usuario Discord autenticado:', newUser.username);
+            
+            console.log('✅ [DEBUG] Usuario Discord autenticado completamente:', newUser.username);
+            console.log('🔍 [DEBUG] Estado actualizado - isDiscordUser: true');
             return;
+          } else {
+            console.error('❌ [DEBUG] Response NO OK:', response.status, response.statusText);
+            const errorText = await response.text();
+            console.error('❌ [DEBUG] Response body:', errorText);
           }
         }
         
         // Verificar si hay usuario de Discord guardado localmente
+        console.log('🔍 [DEBUG] Verificando usuario en localStorage...');
         const savedUser = storage.loadUserData();
+        console.log('🔍 [DEBUG] Usuario en localStorage:', savedUser);
+        
         if (savedUser && savedUser.id && !savedUser.username.startsWith('Invitado') && !savedUser.id.startsWith('guest-')) {
-          console.log('📦 Using cached Discord user from localStorage:', savedUser.username);
+          console.log('📦 [DEBUG] Usuario Discord cacheado encontrado:', savedUser.username);
+          console.log('🔍 [DEBUG] Verificaciones:', {
+            hasId: !!savedUser.id,
+            notStartsWithInvitado: !savedUser.username.startsWith('Invitado'),
+            notStartsWithGuest: !savedUser.id.startsWith('guest-'),
+            isGuest: savedUser.isGuest
+          });
           setCurrentUser(savedUser);
           setIsDiscordUser(true);
+          console.log('✅ [DEBUG] Usuario Discord restaurado desde caché');
         } else {
-          console.log('👤 Entrando como invitado');
+          console.log('👤 [DEBUG] No hay usuario Discord, entrando como invitado');
+          console.log('🔍 [DEBUG] Razón:', {
+            noSavedUser: !savedUser,
+            noId: savedUser && !savedUser.id,
+            startsWithInvitado: savedUser && savedUser.username.startsWith('Invitado'),
+            startsWithGuest: savedUser && savedUser.id.startsWith('guest-')
+          });
           setIsDiscordUser(false);
         }
       } catch (error) {
@@ -177,15 +220,30 @@ function App() {
 
   // Socket.IO Connection - ACTUALIZADO CON GESTIÓN DE USUARIOS
   useEffect(() => {
-    if (!isAuthenticated || !currentUser) return;
+    console.log('🔍 [DEBUG] === useEffect Socket.IO ejecutado ===');
+    console.log('🔍 [DEBUG] isAuthenticated:', isAuthenticated);
+    console.log('🔍 [DEBUG] currentUser:', currentUser);
+    
+    if (!isAuthenticated || !currentUser) {
+      console.log('⚠️ [DEBUG] Socket.IO no se conectará - Falta autenticación o usuario');
+      return;
+    }
+    
+    console.log('🔌 [DEBUG] Iniciando conexión Socket.IO...');
 
     // Si el socket ya existe (creado en autenticación), reutilizarlo
     // Si no, crearlo ahora
     let socket = socketRef.current;
     if (!socket) {
+      console.log('🔌 [DEBUG] Creando nueva instancia Socket.IO...');
+      console.log('🔍 [DEBUG] SOCKET_URL:', SOCKET_URL);
+      console.log('🔍 [DEBUG] SOCKET_CONFIG:', SOCKET_CONFIG);
       socket = io(SOCKET_URL, SOCKET_CONFIG);
       socketRef.current = socket;
       (window as any).socketInstance = socket;
+      console.log('✅ [DEBUG] Socket.IO instancia creada');
+    } else {
+      console.log('♻️ [DEBUG] Reutilizando instancia Socket.IO existente');
     }
 
     // Remover todos los listeners anteriores para evitar duplicados
@@ -193,19 +251,25 @@ function App() {
 
     // ✅ Conexión establecida
     socket.on('connect', () => {
-      console.log('🔌 Conectado a Socket.IO - ID:', socket.id);
+      console.log('🔌 [DEBUG] === SOCKET CONECTADO ===');
+      console.log('🔍 [DEBUG] Socket ID:', socket.id);
+      console.log('🔍 [DEBUG] Usuario actual:', currentUser);
       setIsConnected(true);
 
       // Registrar usuario inmediatamente
-      socket.emit('user:join', {
+      const userJoinData = {
         ...currentUser,
         socketId: socket.id
-      });
+      };
+      console.log('📤 [DEBUG] Emitiendo user:join con:', userJoinData);
+      socket.emit('user:join', userJoinData);
 
       // Solicitar lista de usuarios conectados
+      console.log('📤 [DEBUG] Solicitando lista de usuarios (users:request)');
       socket.emit('users:request');
 
       // Unirse a canal actual
+      console.log('📤 [DEBUG] Uniéndose a canal:', currentChannel.id);
       socket.emit('channel:join', { channelId: currentChannel.id, userId: currentUser.id });
     });
 
@@ -227,17 +291,25 @@ function App() {
 
     // ✅ Lista completa de usuarios (primera carga)
     socket.on('users:list', (users: User[]) => {
-      console.log('👥 Lista de usuarios recibida:', users);
+      console.log('📥 [DEBUG] === users:list recibido ===');
+      console.log('🔍 [DEBUG] Total usuarios:', users.length);
+      console.log('🔍 [DEBUG] Usuarios:', users.map(u => ({ id: u.id, username: u.username, online: u.online })));
       if (currentUser) {
-        setDiscoveredUsers(users.filter(u => u.id !== currentUser.id));
+        const filtered = users.filter(u => u.id !== currentUser.id);
+        console.log('🔍 [DEBUG] Usuarios filtrados (sin current):', filtered.length);
+        setDiscoveredUsers(filtered);
       }
     });
 
     // ✅ Actualización broadcast de usuarios
     socket.on('users:update', (users: User[]) => {
-      console.log('🔄 Usuarios actualizados:', users.length);
+      console.log('📥 [DEBUG] === users:update recibido ===');
+      console.log('🔍 [DEBUG] Total usuarios:', users.length);
+      console.log('🔍 [DEBUG] Usuarios:', users.map(u => ({ id: u.id, username: u.username, online: u.online })));
       if (currentUser) {
-        setDiscoveredUsers(users.filter(u => u.id !== currentUser.id));
+        const filtered = users.filter(u => u.id !== currentUser.id);
+        console.log('🔍 [DEBUG] Usuarios filtrados (sin current):', filtered.length);
+        setDiscoveredUsers(filtered);
       }
     });
 
@@ -372,14 +444,24 @@ function App() {
 
     // ✅ Usuario registrado confirmado por servidor (puede incluir datos recuperados)
     socket.on('user:registered', (userData: User) => {
-      console.log('✅ Registro confirmado por servidor:', userData);
+      console.log('📥 [DEBUG] === user:registered recibido ===');
+      console.log('🔍 [DEBUG] Datos del servidor:', userData);
+      console.log('🔍 [DEBUG] Usuario previo:', currentUser);
+      
       // Actualizar usuario con datos del servidor (incluye rol, etc.)
-      setCurrentUser(prev => ({
-        ...prev,
+      const updatedUser = {
+        ...currentUser,
         ...userData,
         color: userData.role === UserRole.ADMIN ? '#ff4d0a' : '#3ba55c'
-      }));
-      storage.saveUserData(userData);
+      };
+      
+      console.log('🔍 [DEBUG] Usuario actualizado:', updatedUser);
+      console.log('💾 [DEBUG] Guardando usuario actualizado...');
+      
+      setCurrentUser(updatedUser);
+      storage.saveUserData(updatedUser);
+      
+      console.log('✅ [DEBUG] Usuario registrado y guardado');
     });
 
     // ✅ Actualización de rol desde servidor

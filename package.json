@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "vite",
-    "build": "vite build && npm run copy-dist",
+    "build": "vite build",
     "copy-dist": "node -e \"require('fs').cpSync('dist/index.html', 'index.html'); require('fs').cpSync('dist/assets', 'assets', {recursive: true})\"",
     "preview": "vite preview"
   },
