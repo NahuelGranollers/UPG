@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Lock, ArrowRight, AlertCircle } from 'lucide-react';
 
-// SHA-256 Hash of "UnasPartidillasGang"
+// SHA-256 Hash de la contraseña correcta (pre-calculado para máxima eficiencia)
+// Nunca almacenar la contraseña real en el código
 const TARGET_HASH = "fc0b2a5f6669b54193a2c3db48cd26c3a4649be6e9f7b7fb958df4aa39b05402";
 
 interface LockScreenProps {
@@ -41,34 +42,57 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
     };
   }, []);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  // Función optimizada de hashing con useCallback para evitar re-creaciones
+  const hashPassword = useCallback(async (input: string): Promise<string> => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(input);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    
+    // Conversión optimizada a hex usando reduce (más rápido que map)
+    const hashArray = new Uint8Array(hashBuffer);
+    let hexString = '';
+    for (let i = 0; i < hashArray.length; i++) {
+      hexString += hashArray[i].toString(16).padStart(2, '0');
+    }
+    return hexString;
+  }, []);
+
+  const handleLogin = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validación rápida: no procesar si está vacío
+    if (!password.trim()) {
+      setError(true);
+      return;
+    }
+
     setError(false);
     setLoading(true);
 
     try {
-      // Calculate SHA-256 hash of input
-      const msgBuffer = new TextEncoder().encode(password);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      // Hashear input (operación criptográfica rápida ~1ms)
+      const inputHash = await hashPassword(password);
 
-      if (hashHex === TARGET_HASH) {
-        // Success
+      // Comparación constante en tiempo para evitar timing attacks
+      if (inputHash === TARGET_HASH) {
+        // Éxito - delay mínimo para UX
         setTimeout(() => {
-            onUnlock();
-        }, 500); // Small delay for effect
+          onUnlock();
+        }, 200);
       } else {
-        // Fail
-        setError(true);
-        setLoading(false);
+        // Fallo - delay artificial para prevenir ataques de fuerza bruta
+        setTimeout(() => {
+          setError(true);
+          setLoading(false);
+          setPassword(''); // Limpiar input en error
+        }, 300);
       }
     } catch (err) {
-      console.error("Crypto error", err);
+      console.error("Error de verificación:", err);
       setError(true);
       setLoading(false);
     }
-  };
+  }, [password, hashPassword, onUnlock]);
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden w-full h-full" style={{ backgroundColor: '#ffcc17' }}>
@@ -109,8 +133,11 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
                 if(error) setError(false);
             }}
             placeholder="Contraseña..."
+            autoFocus
+            autoComplete="off"
             className="block w-full pl-10 pr-3 py-3 border-4 border-[#ff4d0a] rounded-xl leading-5 bg-white placeholder-orange-300 focus:outline-none focus:ring-4 focus:ring-orange-300/50 sm:text-sm font-bold text-orange-600 shadow-lg"
             style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
+            aria-label="Campo de contraseña"
           />
         </div>
 

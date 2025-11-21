@@ -16,6 +16,11 @@ dist-ssr
 .env.*.local
 .env.server
 
+# Password hash generators (por seguridad)
+generateHash.js
+hash.js
+password*.js
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
