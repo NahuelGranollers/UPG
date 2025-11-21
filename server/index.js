@@ -832,11 +832,11 @@ io.on("connection", (socket) => {
             
             // Limpiar respuesta (remover el prompt original)
             botResponse = botResponse
-              .replace(/Eres un bot agresivo.*Usuario:/gi, '')
-              .replace(/Usuario:.*\nUPG Bot \(respuesta agresiva\):/gi, '')
+              .replace(/Eres un bot español.*Usuario:/gi, '')
+              .replace(/Usuario:.*\nUPG Bot \(respuesta agresiva en español\):/gi, '')
               .replace(/Usuario:/gi, '')
               .replace(/UPG Bot:/gi, '')
-              .replace(/UPG Bot \(respuesta agresiva\):/gi, '')
+              .replace(/UPG Bot \(respuesta agresiva en español\):/gi, '')
               .trim();
 
             // Limitar longitud
@@ -847,27 +847,28 @@ io.on("connection", (socket) => {
             // Si la respuesta está vacía o es muy corta, usar fallback agresivo
             if (botResponse.length < 3) {
               const aggressiveResponses = [
-                '¿En serio me molestas para eso? 🙄 Piensa un poco, anda.',
-                'Tch... ¿no tienes nada mejor que hacer? 😤',
-                'Qué pregunta más tonta, hermano. Usa el cerebro. 🧠',
-                'Otro más que no sabe ni preguntar bien... 🤦',
-                '¿Y yo qué sé? ¿Parezco Google o qué? 😒',
-                'Bah, ni me dan ganas de responderte. Siguiente. ➡️',
-                '¿De verdad esperabas una respuesta seria? Qué ingenuo... 😏'
+                '¿En serio me molestas para esa mierda, tío? 🙄 Piensa un poco, coño.',
+                'Joder... ¿no tienes nada mejor que hacer, pringao? 😤',
+                'Qué pregunta más gilipollas, macho. Usa el cerebro. 🧠',
+                'Otro retrasado que no sabe ni preguntar bien... 🤦',
+                '¿Y yo qué cojones sé? ¿Parezco Google o qué, capullo? 😒',
+                'Bah, ni me dan ganas de responderte, maricón. Siguiente. ➡️',
+                '¿De verdad esperabas una respuesta seria, subnormal? Qué ingenuo... 😏'
               ];
               botResponse = aggressiveResponses[Math.floor(Math.random() * aggressiveResponses.length)];
             }
             
-            // Añadir insulto aleatorio ocasionalmente (30% de probabilidad)
-            if (Math.random() < 0.3) {
+            // Añadir insulto aleatorio ocasionalmente (40% de probabilidad)
+            if (Math.random() < 0.4) {
               const insults = [
-                ' Noob.',
-                ' Crack. 🤡',
-                ' Genio. (sarcasmo)',
-                ' Einstein Jr.',
-                ' Menudo lumbreras.',
-                ' Qué pro eres... NOT. 🙃',
-                ' Pedazo de n00b.'
+                ' Gilipollas.',
+                ' Retrasado. 🤡',
+                ' Maricón.',
+                ' Subnormal.',
+                ' Menudo pringao.',
+                ' Imbécil.',
+                ' Pedazo de capullo.',
+                ' Hijo de puta.'
               ];
               botResponse += insults[Math.floor(Math.random() * insults.length)];
             }
@@ -894,11 +895,11 @@ io.on("connection", (socket) => {
           } else {
             // Fallback si la API falla (versión agresiva)
             const aggressiveFallbacks = [
-              'Agh, la API está caída. ¿Ves lo que me obligas a hacer? 🤬',
-              'Genial, justo cuando me necesitas fallo. Típico. 😒',
-              'Error 404: No me importa tu pregunta. (Mentira, es la API que falló) 🙃',
-              'Tch... problemas técnicos. Vuelve cuando no sea un desastre, ¿vale? 💢',
-              'La API me dejó plantado. Como tú a tu ex, seguramente. 😏'
+              'Agh, la API está caída, joder. ¿Ves lo que me obligas a hacer, gilipollas? 🤬',
+              'Genial, justo cuando me necesitas fallo. Típico, tío. 😒',
+              'Error 404: Me la suda tu pregunta. (Mentira, es la API que falló) 🙃',
+              'Coño... problemas técnicos. Vuelve cuando no sea un desastre, capullo. 💢',
+              'La API me dejó plantado, maricón. Como tú a tu ex, seguramente. 😏'
             ];
             const fallbackMessage = {
               id: Date.now().toString() + Math.random().toString(36).substring(2, 5),
@@ -920,11 +921,11 @@ io.on("connection", (socket) => {
         logger.error('Error en bot de IA:', error);
         // Enviar respuesta de error agresiva
         const aggressiveErrors = [
-          '😤 Uff, me hiciste crashear con tu pregunta estúpida. Bien hecho.',
-          '🤦 Error fatal causado por tu mensaje. ¿Contento ahora?',
-          '💢 Mi cerebro acaba de explotar intentando entender tu lógica. GG.',
-          '😒 Hubo un error. Probablemente culpa tuya por preguntar tonterías.',
-          '🙄 Sistema caído. Es lo que pasa cuando me molestas con boludeces.'
+          '😤 Uff, me hiciste petar con tu pregunta de mierda, retrasado. Bien hecho.',
+          '🤦 Error fatal causado por tu mensaje, gilipollas. ¿Contento ahora?',
+          '💢 Mi cerebro acaba de explotar intentando entender tu lógica de subnormal. GG.',
+          '😒 Hubo un error, tío. Probablemente culpa tuya por preguntar gilipolleces.',
+          '🙄 Sistema caído, joder. Es lo que pasa cuando me molestas con mierdas, capullo.'
         ];
         const errorMessage = {
           id: Date.now().toString() + Math.random().toString(36).substring(2, 5),
