@@ -9,7 +9,6 @@ import UserList from './components/UserList';
 import WhoWeAre from './components/WhoWeAre';
 import Voting from './components/Voting';
 import LockScreen from './components/LockScreen';
-import DiscordLogin from './components/DiscordLogin';
 import ErrorBoundary from './components/ErrorBoundary';
 import MobileTabBar from './components/MobileTabBar';
 
