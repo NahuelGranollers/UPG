@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && npm run copy-dist",
+    "copy-dist": "powershell -Command \"Copy-Item -Path dist/index.html -Destination . -Force; Copy-Item -Path dist/assets -Destination . -Recurse -Force\"",
     "preview": "vite preview"
   },
   "dependencies": {
