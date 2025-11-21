@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Hash, Volume2, ChevronDown, Vote, Users, Mic, HeadphoneOff, Settings } from 'lucide-react';
 import { AppView, User } from '../types';
 import { ChannelData } from '../App';
@@ -218,4 +218,4 @@ const ChannelList: React.FC<ChannelListProps> = ({
   );
 };
 
-export default ChannelList;
+export default memo(ChannelList);

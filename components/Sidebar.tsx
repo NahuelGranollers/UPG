@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Home, Plus, Compass, Download } from 'lucide-react';
 import SafeImage from './SafeImage';
 
-const Sidebar: React.FC = () => {
+const Sidebar: React.FC = memo(() => {
   return (
     <div className="w-[72px] bg-discord-dark flex flex-col items-center py-3 space-y-2 overflow-y-auto shrink-0">
       {/* Direct Messages / Home */}
@@ -39,6 +39,8 @@ const Sidebar: React.FC = () => {
       </button>
     </div>
   );
-};
+});
+
+Sidebar.displayName = 'Sidebar';
 
 export default Sidebar;

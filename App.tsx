@@ -13,6 +13,7 @@ import UserSetup from './components/UserSetup';
 import ErrorBoundary from './components/ErrorBoundary';
 
 import { User, AppView, Message, UserRole } from './types';
+import * as storage from './utils/storageService';
 
 // Bot siempre presente
 const BOT_USER: User = {
@@ -119,8 +120,7 @@ function App() {
 
   // Check Authentication y crear socket temprano
   useEffect(() => {
-    const auth = localStorage.getItem('upg_access_token');
-    if (auth === 'granted') {
+    if (storage.isAuthenticated()) {
       setIsAuthenticated(true);
       
       // Crear socket inmediatamente después de autenticar
@@ -139,18 +139,11 @@ function App() {
   }, []);
 
   const handleUnlock = useCallback(() => {
-    localStorage.setItem('upg_access_token', 'granted');
+    storage.setAuthentication(true);
     setIsAuthenticated(true);
     
-    // Verificar si el usuario ya tiene datos en cookies
-    const cookies = document.cookie.split('; ').reduce((acc, cookie) => {
-      const [key, value] = cookie.split('=');
-      acc[key] = value;
-      return acc;
-    }, {} as Record<string, string>);
-
-    // Si no hay username en cookies, mostrar setup
-    if (!cookies.upg_username) {
+    // Si no hay datos de usuario guardados, mostrar setup
+    if (!storage.hasUserData()) {
       setShowUserSetup(true);
     }
   }, []);
@@ -158,33 +151,18 @@ function App() {
   const handleUserSetupComplete = useCallback((username: string, avatar: string) => {
     const userId = `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     
-    // El rol será asignado por el servidor según la IP
-    // Inicialmente se guarda como USER, el servidor lo actualizará
-    const role = UserRole.USER;
-    
-    // Guardar en cookies (30 días de expiración)
-    const expirationDays = 30;
-    const date = new Date();
-    date.setTime(date.getTime() + (expirationDays * 24 * 60 * 60 * 1000));
-    const expires = `expires=${date.toUTCString()}`;
-    
-    document.cookie = `upg_user_id=${userId}; ${expires}; path=/`;
-    document.cookie = `upg_username=${encodeURIComponent(username)}; ${expires}; path=/`;
-    document.cookie = `upg_avatar=${encodeURIComponent(avatar)}; ${expires}; path=/`;
-    document.cookie = `upg_role=${role}; ${expires}; path=/`;
-    
-    // Actualizar estado del usuario
     const newUser: User = {
       id: userId,
       username,
       avatar,
       status: 'online',
-      color: '#3ba55c', // El color se actualizará cuando el servidor confirme el rol
-      role
+      color: '#3ba55c',
+      role: UserRole.USER // El servidor actualizará el rol según IP
     };
     
+    // Usar servicio de storage centralizado
+    storage.saveUserData(newUser);
     setCurrentUser(newUser);
-    localStorage.setItem('upg_current_user', JSON.stringify(newUser));
     setShowUserSetup(false);
   }, []);
 
@@ -319,20 +297,13 @@ function App() {
 
     socket.on('banned', ({ reason }: { reason: string }) => {
       alert(`Has sido baneado del servidor.\nRazón: ${reason}`);
-      localStorage.removeItem('upg_access_token');
-      localStorage.removeItem('upg_current_user');
-      document.cookie.split(";").forEach(c => {
-        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-      });
+      storage.clearUserData();
       window.location.reload();
     });
 
     socket.on('username:taken', ({ message }: { message: string }) => {
       alert(message);
-      localStorage.removeItem('upg_current_user');
-      document.cookie.split(";").forEach(c => {
-        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-      });
+      storage.clearUserData();
       setShowUserSetup(true);
     });
 
@@ -346,15 +317,9 @@ function App() {
           color: isAdmin ? '#ff4d0a' : '#3ba55c'
         };
         
-        // Actualizar cookies
-        const expirationDays = 30;
-        const date = new Date();
-        date.setTime(date.getTime() + (expirationDays * 24 * 60 * 60 * 1000));
-        const expires = `expires=${date.toUTCString()}`;
-        document.cookie = `upg_role=${role}; ${expires}; path=/`;
-        
-        // Actualizar localStorage
-        localStorage.setItem('upg_current_user', JSON.stringify(updated));
+        // Actualizar usando servicio de storage
+        storage.updateUserRole(role);
+        storage.saveUserData(updated);
         
         return updated;
       });
@@ -365,6 +330,23 @@ function App() {
     // Error de conexión
     socket.on('connect_error', (error) => {
       console.error('❌ Error de conexión:', error.message);
+    });
+
+    // ✅ Heartbeat system - Responder a pings del servidor
+    socket.on('heartbeat:ping', () => {
+      socket.emit('heartbeat:pong');
+    });
+
+    // Rate limit exceeded notification
+    socket.on('rate-limit-exceeded', ({ message }: { message: string }) => {
+      console.warn('⚠️ Rate limit:', message);
+      // Podrías mostrar un toast aquí
+    });
+
+    // Message error notification
+    socket.on('message-error', ({ message }: { message: string }) => {
+      console.error('❌ Error mensaje:', message);
+      // Podrías mostrar un toast aquí
     });
 
     // Cleanup: solo remover listeners, NO desconectar el socket si se va a reutilizar
@@ -418,9 +400,9 @@ function App() {
     });
   }, [activeVoiceChannel, currentUser.id, isAuthenticated]);
 
-  // Persistir usuario actual en localStorage
+  // Persistir usuario actual usando servicio de storage
   useEffect(() => {
-    localStorage.setItem('upg_current_user', JSON.stringify(currentUser));
+    storage.saveUserData(currentUser);
   }, [currentUser]);
 
   // Memoizar lista de todos los usuarios
