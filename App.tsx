@@ -98,14 +98,15 @@ function App() {
 
   // Check Discord Authentication
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkAuth = () => {
       try {
-        const response = await fetch(`${API_URL}/auth/user`, {
-          credentials: 'include' // Importante para enviar cookies de sesión
-        });
-
-        if (response.ok) {
-          const discordUser = await response.json();
+        // Verificar si viene de Discord OAuth callback con datos de usuario
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('auth') === 'success' && urlParams.get('user')) {
+          // Decodificar datos del usuario desde la URL
+          const userDataEncoded = urlParams.get('user')!;
+          const userDataString = atob(userDataEncoded);
+          const discordUser = JSON.parse(userDataString);
           
           // Crear User desde Discord
           const newUser: User = {
@@ -122,8 +123,18 @@ function App() {
           setCurrentUser(newUser);
           storage.saveUserData(newUser);
           setIsAuthenticated(true);
+          
+          // Limpiar URL
+          window.history.replaceState({}, document.title, '/');
         } else {
-          setIsAuthenticated(false);
+          // Verificar si hay usuario guardado localmente
+          const savedUser = storage.loadUserData();
+          if (savedUser && !savedUser.username.startsWith('Guest')) {
+            setCurrentUser(savedUser);
+            setIsAuthenticated(true);
+          } else {
+            setIsAuthenticated(false);
+          }
         }
       } catch (error) {
         console.error('Error checking auth:', error);
@@ -133,16 +144,8 @@ function App() {
       }
     };
 
-    // Verificar si viene de Discord OAuth callback
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('auth') === 'success') {
-      // Limpiar URL
-      window.history.replaceState({}, document.title, '/');
-      checkAuth();
-    } else {
-      checkAuth();
-    }
-  }, [API_URL]);
+    checkAuth();
+  }, []);
 
   const handleUnlock = useCallback(() => {
     // Esta función ya no se usa con Discord OAuth
