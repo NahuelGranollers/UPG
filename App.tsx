@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+﻿import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-// Componentes básicos, puedes adaptar la importación
+// Componentes b├ísicos, puedes adaptar la importaci├│n
 import Sidebar from './components/Sidebar';
 import ChannelList from './components/ChannelList';
 import ChatInterface from './components/ChatInterface';
@@ -9,6 +9,7 @@ import UserList from './components/UserList';
 import WhoWeAre from './components/WhoWeAre';
 import Voting from './components/Voting';
 import LockScreen from './components/LockScreen';
+import DiscordLogin from './components/DiscordLogin';
 import ErrorBoundary from './components/ErrorBoundary';
 import MobileTabBar from './components/MobileTabBar';
 
@@ -60,11 +61,11 @@ function App() {
   });
   const [currentUser, setCurrentUser] = useState<User>(() => {
     const saved = storage.loadUserData();
-    
     if (saved && saved.id && !saved.username.startsWith('Guest')) {
+      // Usuario de Discord guardado
       return { ...saved, online: true, status: 'online' };
     }
-    
+    // Usuario invitado por defecto
     const randomId = Math.floor(Math.random() * 10000).toString();
     const guestUser = {
       id: `guest-${randomId}`,
@@ -95,7 +96,7 @@ function App() {
   // useRef para mantener referencia estable del socket
   const socketRef = useRef<Socket | null>(null);
 
-  // Usar producción por defecto, localhost solo en desarrollo
+  // Usar producci├│n por defecto, localhost solo en desarrollo
   const API_URL = import.meta.env.DEV 
     ? 'http://localhost:3000'
     : 'https://mensajeria-ksc7.onrender.com';
@@ -104,6 +105,7 @@ function App() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Verificar si viene del callback de Discord
         const urlParams = new URLSearchParams(window.location.search);
         const authStatus = urlParams.get('auth');
         const errorCode = urlParams.get('error_code');
@@ -111,15 +113,17 @@ function App() {
         
         // Handle OAuth errors from backend
         if (authStatus === 'error') {
-          console.error('❌ Discord OAuth error:', errorCode, errorDescription);
-          alert(`Error de autenticación: ${decodeURIComponent(errorDescription || 'Error desconocido')}`);
+          console.error('ÔØî Discord OAuth error:', errorCode, errorDescription);
+          alert(`Error de autenticaci├│n: ${decodeURIComponent(errorDescription || 'Error desconocido')}`);
           window.history.replaceState({}, document.title, '/');
           return;
         }
         
         if (authStatus === 'success') {
+          console.log('Ô£à Received Discord OAuth callback, fetching user from backend...');
           window.history.replaceState({}, document.title, '/');
           
+          // Consultar al backend por el usuario de Discord
           const response = await fetch(`${API_URL}/auth/user`, {
             credentials: 'include',
             headers: { 'Accept': 'application/json' }
@@ -127,7 +131,9 @@ function App() {
 
           if (response.ok) {
             const discordUser = await response.json();
+            console.log('Ô£à Discord user session found:', discordUser);
             
+            // Crear User desde Discord
             const newUser: User = {
               id: discordUser.id,
               username: discordUser.username,
@@ -139,23 +145,27 @@ function App() {
               color: '#5865F2',
               isGuest: false
             };
-            
+
             setCurrentUser(newUser);
             storage.saveUserData(newUser);
             setIsDiscordUser(true);
+            console.log('Ô£à Usuario Discord autenticado:', newUser.username);
             return;
           }
         }
         
+        // Verificar si hay usuario de Discord guardado localmente
         const savedUser = storage.loadUserData();
         if (savedUser && savedUser.id && !savedUser.username.startsWith('Invitado') && !savedUser.id.startsWith('guest-')) {
+          console.log('­ƒôª Using cached Discord user from localStorage:', savedUser.username);
           setCurrentUser(savedUser);
           setIsDiscordUser(true);
         } else {
+          console.log('­ƒæñ Entrando como invitado');
           setIsDiscordUser(false);
         }
       } catch (error) {
-        console.error('❌ Error checking auth:', error);
+        console.error('ÔØî Error checking auth:', error);
       }
     };
 
@@ -166,10 +176,12 @@ function App() {
     storage.setAuthentication(true);
   }, []);
 
-  // Socket.IO Connection
+  // Socket.IO Connection - ACTUALIZADO CON GESTI├ôN DE USUARIOS
   useEffect(() => {
     if (!isAuthenticated || !currentUser) return;
 
+    // Si el socket ya existe (creado en autenticaci├│n), reutilizarlo
+    // Si no, crearlo ahora
     let socket = socketRef.current;
     if (!socket) {
       socket = io(SOCKET_URL, SOCKET_CONFIG);
@@ -180,22 +192,33 @@ function App() {
     // Remover todos los listeners anteriores para evitar duplicados
     socket.removeAllListeners();
 
+    // Ô£à Conexi├│n establecida
     socket.on('connect', () => {
+      console.log('­ƒöî Conectado a Socket.IO - ID:', socket.id);
       setIsConnected(true);
-      socket.emit('user:join', { ...currentUser, socketId: socket.id });
+
+      // Registrar usuario inmediatamente
+      socket.emit('user:join', {
+        ...currentUser,
+        socketId: socket.id
+      });
+
+      // Solicitar lista de usuarios conectados
       socket.emit('users:request');
+
+      // Unirse a canal actual
       socket.emit('channel:join', { channelId: currentChannel.id, userId: currentUser.id });
     });
 
-    // ✅ Desconexión
+    // Ô£à Desconexi├│n
     socket.on('disconnect', () => {
-      console.log('⛔ Desconectado de Socket.IO');
+      console.log('Ôøö Desconectado de Socket.IO');
       setIsConnected(false);
     });
 
-    // ✅ Reconexión exitosa
+    // Ô£à Reconexi├│n exitosa
     socket.on('reconnect', (attemptNumber) => {
-      console.log(`✅ Reconectado después de ${attemptNumber} intentos`);
+      console.log(`Ô£à Reconectado despu├®s de ${attemptNumber} intentos`);
       socket.emit('user:join', {
         ...currentUser,
         socketId: socket.id
@@ -203,21 +226,25 @@ function App() {
       socket.emit('users:request');
     });
 
+    // Ô£à Lista completa de usuarios (primera carga)
     socket.on('users:list', (users: User[]) => {
+      console.log('­ƒæÑ Lista de usuarios recibida:', users);
       if (currentUser) {
         setDiscoveredUsers(users.filter(u => u.id !== currentUser.id));
       }
     });
 
+    // Ô£à Actualizaci├│n broadcast de usuarios
     socket.on('users:update', (users: User[]) => {
+      console.log('­ƒöä Usuarios actualizados:', users.length);
       if (currentUser) {
         setDiscoveredUsers(users.filter(u => u.id !== currentUser.id));
       }
     });
 
-    // ✅ Usuario se conectó (cambiar a online)
+    // Ô£à Usuario se conect├│ (cambiar a online)
     socket.on('user:online', (user: User) => {
-      console.log('✅ Usuario online:', user.username);
+      console.log('Ô£à Usuario online:', user.username);
       if (currentUser && user.id !== currentUser.id) {
         setDiscoveredUsers(prev => {
           const index = prev.findIndex(u => u.id === user.id);
@@ -234,9 +261,9 @@ function App() {
       }
     });
 
-    // ✅ Usuario se desconectó (cambiar a offline, no eliminar)
+    // Ô£à Usuario se desconect├│ (cambiar a offline, no eliminar)
     socket.on('user:offline', ({ userId, username }: { userId: string; username: string }) => {
-      console.log('⚫ Usuario offline:', username);
+      console.log('ÔÜ½ Usuario offline:', username);
       setDiscoveredUsers(prev => {
         const index = prev.findIndex(u => u.id === userId);
         if (index !== -1) {
@@ -264,7 +291,7 @@ function App() {
       }));
     });
 
-    // Actualización de canales de voz
+    // Actualizaci├│n de canales de voz
     socket.on('voice:update', ({ userId, channelName, action }: { userId: string; channelName?: string; action: string }) => {
       setVoiceStates(prev => {
         const next = { ...prev };
@@ -277,7 +304,7 @@ function App() {
       });
     });
 
-    // ✅ Eventos de administrador
+    // Ô£à Eventos de administrador
     socket.on('message:deleted', ({ messageId, channelId }: { messageId: string; channelId: string }) => {
       setMessages(prev => ({
         ...prev,
@@ -293,12 +320,12 @@ function App() {
     });
 
     socket.on('user:banned', ({ userId, username }: { userId: string; username: string }) => {
-      console.log(`🔨 Usuario ${username} ha sido baneado`);
+      console.log(`­ƒö¿ Usuario ${username} ha sido baneado`);
       setDiscoveredUsers(prev => prev.filter(u => u.id !== userId));
     });
 
     socket.on('banned', ({ reason }: { reason: string }) => {
-      alert(`Has sido baneado del servidor.\nRazón: ${reason}`);
+      alert(`Has sido baneado del servidor.\nRaz├│n: ${reason}`);
       storage.clearUserData();
       window.location.reload();
     });
@@ -311,18 +338,18 @@ function App() {
     socket.on('username:taken', ({ message }: { message: string }) => {
       alert(message);
       storage.clearUserData();
-      // Con Discord OAuth, esto no debería pasar ya que los IDs son únicos
+      // Con Discord OAuth, esto no deber├¡a pasar ya que los IDs son ├║nicos
       window.location.reload();
     });
 
     // Admin events
     socket.on('admin:action-success', ({ action, message }: { action: string; message: string }) => {
-      console.log(`✅ Admin action ${action}: ${message}`);
-      alert(`✅ ${message}`);
+      console.log(`Ô£à Admin action ${action}: ${message}`);
+      alert(`Ô£à ${message}`);
     });
 
     socket.on('admin:notification', ({ message }: { message: string }) => {
-      console.log(`📢 Admin notification: ${message}`);
+      console.log(`­ƒôó Admin notification: ${message}`);
     });
 
     socket.on('admin:export-data-result', ({ data }: { data: any }) => {
@@ -336,25 +363,27 @@ function App() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      alert('✅ Backup descargado correctamente');
+      alert('Ô£à Backup descargado correctamente');
     });
 
     socket.on('server:restarting', ({ message }: { message: string }) => {
-      console.log(`🔄 ${message}`);
+      console.log(`­ƒöä ${message}`);
       alert(message);
     });
 
+    // Ô£à Usuario registrado confirmado por servidor (puede incluir datos recuperados)
     socket.on('user:registered', (userData: User) => {
-      const updatedUser = {
-        ...currentUser,
+      console.log('Ô£à Registro confirmado por servidor:', userData);
+      // Actualizar usuario con datos del servidor (incluye rol, etc.)
+      setCurrentUser(prev => ({
+        ...prev,
         ...userData,
         color: userData.role === UserRole.ADMIN ? '#ff4d0a' : '#3ba55c'
-      };
-      setCurrentUser(updatedUser);
-      storage.saveUserData(updatedUser);
+      }));
+      storage.saveUserData(userData);
     });
 
-    // ✅ Actualización de rol desde servidor
+    // Ô£à Actualizaci├│n de rol desde servidor
     socket.on('role:updated', ({ role }: { role: UserRole }) => {
       setCurrentUser(prev => {
         const isAdmin = role === UserRole.ADMIN;
@@ -371,29 +400,29 @@ function App() {
         return updated;
       });
       
-      console.log(`🛡️ Rol actualizado: ${role}`);
+      console.log(`­ƒøí´©Å Rol actualizado: ${role}`);
     });
 
-    // Error de conexión
+    // Error de conexi├│n
     socket.on('connect_error', (error) => {
-      console.error('❌ Error de conexión:', error.message);
+      console.error('ÔØî Error de conexi├│n:', error.message);
     });
 
-    // ✅ Heartbeat system - Responder a pings del servidor
+    // Ô£à Heartbeat system - Responder a pings del servidor
     socket.on('heartbeat:ping', () => {
       socket.emit('heartbeat:pong');
     });
 
     // Rate limit exceeded notification
     socket.on('rate-limit-exceeded', ({ message }: { message: string }) => {
-      console.warn('⚠️ Rate limit:', message);
-      // Podrías mostrar un toast aquí
+      console.warn('ÔÜá´©Å Rate limit:', message);
+      // Podr├¡as mostrar un toast aqu├¡
     });
 
     // Message error notification
     socket.on('message-error', ({ message }: { message: string }) => {
-      console.error('❌ Error mensaje:', message);
-      // Podrías mostrar un toast aquí
+      console.error('ÔØî Error mensaje:', message);
+      // Podr├¡as mostrar un toast aqu├¡
     });
 
     // Cleanup: solo remover listeners, NO desconectar el socket si se va a reutilizar
@@ -403,18 +432,18 @@ function App() {
       if (!isAuthenticated || !currentUser) {
         socket.disconnect();
         socketRef.current = null;
-        console.log('🔌 Socket desconectado y limpiado');
+        console.log('­ƒöî Socket desconectado y limpiado');
       }
     };
   }, [isAuthenticated, currentUser, currentChannel.id]);
 
-  // ✅ Solicitar lista de usuarios periódicamente (fallback de sincronización)
+  // Ô£à Solicitar lista de usuarios peri├│dicamente (fallback de sincronizaci├│n)
   useEffect(() => {
     if (!isConnected || !socketRef.current) return;
 
     const interval = setInterval(() => {
       socketRef.current?.emit('users:request');
-      console.log('🔄 Solicitando actualización de usuarios...');
+      console.log('­ƒöä Solicitando actualizaci├│n de usuarios...');
     }, 30000); // Cada 30 segundos
 
     return () => clearInterval(interval);
@@ -491,7 +520,7 @@ function App() {
 
   const handleSendMessage = useCallback((content: string) => {
     if (!socketRef.current || !isConnected || !currentUser) {
-      console.error('❌ Socket no conectado o usuario no disponible');
+      console.error('ÔØî Socket no conectado o usuario no disponible');
       return;
     }
 
@@ -541,7 +570,7 @@ function App() {
   // Primero verificar LockScreen
   const hasPassedLock = storage.isAuthenticated();
   
-  // Si no pasó el LockScreen, mostrarlo primero
+  // Si no pas├│ el LockScreen, mostrarlo primero
   if (!hasPassedLock) return <LockScreen onUnlock={handleUnlock} />;
 
   return (
@@ -549,7 +578,11 @@ function App() {
       <div className="flex h-screen w-full bg-discord-dark font-sans antialiased overflow-hidden relative">
         {/* Desktop Layout */}
         <div className="hidden md:flex h-full w-full">
-          <Sidebar />
+          <Sidebar 
+            currentUser={currentUser} 
+            setCurrentUser={setCurrentUser} 
+            isConnected={isConnected} 
+          />
           <ChannelList 
             activeView={activeView} 
             currentChannelId={currentChannel.id}
@@ -568,9 +601,15 @@ function App() {
                   currentUser={currentUser}
                   users={allUsers}
                   currentChannel={currentChannel}
-                  onMobileMenuClick={handleMenuToggle}
+                  onSendMessage={handleSendMessage}
+                  messages={currentChannelMessages}
+                  onMenuToggle={handleMenuToggle}
                 />
-                <UserList users={allUsers} />
+                <UserList 
+                  users={allUsers} 
+                  currentUserId={currentUser.id}
+                  onLoginWithDiscord={handleLoginWithDiscord}
+                />
               </>
             )}
             {activeView === AppView.WHO_WE_ARE && (
@@ -593,7 +632,11 @@ function App() {
             }`}
           >
             <div className="flex h-full w-full overflow-hidden">
-              <Sidebar />
+              <Sidebar 
+                currentUser={currentUser} 
+                setCurrentUser={setCurrentUser} 
+                isConnected={isConnected} 
+              />
               <ChannelList 
                 activeView={activeView} 
                 currentChannelId={currentChannel.id}
@@ -624,7 +667,9 @@ function App() {
                   currentUser={currentUser}
                   users={allUsers}
                   currentChannel={currentChannel}
-                  onMobileMenuClick={() => setMobileActiveTab('channels')}
+                  onSendMessage={handleSendMessage}
+                  messages={currentChannelMessages}
+                  onMenuToggle={() => setMobileActiveTab('channels')}
                 />
               )}
               {activeView === AppView.WHO_WE_ARE && (
@@ -645,7 +690,12 @@ function App() {
             }`}
           >
             <div className="h-full w-full overflow-hidden">
-              <UserList users={allUsers} />
+              <UserList 
+                users={allUsers} 
+                currentUserId={currentUser.id} 
+                isMobileView={true}
+                onLoginWithDiscord={handleLoginWithDiscord}
+              />
             </div>
           </div>
 

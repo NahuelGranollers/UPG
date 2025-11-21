@@ -1,8 +1,21 @@
-import React from 'react';
-import { Home, Plus, Compass } from 'lucide-react';
+﻿import React, { memo, useState } from 'react';
+import { Home, Plus, Compass, Shield } from 'lucide-react';
 import SafeImage from './SafeImage';
+import AdminPanel from './AdminPanel';
+import { UserRole } from '../types';
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+  currentUser: any;
+  setCurrentUser: (user: any) => void;
+  isConnected: boolean;
+}
+
+const Sidebar: React.FC<SidebarProps> = memo(({ currentUser, setCurrentUser, isConnected }) => {
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const isAdmin = currentUser?.role === UserRole.ADMIN;
+
+  // Get socket instance from window
+  const socket = (window as any).socketInstance;
   return (
     <div className="w-[72px] bg-discord-dark flex flex-col items-center py-3 space-y-2 overflow-y-auto shrink-0">
       {/* Direct Messages / Home */}
@@ -37,8 +50,34 @@ const Sidebar: React.FC = () => {
       <button className="w-12 h-12 bg-discord-chat text-discord-green hover:bg-discord-green hover:text-white rounded-[24px] hover:rounded-[16px] transition-all duration-200 flex items-center justify-center">
         <Compass size={24} />
       </button>
+
+      {/* Admin Panel Button - Only visible for admins */}
+      {isAdmin && (
+        <>
+          <div className="w-8 h-[2px] bg-discord-chat rounded-lg mx-auto mt-auto" />
+          <button 
+            onClick={() => setShowAdminPanel(true)}
+            className="w-12 h-12 bg-red-600 hover:bg-red-700 text-white rounded-[24px] hover:rounded-[16px] transition-all duration-200 flex items-center justify-center"
+            title="Panel de Administraci├│n"
+          >
+            <Shield size={24} />
+          </button>
+        </>
+      )}
+
+      {/* Admin Panel Modal */}
+      {isAdmin && (
+        <AdminPanel 
+          isOpen={showAdminPanel}
+          onClose={() => setShowAdminPanel(false)}
+          currentUser={currentUser}
+          socket={socket}
+        />
+      )}
     </div>
   );
-};
+});
+
+Sidebar.displayName = 'Sidebar';
 
 export default Sidebar;
