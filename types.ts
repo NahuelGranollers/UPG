@@ -17,6 +17,9 @@ export interface User {
   isBot?: boolean;
   color?: string;
   role?: UserRole;
+  online?: boolean; // Estado de conexión (true = conectado, false = registrado pero desconectado)
+  lastSeen?: string; // ISO timestamp de última conexión
+  socketId?: string; // ID de socket actual (solo si está online)
 }
 
 export interface Message {

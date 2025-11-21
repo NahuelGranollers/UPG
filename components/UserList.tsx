@@ -44,9 +44,10 @@ const UserItem: React.FC<{ user: User }> = memo(({ user }) => (
 UserItem.displayName = 'UserItem';
 
 const UserList: React.FC<UserListProps> = memo(({ users }) => {
-  const onlineUsers = users.filter(u => u.status !== 'offline' && !u.isBot);
+  // Filtrar usuarios por estado de conexión (online = true)
+  const onlineUsers = users.filter(u => u.online !== false && !u.isBot && u.status !== 'offline');
   const bots = users.filter(u => u.isBot);
-  const offlineUsers = users.filter(u => u.status === 'offline');
+  const offlineUsers = users.filter(u => (u.online === false || u.status === 'offline') && !u.isBot);
 
   return (
     <div className="w-60 bg-discord-sidebar shrink-0 flex flex-col p-3 overflow-y-auto custom-scrollbar h-full border-l border-gray-900/20 hidden lg:flex">

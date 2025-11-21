@@ -239,22 +239,37 @@ function App() {
       setDiscoveredUsers(users.filter(u => u.id !== currentUser.id));
     });
 
-    // ✅ Nuevo usuario se conectó
-    socket.on('user:joined', (user: User) => {
-      console.log('👋 Usuario conectado:', user.username);
+    // ✅ Usuario se conectó (cambiar a online)
+    socket.on('user:online', (user: User) => {
+      console.log('✅ Usuario online:', user.username);
       if (user.id !== currentUser.id) {
         setDiscoveredUsers(prev => {
-          // Evitar duplicados
-          if (prev.some(u => u.id === user.id)) return prev;
-          return [...prev, user];
+          const index = prev.findIndex(u => u.id === user.id);
+          if (index !== -1) {
+            // Usuario existe, actualizar estado a online
+            const updated = [...prev];
+            updated[index] = { ...updated[index], online: true };
+            return updated;
+          } else {
+            // Usuario nuevo, agregarlo
+            return [...prev, { ...user, online: true }];
+          }
         });
       }
     });
 
-    // ✅ Usuario se desconectó
-    socket.on('user:left', ({ userId, username }: { userId: string; username: string }) => {
-      console.log('👋 Usuario desconectado:', username);
-      setDiscoveredUsers(prev => prev.filter(u => u.id !== userId));
+    // ✅ Usuario se desconectó (cambiar a offline, no eliminar)
+    socket.on('user:offline', ({ userId, username }: { userId: string; username: string }) => {
+      console.log('⚫ Usuario offline:', username);
+      setDiscoveredUsers(prev => {
+        const index = prev.findIndex(u => u.id === userId);
+        if (index !== -1) {
+          const updated = [...prev];
+          updated[index] = { ...updated[index], online: false };
+          return updated;
+        }
+        return prev;
+      });
     });
 
     // Historial de mensajes del canal
@@ -316,6 +331,18 @@ function App() {
       alert(message);
       storage.clearUserData();
       setShowUserSetup(true);
+    });
+
+    // ✅ Usuario registrado confirmado por servidor (puede incluir datos recuperados)
+    socket.on('user:registered', (userData: User) => {
+      console.log('✅ Registro confirmado por servidor:', userData);
+      // Actualizar usuario con datos del servidor (incluye rol, etc.)
+      setCurrentUser(prev => ({
+        ...prev,
+        ...userData,
+        color: userData.role === UserRole.ADMIN ? '#ff4d0a' : '#3ba55c'
+      }));
+      storage.saveUserData(userData);
     });
 
     // ✅ Actualización de rol desde servidor
