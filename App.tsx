@@ -534,7 +534,7 @@ function App() {
         {/* Desktop Layout */}
         <div className="hidden md:flex h-full w-full">
           <Sidebar 
-            currentUser={currentUser} 
+            currentUser={safeCurrentUser} 
             setCurrentUser={setCurrentUser} 
             isConnected={isConnected} 
           />
@@ -542,7 +542,7 @@ function App() {
             activeView={activeView} 
             currentChannelId={currentChannel.id}
             onChannelSelect={handleChannelSelect}
-            currentUser={currentUser}
+            currentUser={safeCurrentUser}
             activeVoiceChannel={activeVoiceChannel}
             onVoiceJoin={handleVoiceJoin}
             voiceStates={voiceStates}
@@ -553,7 +553,7 @@ function App() {
             {activeView === AppView.CHAT && (
               <>
                 <ChatInterface
-                  currentUser={currentUser}
+                  currentUser={safeCurrentUser}
                   users={allUsers}
                   currentChannel={currentChannel}
                   onSendMessage={handleSendMessage}
@@ -584,7 +584,7 @@ function App() {
           >
             <div className="flex h-full w-full overflow-hidden">
               <Sidebar 
-                currentUser={currentUser} 
+                currentUser={safeCurrentUser} 
                 setCurrentUser={setCurrentUser} 
                 isConnected={isConnected} 
               />
@@ -595,7 +595,7 @@ function App() {
                   handleChannelSelect(view, channel);
                   setMobileActiveTab('chat');
                 }}
-                currentUser={currentUser}
+                currentUser={safeCurrentUser}
                 activeVoiceChannel={activeVoiceChannel}
                 onVoiceJoin={handleVoiceJoin}
                 voiceStates={voiceStates}
@@ -615,7 +615,7 @@ function App() {
             <div className="flex flex-1 min-w-0 relative h-full">
               {activeView === AppView.CHAT && (
                 <ChatInterface
-                  currentUser={currentUser}
+                  currentUser={safeCurrentUser}
                   users={allUsers}
                   currentChannel={currentChannel}
                   onSendMessage={handleSendMessage}
