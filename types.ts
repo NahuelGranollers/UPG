@@ -16,8 +16,11 @@ export interface User {
 export interface Message {
   id: string;
   userId: string;
+  username?: string;
+  avatar?: string;
   content: string;
-  timestamp: Date;
+  timestamp: Date | string;
+  channelId: string;
   attachments?: string[];
 }
 

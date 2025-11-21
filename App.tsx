@@ -9,6 +9,7 @@ import UserList from './components/UserList';
 import WhoWeAre from './components/WhoWeAre';
 import Voting from './components/Voting';
 import LockScreen from './components/LockScreen';
+import UserSetup from './components/UserSetup';
 import ErrorBoundary from './components/ErrorBoundary';
 
 import { User, AppView, Message } from './types';
@@ -30,15 +31,15 @@ export interface ChannelData {
 }
 
 // Usar variable de entorno o fallback
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://mensajeria-ksc7.onrender.com';
+const SOCKET_URL = (import.meta.env.VITE_SOCKET_URL as string | undefined) || 'https://mensajeria-ksc7.onrender.com';
 
 const SOCKET_CONFIG = {
-  transports: ['websocket', 'polling'],
+  transports: ['websocket', 'polling'] as ('websocket' | 'polling')[],
   reconnection: true,
   reconnectionDelay: 1000,
   reconnectionAttempts: 5,
   timeout: 10000
-} as const;
+};
 
 const AVATARS = [
   'https://picsum.photos/id/1012/200/200',
@@ -63,6 +64,7 @@ function App() {
   // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [showUserSetup, setShowUserSetup] = useState(false);
 
   // UI & Channels
   const [activeView, setActiveView] = useState<AppView>(AppView.CHAT);
@@ -72,8 +74,29 @@ function App() {
     description: 'Chat general' 
   });
   const [currentUser, setCurrentUser] = useState<User>(() => {
+    // Intentar leer desde cookies primero
+    const cookies = document.cookie.split('; ').reduce((acc, cookie) => {
+      const [key, value] = cookie.split('=');
+      acc[key] = value;
+      return acc;
+    }, {} as Record<string, string>);
+
+    if (cookies.upg_username && cookies.upg_avatar) {
+      return {
+        id: cookies.upg_user_id || `user-${Date.now()}`,
+        username: decodeURIComponent(cookies.upg_username),
+        avatar: decodeURIComponent(cookies.upg_avatar),
+        status: 'online',
+        color: '#3ba55c'
+      };
+    }
+
+    // Fallback a localStorage
     const saved = localStorage.getItem('upg_current_user');
-    return saved ? JSON.parse(saved) : generateRandomUser();
+    if (saved) return JSON.parse(saved);
+    
+    // Si no hay nada, retornar null y mostrar setup
+    return generateRandomUser();
   });
 
   // Estado de usuarios conectados
@@ -99,6 +122,45 @@ function App() {
   const handleUnlock = useCallback(() => {
     localStorage.setItem('upg_access_token', 'granted');
     setIsAuthenticated(true);
+    
+    // Verificar si el usuario ya tiene datos en cookies
+    const cookies = document.cookie.split('; ').reduce((acc, cookie) => {
+      const [key, value] = cookie.split('=');
+      acc[key] = value;
+      return acc;
+    }, {} as Record<string, string>);
+
+    // Si no hay username en cookies, mostrar setup
+    if (!cookies.upg_username) {
+      setShowUserSetup(true);
+    }
+  }, []);
+
+  const handleUserSetupComplete = useCallback((username: string, avatar: string) => {
+    const userId = `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    
+    // Guardar en cookies (30 días de expiración)
+    const expirationDays = 30;
+    const date = new Date();
+    date.setTime(date.getTime() + (expirationDays * 24 * 60 * 60 * 1000));
+    const expires = `expires=${date.toUTCString()}`;
+    
+    document.cookie = `upg_user_id=${userId}; ${expires}; path=/`;
+    document.cookie = `upg_username=${encodeURIComponent(username)}; ${expires}; path=/`;
+    document.cookie = `upg_avatar=${encodeURIComponent(avatar)}; ${expires}; path=/`;
+    
+    // Actualizar estado del usuario
+    const newUser: User = {
+      id: userId,
+      username,
+      avatar,
+      status: 'online',
+      color: '#3ba55c'
+    };
+    
+    setCurrentUser(newUser);
+    localStorage.setItem('upg_current_user', JSON.stringify(newUser));
+    setShowUserSetup(false);
   }, []);
 
   // Socket.IO Connection - ACTUALIZADO CON GESTIÓN DE USUARIOS
@@ -317,6 +379,7 @@ function App() {
 
   if (isLoadingAuth) return null;
   if (!isAuthenticated) return <LockScreen onUnlock={handleUnlock} />;
+  if (showUserSetup) return <UserSetup onComplete={handleUserSetupComplete} />;
 
   return (
     <ErrorBoundary>

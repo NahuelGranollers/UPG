@@ -30,6 +30,12 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
+      },
+      colors: {
+        discord: {
+          'sidebar-hover': '#35373c',
+          'blurple-hover': '#4752c4'
+        }
       }
     }
   },
