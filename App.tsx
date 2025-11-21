@@ -51,6 +51,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(true); // Siempre autenticado como invitado
   const [isLoadingAuth, setIsLoadingAuth] = useState(false);
   const [isDiscordUser, setIsDiscordUser] = useState(false); // Track if logged in with Discord
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true); // Checking Discord auth
 
   // UI & Channels
   const [activeView, setActiveView] = useState<AppView>(AppView.CHAT);
@@ -60,6 +61,24 @@ function App() {
     description: 'Chat general' 
   });
   const [currentUser, setCurrentUser] = useState<User>(() => {
+    // Check if coming from Discord callback
+    const urlParams = new URLSearchParams(window.location.search);
+    const authStatus = urlParams.get('auth');
+    
+    // If coming from Discord, wait for auth check
+    if (authStatus === 'success') {
+      // Temporary placeholder, will be updated in useEffect
+      return {
+        id: 'temp',
+        username: 'Loading...',
+        avatar: '',
+        status: 'online' as const,
+        online: true,
+        color: '#808080',
+        isGuest: true
+      };
+    }
+    
     const saved = storage.loadUserData();
     if (saved && saved.id && !saved.username.startsWith('Guest')) {
       // Usuario de Discord guardado
@@ -149,11 +168,33 @@ function App() {
             setCurrentUser(newUser);
             storage.saveUserData(newUser);
             setIsDiscordUser(true);
+            setIsAuthenticated(true);
             console.log('Ô£à Usuario Discord autenticado:', newUser.username);
+            
+            // Forzar reconexi├│n del socket con el nuevo usuario
+            if (socketRef.current) {
+              socketRef.current.disconnect();
+              socketRef.current.connect();
+            }
             return;
           } else {
             console.warn(`ÔÜá´ŞĆ Failed to fetch Discord user: ${response.status} ${response.statusText}`);
             console.warn('ÔÜá´ŞĆ Session might not persist across domains. Falling back to guest mode.');
+            
+            // Si falla, crear usuario invitado
+            const randomId = Math.floor(Math.random() * 10000).toString();
+            const guestUser: User = {
+              id: `guest-${randomId}`,
+              username: `Invitado${randomId}`,
+              avatar: `https://ui-avatars.com/api/?name=I${randomId.charAt(0)}&background=gray&color=fff&size=200`,
+              status: 'online',
+              online: true,
+              color: '#808080',
+              isGuest: true
+            };
+            setCurrentUser(guestUser);
+            storage.saveUserData(guestUser);
+            setIsDiscordUser(false);
           }
         }
         
@@ -163,12 +204,20 @@ function App() {
           console.log('­ƒôª Using cached Discord user from localStorage:', savedUser.username);
           setCurrentUser(savedUser);
           setIsDiscordUser(true);
+          
+          // Si tiene usuario guardado, reconectar el socket
+          if (socketRef.current) {
+            socketRef.current.disconnect();
+            socketRef.current.connect();
+          }
         } else {
           console.log('­ƒæñ Entrando como invitado');
           setIsDiscordUser(false);
         }
       } catch (error) {
         console.error('ÔØî Error checking auth:', error);
+      } finally {
+        setIsCheckingAuth(false);
       }
     };
 
@@ -601,8 +650,20 @@ function App() {
   // Primero verificar LockScreen
   const hasPassedLock = storage.isAuthenticated();
   
-  // Si no pas├│ el LockScreen, mostrarlo primero
+  // Si no pasó el LockScreen, mostrarlo primero
   if (!hasPassedLock) return <LockScreen onUnlock={handleUnlock} />;
+  
+  // Si está verificando autenticación de Discord, mostrar loading
+  if (isCheckingAuth) {
+    return (
+      <div className="flex h-screen w-full bg-discord-dark items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-16 h-16 border-4 border-discord-blurple border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-discord-text-muted">Verificando autenticación...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ErrorBoundary>
