@@ -25,7 +25,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  const isAdmin = currentUser.role === UserRole.ADMIN;
+  const isAdmin = currentUser?.role === UserRole.ADMIN;
 
   // Socket.IO reference - Obtener instancia global del socket
   const getSocket = () => {
@@ -47,12 +47,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   // Funciones de administrador
   const handleDeleteMessage = (messageId: string) => {
-    if (!isAdmin) return;
+    if (!isAdmin || !currentUser) return;
     
-    const socket = getSocket();
+    const socket = (window as any).socketInstance;
     if (socket) {
-      socket.emit('admin:delete-message', {
-        messageId,
+      socket.emit('admin:delete-message', { 
+        messageId, 
         channelId: currentChannel.id,
         adminId: currentUser.id
       });
@@ -74,7 +74,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   const handleBanUser = (userId: string, username: string) => {
-    if (!isAdmin || userId === currentUser.id) return;
+    if (!isAdmin || !currentUser || userId === currentUser.id) return;
     
     if (confirm(`¿Estás seguro de que quieres banear a ${username}? Esta acción también bloqueará su IP.`)) {
       const socket = getSocket();

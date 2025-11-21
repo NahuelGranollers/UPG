@@ -85,7 +85,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
                             className={`w-5 h-5 rounded-full mr-2 border border-[#2b2d31] ${u.status === 'online' ? 'ring-1 ring-green-500' : ''}`}
                             fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(u.username)}&background=5865F2&color=fff&size=128`}
                         />
-                        <span className={`text-sm truncate ${u.id === currentUser.id ? 'font-bold text-white' : 'text-discord-text-muted group-hover/user:text-discord-text-normal'}`}>
+                        <span className={`text-sm truncate ${u.id === currentUser?.id ? 'font-bold text-white' : 'text-discord-text-muted group-hover/user:text-discord-text-normal'}`}>
                             {u.username}
                         </span>
                         {u.isBot && <span className="ml-1 text-[9px] bg-discord-blurple text-white px-1 rounded">BOT</span>}
@@ -186,18 +186,18 @@ const ChannelList: React.FC<ChannelListProps> = ({
             <div className="group flex items-center py-1 px-1 pl-0.5 rounded-md hover:bg-discord-hover cursor-pointer mr-auto min-w-[120px]">
                 <div className="relative w-8 h-8 mr-2 ml-1">
                     <SafeImage 
-                      src={currentUser.avatar} 
+                      src={currentUser?.avatar || ''} 
                       className="w-8 h-8 rounded-full object-cover" 
                       alt="User"
-                      fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.username)}&background=5865F2&color=fff&size=128`}
+                      fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.username || 'U')}&background=5865F2&color=fff&size=128`}
                     />
                     <div className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-[#232428] rounded-full ${
-                         currentUser.status === 'online' ? 'bg-green-500' : 'bg-yellow-500'
+                         currentUser?.status === 'online' ? 'bg-green-500' : 'bg-yellow-500'
                     }`}></div>
                 </div>
                 <div className="text-sm min-w-0">
-                    <div className="font-semibold text-white text-xs truncate w-20">{currentUser.username}</div>
-                    <div className="text-[10px] text-gray-400 truncate">#{currentUser.id.substring(0,4)}</div>
+                    <div className="font-semibold text-white text-xs truncate w-20">{currentUser?.username || 'User'}</div>
+                    <div className="text-[10px] text-gray-400 truncate">#{currentUser?.id?.substring(0,4) || '0000'}</div>
                 </div>
             </div>
             

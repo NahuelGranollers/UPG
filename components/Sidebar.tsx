@@ -12,7 +12,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = memo(({ currentUser, setCurrentUser, isConnected }) => {
   const [showAdminPanel, setShowAdminPanel] = useState(false);
-  const isAdmin = currentUser.role === UserRole.ADMIN;
+  const isAdmin = currentUser?.role === UserRole.ADMIN;
 
   // Get socket instance from window
   const socket = (window as any).socketInstance;

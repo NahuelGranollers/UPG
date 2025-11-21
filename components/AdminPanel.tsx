@@ -27,10 +27,10 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
     try {
       switch (action) {
         case 'clear-users':
-          socket.emit('admin:clear-users', { adminId: currentUser.id });
+          if (currentUser) socket.emit('admin:clear-users', { adminId: currentUser.id });
           break;
         case 'clear-messages':
-          socket.emit('admin:clear-all-messages', { adminId: currentUser.id });
+          if (currentUser) socket.emit('admin:clear-all-messages', { adminId: currentUser.id });
           break;
       }
     } catch (error) {
@@ -97,7 +97,7 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
         {/* Footer */}
         <div className="bg-discord-dark p-4 border-t border-gray-800">
           <p className="text-xs text-discord-text-muted text-center">
-            Sesión de admin: {currentUser.username} | IP Hash Verificada
+            Sesión de admin: {currentUser?.username || 'Unknown'} | IP Hash Verificada
           </p>
         </div>
       </div>
