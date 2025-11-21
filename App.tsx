@@ -67,6 +67,7 @@ function App() {
     
     // If coming from Discord, wait for auth check
     if (authStatus === 'success') {
+      console.log('🔐 [Init] Coming from Discord callback, showing loading state');
       // Temporary placeholder, will be updated in useEffect
       return {
         id: 'temp',
@@ -80,11 +81,15 @@ function App() {
     }
     
     const saved = storage.loadUserData();
-    if (saved && saved.id && !saved.username.startsWith('Guest')) {
+    // Verificar si hay usuario Discord guardado válido (no invitado)
+    if (saved && saved.id && !saved.username.startsWith('Invitado') && !saved.id.startsWith('guest-')) {
+      console.log('✅ [Init] Using cached Discord user from localStorage:', saved.username);
       // Usuario de Discord guardado
       return { ...saved, online: true, status: 'online' };
     }
-    // Usuario invitado por defecto
+    
+    // Usuario invitado por defecto solo si no hay nada útil
+    console.log('👤 [Init] No valid user found, creating guest');
     const randomId = Math.floor(Math.random() * 10000).toString();
     const guestUser = {
       id: `guest-${randomId}`,
@@ -123,6 +128,9 @@ function App() {
   // Check Discord Authentication
   useEffect(() => {
     const checkAuth = async () => {
+      console.log('🔐 checkAuth running. URL:', window.location.href);
+      console.log('🔐 checkAuth start - currentUser in storage:', storage.loadUserData());
+      
       try {
         // Verificar si viene del callback de Discord
         const urlParams = new URLSearchParams(window.location.search);
@@ -139,14 +147,17 @@ function App() {
         }
         
         if (authStatus === 'success') {
-          console.log('Ô£à Received Discord OAuth callback, fetching user from backend...');
+          console.log('✅ Received Discord OAuth callback, fetching user from backend...');
           window.history.replaceState({}, document.title, '/');
           
+          console.log('🔄 Fetching /auth/user with credentials from', API_URL);
           // Consultar al backend por el usuario de Discord
           const response = await fetch(`${API_URL}/auth/user`, {
             credentials: 'include',
             headers: { 'Accept': 'application/json' }
           });
+
+          console.log('🔁 /auth/user response status:', response.status);
 
           if (response.ok) {
             const discordUser = await response.json();
@@ -169,19 +180,29 @@ function App() {
             storage.saveUserData(newUser);
             setIsDiscordUser(true);
             setIsAuthenticated(true);
-            console.log('Ô£à Usuario Discord autenticado:', newUser.username);
+            console.log('✅ Logged in as Discord user', newUser.username);
             
-            // Forzar reconexi├│n del socket con el nuevo usuario
+            // Forzar reconexión del socket con el nuevo usuario
             if (socketRef.current) {
               socketRef.current.disconnect();
               socketRef.current.connect();
             }
             return;
           } else {
-            console.warn(`ÔÜá´ŞĆ Failed to fetch Discord user: ${response.status} ${response.statusText}`);
-            console.warn('ÔÜá´ŞĆ Session might not persist across domains. Falling back to guest mode.');
+            console.warn(`⚠️ Failed to fetch Discord user: ${response.status} ${response.statusText}`);
             
-            // Si falla, crear usuario invitado
+            // Intentar usar usuario Discord guardado antes de crear invitado
+            const savedUser = storage.loadUserData();
+            if (savedUser && savedUser.id && !savedUser.username.startsWith('Invitado') && !savedUser.id.startsWith('guest-')) {
+              console.log('✅ Using cached Discord user after auth failure:', savedUser.username);
+              setCurrentUser(savedUser);
+              setIsDiscordUser(true);
+              return;
+            }
+            
+            console.warn('⚠️ Session might not persist across domains. Falling back to guest mode.');
+            
+            // Solo crear invitado si no hay nada válido guardado
             const randomId = Math.floor(Math.random() * 10000).toString();
             const guestUser: User = {
               id: `guest-${randomId}`,
@@ -192,6 +213,7 @@ function App() {
               color: '#808080',
               isGuest: true
             };
+            console.log('👤 Using guest user', guestUser.username);
             setCurrentUser(guestUser);
             storage.saveUserData(guestUser);
             setIsDiscordUser(false);
@@ -201,7 +223,7 @@ function App() {
         // Verificar si hay usuario de Discord guardado localmente
         const savedUser = storage.loadUserData();
         if (savedUser && savedUser.id && !savedUser.username.startsWith('Invitado') && !savedUser.id.startsWith('guest-')) {
-          console.log('­ƒôª Using cached Discord user from localStorage:', savedUser.username);
+          console.log('✅ Using cached Discord user', savedUser.username);
           setCurrentUser(savedUser);
           setIsDiscordUser(true);
           
@@ -215,7 +237,7 @@ function App() {
           setIsDiscordUser(false);
         }
       } catch (error) {
-        console.error('ÔØî Error checking auth:', error);
+        console.error('❌ Error in checkAuth:', error);
       } finally {
         setIsCheckingAuth(false);
       }
