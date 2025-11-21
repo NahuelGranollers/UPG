@@ -83,18 +83,28 @@ function App() {
   // Check Discord Authentication
   useEffect(() => {
     const initAuth = async () => {
+      console.log('🔑 Iniciando autenticación Discord...');
+      
       // Verificar si hay callback de Discord
       const token = discordAuth.handleDiscordCallback();
       
       if (token) {
+        console.log('✅ Token de Discord recibido');
         try {
           // Obtener datos del usuario desde Discord
           const discordUser = await discordAuth.getDiscordUser(token);
-          discordAuth.saveDiscordToken(token);
-          
-          // Crear usuario para la app
-          const user: User = {
+          console.log('👤 Usuario Discord obtenido:', {
             id: discordUser.id,
+            username: discordUser.username,
+            global_name: discordUser.global_name
+          });
+          
+          discordAuth.saveDiscordToken(token);
+          localStorage.setItem('discord_user', JSON.stringify(discordUser));
+          
+          // Crear usuario para la app con prefijo discord-
+          const user: User = {
+            id: `discord-${discordUser.id}`,
             username: discordUser.global_name || discordUser.username,
             avatar: discordAuth.getDiscordAvatarUrl(discordUser.id, discordUser.avatar, 128),
             status: 'online',
@@ -103,25 +113,32 @@ function App() {
             role: UserRole.USER
           };
           
+          console.log('✅ Usuario creado para la app:', user);
           setCurrentUser(user);
           storage.saveUserData(user);
           storage.setAuthentication(true);
           setIsAuthenticated(true);
         } catch (error) {
-          console.error('Error obteniendo datos de Discord:', error);
+          console.error('❌ Error obteniendo datos de Discord:', error);
           discordAuth.clearDiscordToken();
         }
       } else if (discordAuth.hasActiveSession()) {
+        console.log('🔄 Sesión activa encontrada, cargando usuario...');
         // Ya hay sesión activa, cargar usuario
         const savedUser = storage.loadUserData();
         if (savedUser) {
+          console.log('✅ Usuario cargado:', savedUser.username);
           setCurrentUser(savedUser);
           storage.setAuthentication(true);
           setIsAuthenticated(true);
         } else {
+          console.warn('⚠️ Token existe pero no hay datos guardados, reautenticando...');
           // Token existe pero no hay datos guardados, reautenticar
           discordAuth.clearDiscordToken();
+          localStorage.removeItem('discord_user');
         }
+      } else {
+        console.log('🚪 No hay sesión activa, mostrar login');
       }
       
       setIsLoadingAuth(false);
@@ -132,7 +149,9 @@ function App() {
   }, []);
 
   const handleLogout = useCallback(() => {
+    console.log('🚪 Cerrando sesión...');
     discordAuth.clearDiscordToken();
+    localStorage.removeItem('discord_user');
     storage.clearUserData();
     storage.setAuthentication(false);
     setCurrentUser(null);
