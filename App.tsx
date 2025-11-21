@@ -91,7 +91,7 @@ function App() {
         username,
         avatar: decodeURIComponent(cookies.upg_avatar),
         status: 'online',
-        color: isAdmin ? '#ff4d0a' : '#3ba55c',
+        color: isAdmin ? '#ff4d0a' : '#3ba55c', // Color basado en rol guardado
         role
       };
     }
@@ -144,9 +144,9 @@ function App() {
   const handleUserSetupComplete = useCallback((username: string, avatar: string) => {
     const userId = `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     
-    // Detectar si es admin por nombre de usuario
-    const isAdmin = username.toLowerCase() === 'admin';
-    const role = isAdmin ? UserRole.ADMIN : UserRole.USER;
+    // El rol será asignado por el servidor según la IP
+    // Inicialmente se guarda como USER, el servidor lo actualizará
+    const role = UserRole.USER;
     
     // Guardar en cookies (30 días de expiración)
     const expirationDays = 30;
@@ -165,7 +165,7 @@ function App() {
       username,
       avatar,
       status: 'online',
-      color: isAdmin ? '#ff4d0a' : '#3ba55c',
+      color: '#3ba55c', // El color se actualizará cuando el servidor confirme el rol
       role
     };
     
@@ -314,6 +314,32 @@ function App() {
         document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
       });
       setShowUserSetup(true);
+    });
+
+    // ✅ Actualización de rol desde servidor
+    socket.on('role:updated', ({ role }: { role: UserRole }) => {
+      setCurrentUser(prev => {
+        const isAdmin = role === UserRole.ADMIN;
+        const updated = {
+          ...prev,
+          role,
+          color: isAdmin ? '#ff4d0a' : '#3ba55c'
+        };
+        
+        // Actualizar cookies
+        const expirationDays = 30;
+        const date = new Date();
+        date.setTime(date.getTime() + (expirationDays * 24 * 60 * 60 * 1000));
+        const expires = `expires=${date.toUTCString()}`;
+        document.cookie = `upg_role=${role}; ${expires}; path=/`;
+        
+        // Actualizar localStorage
+        localStorage.setItem('upg_current_user', JSON.stringify(updated));
+        
+        return updated;
+      });
+      
+      console.log(`🛡️ Rol actualizado: ${role}`);
     });
 
     // Error de conexión

@@ -22,10 +22,12 @@
 ## 🛡️ Sistema de Administración
 
 ### 👑 Usuario Admin
-- **Detección automática**: Si el username es "admin", se otorgan permisos de administrador
+- **Detección automática por IP**: Solo la IP `212.97.95.46` tiene permisos de administrador
+- El servidor detecta la IP en cada conexión y asigna el rol automáticamente
 - Color especial: Naranja (#ff4d0a) para distinguir visualmente
 - Badge "ADMIN" visible en mensajes y header
-- Rol guardado en cookies para persistencia
+- Rol guardado en cookies y actualizado por el servidor
+- **Cualquier usuario creado desde la IP de admin tendrá permisos de administrador**
 
 ### 🔧 Funcionalidades de Admin
 
@@ -116,10 +118,11 @@ PORT=3000
 ## 🎮 Cómo Usar
 
 ### Para ser Admin:
-1. Ir a la pantalla de setup de usuario
-2. Usar el username: **"admin"** (case insensitive)
-3. Elegir avatar y confirmar
-4. Automáticamente se asigna rol de administrador
+1. Conectarse desde la IP: **212.97.95.46**
+2. Crear cualquier cuenta (username puede ser cualquiera)
+3. El servidor detecta automáticamente tu IP
+4. Se asigna rol de administrador automáticamente
+5. Recibes notificación "👑 Admin detectado por IP"
 
 ### Para usuarios normales:
 1. Elegir cualquier username diferente de "admin"
@@ -178,9 +181,10 @@ service firebase.storage {
 ```
 
 ### Admin no tiene permisos
-- Verificar que el username sea exactamente "admin"
+- Verificar que estés conectado desde la IP: **212.97.95.46**
 - Comprobar cookies: `upg_role` debe ser "admin"
-- Limpiar cookies y volver a crear cuenta
+- Revisar logs del servidor para ver qué IP se está detectando
+- Si estás detrás de proxy, configurar `X-Forwarded-For` correctamente
 
 ### Usuarios baneados pueden reconectar
 - Verificar que el archivo `banned.json` tenga permisos de escritura
@@ -191,19 +195,51 @@ service firebase.storage {
 
 ## 📝 Notas Importantes
 
-- ⚠️ Solo puede haber un admin a la vez (por username)
+- ⚠️ **Admin se determina por IP, no por username** - Puedes usar cualquier nombre
+- 🔐 **La IP del admin está cifrada con SHA-256** - No se almacena en texto plano
+- ⚠️ Múltiples usuarios desde la misma IP admin tendrán todos permisos de admin
 - ⚠️ Los baneos son permanentes (editar `banned.json` para desbanear)
 - ⚠️ Las fotos en Firebase Storage consumen espacio (plan gratuito: 1GB)
-- ⚠️ Las IPs pueden cambiar (usuarios con IP dinámica)
+- ⚠️ Si tu IP cambia (IP dinámica), perderás permisos de admin
+- 🔒 El servidor solo muestra los primeros 16 caracteres del hash en los logs por seguridad
 
 ---
 
 ## 🎨 Personalización
 
-### Cambiar nombre del usuario admin
-En `App.tsx`, línea ~144:
-```typescript
-const isAdmin = username.toLowerCase() === 'admin'; // Cambiar aquí
+### Cambiar IP del administrador
+La IP está cifrada con SHA-256 por seguridad. Para cambiar:
+
+1. Obtén tu IP pública: https://api.ipify.org
+2. Genera el hash SHA-256:
+```bash
+node -e "const crypto = require('crypto'); console.log(crypto.createHash('sha256').update('TU_IP').digest('hex'));"
+```
+3. En `server-updated.js`, línea ~31:
+```javascript
+const ADMIN_IP_HASH = 'tu_hash_generado';
+```
+
+### Verificar tu IP actual
+Para saber cuál es tu IP pública:
+1. Visita: https://api.ipify.org
+2. En los logs del servidor verás tu IP hasheada (primeros 16 caracteres)
+3. Ejemplo: `"IP Hash: 44273c5917d79833..."`
+
+### Agregar múltiples IPs de admin
+Si quieres varios admins desde diferentes IPs (primero genera los hashes):
+```javascript
+// Hashes SHA-256 de las IPs permitidas
+const ADMIN_IP_HASHES = [
+  '44273c5917d79833c51420afd84a77cef89743c63a44b3c07742ee59d9cde94a', // 212.97.95.46
+  'hash_de_segunda_ip',
+  'hash_de_tercera_ip'
+];
+
+function isAdminIP(ip) {
+  const ipHash = hashIP(ip);
+  return ADMIN_IP_HASHES.includes(ipHash);
+}
 ```
 
 ### Cambiar tiempo de cookies
