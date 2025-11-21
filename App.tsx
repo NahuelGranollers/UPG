@@ -122,30 +122,23 @@ function App() {
 
           setCurrentUser(newUser);
           storage.saveUserData(newUser);
-          storage.setAuthentication(true);
           setIsAuthenticated(true);
           
           // Limpiar URL
           window.history.replaceState({}, document.title, '/');
         } else {
-          // Verificar si hay usuario guardado localmente con autenticación válida
-          const isAuth = storage.isAuthenticated();
+          // Verificar si hay usuario Discord guardado localmente
           const savedUser = storage.loadUserData();
           
-          if (isAuth && savedUser && savedUser.id && !savedUser.username.startsWith('Guest')) {
+          if (savedUser && savedUser.id && !savedUser.username.startsWith('Guest')) {
             setCurrentUser(savedUser);
             setIsAuthenticated(true);
           } else {
-            // Limpiar datos inválidos
-            storage.clearUserData();
-            storage.setAuthentication(false);
             setIsAuthenticated(false);
           }
         }
       } catch (error) {
         console.error('Error checking auth:', error);
-        storage.clearUserData();
-        storage.setAuthentication(false);
         setIsAuthenticated(false);
       } finally {
         setIsLoadingAuth(false);
@@ -156,8 +149,9 @@ function App() {
   }, []);
 
   const handleUnlock = useCallback(() => {
-    // Después de desbloquear con contraseña, permitir login con Discord
+    // Después de desbloquear con contraseña, marcar que pasó el LockScreen
     storage.setAuthentication(true);
+    setIsLoadingAuth(false);
   }, []);
 
   // Socket.IO Connection - ACTUALIZADO CON GESTIÓN DE USUARIOS
