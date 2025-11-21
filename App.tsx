@@ -248,11 +248,11 @@ function App() {
           if (index !== -1) {
             // Usuario existe, actualizar estado a online
             const updated = [...prev];
-            updated[index] = { ...updated[index], online: true };
+            updated[index] = { ...updated[index], online: true, status: 'online' };
             return updated;
           } else {
             // Usuario nuevo, agregarlo
-            return [...prev, { ...user, online: true }];
+            return [...prev, { ...user, online: true, status: 'online' }];
           }
         });
       }
@@ -265,7 +265,7 @@ function App() {
         const index = prev.findIndex(u => u.id === userId);
         if (index !== -1) {
           const updated = [...prev];
-          updated[index] = { ...updated[index], online: false };
+          updated[index] = { ...updated[index], online: false, status: 'offline' };
           return updated;
         }
         return prev;
