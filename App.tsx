@@ -59,6 +59,7 @@ function generateRandomUser(): User {
     username: `Guest${randomId}`,
     avatar: AVATARS[Math.floor(Math.random() * AVATARS.length)],
     status: 'online',
+    online: true,
     color: '#3ba55c'
   };
 }
@@ -94,6 +95,7 @@ function App() {
         username,
         avatar: decodeURIComponent(cookies.upg_avatar),
         status: 'online',
+        online: true,
         color: isAdmin ? '#ff4d0a' : '#3ba55c', // Color basado en rol guardado
         role
       };
@@ -101,7 +103,10 @@ function App() {
 
     // Fallback a localStorage
     const saved = localStorage.getItem('upg_current_user');
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const user = JSON.parse(saved);
+      return { ...user, online: true, status: 'online' };
+    }
     
     // Si no hay nada, retornar null y mostrar setup
     return generateRandomUser();

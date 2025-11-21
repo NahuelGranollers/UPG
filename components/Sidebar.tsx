@@ -57,7 +57,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentUser, setCurrentUser, isC
           <div className="w-8 h-[2px] bg-discord-chat rounded-lg mx-auto mt-auto" />
           <button 
             onClick={() => setShowAdminPanel(true)}
-            className="w-12 h-12 bg-red-600 hover:bg-red-700 text-white rounded-[24px] hover:rounded-[16px] transition-all duration-200 flex items-center justify-center animate-pulse hover:animate-none"
+            className="w-12 h-12 bg-red-600 hover:bg-red-700 text-white rounded-[24px] hover:rounded-[16px] transition-all duration-200 flex items-center justify-center"
             title="Panel de Administración"
           >
             <Shield size={24} />

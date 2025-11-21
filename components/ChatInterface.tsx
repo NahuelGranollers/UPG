@@ -167,26 +167,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   </div>
                   <p className="text-discord-text-normal whitespace-pre-wrap leading-[1.375rem]">{msg.content}</p>
                 </div>
-                
-                {/* Botones de admin */}
-                {isAdmin && hoveredMessageId === msg.id && msg.userId !== currentUser.id && (
-                  <div className="absolute right-4 top-0 flex gap-1 bg-discord-sidebar border border-gray-700 rounded shadow-lg p-1">
-                    <button
-                      onClick={() => handleDeleteMessage(msg.id)}
-                      className="p-1.5 hover:bg-red-500/20 text-red-400 rounded transition-colors"
-                      title="Eliminar mensaje"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                    <button
-                      onClick={() => handleBanUser(msg.userId, msg.username || '')}
-                      className="p-1.5 hover:bg-red-500/20 text-red-400 rounded transition-colors"
-                      title="Banear usuario"
-                    >
-                      <Ban size={14} />
-                    </button>
-                  </div>
-                )}
               </div>
             );
           })}
