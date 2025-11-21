@@ -12,7 +12,7 @@ import LockScreen from './components/LockScreen';
 import UserSetup from './components/UserSetup';
 import ErrorBoundary from './components/ErrorBoundary';
 
-import { User, AppView, Message } from './types';
+import { User, AppView, Message, UserRole } from './types';
 
 // Bot siempre presente
 const BOT_USER: User = {
@@ -82,12 +82,17 @@ function App() {
     }, {} as Record<string, string>);
 
     if (cookies.upg_username && cookies.upg_avatar) {
+      const username = decodeURIComponent(cookies.upg_username);
+      const role = (cookies.upg_role as UserRole) || UserRole.USER;
+      const isAdmin = role === UserRole.ADMIN;
+      
       return {
         id: cookies.upg_user_id || `user-${Date.now()}`,
-        username: decodeURIComponent(cookies.upg_username),
+        username,
         avatar: decodeURIComponent(cookies.upg_avatar),
         status: 'online',
-        color: '#3ba55c'
+        color: isAdmin ? '#ff4d0a' : '#3ba55c',
+        role
       };
     }
 
@@ -139,6 +144,10 @@ function App() {
   const handleUserSetupComplete = useCallback((username: string, avatar: string) => {
     const userId = `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     
+    // Detectar si es admin por nombre de usuario
+    const isAdmin = username.toLowerCase() === 'admin';
+    const role = isAdmin ? UserRole.ADMIN : UserRole.USER;
+    
     // Guardar en cookies (30 días de expiración)
     const expirationDays = 30;
     const date = new Date();
@@ -148,6 +157,7 @@ function App() {
     document.cookie = `upg_user_id=${userId}; ${expires}; path=/`;
     document.cookie = `upg_username=${encodeURIComponent(username)}; ${expires}; path=/`;
     document.cookie = `upg_avatar=${encodeURIComponent(avatar)}; ${expires}; path=/`;
+    document.cookie = `upg_role=${role}; ${expires}; path=/`;
     
     // Actualizar estado del usuario
     const newUser: User = {
@@ -155,7 +165,8 @@ function App() {
       username,
       avatar,
       status: 'online',
-      color: '#3ba55c'
+      color: isAdmin ? '#ff4d0a' : '#3ba55c',
+      role
     };
     
     setCurrentUser(newUser);
@@ -169,6 +180,9 @@ function App() {
 
     const socket = io(SOCKET_URL, SOCKET_CONFIG);
     socketRef.current = socket;
+    
+    // Exponer socket globalmente para componentes hijos
+    (window as any).socketInstance = socket;
 
     // ✅ Conexión establecida
     socket.on('connect', () => {
@@ -261,6 +275,45 @@ function App() {
         }
         return next;
       });
+    });
+
+    // ✅ Eventos de administrador
+    socket.on('message:deleted', ({ messageId, channelId }: { messageId: string; channelId: string }) => {
+      setMessages(prev => ({
+        ...prev,
+        [channelId]: (prev[channelId] || []).filter(msg => msg.id !== messageId)
+      }));
+    });
+
+    socket.on('channel:cleared', ({ channelId }: { channelId: string }) => {
+      setMessages(prev => ({
+        ...prev,
+        [channelId]: []
+      }));
+    });
+
+    socket.on('user:banned', ({ userId, username }: { userId: string; username: string }) => {
+      console.log(`🔨 Usuario ${username} ha sido baneado`);
+      setDiscoveredUsers(prev => prev.filter(u => u.id !== userId));
+    });
+
+    socket.on('banned', ({ reason }: { reason: string }) => {
+      alert(`Has sido baneado del servidor.\nRazón: ${reason}`);
+      localStorage.removeItem('upg_access_token');
+      localStorage.removeItem('upg_current_user');
+      document.cookie.split(";").forEach(c => {
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+      window.location.reload();
+    });
+
+    socket.on('username:taken', ({ message }: { message: string }) => {
+      alert(message);
+      localStorage.removeItem('upg_current_user');
+      document.cookie.split(";").forEach(c => {
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+      setShowUserSetup(true);
     });
 
     // Error de conexión

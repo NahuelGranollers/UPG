@@ -1,5 +1,6 @@
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getDatabase, Database, ref, push, onValue, off, set, serverTimestamp, onDisconnect, connectDatabaseEmulator } from 'firebase/database';
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { User, Message } from '../types';
 
 // Firebase configuration - usar variables de entorno
@@ -99,6 +100,7 @@ export const subscribeToMessages = (
           userId: msg.userId,
           content: msg.content,
           timestamp,
+          channelId,
           attachments: msg.attachments || [],
         };
       })
@@ -187,5 +189,59 @@ export const subscribeToOnlineUsers = (
 
 export const isFirebaseConfigured = (): boolean => {
   return !!firebaseConfig.databaseURL;
+};
+
+// Storage para imágenes de perfil
+export const uploadProfileImage = async (
+  file: File,
+  userId: string
+): Promise<string> => {
+  const firebase = initFirebase();
+  if (!firebase) {
+    throw new Error('Firebase no está configurado');
+  }
+
+  const storage = getStorage(firebase.app);
+  const fileExtension = file.name.split('.').pop();
+  const fileName = `avatars/${userId}_${Date.now()}.${fileExtension}`;
+  const imageRef = storageRef(storage, fileName);
+
+  // Subir imagen
+  await uploadBytes(imageRef, file);
+  
+  // Obtener URL de descarga
+  const downloadURL = await getDownloadURL(imageRef);
+  return downloadURL;
+};
+
+export const deleteProfileImage = async (imageUrl: string): Promise<void> => {
+  const firebase = initFirebase();
+  if (!firebase) {
+    throw new Error('Firebase no está configurado');
+  }
+
+  try {
+    const storage = getStorage(firebase.app);
+    const imageRef = storageRef(storage, imageUrl);
+    await deleteObject(imageRef);
+  } catch (error) {
+    console.error('Error eliminando imagen:', error);
+  }
+};
+
+// Validar imagen antes de subir
+export const validateImageFile = (file: File): { valid: boolean; error?: string } => {
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+
+  if (!allowedTypes.includes(file.type)) {
+    return { valid: false, error: 'Formato no permitido. Usa JPG, PNG, GIF o WEBP.' };
+  }
+
+  if (file.size > maxSize) {
+    return { valid: false, error: 'La imagen no puede superar 5MB.' };
+  }
+
+  return { valid: true };
 };
 

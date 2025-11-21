@@ -4,6 +4,11 @@ export enum ChannelType {
   VOICE = 'VOICE'
 }
 
+export enum UserRole {
+  ADMIN = 'admin',
+  USER = 'user'
+}
+
 export interface User {
   id: string;
   username: string;
@@ -11,6 +16,7 @@ export interface User {
   status: 'online' | 'idle' | 'dnd' | 'offline';
   isBot?: boolean;
   color?: string;
+  role?: UserRole;
 }
 
 export interface Message {

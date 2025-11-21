@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Message, User } from '../types';
-import { Hash, Menu } from 'lucide-react';
+import { Message, User, UserRole } from '../types';
+import { Hash, Menu, Trash2, Shield, Ban } from 'lucide-react';
 import SafeImage from './SafeImage';
 import { ChannelData } from '../App';
 
@@ -8,91 +8,84 @@ interface ChatInterfaceProps {
   currentUser: User;
   users: User[];
   currentChannel: ChannelData;
-  onMobileMenuClick: () => void;
+  onSendMessage: (content: string) => void;
+  messages: Message[];
+  onMenuToggle: () => void;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
   currentUser,
   users,
   currentChannel,
-  onMobileMenuClick
+  onSendMessage,
+  messages: propMessages,
+  onMenuToggle
 }) => {
-  const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
+  const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const isAdmin = currentUser.role === UserRole.ADMIN;
 
-  // Socket.IO reference
-  const socketRef = useRef<any>(null);
-
-  useEffect(() => {
-    // Crea la conexión solo una vez
-    if (!socketRef.current && typeof window !== 'undefined' && window.io) {
-      socketRef.current = window.io('https://mensajeria-ksc7.onrender.com', {
-        transports: ['websocket']
-      });
-    }
-    const socket = socketRef.current;
-
-    // Registrar usuario y canal (solo la primera vez)
-    socket.emit('user:join', {
-      id: currentUser.id,
-      username: currentUser.username,
-      avatar: currentUser.avatar || '',
-      status: 'online'
-    });
-    socket.emit('channel:join', { channelId: currentChannel.id, userId: currentUser.id });
-
-    // Recibe historial de mensajes
-    socket.on('channel:history', (data: any) => {
-      if (data && data.messages) {
-        setMessages(
-          data.messages.map((msg: any) => ({
-            ...msg,
-            timestamp: new Date(msg.timestamp)
-          }))
-        );
-      }
-    });
-
-    // Recibe mensajes nuevos en tiempo real
-    socket.on('message:received', (msg: any) => {
-      setMessages(prev => [
-        ...prev,
-        { ...msg, timestamp: new Date(msg.timestamp) },
-      ]);
-    });
-
-    // Cleanup al desmontar
-    return () => {
-      socket.off('channel:history');
-      socket.off('message:received');
-      // socket.disconnect(); // si quieres cerrar el websocket al desmontar el componente
-    };
-    // NOTA: currentUser NO en deps, para que no reconecte en cada cambio menor
-    // eslint-disable-next-line
-  }, [currentChannel.id]);
+  // Socket.IO reference - Obtener instancia global del socket
+  const getSocket = () => {
+    return (window as any).socketInstance;
+  };
 
   // Auto scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [propMessages]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim()) return;
 
-    const socket = socketRef.current;
+    onSendMessage(inputText);
+    setInputText('');
+  };
+
+  // Funciones de administrador
+  const handleDeleteMessage = (messageId: string) => {
+    if (!isAdmin) return;
+    
+    const socket = getSocket();
     if (socket) {
-      socket.emit('message:send', {
+      socket.emit('admin:delete-message', {
+        messageId,
         channelId: currentChannel.id,
-        content: inputText,
-        userId: currentUser.id,
-        username: currentUser.username,
-        avatar: currentUser.avatar,
-        timestamp: new Date().toISOString()
+        adminId: currentUser.id
       });
     }
-    setInputText('');
+  };
+
+  const handleClearChannel = () => {
+    if (!isAdmin) return;
+    
+    if (confirm(`¿Estás seguro de que quieres eliminar todos los mensajes de #${currentChannel.name}?`)) {
+      const socket = getSocket();
+      if (socket) {
+        socket.emit('admin:clear-channel', {
+          channelId: currentChannel.id,
+          adminId: currentUser.id
+        });
+      }
+    }
+  };
+
+  const handleBanUser = (userId: string, username: string) => {
+    if (!isAdmin || userId === currentUser.id) return;
+    
+    if (confirm(`¿Estás seguro de que quieres banear a ${username}? Esta acción también bloqueará su IP.`)) {
+      const socket = getSocket();
+      if (socket) {
+        socket.emit('admin:ban-user', {
+          userId,
+          username,
+          adminId: currentUser.id
+        });
+      }
+    }
   };
 
   // Mostrar todos los mensajes recibidos online
@@ -102,7 +95,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       <div className="h-12 flex items-center justify-between px-4 shadow-sm border-b border-gray-900/20 shrink-0">
         <div className="flex items-center text-discord-text-header font-bold truncate">
           <button 
-            onClick={onMobileMenuClick}
+            onClick={onMenuToggle}
             className="md:hidden mr-3 text-discord-text-muted hover:text-white"
             aria-label="Abrir menú"
             aria-expanded="false"
@@ -112,6 +105,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <Hash size={24} className="text-discord-text-muted mr-2 shrink-0" />
           <span className="truncate">{currentChannel.name}</span>
         </div>
+        {isAdmin && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs bg-discord-blurple px-2 py-1 rounded flex items-center gap-1">
+              <Shield size={12} />
+              ADMIN
+            </span>
+            <button
+              onClick={handleClearChannel}
+              className="text-red-400 hover:text-red-300 px-2 py-1 hover:bg-red-500/10 rounded transition-colors"
+              title="Limpiar chat"
+            >
+              <Trash2 size={18} />
+            </button>
+          </div>
+        )}
       </div>
       {/* Mensajes */}
       <div className="flex-1 overflow-y-auto px-4 pt-4 flex flex-col">
@@ -124,24 +132,64 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <p className="text-discord-text-muted">Este es el chat real del canal.</p>
           </div>
           <div className="h-[1px] bg-discord-text-muted/20 w-full my-4" />
-          {messages.map((msg) => (
-            <div key={msg.id} className="flex pr-4 mt-4 py-0.5 hover:bg-[#2e3035]">
-              <div className="w-10 h-10 rounded-full bg-gray-600 mr-4 mt-0.5 overflow-hidden shrink-0 cursor-pointer">
-                <SafeImage src={msg.avatar || ''} alt={msg.username || ''} className="w-full h-full object-cover" fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(msg.username || '')}&background=5865F2&color=fff&size=128`} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center">
-                  <span className="font-medium text-base mr-2" style={{ color: '#fff' }}>
-                    {msg.username}
-                  </span>
-                  <span className="text-xs text-discord-text-muted ml-2 font-medium">
-                    {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
+          {propMessages.map((msg) => {
+            const msgUser = users.find(u => u.id === msg.userId);
+            const msgTimestamp = typeof msg.timestamp === 'string' ? new Date(msg.timestamp) : msg.timestamp;
+            
+            return (
+              <div 
+                key={msg.id} 
+                className="group flex pr-4 mt-4 py-0.5 hover:bg-[#2e3035] relative"
+                onMouseEnter={() => setHoveredMessageId(msg.id)}
+                onMouseLeave={() => setHoveredMessageId(null)}
+              >
+                <div className="w-10 h-10 rounded-full bg-gray-600 mr-4 mt-0.5 overflow-hidden shrink-0 cursor-pointer">
+                  <SafeImage 
+                    src={msg.avatar || msgUser?.avatar || ''} 
+                    alt={msg.username || msgUser?.username || ''} 
+                    className="w-full h-full object-cover" 
+                    fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(msg.username || msgUser?.username || '')}&background=5865F2&color=fff&size=128`} 
+                  />
                 </div>
-                <p className="text-discord-text-normal whitespace-pre-wrap leading-[1.375rem]">{msg.content}</p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center">
+                    <span className="font-medium text-base mr-2" style={{ color: msgUser?.color || '#fff' }}>
+                      {msg.username || msgUser?.username}
+                    </span>
+                    {msgUser?.role === UserRole.ADMIN && (
+                      <span className="text-[10px] bg-discord-blurple px-1.5 py-0.5 rounded mr-2">
+                        ADMIN
+                      </span>
+                    )}
+                    <span className="text-xs text-discord-text-muted ml-2 font-medium">
+                      {msgTimestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <p className="text-discord-text-normal whitespace-pre-wrap leading-[1.375rem]">{msg.content}</p>
+                </div>
+                
+                {/* Botones de admin */}
+                {isAdmin && hoveredMessageId === msg.id && msg.userId !== currentUser.id && (
+                  <div className="absolute right-4 top-0 flex gap-1 bg-discord-sidebar border border-gray-700 rounded shadow-lg p-1">
+                    <button
+                      onClick={() => handleDeleteMessage(msg.id)}
+                      className="p-1.5 hover:bg-red-500/20 text-red-400 rounded transition-colors"
+                      title="Eliminar mensaje"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleBanUser(msg.userId, msg.username || '')}
+                      className="p-1.5 hover:bg-red-500/20 text-red-400 rounded transition-colors"
+                      title="Banear usuario"
+                    >
+                      <Ban size={14} />
+                    </button>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
           <div ref={messagesEndRef} />
         </div>
       </div>

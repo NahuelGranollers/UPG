@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { User, Check, RefreshCw } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { User, Check, RefreshCw, Upload, X } from 'lucide-react';
+import { uploadProfileImage, validateImageFile } from '../services/firebaseService';
 
 const AVATARS = [
   'https://picsum.photos/id/1012/200/200',
@@ -19,14 +20,53 @@ interface UserSetupProps {
 const UserSetup: React.FC<UserSetupProps> = ({ onComplete }) => {
   const [username, setUsername] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0]);
+  const [customAvatar, setCustomAvatar] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [checkingUsername, setCheckingUsername] = useState(false);
   const [error, setError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleRandomAvatar = () => {
     const randomIndex = Math.floor(Math.random() * AVATARS.length);
     setSelectedAvatar(AVATARS[randomIndex]);
+    setCustomAvatar(null); // Resetear avatar personalizado
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar archivo
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      setError(validation.error || 'Error validando imagen');
+      return;
+    }
+
+    setUploadingImage(true);
+    setError('');
+
+    try {
+      // Generar ID temporal para la subida
+      const tempUserId = `temp-${Date.now()}`;
+      const downloadURL = await uploadProfileImage(file, tempUserId);
+      
+      setCustomAvatar(downloadURL);
+      setSelectedAvatar(downloadURL as any); // Usar la URL personalizada
+    } catch (err) {
+      console.error('Error subiendo imagen:', err);
+      setError('Error subiendo la imagen. Intenta de nuevo.');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleRemoveCustomAvatar = () => {
+    setCustomAvatar(null);
+    setSelectedAvatar(AVATARS[0]);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const trimmedUsername = username.trim();
@@ -46,7 +86,41 @@ const UserSetup: React.FC<UserSetupProps> = ({ onComplete }) => {
       return;
     }
 
-    onComplete(trimmedUsername, selectedAvatar);
+    // Verificar si el username ya existe en el servidor
+    setCheckingUsername(true);
+    try {
+      const socket = (window as any).socketInstance;
+      if (socket) {
+        // Emitir evento para verificar username
+        socket.emit('username:check', { username: trimmedUsername });
+        
+        // Esperar respuesta
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Timeout verificando username'));
+          }, 5000);
+
+          socket.once('username:check-result', ({ available, message }: { available: boolean; message?: string }) => {
+            clearTimeout(timeout);
+            if (!available) {
+              setError(message || 'Este nombre de usuario ya está en uso');
+              reject(new Error('Username no disponible'));
+            } else {
+              resolve();
+            }
+          });
+        });
+      }
+    } catch (err) {
+      console.error('Error verificando username:', err);
+      setCheckingUsername(false);
+      return;
+    }
+    setCheckingUsername(false);
+
+    // Usar avatar personalizado o el seleccionado
+    const finalAvatar = customAvatar || selectedAvatar;
+    onComplete(trimmedUsername, finalAvatar);
   };
 
   return (
@@ -70,19 +144,59 @@ const UserSetup: React.FC<UserSetupProps> = ({ onComplete }) => {
               Elige tu avatar
             </label>
             <div className="flex items-center gap-4">
-              <img 
-                src={selectedAvatar} 
-                alt="Avatar seleccionado"
-                className="w-20 h-20 rounded-full object-cover border-4 border-discord-blurple shadow-lg"
-              />
-              <button
-                type="button"
-                onClick={handleRandomAvatar}
-                className="flex items-center gap-2 px-4 py-2 bg-discord-chat hover:bg-discord-sidebar-hover text-white rounded-lg transition-colors font-medium"
-              >
-                <RefreshCw size={16} />
-                Aleatorio
-              </button>
+              <div className="relative">
+                <img 
+                  src={customAvatar || selectedAvatar} 
+                  alt="Avatar seleccionado"
+                  className="w-20 h-20 rounded-full object-cover border-4 border-discord-blurple shadow-lg"
+                />
+                {customAvatar && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveCustomAvatar}
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white transition-colors"
+                    title="Eliminar foto personalizada"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleRandomAvatar}
+                  className="flex items-center gap-2 px-4 py-2 bg-discord-chat hover:bg-discord-sidebar-hover text-white rounded-lg transition-colors font-medium"
+                  disabled={uploadingImage}
+                >
+                  <RefreshCw size={16} />
+                  Aleatorio
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 px-4 py-2 bg-discord-blurple hover:bg-discord-blurple-hover text-white rounded-lg transition-colors font-medium disabled:opacity-50"
+                  disabled={uploadingImage}
+                >
+                  {uploadingImage ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Subiendo...
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={16} />
+                      Subir foto
+                    </>
+                  )}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </div>
             </div>
             
             {/* Avatar Grid */}
@@ -146,10 +260,19 @@ const UserSetup: React.FC<UserSetupProps> = ({ onComplete }) => {
           <button
             type="submit"
             className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-discord-blurple hover:bg-discord-blurple-hover text-white font-semibold rounded-lg transition-colors shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={!username.trim()}
+            disabled={!username.trim() || checkingUsername || uploadingImage}
           >
-            <Check size={20} />
-            Comenzar
+            {checkingUsername ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Verificando...
+              </>
+            ) : (
+              <>
+                <Check size={20} />
+                Comenzar
+              </>
+            )}
           </button>
         </form>
       </div>

@@ -14,12 +14,14 @@ export default {
         discord: {
           dark: '#1a1a1e',
           sidebar: '#2b2d31',
+          'sidebar-hover': '#35373c',
           chat: '#313338',
           header: '#2b2d31',
           hover: '#3f4147',
           blurple: '#5865F2',
+          'blurple-hover': '#4752c4',
           green: '#23a559',
-		  yellow: '#ffcc17',
+          yellow: '#ffcc17',
           red: '#da373c',
           text: {
             normal: '#dbdee1',
@@ -30,12 +32,6 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
-      },
-      colors: {
-        discord: {
-          'sidebar-hover': '#35373c',
-          'blurple-hover': '#4752c4'
-        }
       }
     }
   },
