@@ -6,7 +6,7 @@
     "start": "node index.js",
     "dev": "vite",
     "build": "vite build && npm run copy-dist",
-    "copy-dist": "powershell -Command \"Copy-Item -Path dist/index.html -Destination . -Force; Copy-Item -Path dist/assets -Destination . -Recurse -Force\"",
+    "copy-dist": "node -e \"require('fs').cpSync('dist/index.html', 'index.html'); require('fs').cpSync('dist/assets', 'assets', {recursive: true})\"",
     "preview": "vite preview"
   },
   "dependencies": {
