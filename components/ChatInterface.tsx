@@ -38,11 +38,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     return (window as any).socketInstance;
   }, []);
 
-  // Lista de usuarios mencionables (bot + usuarios reales)
+  // Lista de usuarios mencionables (bot + TODOS los usuarios, incluso offline y el usuario actual)
   const mentionableUsers = useMemo(() => {
-    const botUser = { id: 'bot', username: 'UPG', avatar: '/upg.png', color: '#5865F2' };
-    return [botUser, ...users.filter(u => u.id !== currentUser?.id)];
-  }, [users, currentUser]);
+    const botUser = { id: 'bot', username: 'UPG', avatar: '/upg.png', color: '#5865F2', online: true };
+    // Incluir TODOS los usuarios (online, offline, y el usuario actual)
+    return [botUser, ...users];
+  }, [users]);
 
   // Filtrar sugerencias de menciones
   const mentionSuggestions = useMemo(() => {
@@ -156,6 +157,42 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   }, [propMessages]);
 
+  // Función para detectar si un mensaje menciona al usuario actual
+  const isMentioned = useCallback((messageContent: string) => {
+    if (!currentUser) return false;
+    const mentionPattern = new RegExp(`@${currentUser.username}\\b`, 'i');
+    return mentionPattern.test(messageContent);
+  }, [currentUser]);
+
+  // Función para resaltar menciones en el texto del mensaje
+  const highlightMentions = useCallback((text: string) => {
+    if (!text) return text;
+    
+    // Buscar todas las menciones (@username)
+    const mentionRegex = /@(\w+)/g;
+    const parts = text.split(mentionRegex);
+    
+    return parts.map((part, index) => {
+      // Si es índice impar, es un username mencionado
+      if (index % 2 === 1) {
+        const isMentioningCurrentUser = currentUser && part.toLowerCase() === currentUser.username.toLowerCase();
+        return (
+          <span
+            key={index}
+            className={`font-semibold ${
+              isMentioningCurrentUser 
+                ? 'text-blue-400 bg-blue-500/20 px-1 rounded' 
+                : 'text-blue-300 hover:underline cursor-pointer'
+            }`}
+          >
+            @{part}
+          </span>
+        );
+      }
+      return part;
+    });
+  }, [currentUser]);
+
   // Funciones de administrador (memoizadas)
   const handleDeleteMessage = useCallback((messageId: string) => {
     if (!isAdmin || !currentUser) return;
@@ -261,11 +298,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           {propMessages.map((msg) => {
             const msgUser = users.find(u => u.id === msg.userId);
             const msgTimestamp = typeof msg.timestamp === 'string' ? new Date(msg.timestamp) : msg.timestamp;
+            const mentioned = isMentioned(msg.content);
             
             return (
               <div 
                 key={msg.id} 
-                className="group flex pr-2 sm:pr-4 mt-3 sm:mt-4 py-0.5 hover:bg-[#2e3035] relative"
+                className={`group flex pr-2 sm:pr-4 mt-3 sm:mt-4 py-0.5 relative transition-all ${
+                  mentioned 
+                    ? 'bg-yellow-500/10 border-l-4 border-yellow-500 pl-2 -ml-1 hover:bg-yellow-500/15' 
+                    : 'hover:bg-[#2e3035]'
+                }`}
                 onMouseEnter={() => setHoveredMessageId(msg.id)}
                 onMouseLeave={() => setHoveredMessageId(null)}
               >
@@ -287,11 +329,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                         ADMIN
                       </span>
                     )}
+                    {mentioned && (
+                      <span className="text-[9px] sm:text-[10px] bg-yellow-500 text-black px-1.5 py-0.5 rounded mr-2 font-bold">
+                        MENCIÓN
+                      </span>
+                    )}
                     <span className="text-[11px] sm:text-xs text-discord-text-muted ml-1 sm:ml-2 font-medium">
                       {msgTimestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <p className="text-sm sm:text-base text-discord-text-normal whitespace-pre-wrap leading-[1.3rem] sm:leading-[1.375rem]">{msg.content}</p>
+                  <p className="text-sm sm:text-base text-discord-text-normal whitespace-pre-wrap leading-[1.3rem] sm:leading-[1.375rem]">
+                    {highlightMentions(msg.content)}
+                  </p>
                 </div>
                 
                 {/* Admin Actions */}
@@ -379,13 +428,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       : 'hover:bg-[#36373d] hover:scale-[1.01]'
                   }`}
                 >
-                  <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 bg-gray-600">
+                  <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 bg-gray-600">
                     <SafeImage 
                       src={user.avatar || ''} 
                       alt={user.username} 
                       className="w-full h-full object-cover" 
                       fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=5865F2&color=fff&size=128`} 
                     />
+                    {/* Indicador de estado online/offline */}
+                    {'online' in user && (
+                      <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#2f3136] ${
+                        user.online ? 'bg-green-500' : 'bg-gray-500'
+                      }`} />
+                    )}
                   </div>
                   <div className="flex-1 text-left">
                     <div className="font-medium text-white flex items-center gap-2">
@@ -395,7 +450,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                           Bot
                         </span>
                       )}
+                      {user.id === currentUser?.id && (
+                        <span className="text-[10px] bg-gray-600 px-1.5 py-0.5 rounded">
+                          Tú
+                        </span>
+                      )}
                     </div>
+                    {'online' in user && (
+                      <div className="text-xs text-discord-text-muted">
+                        {user.online ? '🟢 En línea' : '⚫ Desconectado'}
+                      </div>
+                    )}
                     {user.id === 'bot' && (
                       <div className="text-xs text-discord-text-muted">
                         Bot de la comunidad UPG
