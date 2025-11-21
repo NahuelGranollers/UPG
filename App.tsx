@@ -102,9 +102,21 @@ function App() {
       try {
         // Verificar si viene del callback de Discord
         const urlParams = new URLSearchParams(window.location.search);
-        const isCallback = urlParams.get('auth') === 'success';
+        const authStatus = urlParams.get('auth');
+        const errorCode = urlParams.get('error_code');
+        const errorDescription = urlParams.get('error_description');
         
-        if (isCallback) {
+        // Handle OAuth errors from backend
+        if (authStatus === 'error') {
+          console.error('❌ Discord OAuth error:', errorCode, errorDescription);
+          alert(`Error de autenticación: ${decodeURIComponent(errorDescription || 'Error desconocido')}`);
+          window.history.replaceState({}, document.title, '/');
+          setIsAuthenticated(false);
+          setIsLoadingAuth(false);
+          return;
+        }
+        
+        if (authStatus === 'success') {
           console.log('✅ Received Discord OAuth callback, fetching user from backend...');
           
           // Limpiar URL
