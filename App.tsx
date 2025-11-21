@@ -192,20 +192,24 @@ function App() {
 
     // ✅ Lista completa de usuarios (primera carga)
     socket.on('users:list', (users: User[]) => {
-      console.log('📋 Lista de usuarios recibida:', users.length);
-      setDiscoveredUsers(users.filter(u => u.id !== currentUser.id));
+      console.log('👥 Lista de usuarios recibida:', users);
+      if (currentUser) {
+        setDiscoveredUsers(users.filter(u => u.id !== currentUser.id));
+      }
     });
 
     // ✅ Actualización broadcast de usuarios
     socket.on('users:update', (users: User[]) => {
       console.log('🔄 Usuarios actualizados:', users.length);
-      setDiscoveredUsers(users.filter(u => u.id !== currentUser.id));
+      if (currentUser) {
+        setDiscoveredUsers(users.filter(u => u.id !== currentUser.id));
+      }
     });
 
     // ✅ Usuario se conectó (cambiar a online)
     socket.on('user:online', (user: User) => {
       console.log('✅ Usuario online:', user.username);
-      if (user.id !== currentUser.id) {
+      if (currentUser && user.id !== currentUser.id) {
         setDiscoveredUsers(prev => {
           const index = prev.findIndex(u => u.id === user.id);
           if (index !== -1) {
@@ -444,7 +448,9 @@ function App() {
     const map = new Map<string, User>();
     map.set(BOT_USER.id, BOT_USER);
     discoveredUsers.forEach(u => map.set(u.id, u));
-    map.set(currentUser.id, currentUser);
+    if (currentUser) {
+      map.set(currentUser.id, currentUser);
+    }
     return Array.from(map.values());
   }, [discoveredUsers, currentUser]);
 
@@ -458,7 +464,7 @@ function App() {
     setActiveView(view);
     if (channel && channel.id !== currentChannel.id) {
       setCurrentChannel(channel);
-      if (socketRef.current && isConnected) {
+      if (socketRef.current && isConnected && currentUser) {
         socketRef.current.emit('channel:join', { 
           channelId: channel.id, 
           userId: currentUser.id 
@@ -466,15 +472,15 @@ function App() {
       }
     }
     setMobileMenuOpen(false);
-  }, [isConnected, currentUser.id, currentChannel.id]);
+  }, [isConnected, currentUser, currentChannel.id]);
 
   const handleVoiceJoin = useCallback((channelName: string) => {
     setActiveVoiceChannel(prev => prev === channelName ? null : channelName);
   }, []);
 
   const handleSendMessage = useCallback((content: string) => {
-    if (!socketRef.current || !isConnected) {
-      console.error('❌ Socket no conectado');
+    if (!socketRef.current || !isConnected || !currentUser) {
+      console.error('❌ Socket no conectado o usuario no disponible');
       return;
     }
 
@@ -519,6 +525,9 @@ function App() {
   if (isLoadingAuth || isLoadingDiscord) return null;
   if (!isAuthenticated || !currentUser) return <DiscordLogin />;
 
+  // Asegurar que currentUser no es null en este punto
+  const safeCurrentUser = currentUser;
+
   return (
     <ErrorBoundary>
       <div className="flex h-screen w-full bg-discord-dark font-sans antialiased overflow-hidden relative">
@@ -551,7 +560,7 @@ function App() {
                   messages={currentChannelMessages}
                   onMenuToggle={handleMenuToggle}
                 />
-                <UserList users={allUsers} currentUserId={currentUser.id} />
+                <UserList users={allUsers} currentUserId={safeCurrentUser.id} />
               </>
             )}
             {activeView === AppView.WHO_WE_ARE && (
@@ -632,7 +641,7 @@ function App() {
             }`}
           >
             <div className="h-full w-full overflow-hidden">
-              <UserList users={allUsers} currentUserId={currentUser.id} isMobileView={true} />
+              <UserList users={allUsers} currentUserId={safeCurrentUser.id} isMobileView={true} />
             </div>
           </div>
 
