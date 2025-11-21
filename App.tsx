@@ -774,13 +774,8 @@ function App() {
         {/* Mobile Layout */}
         <div className="flex md:hidden h-full w-full flex-col relative overflow-hidden" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
           {/* Channels Tab */}
-          <div 
-            className={`absolute inset-0 transition-all duration-300 ease-out pb-16 ${
-              mobileActiveTab === 'channels' 
-                ? 'opacity-100 translate-x-0 pointer-events-auto' 
-                : 'opacity-0 -translate-x-full pointer-events-none'
-            }`}
-          >
+          {mobileActiveTab === 'channels' && (
+          <div className="absolute inset-0 pb-16">
             <div className="flex h-full w-full overflow-hidden">
               <Sidebar 
                 currentUser={currentUser} 
@@ -804,43 +799,35 @@ function App() {
               />
             </div>
           </div>
+          )}
 
           {/* Chat Tab */}
-          <div 
-            className={`absolute inset-0 transition-all duration-300 ease-out pb-16 ${
-              mobileActiveTab === 'chat' 
-                ? 'opacity-100 translate-x-0 pointer-events-auto' 
-                : 'opacity-0 translate-x-full pointer-events-none'
-            }`}
-          >
-            <div className="flex flex-1 min-w-0 relative h-full">
-              {activeView === AppView.CHAT && (
-                <ChatInterface
-                  currentUser={currentUser}
-                  users={allUsers}
-                  currentChannel={currentChannel}
-                  onSendMessage={handleSendMessage}
-                  messages={currentChannelMessages}
-                  onMenuToggle={() => setMobileActiveTab('channels')}
-                />
-              )}
-              {activeView === AppView.WHO_WE_ARE && (
-                <WhoWeAre onMenuToggle={() => setMobileActiveTab('channels')} />
-              )}
-              {activeView === AppView.VOTING && (
-                <Voting onMenuToggle={() => setMobileActiveTab('channels')} />
-              )}
+          {mobileActiveTab === 'chat' && (
+            <div className="absolute inset-0 pb-16">
+              <div className="flex flex-1 min-w-0 relative h-full">
+                {activeView === AppView.CHAT && (
+                  <ChatInterface
+                    currentUser={currentUser}
+                    users={allUsers}
+                    currentChannel={currentChannel}
+                    onSendMessage={handleSendMessage}
+                    messages={currentChannelMessages}
+                    onMenuToggle={() => setMobileActiveTab('channels')}
+                  />
+                )}
+                {activeView === AppView.WHO_WE_ARE && (
+                  <WhoWeAre onMenuToggle={() => setMobileActiveTab('channels')} />
+                )}
+                {activeView === AppView.VOTING && (
+                  <Voting onMenuToggle={() => setMobileActiveTab('channels')} />
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Users Tab */}
-          <div 
-            className={`absolute inset-0 transition-all duration-300 ease-out pb-16 ${
-              mobileActiveTab === 'users' 
-                ? 'opacity-100 translate-x-0 pointer-events-auto' 
-                : 'opacity-0 translate-x-full pointer-events-none'
-            }`}
-          >
+          {mobileActiveTab === 'users' && (
+          <div className="absolute inset-0 pb-16">
             <div className="h-full w-full overflow-hidden">
               <UserList 
                 users={allUsers} 
@@ -849,6 +836,7 @@ function App() {
               />
             </div>
           </div>
+          )}
 
           {/* Mobile Tab Bar */}
           <MobileTabBar 
