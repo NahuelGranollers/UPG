@@ -568,9 +568,7 @@ function App() {
                   currentUser={currentUser}
                   users={allUsers}
                   currentChannel={currentChannel}
-                  onSendMessage={handleSendMessage}
-                  messages={currentChannelMessages}
-                  onMenuToggle={handleMenuToggle}
+                  onMobileMenuClick={handleMenuToggle}
                 />
                 <UserList users={allUsers} />
               </>
@@ -626,9 +624,7 @@ function App() {
                   currentUser={currentUser}
                   users={allUsers}
                   currentChannel={currentChannel}
-                  onSendMessage={handleSendMessage}
-                  messages={currentChannelMessages}
-                  onMenuToggle={() => setMobileActiveTab('channels')}
+                  onMobileMenuClick={() => setMobileActiveTab('channels')}
                 />
               )}
               {activeView === AppView.WHO_WE_ARE && (
