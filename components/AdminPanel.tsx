@@ -1,5 +1,5 @@
 import React, { useState, memo } from 'react';
-import { X, Trash2, Users, MessageSquare, Database, RefreshCw, Shield, Ban, Download, AlertTriangle } from 'lucide-react';
+import { X, Trash2, MessageSquare, Shield, AlertTriangle } from 'lucide-react';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -31,21 +31,6 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
           break;
         case 'clear-messages':
           socket.emit('admin:clear-all-messages', { adminId: currentUser.id });
-          break;
-        case 'clear-banned':
-          socket.emit('admin:clear-banned', { adminId: currentUser.id });
-          break;
-        case 'restart-server':
-          socket.emit('admin:restart-server', { adminId: currentUser.id });
-          break;
-        case 'export-data':
-          socket.emit('admin:export-data', { adminId: currentUser.id });
-          break;
-        case 'clear-cache':
-          socket.emit('admin:clear-cache', { adminId: currentUser.id });
-          break;
-        case 'kick-all':
-          socket.emit('admin:kick-all-users', { adminId: currentUser.id });
           break;
       }
     } catch (error) {
@@ -85,51 +70,8 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
 
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)] custom-scrollbar space-y-4">
-          {/* User Management */}
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Users size={20} />
-              Gestión de Usuarios
-            </h3>
-            
-            <ActionButton
-              icon={<Trash2 size={18} />}
-              title="Eliminar Todos los Usuarios"
-              description="Borra todos los usuarios registrados (excepto admin) y limpia users.json"
-              onClick={() => handleAction('clear-users')}
-              isConfirming={confirmAction === 'clear-users'}
-              isLoading={isLoading}
-              variant="danger"
-            />
-
-            <ActionButton
-              icon={<RefreshCw size={18} />}
-              title="Expulsar Todos los Usuarios"
-              description="Desconecta a todos los usuarios conectados (excepto admin)"
-              onClick={() => handleAction('kick-all')}
-              isConfirming={confirmAction === 'kick-all'}
-              isLoading={isLoading}
-              variant="warning"
-            />
-
-            <ActionButton
-              icon={<Ban size={18} />}
-              title="Limpiar Lista de Baneados"
-              description="Elimina todos los usuarios y IPs de la lista de baneos"
-              onClick={() => handleAction('clear-banned')}
-              isConfirming={confirmAction === 'clear-banned'}
-              isLoading={isLoading}
-              variant="warning"
-            />
-          </div>
-
-          {/* Data Management */}
-          <div className="space-y-3 pt-4 border-t border-gray-700">
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Database size={20} />
-              Gestión de Datos
-            </h3>
-
+          {/* Admin Actions */}
+          <div className="space-y-4">
             <ActionButton
               icon={<MessageSquare size={18} />}
               title="Limpiar Todos los Mensajes"
@@ -141,39 +83,11 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
             />
 
             <ActionButton
-              icon={<Database size={18} />}
-              title="Limpiar Caché del Servidor"
-              description="Limpia rate limits y datos temporales en memoria"
-              onClick={() => handleAction('clear-cache')}
-              isConfirming={confirmAction === 'clear-cache'}
-              isLoading={isLoading}
-              variant="info"
-            />
-
-            <ActionButton
-              icon={<Download size={18} />}
-              title="Exportar Datos del Servidor"
-              description="Descarga backup de usuarios, mensajes y configuración"
-              onClick={() => handleAction('export-data', false)}
-              isConfirming={false}
-              isLoading={isLoading}
-              variant="success"
-            />
-          </div>
-
-          {/* Server Management */}
-          <div className="space-y-3 pt-4 border-t border-gray-700">
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-              <RefreshCw size={20} />
-              Servidor
-            </h3>
-
-            <ActionButton
-              icon={<RefreshCw size={18} />}
-              title="Reiniciar Servidor Socket.IO"
-              description="Reinicia las conexiones de Socket.IO (desconecta a todos temporalmente)"
-              onClick={() => handleAction('restart-server')}
-              isConfirming={confirmAction === 'restart-server'}
+              icon={<Trash2 size={18} />}
+              title="Reiniciar Usuarios y IPs"
+              description="Elimina todos los usuarios registrados y limpia sus IPs. Todos deberán volver a crear su usuario"
+              onClick={() => handleAction('clear-users')}
+              isConfirming={confirmAction === 'clear-users'}
               isLoading={isLoading}
               variant="danger"
             />
