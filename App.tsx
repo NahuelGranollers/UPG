@@ -142,8 +142,11 @@ function App() {
     storage.setAuthentication(true);
     setIsAuthenticated(true);
     
-    // Si no hay datos de usuario guardados, mostrar setup
-    if (!storage.hasUserData()) {
+    // Siempre verificar si hay datos de usuario válidos
+    const userData = storage.loadUserData();
+    
+    // Si no hay datos o el usuario tiene un nombre temporal (Guest), mostrar setup
+    if (!userData || userData.username.startsWith('Guest')) {
       setShowUserSetup(true);
     }
   }, []);
@@ -168,7 +171,15 @@ function App() {
 
   // Socket.IO Connection - ACTUALIZADO CON GESTIÓN DE USUARIOS
   useEffect(() => {
-    if (!isAuthenticated || !currentUser) return;
+    if (!isAuthenticated) return;
+    
+    // Si el usuario actual es un Guest (generado automáticamente), mostrar UserSetup
+    if (currentUser.username.startsWith('Guest')) {
+      setShowUserSetup(true);
+      return;
+    }
+    
+    if (!currentUser) return;
 
     // Si el socket ya existe (creado en autenticación), reutilizarlo
     // Si no, crearlo ahora
