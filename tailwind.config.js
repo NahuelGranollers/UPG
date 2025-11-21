@@ -12,7 +12,7 @@ export default {
     extend: {
       colors: {
         discord: {
-          dark: '#1e1f22',
+          dark: '#1a1a1e',
           sidebar: '#2b2d31',
           chat: '#313338',
           header: '#2b2d31',
