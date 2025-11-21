@@ -543,8 +543,22 @@ function App() {
     }
   });
 
-  if (isLoadingAuth || isLoadingDiscord) return null;
-  if (!isAuthenticated || !currentUser) return <DiscordLogin />;
+  if (isLoadingAuth || isLoadingDiscord) {
+    return <div className="flex items-center justify-center h-screen bg-discord-dark text-white">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-discord-blurple"></div>
+    </div>;
+  }
+  
+  if (!isAuthenticated || !currentUser) {
+    return <DiscordLogin />;
+  }
+
+  // Triple verificación que currentUser tiene todas las propiedades necesarias
+  if (!currentUser.id || !currentUser.username || !currentUser.avatar) {
+    console.error('❌ currentUser incompleto:', currentUser);
+    handleLogout();
+    return null;
+  }
 
   // Asegurar que currentUser no es null en este punto
   const safeCurrentUser = currentUser;
