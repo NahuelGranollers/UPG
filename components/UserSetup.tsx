@@ -1,17 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { User, Check, RefreshCw, Upload, X } from 'lucide-react';
-import { uploadImageToImgur, validateImageFile } from '../services/imageUploadService';
-
-const AVATARS = [
-  'https://ui-avatars.com/api/?name=A&background=5865F2&color=fff&size=200',
-  'https://ui-avatars.com/api/?name=B&background=57F287&color=fff&size=200',
-  'https://ui-avatars.com/api/?name=C&background=FEE75C&color=000&size=200',
-  'https://ui-avatars.com/api/?name=D&background=EB459E&color=fff&size=200',
-  'https://ui-avatars.com/api/?name=E&background=ED4245&color=fff&size=200',
-  'https://ui-avatars.com/api/?name=F&background=9B59B6&color=fff&size=200',
-  'https://ui-avatars.com/api/?name=G&background=3498DB&color=fff&size=200',
-  'https://ui-avatars.com/api/?name=H&background=E67E22&color=fff&size=200'
-] as const;
+import React, { useState, useMemo } from 'react';
+import { User, Check } from 'lucide-react';
 
 interface UserSetupProps {
   onComplete: (username: string, avatar: string) => void;
@@ -19,65 +7,34 @@ interface UserSetupProps {
 
 const UserSetup: React.FC<UserSetupProps> = ({ onComplete }) => {
   const [username, setUsername] = useState('');
-  const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0]);
-  const [customAvatar, setCustomAvatar] = useState<string | null>(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
   const [checkingUsername, setCheckingUsername] = useState(false);
   const [error, setError] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleRandomAvatar = () => {
-    const randomIndex = Math.floor(Math.random() * AVATARS.length);
-    setSelectedAvatar(AVATARS[randomIndex]);
-    setCustomAvatar(null); // Resetear avatar personalizado
-  };
+  // Generar avatar basado en la primera letra del nombre
+  const generatedAvatar = useMemo(() => {
+    const firstLetter = username.trim().charAt(0).toUpperCase() || 'U';
+    const colors = [
+      { bg: '5865F2', text: 'fff' }, // Discord blurple
+      { bg: '57F287', text: 'fff' }, // Green
+      { bg: 'FEE75C', text: '000' }, // Yellow
+      { bg: 'EB459E', text: 'fff' }, // Pink
+      { bg: 'ED4245', text: 'fff' }, // Red
+      { bg: '9B59B6', text: 'fff' }, // Purple
+      { bg: '3498DB', text: 'fff' }, // Blue
+      { bg: 'E67E22', text: 'fff' }, // Orange
+      { bg: '11806A', text: 'fff' }, // Teal
+      { bg: '992D22', text: 'fff' }  // Dark red
+    ];
+    
+    // Seleccionar color basado en el código ASCII de la primera letra
+    const charCode = firstLetter.charCodeAt(0);
+    const colorIndex = charCode % colors.length;
+    const color = colors[colorIndex];
+    
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(firstLetter)}&background=${color.bg}&color=${color.text}&size=200&bold=true&font-size=0.5`;
+  }, [username]);
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
 
-    // Validar archivo
-    const validation = validateImageFile(file);
-    if (!validation.valid) {
-      setError(validation.error || 'Error validando imagen');
-      return;
-    }
-
-    setUploadingImage(true);
-    setError('');
-
-    try {
-      // Subir imagen a Imgur (servicio gratuito)
-      const result = await uploadImageToImgur(file);
-      
-      setCustomAvatar(result.url);
-      setSelectedAvatar(result.url as any); // Usar la URL personalizada
-      
-      console.log('✅ Imagen subida exitosamente a Imgur');
-    } catch (err: any) {
-      console.error('Error subiendo imagen:', err);
-      
-      // Mensaje de error más específico
-      if (err.message?.includes('429')) {
-        setError('Límite de subidas alcanzado. Intenta de nuevo en unos minutos.');
-      } else if (err.message?.includes('Network')) {
-        setError('Error de conexión. Verifica tu internet.');
-      } else {
-        setError('Error subiendo la imagen. Intenta de nuevo.');
-      }
-    } finally {
-      setUploadingImage(false);
-      // Limpiar el input para permitir seleccionar el mismo archivo de nuevo
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
-  const handleRemoveCustomAvatar = () => {
-    setCustomAvatar(null);
-    setSelectedAvatar(AVATARS[0]);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,9 +120,8 @@ const UserSetup: React.FC<UserSetupProps> = ({ onComplete }) => {
       return;
     }
 
-    // Usar avatar personalizado o el seleccionado
-    const finalAvatar = customAvatar || selectedAvatar;
-    onComplete(trimmedUsername, finalAvatar);
+    // Usar el avatar generado automáticamente
+    onComplete(trimmedUsername, generatedAvatar);
   };
 
   return (
@@ -183,93 +139,24 @@ const UserSetup: React.FC<UserSetupProps> = ({ onComplete }) => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           
-          {/* Avatar Selection */}
+          {/* Avatar Preview */}
           <div>
-            <label className="block text-sm font-semibold text-gray-300 mb-3">
-              Elige tu avatar
+            <label className="block text-sm font-semibold text-gray-300 mb-3 text-center">
+              Tu avatar
             </label>
-            <div className="flex items-center gap-4">
+            <div className="flex justify-center">
               <div className="relative">
                 <img 
-                  src={customAvatar || selectedAvatar} 
-                  alt="Avatar seleccionado"
-                  className="w-20 h-20 rounded-full object-cover border-4 border-discord-blurple shadow-lg"
-                />
-                {customAvatar && (
-                  <button
-                    type="button"
-                    onClick={handleRemoveCustomAvatar}
-                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white transition-colors"
-                    title="Eliminar foto personalizada"
-                  >
-                    <X size={14} />
-                  </button>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={handleRandomAvatar}
-                  className="flex items-center gap-2 px-4 py-2 bg-discord-chat hover:bg-discord-sidebar-hover text-white rounded-lg transition-colors font-medium"
-                  disabled={uploadingImage}
-                >
-                  <RefreshCw size={16} />
-                  Aleatorio
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2 px-4 py-2 bg-discord-blurple hover:bg-discord-blurple-hover text-white rounded-lg transition-colors font-medium disabled:opacity-50"
-                  disabled={uploadingImage}
-                >
-                  {uploadingImage ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Subiendo...
-                    </>
-                  ) : (
-                    <>
-                      <Upload size={16} />
-                      Subir foto
-                    </>
-                  )}
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                  onChange={handleFileSelect}
-                  className="hidden"
+                  src={generatedAvatar} 
+                  alt="Tu avatar"
+                  className="w-32 h-32 rounded-full object-cover border-4 border-discord-blurple shadow-lg transition-all duration-300"
+                  key={generatedAvatar}
                 />
               </div>
             </div>
-            
-            {/* Avatar Grid */}
-            <div className="grid grid-cols-4 gap-2 mt-4">
-              {AVATARS.map((avatar, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => setSelectedAvatar(avatar)}
-                  className={`relative w-full aspect-square rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${
-                    selectedAvatar === avatar 
-                      ? 'border-discord-blurple ring-2 ring-discord-blurple/50' 
-                      : 'border-transparent hover:border-gray-500'
-                  }`}
-                >
-                  <img 
-                    src={avatar} 
-                    alt={`Avatar ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                  {selectedAvatar === avatar && (
-                    <div className="absolute inset-0 bg-discord-blurple/40 flex items-center justify-center">
-                      <Check size={24} className="text-white" />
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
+            <p className="mt-3 text-xs text-gray-400 text-center">
+              El avatar se genera automáticamente con la primera letra de tu nombre
+            </p>
           </div>
 
           {/* Username Input */}
@@ -305,7 +192,7 @@ const UserSetup: React.FC<UserSetupProps> = ({ onComplete }) => {
           <button
             type="submit"
             className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-discord-blurple hover:bg-discord-blurple-hover text-white font-semibold rounded-lg transition-colors shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={!username.trim() || checkingUsername || uploadingImage}
+            disabled={!username.trim() || checkingUsername}
           >
             {checkingUsername ? (
               <>
