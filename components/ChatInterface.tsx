@@ -61,22 +61,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [propMessages]);
 
-  // Manejar input de texto con detección de @
+  // Manejar input de texto con detección de @ y cierre automático del panel
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const text = e.target.value;
     const cursorPos = e.target.selectionStart || 0;
-
     setInputText(text);
-
     // Buscar @ antes del cursor
     const textBeforeCursor = text.slice(0, cursorPos);
     const lastAtIndex = textBeforeCursor.lastIndexOf('@');
-
     if (lastAtIndex !== -1) {
-      // Hay un @ antes del cursor
       const textAfterAt = textBeforeCursor.slice(lastAtIndex + 1);
-
-      // Solo mostrar si no hay espacios después del @ y está cerca del cursor
       if (!textAfterAt.includes(' ') && (cursorPos - lastAtIndex) <= 20) {
         setShowMentionSuggestions(true);
         setMentionSearch(textAfterAt);
@@ -90,7 +84,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   }, []);
 
-  // Manejar teclas especiales
+  // Cerrar panel de menciones al perder foco
+  const handleInputBlur = useCallback(() => {
+    setTimeout(() => setShowMentionSuggestions(false), 100);
+  }, []);
+
+  // Manejar teclas especiales y cierre con Escape
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (showMentionSuggestions && mentionSuggestions.length > 0) {
       if (e.key === 'ArrowDown') {
@@ -110,6 +109,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         }
       } else if (e.key === 'Escape') {
         setShowMentionSuggestions(false);
+        inputRef.current?.blur();
       }
     }
   }, [showMentionSuggestions, mentionSuggestions, selectedSuggestionIndex]);
@@ -442,9 +442,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </div>
       {/* Input */}
       <div className="px-3 sm:px-4 pt-2 shrink-0 relative" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
-        {/* Sugerencias de menciones */}
+        {/* Sugerencias de menciones - overlay con z-index alto y responsive */}
         {showMentionSuggestions && mentionSuggestions.length > 0 && (
-          <div className="absolute bottom-full left-3 sm:left-4 right-3 sm:right-4 mb-2 bg-[#2f3136] rounded-lg shadow-2xl border border-gray-800 overflow-hidden max-h-64 overflow-y-auto z-50 animate-in fade-in slide-in-from-bottom-2 duration-150">
+          <div className="fixed left-1/2 bottom-[80px] sm:left-1/2 sm:bottom-[100px] w-[90vw] sm:w-[500px] max-w-[500px] -translate-x-1/2 bg-[#2f3136] rounded-lg shadow-2xl border border-gray-800 overflow-hidden max-h-64 overflow-y-auto z-[9999] animate-in fade-in slide-in-from-bottom-2 duration-150">
             <div className="py-2">
               <div className="px-3 py-1 text-xs font-semibold text-discord-text-muted uppercase">
                 Mencionar
@@ -458,6 +458,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       ? 'bg-discord-blurple scale-[1.02] shadow-lg'
                       : 'hover:bg-[#36373d] hover:scale-[1.01]'
                     }`}
+                  aria-label={`Mencionar a ${user.username}`}
                 >
                   <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 bg-gray-600">
                     <SafeImage
@@ -526,9 +527,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               value={inputText}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
+              onBlur={handleInputBlur}
               placeholder={`Enviar mensaje a #${currentChannel.name}`}
-              className={`relative z-10 bg-transparent w-full text-sm sm:text-base outline-none min-h-[44px] transition-all ${
-                inputText ? 'text-transparent caret-white' : 'text-discord-text-normal placeholder-discord-text-muted'
+              className={`relative z-10 bg-[#232428] w-full text-sm sm:text-base outline-none min-h-[44px] transition-all ${
+                inputText ? 'text-transparent caret-blue-400' : 'text-discord-text-normal placeholder-discord-text-muted'
               }`}
               aria-label="Escribir mensaje"
               maxLength={2000}
