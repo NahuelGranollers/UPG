@@ -1,4 +1,5 @@
 ﻿import React, { memo, useState } from 'react';
+import { useSocket } from '../context/SocketContext';
 import { Home, Plus, Compass, Shield } from 'lucide-react';
 import SafeImage from './SafeImage';
 import AdminPanel from './AdminPanel';
@@ -14,8 +15,8 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentUser, setCurrentUser, isC
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const isAdmin = currentUser?.role === UserRole.ADMIN;
 
-  // Get socket instance from window
-  const socket = (window as any).socketInstance;
+  // Obtener socket desde el contexto
+  const { socket } = useSocket();
   return (
     <div className="w-[72px] bg-discord-dark flex flex-col items-center py-3 space-y-2 overflow-y-auto shrink-0">
       {/* Direct Messages / Home */}
