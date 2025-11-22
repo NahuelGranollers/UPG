@@ -73,6 +73,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     };
   }, [socket, isConnected, currentChannel.id]);
 
+  // Escuchar cambios de color de usuario
+  useEffect(() => {
+    if (socket) {
+      socket.on('admin:user-color-changed', ({ userId, color }) => {
+        setUserColors(prev => ({ ...prev, [userId]: color }));
+      });
+
+      return () => {
+        socket.off('admin:user-color-changed');
+      };
+    }
+  }, [socket]);
+
   // Lista de usuarios mencionables (bot + TODOS los usuarios, incluso offline y el usuario actual)
   const mentionableUsers = useMemo(() => {
     const botUser = { id: 'bot', username: 'UPG', avatar: '/upg.png', color: '#5865F2', online: true, isBot: true };
@@ -378,7 +391,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center flex-wrap">
-                    <span className="font-medium text-sm sm:text-base mr-2" style={{ color: msgUser?.color || '#fff' }}>
+                    <span className="font-medium text-sm sm:text-base mr-2" style={{ color: msg.userId === 'bot' ? '#5865F2' : (userColors[msg.userId] || msgUser?.color || '#fff') }}>
                       {msg.username || msgUser?.username}
                     </span>
                     {msgUser?.role === UserRole.ADMIN && (

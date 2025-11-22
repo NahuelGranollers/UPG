@@ -46,20 +46,6 @@ export const useChat = (channelId: string) => {
         }
         // Forzar unión al canal antes de enviar el mensaje
         socket.emit('channel:join', { channelId, userId: currentUser.id });
-        // Agregar el mensaje localmente para mostrarlo de inmediato
-        setMessages(prev => [
-            ...prev,
-            {
-                id: `${Date.now()}-local`,
-                channelId,
-                userId: currentUser.id,
-                username: currentUser.username,
-                avatar: currentUser.avatar,
-                content,
-                timestamp: new Date(),
-                isSystem: false
-            }
-        ]);
         socket.emit('message:send', {
             channelId,
             content,
