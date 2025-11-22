@@ -31,7 +31,9 @@ export const useChat = (channelId: string) => {
 
     // Escuchar mensajes nuevos en tiempo real
     const handleNewMessage = (message: Message) => {
+      console.log('FRONTEND: Mensaje recibido:', message);
       if (message.channelId === channelId) {
+        console.log('FRONTEND: Agregando mensaje al estado:', message);
         setMessages(prev => {
           // Remover mensaje local duplicado si existe
           const filtered = prev.filter(
@@ -42,6 +44,7 @@ export const useChat = (channelId: string) => {
           );
           return [...filtered, message];
         });
+        console.log('FRONTEND: Mensaje agregado al estado');
       }
     };
 

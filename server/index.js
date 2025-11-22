@@ -536,6 +536,12 @@ io.on('connection', socket => {
 
     // Emitir a todos en el canal
     io.to(message.channelId).emit('message:received', db.sanitizeMessageOutput(message));
+    // Asegurar entrega al socket remitente aunque no se haya unido todavía al room
+    try {
+      socket.emit('message:received', db.sanitizeMessageOutput(message));
+    } catch (e) {
+      logger.debug('No se pudo emitir directamente al socket remitente:', e);
+    }
 
     // 🤖 Lógica del Bot (Respuestas Agresivas)
     if (message.content.toLowerCase().includes('@upg')) {
@@ -636,13 +642,19 @@ io.on('connection', socket => {
       setTimeout(async () => {
         try {
           await db.saveMessage(botMessage);
-          logger.info(`Enviando respuesta del bot: ${botResponse}`);
+          console.log('SERVIDOR: Enviando respuesta del bot:', botResponse);
           io.to(message.channelId).emit('message:received', db.sanitizeMessageOutput(botMessage));
-          logger.info(`Mensaje del bot enviado al canal ${message.channelId}`);
+          // También enviar directamente al socket remitente para evitar condiciones de carrera
+          try {
+            socket.emit('message:received', db.sanitizeMessageOutput(botMessage));
+          } catch (innerErr) {
+            logger.debug('No se pudo emitir respuesta del bot directamente al socket remitente:', innerErr);
+          }
+          console.log('SERVIDOR: Mensaje del bot enviado al canal', message.channelId);
         } catch (err) {
           logger.error('Error guardando mensaje del bot:', err);
         }
-      }, 1500);
+      }, 1000); // Reducido a 1 segundo para testing
     }
   });
 
