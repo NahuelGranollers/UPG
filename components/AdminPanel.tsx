@@ -14,6 +14,20 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
 
   if (!isOpen) return null;
 
+  // Mostrar advertencia si el socket no está disponible
+  if (!socket) {
+    return (
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+        <div className="bg-discord-sidebar rounded-lg shadow-2xl max-w-md w-full p-8 border border-red-600 flex flex-col items-center">
+          <Shield className="w-10 h-10 text-red-600 mb-4" />
+          <h2 className="text-xl font-bold text-red-600 mb-2">Error de conexión</h2>
+          <p className="text-base text-white mb-4 text-center">No se ha detectado conexión con el servidor.<br />Verifica tu conexión y recarga la página.</p>
+          <button onClick={onClose} className="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700">Cerrar</button>
+        </div>
+      </div>
+    );
+  }
+
   const handleAction = async (action: string, requiresConfirm = true) => {
     if (requiresConfirm && confirmAction !== action) {
       setConfirmAction(action);
