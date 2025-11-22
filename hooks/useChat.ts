@@ -44,7 +44,8 @@ export const useChat = (channelId: string) => {
             toast.error('No hay conexión con el servidor');
             return;
         }
-
+        // Forzar unión al canal antes de enviar el mensaje
+        socket.emit('channel:join', { channelId, userId: currentUser.id });
         socket.emit('message:send', {
             channelId,
             content,
