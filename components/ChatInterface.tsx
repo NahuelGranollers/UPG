@@ -397,11 +397,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             return (
               <div
                 key={msg.id}
-                className={`group flex pr-2 sm:pr-4 mt-3 sm:mt-4 py-0.5 relative transition-all ${mentioned ? 'bg-yellow-500/10 border-l-4 border-yellow-500 pl-2 -ml-1 hover:bg-yellow-500/15' : 'hover:bg-[#2e3035]'}`}
+                className={`group flex pr-2 sm:pr-3 mt-2 sm:mt-3 py-0.5 relative transition-all ${mentioned ? 'bg-yellow-500/10 border-l-4 border-yellow-500 pl-2 -ml-1 hover:bg-yellow-500/15' : 'hover:bg-[rgba(255,255,255,0.02)]'}`}
                 onMouseEnter={() => setHoveredMessageId(msg.id)}
                 onMouseLeave={() => setHoveredMessageId(null)}
               >
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-600 mr-3 sm:mr-4 mt-0.5 overflow-hidden shrink-0 cursor-pointer">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gray-600 mr-2 sm:mr-3 mt-0.5 overflow-hidden shrink-0 cursor-pointer">
                   <SafeImage
                     src={msg.avatar || msgUser?.avatar || ''}
                     alt={msg.username || msgUser?.username || ''}

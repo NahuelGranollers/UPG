@@ -107,7 +107,7 @@ const UserList: React.FC<UserListProps> = memo(({ users, currentUserId, isMobile
       } flex flex-col p-2 sm:p-3 overflow-y-auto custom-scrollbar border-l border-gray-900/20`}
     >
       {/* Online Category */}
-      <div className="mb-5 sm:mb-6">
+      <div className="mb-4 sm:mb-5">
         <h2 className="text-xs font-bold text-discord-text-muted uppercase mb-2 px-2 tracking-wide">
           Disponible — {onlineUsers.length}
         </h2>
@@ -117,7 +117,7 @@ const UserList: React.FC<UserListProps> = memo(({ users, currentUserId, isMobile
       </div>
 
       {/* Bots Category */}
-      <div className="mb-5 sm:mb-6">
+      <div className="mb-4 sm:mb-5">
         <h2 className="text-xs font-bold text-discord-text-muted uppercase mb-2 px-2 tracking-wide">
           Bots — {bots.length}
         </h2>

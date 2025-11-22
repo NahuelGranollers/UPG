@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react';
 import { User } from '../types';
+import { Send } from 'lucide-react';
 
 interface MessageInputProps {
   inputText: string;
@@ -131,12 +132,12 @@ const MessageInput: React.FC<MessageInputProps> = ({
       )}
 
       <div
-        className={`bg-[#383a40] rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 flex items-center transition-all duration-200 relative ${showMentionSuggestions ? 'ring-2 ring-discord-blurple shadow-lg shadow-discord-blurple/20' : ''}`}
+        className={`bg-[var(--chat-bg)] rounded-lg px-2 sm:px-3 py-2 flex items-center gap-2 transition-all duration-150 relative z-base ${showMentionSuggestions ? 'ring-1 ring-[var(--blurple)]' : ''}`}
       >
         <form onSubmit={handleSendMessage} className="flex-1 flex items-center relative">
           {/* Preview layer */}
           <div
-            className="absolute inset-0 flex items-center pointer-events-none overflow-hidden whitespace-pre text-sm sm:text-base text-discord-text-normal"
+            className="absolute left-3 right-12 inset-y-0 flex items-center pointer-events-none overflow-hidden whitespace-pre text-sm sm:text-sm text-discord-text-normal"
             aria-hidden="true"
           >
             {renderInputPreview(inputText)}
@@ -149,11 +150,19 @@ const MessageInput: React.FC<MessageInputProps> = ({
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder={`Enviar mensaje a #${currentChannel.name}`}
-            className={`relative z-10 bg-[#232428] w-full text-sm sm:text-base outline-none min-h-[44px] transition-all text-discord-text-normal placeholder-discord-text-muted ${inputText ? 'caret-blue-400' : ''}`}
+            className={`relative z-10 bg-[var(--chat-bg)] w-full text-sm sm:text-sm outline-none min-h-[40px] pl-3 pr-12 transition-all text-[var(--text)] placeholder-[var(--muted)] rounded`}
             aria-label="Escribir mensaje"
             maxLength={2000}
             autoComplete="off"
           />
+          {/* Botón de envío a la derecha */}
+          <button
+            type="submit"
+            aria-label="Enviar mensaje"
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-transparent p-2 rounded hover:bg-[rgba(255,255,255,0.03)]"
+          >
+            <Send size={16} className="text-[var(--blurple)]" />
+          </button>
         </form>
       </div>
     </div>

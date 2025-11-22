@@ -93,6 +93,23 @@ body {
 /* Input container safe area so messages never hide under the input */
 .chat-input-safe { padding-bottom: 1.25rem; }
 
+/* Compact spacing adjustments */
+:root {
+  --compact-avatar: 36px;
+  --compact-gap: 8px;
+  --compact-padding: 8px;
+}
+
+/* Send button styling adjustments */
+.message-send-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+}
+
 
 #root {
   width: 100vw;
