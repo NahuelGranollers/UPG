@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { Message, User, UserRole } from '../types';
-import { Hash, Menu, Trash2, Shield, Ban, UserX } from 'lucide-react';
+import { Hash, Menu, Trash2, Shield, Ban, UserX, VolumeX, Palette, Globe, Zap } from 'lucide-react';
 import SafeImage from './SafeImage';
 
 interface ChatInterfaceProps {
@@ -30,6 +30,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [isBotTyping, setIsBotTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [silencedUsers, setSilencedUsers] = useState<string[]>([]);
+  const [userColors, setUserColors] = useState<Record<string, string>>({});
 
   // Ordenar mensajes: más antiguo arriba, más reciente abajo
   const orderedMessages = useMemo(() => {
@@ -39,6 +41,26 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       return ta - tb;
     });
   }, [messages]);
+
+  // Actualizar chat al recibir channel:history
+  useEffect(() => {
+    // getSocket está definido después, así que lo movemos dentro del useEffect
+    const socket = (window as any).socketInstance;
+    if (!socket) return;
+    const handleChannelHistory = (data: { channelId: string; messages: Message[] }) => {
+      if (data.channelId === currentChannel.id) {
+        // Actualizar mensajes
+        if (Array.isArray(data.messages)) {
+          setInputText('');
+          setShowMentionSuggestions(false);
+        }
+      }
+    };
+    socket.on('channel:history', handleChannelHistory);
+    return () => {
+      socket.off('channel:history', handleChannelHistory);
+    };
+  }, [currentChannel.id]);
 
   // Lista de usuarios mencionables (bot + TODOS los usuarios, incluso offline y el usuario actual)
   const mentionableUsers = useMemo(() => {
@@ -221,6 +243,69 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   }, [isAdmin, currentUser, getSocket]);
 
+  // Nueva acción: silenciar usuario
+  const handleSilenceUser = useCallback((userId: string, username: string) => {
+    if (!isAdmin || !currentUser || userId === currentUser.id) return;
+    if (window.confirm(`¿Silenciar a ${username}? No podrá enviar mensajes hasta que lo des-silencies.`)) {
+      const socket = getSocket();
+      if (socket) {
+        socket.emit('admin:silence-user', {
+          userId,
+          adminId: currentUser.id
+        });
+      }
+      setSilencedUsers(prev => [...prev, userId]);
+    }
+  }, [isAdmin, currentUser, getSocket]);
+
+  // Nueva acción: cambiar color de usuario
+  const handleChangeColor = useCallback((userId: string, username: string) => {
+    if (!isAdmin || !currentUser || userId === currentUser.id) return;
+    const newColor = prompt(`Nuevo color HEX para ${username} (ejemplo: #ff0000):`, '#'+Math.floor(Math.random()*16777215).toString(16));
+    if (newColor && /^#[0-9A-Fa-f]{6}$/.test(newColor)) {
+      const socket = getSocket();
+      if (socket) {
+        socket.emit('admin:change-color', {
+          userId,
+          color: newColor,
+          adminId: currentUser.id
+        });
+      }
+      setUserColors(prev => ({ ...prev, [userId]: newColor }));
+    } else {
+      alert('Color inválido. Usa formato HEX (#RRGGBB)');
+    }
+  }, [isAdmin, currentUser, getSocket]);
+
+  // Nueva acción: enviar mensaje global
+  const handleGlobalMessage = useCallback(() => {
+    if (!isAdmin || !currentUser) return;
+    const msg = prompt('Mensaje global para todos los canales:');
+    if (msg && msg.trim()) {
+      const socket = getSocket();
+      if (socket) {
+        socket.emit('admin:global-message', {
+          content: msg,
+          adminId: currentUser.id
+        });
+      }
+    }
+  }, [isAdmin, currentUser, getSocket]);
+
+  // Nueva acción: modo troll
+  const handleTrollMode = useCallback((userId: string, username: string) => {
+    if (!isAdmin || !currentUser || userId === currentUser.id) return;
+    if (window.confirm(`¿Activar modo troll para ${username}?`)) {
+      const socket = getSocket();
+      if (socket) {
+        socket.emit('admin:troll-mode', {
+          userId,
+          adminId: currentUser.id
+        });
+      }
+    }
+  }, [isAdmin, currentUser, getSocket]);
+
   // Render
   return (
     <div className="flex-1 flex flex-col bg-discord-chat min-w-0 h-full">
@@ -326,6 +411,27 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     >
                       <Ban size={16} className="sm:w-3.5 sm:h-3.5" />
                     </button>
+                    <button
+                      onClick={() => handleSilenceUser(msg.userId, msg.username)}
+                      className="p-2 sm:p-1.5 hover:bg-gray-500/20 rounded text-gray-400 hover:text-gray-300 transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
+                      title="Silenciar usuario"
+                    >
+                      <VolumeX size={16} className="sm:w-3.5 sm:h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleChangeColor(msg.userId, msg.username)}
+                      className="p-2 sm:p-1.5 hover:bg-blue-500/20 rounded text-blue-400 hover:text-blue-300 transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
+                      title="Cambiar color de usuario"
+                    >
+                      <Palette size={16} className="sm:w-3.5 sm:h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleTrollMode(msg.userId, msg.username)}
+                      className="p-2 sm:p-1.5 hover:bg-pink-500/20 rounded text-pink-400 hover:text-pink-300 transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
+                      title="Modo troll"
+                    >
+                      <Zap size={16} className="sm:w-3.5 sm:h-3.5" />
+                    </button>
                   </div>
                 )}
               </div>
@@ -360,112 +466,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </div>
       {/* Input */}
       <div className="px-3 sm:px-4 pt-2 shrink-0 relative" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
-        {/* Sugerencias de menciones */}
-        {showMentionSuggestions && mentionSuggestions.length > 0 && (
-          <div className="fixed left-1/2 bottom-[80px] sm:left-1/2 sm:bottom-[100px] w-[90vw] sm:w-[500px] max-w-[500px] -translate-x-1/2 bg-[#2f3136] rounded-lg shadow-2xl border border-gray-800 overflow-hidden max-h-64 overflow-y-auto z-[9999] animate-in fade-in slide-in-from-bottom-2 duration-150">
-            <div className="py-2">
-              <div className="px-3 py-1 text-xs font-semibold text-discord-text-muted uppercase">Mencionar</div>
-              {/* Apartado de bots */}
-              {mentionSuggestions.filter(u => u.isBot).length > 0 && (
-                <div className="px-3 py-1 text-xs font-bold text-discord-text-muted">Bots</div>
-              )}
-              {mentionSuggestions.map((user, globalIndex) => {
-                if (!user.isBot) return null;
-                return (
-                  <button
-                    key={user.id}
-                    onClick={() => completeMention(user)}
-                    onMouseEnter={() => setSelectedSuggestionIndex(globalIndex)}
-                    className={`w-full px-3 py-2 flex items-center gap-3 transition-all duration-150 ${globalIndex === selectedSuggestionIndex ? 'bg-discord-blurple scale-[1.02] shadow-lg' : 'hover:bg-[#36373d] hover:scale-[1.01]'}`}
-                    aria-label={`Mencionar a ${user.username}`}
-                  >
-                    <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 bg-gray-600">
-                      <SafeImage src={user.avatar || ''} alt={user.username} className="w-full h-full object-cover" fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=5865F2&color=fff&size=128`} />
-                      <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#2f3136] bg-gray-500" />
-                    </div>
-                    <div className="flex-1 text-left">
-                      <div className="font-medium text-white flex items-center gap-2">
-                        {user.username}
-                        <span className="text-[10px] bg-discord-blurple px-1.5 py-0.5 rounded uppercase">Bot</span>
-                      </div>
-                      <div className="text-xs text-discord-text-muted">Bot de la comunidad UPG</div>
-                    </div>
-                    <div className="text-xs text-discord-text-muted">
-                      {globalIndex === selectedSuggestionIndex && (
-                        <span className="bg-gray-700 px-2 py-0.5 rounded">Tab</span>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-              {/* Apartado de usuarios normales */}
-              {mentionSuggestions.filter(u => !u.isBot).length > 0 && (
-                <div className="px-3 py-1 text-xs font-bold text-discord-text-muted">Usuarios</div>
-              )}
-              {mentionSuggestions.map((user, globalIndex) => {
-                if (user.isBot) return null;
-                return (
-                  <button
-                    key={user.id}
-                    onClick={() => completeMention(user)}
-                    onMouseEnter={() => setSelectedSuggestionIndex(globalIndex)}
-                    className={`w-full px-3 py-2 flex items-center gap-3 transition-all duration-150 ${globalIndex === selectedSuggestionIndex ? 'bg-discord-blurple scale-[1.02] shadow-lg' : 'hover:bg-[#36373d] hover:scale-[1.01]'}`}
-                    aria-label={`Mencionar a ${user.username}`}
-                  >
-                    <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 bg-gray-600">
-                      <SafeImage src={user.avatar || ''} alt={user.username} className="w-full h-full object-cover" fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=5865F2&color=fff&size=128`} />
-                      {'online' in user && (
-                        <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#2f3136] ${user.online ? 'bg-green-500' : 'bg-gray-500'}`} />
-                      )}
-                    </div>
-                    <div className="flex-1 text-left">
-                      <div className="font-medium text-white flex items-center gap-2">
-                        {user.username}
-                        {user.id === currentUser?.id && (
-                          <span className="text-[10px] bg-gray-600 px-1.5 py-0.5 rounded">Tú</span>
-                        )}
-                      </div>
-                      {'online' in user && (
-                        <div className="text-xs text-discord-text-muted">{user.online ? '🟢 En línea' : '⚫ Desconectado'}</div>
-                      )}
-                    </div>
-                    <div className="text-xs text-discord-text-muted">
-                      {globalIndex === selectedSuggestionIndex && (
-                        <span className="bg-gray-700 px-2 py-0.5 rounded">Tab</span>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+        {/* Botón de mensaje global para admin */}
+        {isAdmin && (
+          <button
+            onClick={handleGlobalMessage}
+            className="absolute right-4 top-2 bg-discord-blurple text-white px-3 py-1 rounded shadow hover:bg-blue-600 z-10"
+            title="Enviar mensaje global"
+          >
+            <Globe size={16} className="inline mr-1" /> Mensaje global
+          </button>
         )}
-
-        <div className={`bg-[#383a40] rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 flex items-center transition-all duration-200 relative ${showMentionSuggestions ? 'ring-2 ring-discord-blurple shadow-lg shadow-discord-blurple/20' : ''}`}>
-          <form onSubmit={handleSendMessage} className="flex-1 flex items-center relative">
-            {/* Preview layer - muestra texto con menciones destacadas */}
-            <div className="absolute inset-0 flex items-center pointer-events-none overflow-hidden whitespace-pre text-sm sm:text-base text-discord-text-normal" aria-hidden="true">
-              {renderInputPreview(inputText)}
-            </div>
-            {/* Input real */}
-            <input
-              ref={inputRef}
-              type="text"
-              value={inputText}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              onBlur={handleInputBlur}
-              placeholder={`Enviar mensaje a #${currentChannel.name}`}
-              className={`relative z-10 bg-[#232428] w-full text-sm sm:text-base outline-none min-h-[44px] transition-all text-discord-text-normal placeholder-discord-text-muted ${inputText ? 'caret-blue-400' : ''}`}
-              aria-label="Escribir mensaje"
-              maxLength={2000}
-              autoComplete="off"
-            />
-          </form>
+        {/* Sugerencias de menciones */}
+        {/* ...existing code... */}
         </div>
-      </div>
-    </div>
+       </div>
   );
-};
+}
 
 export default memo(ChatInterface);
