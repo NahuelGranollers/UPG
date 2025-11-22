@@ -323,20 +323,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <Hash size={24} className="text-discord-text-muted mr-2 shrink-0" />
           <span className="truncate">{currentChannel.name}</span>
         </div>
-        {isAdmin && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs bg-discord-blurple px-2 py-1 rounded flex items-center gap-1">
-              <Shield size={12} /> ADMIN
-            </span>
-            <button
-              onClick={handleClearChannel}
-              className="text-red-400 hover:text-red-300 px-2 py-1 hover:bg-red-500/10 rounded transition-colors"
-              title="Limpiar chat"
-            >
-              <Trash2 size={18} />
-            </button>
-          </div>
-        )}
       </div>
       {/* Mensajes */}
       <div className="flex-1 overflow-y-auto px-3 sm:px-4 pt-3 sm:pt-4 flex flex-col" style={{ maxHeight: '100%' }}>
