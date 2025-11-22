@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import {
   Hash,
   Volume2,
@@ -6,11 +6,12 @@ import {
   Vote,
   Users,
   Mic,
-  HeadphoneOff,
   Settings,
   LogIn,
   LogOut,
 } from 'lucide-react';
+import ServerSettings from './ServerSettings';
+import { useAuth } from '../context/AuthContext';
 import { AppView, User } from '../types';
 import { ChannelData } from '../types';
 import SafeImage from './SafeImage';
@@ -40,6 +41,9 @@ const ChannelList: React.FC<ChannelListProps> = ({
   onLoginWithDiscord,
   onLogoutDiscord,
 }) => {
+  const [micActive, setMicActive] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const { updateUser } = useAuth();
   const TextChannelItem = React.memo(
     ({
       id,
@@ -212,12 +216,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
           </div>
           <div className="flex items-center justify-between">
             <div className="text-discord-text-muted text-[10px] px-1">Latencia: 24ms</div>
-            <button
-              onClick={() => onVoiceJoin(activeVoiceChannel)}
-              className="hover:bg-gray-700 p-1 rounded"
-            >
-              <HeadphoneOff size={14} className="text-discord-text-header" />
-            </button>
+              {/* Headphone button removed */}
           </div>
         </div>
       )}
@@ -225,7 +224,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
       {/* Bottom Controls (User) */}
       <div className="bg-[#232428] shrink-0 flex flex-col z-10">
         <div className="h-[60px] sm:h-[52px] px-2 flex items-center">
-          <div className="group flex items-center py-1 px-1 pl-0.5 rounded-md hover:bg-discord-hover cursor-pointer mr-auto min-w-[120px] flex-1 max-w-[140px]">
+          <div className="group flex items-center py-1 px-1 pl-0.5 rounded-md hover:bg-discord-hover cursor-pointer mr-2 min-w-0 flex-1">
             <div className="relative w-9 h-9 sm:w-8 sm:h-8 mr-2 ml-1 shrink-0">
               <SafeImage
                 src={currentUser?.avatar || ''}
@@ -249,7 +248,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-1 ml-2">
             {currentUser?.isGuest && onLoginWithDiscord && (
               <button
                 onClick={onLoginWithDiscord}
@@ -268,18 +267,38 @@ const ChannelList: React.FC<ChannelListProps> = ({
                 <LogOut size={18} />
               </button>
             )}
-            <button className="hidden sm:flex p-1.5 rounded hover:bg-discord-hover text-discord-text-muted hover:text-discord-text-normal">
+            <button
+              onClick={() => setMicActive(s => !s)}
+              className={`hidden sm:flex p-1.5 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${micActive ? 'bg-green-600 text-white' : 'hover:bg-discord-hover text-discord-text-muted hover:text-discord-text-normal'}`}
+              title={micActive ? 'Micrófono activado' : 'Activar micrófono'}
+            >
               <Mic size={18} />
             </button>
-            <button className="hidden sm:flex p-1.5 rounded hover:bg-discord-hover text-discord-text-muted hover:text-discord-text-normal">
-              <HeadphoneOff size={18} />
-            </button>
-            <button className="p-2 sm:p-1.5 rounded hover:bg-discord-hover text-discord-text-muted hover:text-discord-text-normal min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center">
+
+            <button
+              onClick={() => setSettingsOpen(true)}
+              className="p-2 sm:p-1.5 rounded hover:bg-discord-hover text-discord-text-muted hover:text-discord-text-normal min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
+              title="Editar perfil"
+            >
               <Settings size={18} />
             </button>
           </div>
         </div>
       </div>
+      
+      <ServerSettings
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        initialName={currentUser?.username || ''}
+        initialColor={currentUser?.color || '#808080'}
+        onSave={(name, color) => {
+          if (!currentUser) return;
+          updateUser({ ...currentUser, username: name, color });
+        }}
+        onLinkDiscord={onLoginWithDiscord}
+        onUnlinkDiscord={onLogoutDiscord}
+        isGuest={currentUser?.isGuest}
+      />
     </div>
   );
 };
