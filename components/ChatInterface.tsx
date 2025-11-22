@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
+import { useSocket } from '../context/SocketContext';
 import { Message, User, UserRole } from '../types';
 import { Hash, Menu, Trash2, Shield, Ban, UserX, VolumeX, Palette, Globe, Zap } from 'lucide-react';
 import SafeImage from './SafeImage';
@@ -42,25 +43,29 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     });
   }, [messages]);
 
-  // Actualizar chat al recibir channel:history
+  // Actualizar chat al recibir channel:history y nuevos mensajes
+  const { socket, isConnected } = useSocket();
   useEffect(() => {
-    // getSocket está definido después, así que lo movemos dentro del useEffect
-    const socket = (window as any).socketInstance;
-    if (!socket) return;
+    if (!socket || !isConnected) return;
     const handleChannelHistory = (data: { channelId: string; messages: Message[] }) => {
       if (data.channelId === currentChannel.id) {
-        // Actualizar mensajes
-        if (Array.isArray(data.messages)) {
-          setInputText('');
-          setShowMentionSuggestions(false);
-        }
+        setInputText('');
+        setShowMentionSuggestions(false);
+      }
+    };
+    const handleNewMessage = (msg: Message) => {
+      if (msg.channelId === currentChannel.id) {
+        setInputText('');
+        setShowMentionSuggestions(false);
       }
     };
     socket.on('channel:history', handleChannelHistory);
+    socket.on('message:received', handleNewMessage);
     return () => {
       socket.off('channel:history', handleChannelHistory);
+      socket.off('message:received', handleNewMessage);
     };
-  }, [currentChannel.id]);
+  }, [socket, isConnected, currentChannel.id]);
 
   // Lista de usuarios mencionables (bot + TODOS los usuarios, incluso offline y el usuario actual)
   const mentionableUsers = useMemo(() => {
@@ -82,7 +87,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const isAdmin = useMemo(() => currentUser?.role === UserRole.ADMIN, [currentUser?.role]);
 
   // Socket.IO reference
-  const getSocket = useCallback(() => (window as any).socketInstance, []);
+  const getSocket = useCallback(() => socket, [socket]);
 
   // Handlers
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
