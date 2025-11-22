@@ -1,4 +1,4 @@
-﻿import React, { memo } from 'react';
+﻿import React, { memo, useMemo } from 'react';
 import { User } from '../types';
 import SafeImage from './SafeImage';
 
@@ -55,18 +55,38 @@ const UserItem: React.FC<{ user: User; isCurrentUser?: boolean }> = memo(({ user
 UserItem.displayName = 'UserItem';
 
 const UserList: React.FC<UserListProps> = memo(({ users, currentUserId, isMobileView = false }) => {
-  // Filtrar usuarios por estado de conexi├│n (incluir usuario actual)
-  const onlineUsers = users.filter(u => {
+  // Forzar inclusión del bot UPG si no está presente
+  const botUser = {
+    id: 'bot',
+    username: 'UPG',
+    avatar: '/upg.png',
+    status: 'online',
+    isBot: true,
+    color: '#5865F2',
+    role: 'bot',
+    online: true
+  };
+  const usersWithBot = useMemo(() => {
+    // Si hay bot, fuerza isBot: true
+    const usersFixed = users.map(u =>
+      u.id === 'bot' ? { ...u, isBot: true } : u
+    );
+    const hasBot = usersFixed.some(u => u.id === 'bot');
+    return hasBot ? usersFixed : [...usersFixed, botUser];
+  }, [users]);
+
+  // Filtrar usuarios por estado de conexión (incluir usuario actual)
+  const onlineUsers = usersWithBot.filter(u => {
+    // El bot nunca debe aparecer en Disponible
     if (u.isBot) return false;
-    // Usuario est├í online si: online === true O (online no est├í definido Y status === 'online')
     return (u.online === true || (u.online === undefined && u.status === 'online'));
   });
-  
-  const bots = users.filter(u => u.isBot);
-  
-  const offlineUsers = users.filter(u => {
+
+  const bots = usersWithBot.filter(u => u.isBot);
+
+  const offlineUsers = usersWithBot.filter(u => {
+    // El bot nunca debe aparecer en Desconectado
     if (u.isBot) return false;
-    // Usuario est├í offline si: online === false O status === 'offline'
     return (u.online === false || u.status === 'offline');
   });
 

@@ -2,43 +2,25 @@
 import { Message, User, UserRole } from '../types';
 import { Hash, Menu, Trash2, Shield, Ban, UserX } from 'lucide-react';
 import SafeImage from './SafeImage';
-import { ChannelData } from '../App';
 
 interface ChatInterfaceProps {
   currentUser: User;
   users: User[];
-  currentChannel: ChannelData;
+  currentChannel: { id: string; name: string };
   onSendMessage: (content: string) => void;
   messages: Message[];
   onMenuToggle: () => void;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
-    // Filtrar sugerencias de menciones
-    const mentionSuggestions = useMemo(() => {
-      if (!mentionSearch) {
-        return mentionableUsers;
-      }
-      const search = mentionSearch.toLowerCase();
-      const filtered = mentionableUsers.filter(u => u.username.toLowerCase().includes(search));
-      return filtered;
-    }, [mentionSearch, mentionableUsers]);
-
-    // Ordenar mensajes: más antiguo arriba, más reciente abajo
-    const orderedMessages = useMemo(() => {
-      return [...propMessages].sort((a, b) => {
-        const ta = new Date(a.timestamp).getTime();
-        const tb = new Date(b.timestamp).getTime();
-        return ta - tb;
-      });
-    }, [propMessages]);
   currentUser,
   users,
   currentChannel,
   onSendMessage,
-  messages: propMessages,
+  messages,
   onMenuToggle
 }) => {
+  // State
   const [inputText, setInputText] = useState('');
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const [showMentionSuggestions, setShowMentionSuggestions] = useState(false);
@@ -49,105 +31,83 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const isAdmin = useMemo(() => currentUser?.role === UserRole.ADMIN, [currentUser?.role]);
-
-  // Socket.IO reference - Obtener instancia global del socket (memoizado)
-  const getSocket = useCallback(() => {
-    return (window as any).socketInstance;
-  }, []);
-
-  // Lista de usuarios mencionables (bot + TODOS los usuarios, incluso offline y el usuario actual)
-  const mentionableUsers = useMemo(() => {
-    const botUser = { id: 'bot', username: 'UPG', avatar: '/upg.png', color: '#5865F2', online: true };
-    // Incluir TODOS los usuarios (online, offline, y el usuario actual)
-    const allUsers = [botUser, ...users];
-    return allUsers;
-  }, [users]);
-
-  // Filtrar sugerencias de menciones
-  const mentionSuggestions = useMemo(() => {
-    // Ordenar mensajes: más antiguo arriba, más reciente abajo
-    const orderedMessages = [...propMessages].sort((a, b) => {
+  // Ordenar mensajes: más antiguo arriba, más reciente abajo
+  const orderedMessages = useMemo(() => {
+    return [...messages].sort((a, b) => {
       const ta = new Date(a.timestamp).getTime();
       const tb = new Date(b.timestamp).getTime();
       return ta - tb;
     });
+  }, [messages]);
 
-    return (
-      <div className="flex-1 flex flex-col bg-discord-chat min-w-0 h-full">
-        {/* Header */}
-        <div className="h-12 flex items-center justify-between px-4 shadow-sm border-b border-gray-900/20 shrink-0">
-          {/* ...existing code... */}
-        </div>
-        {/* Mensajes */}
-        <div className="flex-1 overflow-y-auto px-3 sm:px-4 pt-3 sm:pt-4 flex flex-col" style={{ maxHeight: '100%' }}>
-          <div className="mt-auto">
-            {/* ...existing code... */}
-            {orderedMessages.map((msg) => {
-              /* ...existing code... */
-            })}
-            {/* ...existing code... */}
-          </div>
-        </div>
-        {/* Input */}
-        <div className="px-3 sm:px-4 pt-2 shrink-0 relative" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
-          {/* ...existing code... */}
-          <div className={`bg-[#383a40] rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 flex items-center transition-all duration-200 relative ${showMentionSuggestions ? 'ring-2 ring-discord-blurple shadow-lg shadow-discord-blurple/20' : ''}`}> 
-            <form onSubmit={handleSendMessage} className="flex-1 flex items-center relative">
-              {/* Preview layer - muestra texto con menciones destacadas */}
-              <div 
-                className="absolute inset-0 flex items-center pointer-events-none overflow-hidden whitespace-pre text-sm sm:text-base text-discord-text-normal"
-                aria-hidden="true"
-              >
-                {renderInputPreview(inputText)}
-              </div>
-              {/* Input real - SIEMPRE visible, solo caret azul cuando hay texto */}
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputText}
-                onChange={handleInputChange}
-                onKeyDown={handleKeyDown}
-                onBlur={handleInputBlur}
-                placeholder={`Enviar mensaje a #${currentChannel.name}`}
-                className={`relative z-10 bg-[#232428] w-full text-sm sm:text-base outline-none min-h-[44px] transition-all text-discord-text-normal placeholder-discord-text-muted ${inputText ? 'caret-blue-400' : ''}`}
-                aria-label="Escribir mensaje"
-                maxLength={2000}
-                autoComplete="off"
-              />
-            </form>
-          </div>
-        </div>
-      </div>
-    );
-        setSelectedSuggestionIndex(prev =>
-          prev > 0 ? prev - 1 : mentionSuggestions.length - 1
-        );
+  // Lista de usuarios mencionables (bot + TODOS los usuarios, incluso offline y el usuario actual)
+  const mentionableUsers = useMemo(() => {
+    const botUser = { id: 'bot', username: 'UPG', avatar: '/upg.png', color: '#5865F2', online: true, isBot: true };
+    // Filtrar usuarios normales y bots
+    const bots = [botUser];
+    // Eliminar el bot de la lista de usuarios normales si está presente
+    const normalUsers = users.filter(u => !u.isBot && u.id !== 'bot');
+    return [...bots, ...normalUsers];
+  }, [users]);
+
+  // Filtrar sugerencias de menciones
+  const mentionSuggestions = useMemo(() => {
+    if (!mentionSearch) return mentionableUsers;
+    const search = mentionSearch.toLowerCase();
+    return mentionableUsers.filter(u => u.username.toLowerCase().includes(search));
+  }, [mentionSearch, mentionableUsers]);
+
+  const isAdmin = useMemo(() => currentUser?.role === UserRole.ADMIN, [currentUser?.role]);
+
+  // Socket.IO reference
+  const getSocket = useCallback(() => (window as any).socketInstance, []);
+
+  // Handlers
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputText(e.target.value);
+    // Modo mención: detectar @ y mostrar sugerencias
+    const value = e.target.value;
+    const atIndex = value.lastIndexOf('@');
+    if (atIndex !== -1) {
+      setShowMentionSuggestions(true);
+      setMentionStartPos(atIndex);
+      setMentionSearch(value.slice(atIndex + 1));
+    } else {
+      setShowMentionSuggestions(false);
+      setMentionSearch('');
+    }
+  }, []);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (showMentionSuggestions && mentionSuggestions.length > 0) {
+      if (e.key === 'ArrowDown') {
+        setSelectedSuggestionIndex(i => (i + 1) % mentionSuggestions.length);
+        e.preventDefault();
+      } else if (e.key === 'ArrowUp') {
+        setSelectedSuggestionIndex(i => (i - 1 + mentionSuggestions.length) % mentionSuggestions.length);
+        e.preventDefault();
       } else if (e.key === 'Tab' || e.key === 'Enter') {
-        if (e.key === 'Tab' || (e.key === 'Enter' && showMentionSuggestions)) {
-          e.preventDefault();
-          completeMention(mentionSuggestions[selectedSuggestionIndex]);
-        }
+        e.preventDefault();
+        completeMention(mentionSuggestions[selectedSuggestionIndex]);
       } else if (e.key === 'Escape') {
         setShowMentionSuggestions(false);
-        inputRef.current?.blur();
       }
     }
   }, [showMentionSuggestions, mentionSuggestions, selectedSuggestionIndex]);
 
-  // Completar mención
+  const handleInputBlur = useCallback(() => {
+    setShowMentionSuggestions(false);
+  }, []);
+
   const completeMention = useCallback((user: { username: string }) => {
     const before = inputText.slice(0, mentionStartPos);
     const after = inputText.slice(inputRef.current?.selectionStart || inputText.length);
     const newText = `${before}@${user.username} ${after}`;
-
     setInputText(newText);
     setShowMentionSuggestions(false);
     setMentionSearch('');
-
-    // Mover cursor después de la mención
     setTimeout(() => {
-      const newCursorPos = before.length + user.username.length + 2; // +2 por @ y espacio
+      const newCursorPos = before.length + user.username.length + 2;
       inputRef.current?.setSelectionRange(newCursorPos, newCursorPos);
       inputRef.current?.focus();
     }, 0);
@@ -156,89 +116,31 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const handleSendMessage = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim()) return;
-
-    // Detectar si se menciona al bot (case insensitive)
     const lowerInput = inputText.toLowerCase();
     const mentionsBot = lowerInput.includes('@upg');
-
     onSendMessage(inputText);
     setInputText('');
     setShowMentionSuggestions(false);
-
-    // Mostrar feedback de "bot escribiendo" si se menciona al bot
-    if (mentionsBot) {
-      setIsBotTyping(true);
-      // El estado se limpiará cuando llegue el mensaje del bot
-    }
+    if (mentionsBot) setIsBotTyping(true);
   }, [inputText, onSendMessage]);
 
-  // Detectar cuando llega un mensaje del bot y limpiar el estado de "escribiendo"
   useEffect(() => {
-    if (propMessages.length > 0) {
-      const lastMessage = propMessages[propMessages.length - 1];
-      if (lastMessage.userId === 'bot') {
-        setIsBotTyping(false);
-      }
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.userId === 'bot') setIsBotTyping(false);
     }
-  }, [propMessages]);
-
-  // Función para detectar si un mensaje menciona al usuario actual
-  const isMentioned = useCallback((messageContent: string) => {
-    if (!currentUser) return false;
-    const mentionPattern = new RegExp(`@${currentUser.username}\\b`, 'i');
-    return mentionPattern.test(messageContent);
-  }, [currentUser]);
-
-  // Función para resaltar menciones en el texto del mensaje
-  const highlightMentions = useCallback((text: string) => {
-    if (!text) return text;
-
-    // Buscar todas las menciones (@username)
-    const mentionRegex = /@(\w+)/g;
-    const parts = text.split(mentionRegex);
-
-    return parts.map((part, index) => {
-      // Si es índice impar, es un username mencionado
-      if (index % 2 === 1) {
-        const isMentioningCurrentUser = currentUser && part.toLowerCase() === currentUser.username.toLowerCase();
-        return (
-          <span
-            key={index}
-            className={`font-semibold ${isMentioningCurrentUser
-                ? 'text-blue-400 bg-blue-500/20 px-1 rounded'
-                : 'text-blue-300 hover:underline cursor-pointer'
-              }`}
-          >
-            @{part}
-          </span>
-        );
-      }
-      return part;
-    });
-  }, [currentUser]);
+  }, [messages]);
 
   // Renderizar preview del input con menciones destacadas en tiempo real
   const renderInputPreview = useCallback((text: string) => {
     if (!text) return null;
-    
-    const mentionRegex = /@(\w+)/g;
+    const mentionRegex = /@([\w]+)/g;
     const parts = text.split(mentionRegex);
-    
     return parts.map((part, index) => {
       if (index % 2 === 1) {
-        // Es una mención
-        const user = mentionableUsers.find(u => 
-          u.username.toLowerCase() === part.toLowerCase()
-        );
+        const user = mentionableUsers.find(u => u.username.toLowerCase() === part.toLowerCase());
         return (
-          <span
-            key={index}
-            className={`${
-              user 
-                ? 'bg-blue-500/30 text-blue-300' 
-                : 'bg-gray-600/30 text-gray-400'
-            } font-semibold px-1 rounded`}
-          >
+          <span key={index} className={`${user ? 'bg-blue-500/30 text-blue-300' : 'bg-gray-600/30 text-gray-400'} font-semibold px-1 rounded`}>
             @{part}
           </span>
         );
@@ -247,11 +149,28 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     });
   }, [mentionableUsers]);
 
-  // Funciones de administrador (memoizadas)
+  // Función para resaltar menciones en el texto del mensaje
+  const highlightMentions = useCallback((text: string) => {
+    if (!text) return text;
+    const mentionRegex = /@([\w]+)/g;
+    const parts = text.split(mentionRegex);
+    return parts.map((part, index) => {
+      if (index % 2 === 1) {
+        const isMentioningCurrentUser = currentUser && part.toLowerCase() === currentUser.username.toLowerCase();
+        return (
+          <span key={index} className={`font-semibold ${isMentioningCurrentUser ? 'text-blue-400 bg-blue-500/20 px-1 rounded' : 'text-blue-300 hover:underline cursor-pointer'}`}>
+            @{part}
+          </span>
+        );
+      }
+      return part;
+    });
+  }, [currentUser]);
+
+  // Funciones de administrador
   const handleDeleteMessage = useCallback((messageId: string) => {
     if (!isAdmin || !currentUser) return;
-
-    const socket = (window as any).socketInstance;
+    const socket = getSocket();
     if (socket) {
       socket.emit('admin:delete-message', {
         messageId,
@@ -259,12 +178,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         adminId: currentUser.id
       });
     }
-  }, [isAdmin, currentUser, currentChannel.id]);
+  }, [isAdmin, currentUser, currentChannel.id, getSocket]);
 
   const handleClearChannel = useCallback(() => {
     if (!isAdmin) return;
-
-    if (confirm(`¿Estás seguro de que quieres eliminar todos los mensajes de #${currentChannel.name}?`)) {
+    if (window.confirm(`¿Estás seguro de que quieres eliminar todos los mensajes de #${currentChannel.name}?`)) {
       const socket = getSocket();
       if (socket) {
         socket.emit('admin:clear-channel', {
@@ -277,8 +195,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const handleBanUser = useCallback((userId: string, username: string) => {
     if (!isAdmin || !currentUser || userId === currentUser.id) return;
-
-    if (confirm(`¿Estás seguro de que quieres banear a ${username}? Esta acción también bloqueará su IP.`)) {
+    if (window.confirm(`¿Estás seguro de que quieres banear a ${username}? Esta acción también bloqueará su IP.`)) {
       const socket = getSocket();
       if (socket) {
         socket.emit('admin:ban-user', {
@@ -292,8 +209,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const handleKickUser = useCallback((userId: string, username: string) => {
     if (!isAdmin || !currentUser || userId === currentUser.id) return;
-
-    if (confirm(`¿Estás seguro de que quieres expulsar a ${username}?`)) {
+    if (window.confirm(`¿Estás seguro de que quieres expulsar a ${username}?`)) {
       const socket = getSocket();
       if (socket) {
         socket.emit('admin:kick-user', {
@@ -305,7 +221,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   }, [isAdmin, currentUser, getSocket]);
 
-  // Mostrar todos los mensajes recibidos online
+  // Render
   return (
     <div className="flex-1 flex flex-col bg-discord-chat min-w-0 h-full">
       {/* Header */}
@@ -314,7 +230,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <button
             onClick={onMenuToggle}
             className="md:hidden mr-3 text-discord-text-muted hover:text-white"
-            aria-label="Abrir men├║"
+            aria-label="Abrir menú"
             aria-expanded="false"
           >
             <Menu size={24} />
@@ -325,8 +241,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         {isAdmin && (
           <div className="flex items-center gap-2">
             <span className="text-xs bg-discord-blurple px-2 py-1 rounded flex items-center gap-1">
-              <Shield size={12} />
-              ADMIN
+              <Shield size={12} /> ADMIN
             </span>
             <button
               onClick={handleClearChannel}
@@ -352,15 +267,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           {orderedMessages.map((msg) => {
             const msgUser = users.find(u => u.id === msg.userId);
             const msgTimestamp = typeof msg.timestamp === 'string' ? new Date(msg.timestamp) : msg.timestamp;
-            const mentioned = isMentioned(msg.content);
-
+            const mentioned = msg.content && currentUser && msg.content.includes(`@${currentUser.username}`);
             return (
               <div
                 key={msg.id}
-                className={`group flex pr-2 sm:pr-4 mt-3 sm:mt-4 py-0.5 relative transition-all ${mentioned
-                    ? 'bg-yellow-500/10 border-l-4 border-yellow-500 pl-2 -ml-1 hover:bg-yellow-500/15'
-                    : 'hover:bg-[#2e3035]'
-                  }`}
+                className={`group flex pr-2 sm:pr-4 mt-3 sm:mt-4 py-0.5 relative transition-all ${mentioned ? 'bg-yellow-500/10 border-l-4 border-yellow-500 pl-2 -ml-1 hover:bg-yellow-500/15' : 'hover:bg-[#2e3035]'}`}
                 onMouseEnter={() => setHoveredMessageId(msg.id)}
                 onMouseLeave={() => setHoveredMessageId(null)}
               >
@@ -378,14 +289,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       {msg.username || msgUser?.username}
                     </span>
                     {msgUser?.role === UserRole.ADMIN && (
-                      <span className="text-[9px] sm:text-[10px] bg-discord-blurple px-1.5 py-0.5 rounded mr-2">
-                        ADMIN
-                      </span>
+                      <span className="text-[9px] sm:text-[10px] bg-discord-blurple px-1.5 py-0.5 rounded mr-2">ADMIN</span>
                     )}
                     {mentioned && (
-                      <span className="text-[9px] sm:text-[10px] bg-yellow-500 text-black px-1.5 py-0.5 rounded mr-2 font-bold">
-                        MENCIÓN
-                      </span>
+                      <span className="text-[9px] sm:text-[10px] bg-yellow-500 text-black px-1.5 py-0.5 rounded mr-2 font-bold">MENCIÓN</span>
                     )}
                     <span className="text-[11px] sm:text-xs text-discord-text-muted ml-1 sm:ml-2 font-medium">
                       {msgTimestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -395,7 +302,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     {highlightMentions(msg.content)}
                   </p>
                 </div>
-
                 {/* Admin Actions */}
                 {isAdmin && hoveredMessageId === msg.id && msg.userId !== currentUser.id && (
                   <div className="absolute right-2 sm:right-4 top-1 bg-discord-sidebar rounded shadow-lg flex gap-0.5 sm:gap-1 p-1 border border-gray-700">
@@ -430,21 +336,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           {isBotTyping && (
             <div className="flex pr-2 sm:pr-4 mt-3 sm:mt-4 py-0.5">
               <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-600 mr-3 sm:mr-4 mt-0.5 overflow-hidden shrink-0">
-                <SafeImage
-                  src="/upg.png"
-                  alt="UPG"
-                  className="w-full h-full object-cover"
-                  fallbackSrc="https://ui-avatars.com/api/?name=UPG&background=5865F2&color=fff&size=128"
-                />
+                <SafeImage src="/upg.png" alt="UPG" className="w-full h-full object-cover" fallbackSrc="https://ui-avatars.com/api/?name=UPG&background=5865F2&color=fff&size=128" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center flex-wrap mb-1">
-                  <span className="font-medium text-sm sm:text-base mr-2 text-[#5865F2]">
-                    UPG
-                  </span>
-                  <span className="text-[9px] sm:text-[10px] bg-discord-blurple px-1.5 py-0.5 rounded mr-2">
-                    BOT
-                  </span>
+                  <span className="font-medium text-sm sm:text-base mr-2 text-[#5865F2]">UPG</span>
+                  <span className="text-[9px] sm:text-[10px] bg-discord-blurple px-1.5 py-0.5 rounded mr-2">BOT</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <div className="flex gap-1">
@@ -463,85 +360,94 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </div>
       {/* Input */}
       <div className="px-3 sm:px-4 pt-2 shrink-0 relative" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
-        {/* Sugerencias de menciones - overlay con z-index alto y responsive */}
+        {/* Sugerencias de menciones */}
         {showMentionSuggestions && mentionSuggestions.length > 0 && (
           <div className="fixed left-1/2 bottom-[80px] sm:left-1/2 sm:bottom-[100px] w-[90vw] sm:w-[500px] max-w-[500px] -translate-x-1/2 bg-[#2f3136] rounded-lg shadow-2xl border border-gray-800 overflow-hidden max-h-64 overflow-y-auto z-[9999] animate-in fade-in slide-in-from-bottom-2 duration-150">
             <div className="py-2">
-              <div className="px-3 py-1 text-xs font-semibold text-discord-text-muted uppercase">
-                Mencionar
-              </div>
-              {mentionSuggestions.map((user, index) => (
-                <button
-                  key={user.id}
-                  onClick={() => completeMention(user)}
-                  onMouseEnter={() => setSelectedSuggestionIndex(index)}
-                  className={`w-full px-3 py-2 flex items-center gap-3 transition-all duration-150 ${index === selectedSuggestionIndex
-                      ? 'bg-discord-blurple scale-[1.02] shadow-lg'
-                      : 'hover:bg-[#36373d] hover:scale-[1.01]'
-                    }`}
-                  aria-label={`Mencionar a ${user.username}`}
-                >
-                  <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 bg-gray-600">
-                    <SafeImage
-                      src={user.avatar || ''}
-                      alt={user.username}
-                      className="w-full h-full object-cover"
-                      fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=5865F2&color=fff&size=128`}
-                    />
-                    {/* Indicador de estado online/offline */}
-                    {'online' in user && (
-                      <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#2f3136] ${user.online ? 'bg-green-500' : 'bg-gray-500'
-                        }`} />
-                    )}
-                  </div>
-                  <div className="flex-1 text-left">
-                    <div className="font-medium text-white flex items-center gap-2">
-                      {user.username}
-                      {user.id === 'bot' && (
-                        <span className="text-[10px] bg-discord-blurple px-1.5 py-0.5 rounded uppercase">
-                          Bot
-                        </span>
-                      )}
-                      {user.id === currentUser?.id && (
-                        <span className="text-[10px] bg-gray-600 px-1.5 py-0.5 rounded">
-                          Tú
-                        </span>
+              <div className="px-3 py-1 text-xs font-semibold text-discord-text-muted uppercase">Mencionar</div>
+              {/* Apartado de bots */}
+              {mentionSuggestions.filter(u => u.isBot).length > 0 && (
+                <div className="px-3 py-1 text-xs font-bold text-discord-text-muted">Bots</div>
+              )}
+              {mentionSuggestions.map((user, globalIndex) => {
+                if (!user.isBot) return null;
+                return (
+                  <button
+                    key={user.id}
+                    onClick={() => completeMention(user)}
+                    onMouseEnter={() => setSelectedSuggestionIndex(globalIndex)}
+                    className={`w-full px-3 py-2 flex items-center gap-3 transition-all duration-150 ${globalIndex === selectedSuggestionIndex ? 'bg-discord-blurple scale-[1.02] shadow-lg' : 'hover:bg-[#36373d] hover:scale-[1.01]'}`}
+                    aria-label={`Mencionar a ${user.username}`}
+                  >
+                    <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 bg-gray-600">
+                      <SafeImage src={user.avatar || ''} alt={user.username} className="w-full h-full object-cover" fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=5865F2&color=fff&size=128`} />
+                      <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#2f3136] bg-gray-500" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="font-medium text-white flex items-center gap-2">
+                        {user.username}
+                        <span className="text-[10px] bg-discord-blurple px-1.5 py-0.5 rounded uppercase">Bot</span>
+                      </div>
+                      <div className="text-xs text-discord-text-muted">Bot de la comunidad UPG</div>
+                    </div>
+                    <div className="text-xs text-discord-text-muted">
+                      {globalIndex === selectedSuggestionIndex && (
+                        <span className="bg-gray-700 px-2 py-0.5 rounded">Tab</span>
                       )}
                     </div>
-                    {'online' in user && (
-                      <div className="text-xs text-discord-text-muted">
-                        {user.online ? '🟢 En línea' : '⚫ Desconectado'}
+                  </button>
+                );
+              })}
+              {/* Apartado de usuarios normales */}
+              {mentionSuggestions.filter(u => !u.isBot).length > 0 && (
+                <div className="px-3 py-1 text-xs font-bold text-discord-text-muted">Usuarios</div>
+              )}
+              {mentionSuggestions.map((user, globalIndex) => {
+                if (user.isBot) return null;
+                return (
+                  <button
+                    key={user.id}
+                    onClick={() => completeMention(user)}
+                    onMouseEnter={() => setSelectedSuggestionIndex(globalIndex)}
+                    className={`w-full px-3 py-2 flex items-center gap-3 transition-all duration-150 ${globalIndex === selectedSuggestionIndex ? 'bg-discord-blurple scale-[1.02] shadow-lg' : 'hover:bg-[#36373d] hover:scale-[1.01]'}`}
+                    aria-label={`Mencionar a ${user.username}`}
+                  >
+                    <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 bg-gray-600">
+                      <SafeImage src={user.avatar || ''} alt={user.username} className="w-full h-full object-cover" fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=5865F2&color=fff&size=128`} />
+                      {'online' in user && (
+                        <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#2f3136] ${user.online ? 'bg-green-500' : 'bg-gray-500'}`} />
+                      )}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="font-medium text-white flex items-center gap-2">
+                        {user.username}
+                        {user.id === currentUser?.id && (
+                          <span className="text-[10px] bg-gray-600 px-1.5 py-0.5 rounded">Tú</span>
+                        )}
                       </div>
-                    )}
-                    {user.id === 'bot' && (
-                      <div className="text-xs text-discord-text-muted">
-                        Bot de la comunidad UPG
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-xs text-discord-text-muted">
-                    {index === selectedSuggestionIndex && (
-                      <span className="bg-gray-700 px-2 py-0.5 rounded">Tab</span>
-                    )}
-                  </div>
-                </button>
-              ))}
+                      {'online' in user && (
+                        <div className="text-xs text-discord-text-muted">{user.online ? '🟢 En línea' : '⚫ Desconectado'}</div>
+                      )}
+                    </div>
+                    <div className="text-xs text-discord-text-muted">
+                      {globalIndex === selectedSuggestionIndex && (
+                        <span className="bg-gray-700 px-2 py-0.5 rounded">Tab</span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
 
-        <div className={`bg-[#383a40] rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 flex items-center transition-all duration-200 relative ${showMentionSuggestions ? 'ring-2 ring-discord-blurple shadow-lg shadow-discord-blurple/20' : ''
-          }`}>
+        <div className={`bg-[#383a40] rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 flex items-center transition-all duration-200 relative ${showMentionSuggestions ? 'ring-2 ring-discord-blurple shadow-lg shadow-discord-blurple/20' : ''}`}>
           <form onSubmit={handleSendMessage} className="flex-1 flex items-center relative">
             {/* Preview layer - muestra texto con menciones destacadas */}
-            <div 
-              className="absolute inset-0 flex items-center pointer-events-none overflow-hidden whitespace-pre text-sm sm:text-base text-discord-text-normal"
-              aria-hidden="true"
-            >
+            <div className="absolute inset-0 flex items-center pointer-events-none overflow-hidden whitespace-pre text-sm sm:text-base text-discord-text-normal" aria-hidden="true">
               {renderInputPreview(inputText)}
             </div>
-            
-            {/* Input real - transparente cuando hay texto */}
+            {/* Input real */}
             <input
               ref={inputRef}
               type="text"
