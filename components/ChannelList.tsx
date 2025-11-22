@@ -12,7 +12,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { AppView, User } from '../types';
-import { ChannelData } from '../App';
+import { ChannelData } from '../types';
 import SafeImage from './SafeImage';
 
 interface ChannelListProps {

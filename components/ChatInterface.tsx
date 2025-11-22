@@ -13,6 +13,7 @@ interface ChatInterfaceProps {
   messages: Message[];
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   onMenuToggle: () => void;
+  userColors?: Record<string, string>;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -23,6 +24,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   messages,
   setMessages,
   onMenuToggle,
+  userColors = {},
 }) => {
   // State
   const [inputText, setInputText] = useState('');
@@ -30,11 +32,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [showMentionSuggestions, setShowMentionSuggestions] = useState(false);
   const [mentionSearch, setMentionSearch] = useState('');
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
-  const mentionStartPos = 0;
+  const [mentionStartPos, setMentionStartPos] = useState(0);
   const [isBotTyping, setIsBotTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [userColors, setUserColors] = useState<Record<string, string>>({});
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
 
   // Ordenar mensajes: más antiguo arriba, más reciente abajo
@@ -60,13 +61,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       }
     };
     const handleNewMessage = (msg: Message) => {
-      if (msg.channelId === currentChannel.id) {
+      if (msg.channelId === currentChannel.id && msg.userId === currentUser.id) {
+        // Limpiar input cuando llega la confirmación del mensaje del usuario
         setInputText('');
         setShowMentionSuggestions(false);
         // Remover mensaje local duplicado
         setLocalMessages(prev =>
           prev.filter(
-            local => !(local.timestamp === msg.timestamp && local.content === msg.content)
+            local => !(local.id.startsWith('local-') && 
+                      local.timestamp === msg.timestamp && 
+                      local.content === msg.content)
           )
         );
       }
@@ -77,20 +81,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       socket.off('channel:history', handleChannelHistory);
       socket.off('message:received', handleNewMessage);
     };
-  }, [socket, isConnected, currentChannel.id]);
+  }, [socket, isConnected, currentChannel.id, currentUser]);
 
-  // Escuchar cambios de color de usuario
-  useEffect(() => {
-    if (socket) {
-      socket.on('admin:user-color-changed', ({ userId, color }) => {
-        setUserColors(prev => ({ ...prev, [userId]: color }));
-      });
 
-      return () => {
-        socket.off('admin:user-color-changed');
-      };
-    }
-  }, [socket, setMessages]);
 
   // Lista de usuarios mencionables (bot + TODOS los usuarios, incluso offline y el usuario actual)
   const mentionableUsers = useMemo(() => {
@@ -121,6 +114,31 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   // Socket.IO reference
   const getSocket = useCallback(() => socket, [socket]);
 
+  // Handle input change for mentions
+  const handleInputChange = useCallback((value: string) => {
+    // Modo mención: detectar @ y mostrar sugerencias
+    const atIndex = value.lastIndexOf('@');
+    if (atIndex !== -1) {
+      setShowMentionSuggestions(true);
+      setMentionStartPos(atIndex);
+      setMentionSearch(value.slice(atIndex + 1));
+      setSelectedSuggestionIndex(0);
+    } else {
+      setShowMentionSuggestions(false);
+      setMentionSearch('');
+    }
+  }, []);
+
+  // Handle key down for mentions
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (showMentionSuggestions && mentionSuggestions.length > 0) {
+      if (e.key === 'Escape') {
+        setShowMentionSuggestions(false);
+        e.preventDefault();
+      }
+    }
+  }, [showMentionSuggestions, mentionSuggestions.length]);
+
   // Handlers
   const completeMention = useCallback(
     (user: { username: string }) => {
@@ -146,7 +164,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       const lowerInput = inputText.toLowerCase();
       const mentionsBot = lowerInput.includes('@upg');
       onSendMessage(inputText);
-      // Agregar mensaje local inmediatamente
+      // Agregar mensaje local inmediatamente para feedback visual
       const localMessage: Message = {
         id: 'local-' + Date.now(),
         userId: currentUser.id,
@@ -157,8 +175,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         channelId: currentChannel.id,
       };
       setLocalMessages(prev => [...prev, localMessage]);
-      setInputText('');
-      setShowMentionSuggestions(false);
+      // No limpiar input aquí - se limpia cuando llega la confirmación del servidor
+      // setInputText('');
+      // setShowMentionSuggestions(false);
       if (mentionsBot) setIsBotTyping(true);
     },
     [inputText, onSendMessage, currentUser, currentChannel.id]
@@ -309,7 +328,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             adminId: currentUser.id,
           });
         }
-        setUserColors(prev => ({ ...prev, [userId]: newColor }));
       } else {
         alert('Color inválido. Usa formato HEX (#RRGGBB)');
       }
@@ -528,6 +546,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         completeMention={completeMention}
         renderInputPreview={renderInputPreview}
         currentChannel={currentChannel}
+        onInputChange={handleInputChange}
       />
     </div>
   );

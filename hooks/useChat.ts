@@ -29,10 +29,28 @@ export const useChat = (channelId: string) => {
       }
     };
 
+    // Escuchar mensajes nuevos en tiempo real
+    const handleNewMessage = (message: Message) => {
+      if (message.channelId === channelId) {
+        setMessages(prev => {
+          // Remover mensaje local duplicado si existe
+          const filtered = prev.filter(
+            local => !(local.id.startsWith('local-') && 
+                      local.timestamp === message.timestamp && 
+                      local.content === message.content &&
+                      local.userId === message.userId)
+          );
+          return [...filtered, message];
+        });
+      }
+    };
+
     socket.on('channel:history', handleHistory);
+    socket.on('message:received', handleNewMessage);
 
     return () => {
       socket.off('channel:history', handleHistory);
+      socket.off('message:received', handleNewMessage);
     };
   }, [socket, isConnected, channelId, currentUser]);
 
@@ -42,6 +60,7 @@ export const useChat = (channelId: string) => {
         toast.error('No hay conexión con el servidor');
         return;
       }
+      console.log('Enviando mensaje:', content);
       // Forzar unión al canal antes de enviar el mensaje
       socket.emit('channel:join', { channelId, userId: currentUser.id });
       socket.emit('message:send', {
@@ -51,6 +70,7 @@ export const useChat = (channelId: string) => {
         username: currentUser.username,
         avatar: currentUser.avatar,
       });
+      console.log('Mensaje enviado al servidor');
     },
     [socket, isConnected, channelId, currentUser]
   );

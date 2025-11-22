@@ -13,6 +13,7 @@ interface MessageInputProps {
   completeMention: (user: { username: string }) => void;
   renderInputPreview: (text: string) => React.ReactNode;
   currentChannel: { id: string; name: string };
+  onInputChange?: (value: string) => void;
 }
 
 const MessageInput: React.FC<MessageInputProps> = ({
@@ -27,20 +28,18 @@ const MessageInput: React.FC<MessageInputProps> = ({
   completeMention,
   renderInputPreview,
   currentChannel,
+  onInputChange,
 }) => {
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setInputText(e.target.value);
-      // Modo mención: detectar @ y mostrar sugerencias
       const value = e.target.value;
-      const atIndex = value.lastIndexOf('@');
-      if (atIndex !== -1) {
-        // Lógica de menciones aquí si es necesario
-      } else {
-        // setShowMentionSuggestions(false);
+      setInputText(value);
+      // Llamar al callback para manejar menciones
+      if (onInputChange) {
+        onInputChange(value);
       }
     },
-    [setInputText]
+    [setInputText, onInputChange]
   );
 
   const handleKeyDown = useCallback(
@@ -58,7 +57,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
           e.preventDefault();
           completeMention(mentionSuggestions[selectedSuggestionIndex]);
         } else if (e.key === 'Escape') {
-          // setShowMentionSuggestions(false);
+          // Esto debería manejarse en ChatInterface
         }
       }
     },

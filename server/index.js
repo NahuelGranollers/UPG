@@ -134,6 +134,9 @@ app.use(
     resave: false,
     saveUninitialized: false,
     name: 'upg.sid',
+    // WARNING: MemoryStore is not suitable for production!
+    // For production, use a proper session store like connect-redis or connect-session-sequelize
+    // Example: store: new RedisStore({ client: redisClient })
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
@@ -158,6 +161,13 @@ const io = new Server(server, {
 
 // ✅ Map de usuarios conectados (socketId -> userData)
 // const connectedUsers = new Map(); // YA DEFINIDO ARRIBA
+
+// ✅ Utility function for async error handling
+const catchAsync = (fn) => {
+  return (req, res, next) => {
+    fn(req, res, next).catch(next);
+  };
+};
 
 // ===============================================
 // 🔐 Discord OAuth2 Routes
@@ -626,7 +636,9 @@ io.on('connection', socket => {
       setTimeout(async () => {
         try {
           await db.saveMessage(botMessage);
+          logger.info(`Enviando respuesta del bot: ${botResponse}`);
           io.to(message.channelId).emit('message:received', db.sanitizeMessageOutput(botMessage));
+          logger.info(`Mensaje del bot enviado al canal ${message.channelId}`);
         } catch (err) {
           logger.error('Error guardando mensaje del bot:', err);
         }
@@ -685,6 +697,6 @@ io.on('connection', socket => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  logger.server(`Servidor corriendo en puerto ${PORT}`);
+  logger.info(`Servidor corriendo en puerto ${PORT}`);
   logger.info(`Admin ID configurado: ${ADMIN_DISCORD_ID}`);
 });

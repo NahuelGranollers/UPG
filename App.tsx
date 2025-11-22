@@ -43,6 +43,9 @@ function MainApp() {
   const [voiceStates, setVoiceStates] = useState<Record<string, string>>({});
   const activeVoiceChannel = currentUser ? voiceStates[currentUser.id] || null : null;
 
+  // Estado de colores de usuario
+  const [userColors, setUserColors] = useState<Record<string, string>>({});
+
   const handleVoiceJoin = (channelId: string) => {
     if (!socket) return;
     socket.emit('voice:join', { channelId });
@@ -70,6 +73,11 @@ function MainApp() {
     // Escuchar cambios en canales de voz
     socket.on('voice:state', states => setVoiceStates(states));
 
+    // Escuchar cambios de color de usuario
+    socket.on('admin:user-color-changed', ({ userId, color }) => {
+      setUserColors(prev => ({ ...prev, [userId]: color }));
+    });
+
     // Solicitar usuarios iniciales
     socket.emit('users:request');
 
@@ -78,6 +86,7 @@ function MainApp() {
       socket.off('user:online');
       socket.off('user:offline');
       socket.off('voice:state');
+      socket.off('admin:user-color-changed');
     };
   }, [socket]);
 
@@ -143,8 +152,9 @@ function MainApp() {
                 messages={messages}
                 setMessages={setMessages}
                 onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
+                userColors={userColors}
               />
-              <UserList users={users} currentUserId={currentUser.id} />
+              <UserList users={users} currentUserId={currentUser.id} userColors={userColors} />
             </>
           )}
           {activeView === AppView.WHO_WE_ARE && <WhoWeAre onMenuToggle={() => {}} />}
@@ -189,10 +199,11 @@ function MainApp() {
             messages={messages}
             setMessages={setMessages}
             onMenuToggle={() => setMobileActiveTab('channels')}
+            userColors={userColors}
           />
         )}
 
-        {mobileActiveTab === 'users' && <UserList users={users} currentUserId={currentUser.id} />}
+        {mobileActiveTab === 'users' && <UserList users={users} currentUserId={currentUser.id} userColors={userColors} />}
 
         <MobileTabBar
           activeTab={mobileActiveTab}
