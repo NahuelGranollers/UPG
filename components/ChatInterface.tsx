@@ -33,15 +33,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const [silencedUsers, setSilencedUsers] = useState<string[]>([]);
   const [userColors, setUserColors] = useState<Record<string, string>>({});
+  const [localMessages, setLocalMessages] = useState<Message[]>([]);
 
   // Ordenar mensajes: más antiguo arriba, más reciente abajo
   const orderedMessages = useMemo(() => {
-    return [...messages].sort((a, b) => {
+    const combined = [...messages, ...localMessages];
+    return combined.sort((a, b) => {
       const ta = new Date(a.timestamp).getTime();
       const tb = new Date(b.timestamp).getTime();
       return ta - tb;
     });
-  }, [messages]);
+  }, [messages, localMessages]);
 
   // Actualizar chat al recibir channel:history y nuevos mensajes
   const { socket, isConnected } = useSocket();
@@ -57,6 +59,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       if (msg.channelId === currentChannel.id) {
         setInputText('');
         setShowMentionSuggestions(false);
+        // Remover mensaje local duplicado
+        setLocalMessages(prev => prev.filter(local => 
+          !(local.timestamp === msg.timestamp && local.content === msg.content)
+        ));
       }
     };
     socket.on('channel:history', handleChannelHistory);
@@ -146,10 +152,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const lowerInput = inputText.toLowerCase();
     const mentionsBot = lowerInput.includes('@upg');
     onSendMessage(inputText);
+    // Agregar mensaje local inmediatamente
+    const localMessage: Message = {
+      id: 'local-' + Date.now(),
+      userId: currentUser.id,
+      username: currentUser.username,
+      avatar: currentUser.avatar,
+      content: inputText,
+      timestamp: new Date().toISOString(),
+      channelId: currentChannel.id
+    };
+    setLocalMessages(prev => [...prev, localMessage]);
     setInputText('');
     setShowMentionSuggestions(false);
     if (mentionsBot) setIsBotTyping(true);
-  }, [inputText, onSendMessage]);
+  }, [inputText, onSendMessage, currentUser, currentChannel.id]);
 
   useEffect(() => {
     if (messages.length > 0) {
