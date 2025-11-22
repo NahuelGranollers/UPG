@@ -14,6 +14,24 @@ interface ChatInterfaceProps {
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
+    // Filtrar sugerencias de menciones
+    const mentionSuggestions = useMemo(() => {
+      if (!mentionSearch) {
+        return mentionableUsers;
+      }
+      const search = mentionSearch.toLowerCase();
+      const filtered = mentionableUsers.filter(u => u.username.toLowerCase().includes(search));
+      return filtered;
+    }, [mentionSearch, mentionableUsers]);
+
+    // Ordenar mensajes: más antiguo arriba, más reciente abajo
+    const orderedMessages = useMemo(() => {
+      return [...propMessages].sort((a, b) => {
+        const ta = new Date(a.timestamp).getTime();
+        const tb = new Date(b.timestamp).getTime();
+        return ta - tb;
+      });
+    }, [propMessages]);
   currentUser,
   users,
   currentChannel,
@@ -48,57 +66,60 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   // Filtrar sugerencias de menciones
   const mentionSuggestions = useMemo(() => {
-    if (!mentionSearch) {
-      return mentionableUsers;
-    }
-    const search = mentionSearch.toLowerCase();
-    const filtered = mentionableUsers.filter(u => u.username.toLowerCase().includes(search));
-    return filtered;
-  }, [mentionSearch, mentionableUsers]);
+    // Ordenar mensajes: más antiguo arriba, más reciente abajo
+    const orderedMessages = [...propMessages].sort((a, b) => {
+      const ta = new Date(a.timestamp).getTime();
+      const tb = new Date(b.timestamp).getTime();
+      return ta - tb;
+    });
 
-  // Auto scroll
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [propMessages]);
-
-  // Manejar input de texto con detección de @ y cierre automático del panel
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const text = e.target.value;
-    const cursorPos = e.target.selectionStart || 0;
-    setInputText(text);
-    // Buscar @ antes del cursor
-    const textBeforeCursor = text.slice(0, cursorPos);
-    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
-    if (lastAtIndex !== -1) {
-      const textAfterAt = textBeforeCursor.slice(lastAtIndex + 1);
-      if (!textAfterAt.includes(' ') && (cursorPos - lastAtIndex) <= 20) {
-        setShowMentionSuggestions(true);
-        setMentionSearch(textAfterAt);
-        setMentionStartPos(lastAtIndex);
-        setSelectedSuggestionIndex(0);
-      } else if (textAfterAt.includes(' ')) {
-        setShowMentionSuggestions(false);
-      }
-    } else {
-      setShowMentionSuggestions(false);
-    }
-  }, []);
-
-  // Cerrar panel de menciones al perder foco
-  const handleInputBlur = useCallback(() => {
-    setTimeout(() => setShowMentionSuggestions(false), 100);
-  }, []);
-
-  // Manejar teclas especiales y cierre con Escape
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (showMentionSuggestions && mentionSuggestions.length > 0) {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setSelectedSuggestionIndex(prev =>
-          prev < mentionSuggestions.length - 1 ? prev + 1 : 0
-        );
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
+    return (
+      <div className="flex-1 flex flex-col bg-discord-chat min-w-0 h-full">
+        {/* Header */}
+        <div className="h-12 flex items-center justify-between px-4 shadow-sm border-b border-gray-900/20 shrink-0">
+          {/* ...existing code... */}
+        </div>
+        {/* Mensajes */}
+        <div className="flex-1 overflow-y-auto px-3 sm:px-4 pt-3 sm:pt-4 flex flex-col" style={{ maxHeight: '100%' }}>
+          <div className="mt-auto">
+            {/* ...existing code... */}
+            {orderedMessages.map((msg) => {
+              /* ...existing code... */
+            })}
+            {/* ...existing code... */}
+          </div>
+        </div>
+        {/* Input */}
+        <div className="px-3 sm:px-4 pt-2 shrink-0 relative" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+          {/* ...existing code... */}
+          <div className={`bg-[#383a40] rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 flex items-center transition-all duration-200 relative ${showMentionSuggestions ? 'ring-2 ring-discord-blurple shadow-lg shadow-discord-blurple/20' : ''}`}> 
+            <form onSubmit={handleSendMessage} className="flex-1 flex items-center relative">
+              {/* Preview layer - muestra texto con menciones destacadas */}
+              <div 
+                className="absolute inset-0 flex items-center pointer-events-none overflow-hidden whitespace-pre text-sm sm:text-base text-discord-text-normal"
+                aria-hidden="true"
+              >
+                {renderInputPreview(inputText)}
+              </div>
+              {/* Input real - SIEMPRE visible, solo caret azul cuando hay texto */}
+              <input
+                ref={inputRef}
+                type="text"
+                value={inputText}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                onBlur={handleInputBlur}
+                placeholder={`Enviar mensaje a #${currentChannel.name}`}
+                className={`relative z-10 bg-[#232428] w-full text-sm sm:text-base outline-none min-h-[44px] transition-all text-discord-text-normal placeholder-discord-text-muted ${inputText ? 'caret-blue-400' : ''}`}
+                aria-label="Escribir mensaje"
+                maxLength={2000}
+                autoComplete="off"
+              />
+            </form>
+          </div>
+        </div>
+      </div>
+    );
         setSelectedSuggestionIndex(prev =>
           prev > 0 ? prev - 1 : mentionSuggestions.length - 1
         );
@@ -328,7 +349,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <p className="text-sm sm:text-base text-discord-text-muted">Este es el chat real del canal.</p>
           </div>
           <div className="h-[1px] bg-discord-text-muted/20 w-full my-4" />
-          {propMessages.map((msg) => {
+          {orderedMessages.map((msg) => {
             const msgUser = users.find(u => u.id === msg.userId);
             const msgTimestamp = typeof msg.timestamp === 'string' ? new Date(msg.timestamp) : msg.timestamp;
             const mentioned = isMentioned(msg.content);
@@ -529,9 +550,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               onKeyDown={handleKeyDown}
               onBlur={handleInputBlur}
               placeholder={`Enviar mensaje a #${currentChannel.name}`}
-              className={`relative z-10 bg-[#232428] w-full text-sm sm:text-base outline-none min-h-[44px] transition-all ${
-                inputText ? 'text-transparent caret-blue-400' : 'text-discord-text-normal placeholder-discord-text-muted'
-              }`}
+              className={`relative z-10 bg-[#232428] w-full text-sm sm:text-base outline-none min-h-[44px] transition-all text-discord-text-normal placeholder-discord-text-muted ${inputText ? 'caret-blue-400' : ''}`}
               aria-label="Escribir mensaje"
               maxLength={2000}
               autoComplete="off"
