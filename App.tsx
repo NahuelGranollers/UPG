@@ -32,7 +32,7 @@ function MainApp() {
   const [isLocked, setIsLocked] = useState(() => !sessionStorage.getItem('app_unlocked'));
 
   // Hook de chat para el canal actual
-  const { messages, sendMessage } = useChat(currentChannel.id);
+  const { messages, setMessages, sendMessage } = useChat(currentChannel.id);
 
   // Mock de usuarios (idealmente mover a un UsersContext o Hook)
   const [users, setUsers] = useState<any[]>([]);
@@ -117,6 +117,7 @@ function MainApp() {
                 currentChannel={currentChannel}
                 onSendMessage={sendMessage}
                 messages={messages}
+                setMessages={setMessages}
                 onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
               />
               <UserList users={users} currentUserId={currentUser.id} />
@@ -158,6 +159,7 @@ function MainApp() {
             currentChannel={currentChannel}
             onSendMessage={sendMessage}
             messages={messages}
+            setMessages={setMessages}
             onMenuToggle={() => setMobileActiveTab('channels')}
           />
         )}

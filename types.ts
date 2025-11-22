@@ -62,6 +62,12 @@ export interface Poll {
   author: string;
 }
 
+export interface ChannelData {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 export enum AppView {
   CHAT = 'CHAT',
   WHO_WE_ARE = 'WHO_WE_ARE',

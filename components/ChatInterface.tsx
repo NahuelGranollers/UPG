@@ -10,6 +10,7 @@ interface ChatInterfaceProps {
   currentChannel: { id: string; name: string };
   onSendMessage: (content: string) => void;
   messages: Message[];
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   onMenuToggle: () => void;
 }
 
@@ -19,6 +20,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   currentChannel,
   onSendMessage,
   messages,
+  setMessages,
   onMenuToggle
 }) => {
   // State
@@ -38,11 +40,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   // Ordenar mensajes: más antiguo arriba, más reciente abajo
   const orderedMessages = useMemo(() => {
     const combined = [...messages, ...localMessages];
-    return combined.sort((a, b) => {
+    const sorted = combined.sort((a, b) => {
       const ta = new Date(a.timestamp).getTime();
       const tb = new Date(b.timestamp).getTime();
       return ta - tb;
     });
+    // Limitar a los últimos 100 mensajes para performance
+    return sorted.slice(-100);
   }, [messages, localMessages]);
 
   // Actualizar chat al recibir channel:history y nuevos mensajes
@@ -84,7 +88,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         socket.off('admin:user-color-changed');
       };
     }
-  }, [socket]);
+  }, [socket, setMessages]);
 
   // Lista de usuarios mencionables (bot + TODOS los usuarios, incluso offline y el usuario actual)
   const mentionableUsers = useMemo(() => {

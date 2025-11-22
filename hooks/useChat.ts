@@ -23,19 +23,10 @@ export const useChat = (channelId: string) => {
             }
         };
 
-        // Escuchar nuevos mensajes
-        const handleNewMessage = (message: Message) => {
-            if (message.channelId === channelId) {
-                setMessages(prev => [...prev, message]);
-            }
-        };
-
         socket.on('channel:history', handleHistory);
-        socket.on('message:received', handleNewMessage);
 
         return () => {
             socket.off('channel:history', handleHistory);
-            socket.off('message:received', handleNewMessage);
         };
     }, [socket, isConnected, channelId, currentUser]);
 
@@ -55,5 +46,5 @@ export const useChat = (channelId: string) => {
         });
     }, [socket, isConnected, channelId, currentUser]);
 
-    return { messages, sendMessage };
+    return { messages, setMessages, sendMessage };
 };
