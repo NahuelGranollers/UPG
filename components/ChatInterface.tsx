@@ -453,15 +453,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {/* Input */}
       <div className="px-3 sm:px-4 pt-2 shrink-0 relative" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
         {/* Botón de mensaje global para admin */}
-        {isAdmin && (
-          <button
-            onClick={handleGlobalMessage}
-            className="absolute right-4 top-2 bg-discord-blurple text-white px-3 py-1 rounded shadow hover:bg-blue-600 z-10"
-            title="Enviar mensaje global"
-          >
-            <Globe size={16} className="inline mr-1" /> Mensaje global
-          </button>
-        )}
+        {/* Botón de mensaje global eliminado */}
         {/* Sugerencias de menciones */}
         {showMentionSuggestions && mentionSuggestions.length > 0 && (
           <div className="fixed left-1/2 bottom-[80px] sm:left-1/2 sm:bottom-[100px] w-[90vw] sm:w-[500px] max-w-[500px] -translate-x-1/2 bg-[#2f3136] rounded-lg shadow-2xl border border-gray-800 overflow-hidden max-h-64 overflow-y-auto z-[9999] animate-in fade-in slide-in-from-bottom-2 duration-150">
