@@ -1,12 +1,12 @@
 export enum ChannelType {
   TEXT = 'TEXT',
   INFO = 'INFO',
-  VOICE = 'VOICE'
+  VOICE = 'VOICE',
 }
 
 export enum UserRole {
   ADMIN = 'admin',
-  USER = 'user'
+  USER = 'user',
 }
 
 export interface User {
@@ -71,5 +71,5 @@ export interface ChannelData {
 export enum AppView {
   CHAT = 'CHAT',
   WHO_WE_ARE = 'WHO_WE_ARE',
-  VOTING = 'VOTING'
+  VOTING = 'VOTING',
 }

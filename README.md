@@ -11,6 +11,7 @@ Aplicación de chat estilo Discord para la comunidad UPG (United Player Group).
 **Prerrequisitos:** Node.js 20 o superior
 
 1. Instalar dependencias:
+
    ```bash
    npm install
    ```
@@ -18,14 +19,15 @@ Aplicación de chat estilo Discord para la comunidad UPG (United Player Group).
 2. Configurar las variables de entorno:
    - Crea un archivo `.env` en la raíz del proyecto
    - Agrega las siguientes variables:
+
    ```env
    # Gemini API Key (para el bot)
    GEMINI_API_KEY=tu_api_key_aqui
-   
+
    # Discord Bot Token (opcional - solo si quieres obtener información automática)
    # Si no lo configuras, puedes editar config/discordUsers.ts con los nombres manualmente
    VITE_DISCORD_BOT_TOKEN=tu_discord_bot_token
-   
+
    # Firebase Configuration (para chat en tiempo real - opcional)
    VITE_FIREBASE_API_KEY=tu_firebase_api_key
    VITE_FIREBASE_AUTH_DOMAIN=tu_proyecto.firebaseapp.com
@@ -35,12 +37,13 @@ Aplicación de chat estilo Discord para la comunidad UPG (United Player Group).
    VITE_FIREBASE_MESSAGING_SENDER_ID=tu_sender_id
    VITE_FIREBASE_APP_ID=tu_app_id
    ```
-   
+
    **Notas:**
    - Si no configuras Firebase, la app funcionará en modo local (solo sincronización entre pestañas del mismo navegador).
    - Si no configuras el Discord Bot Token, se usarán avatares por defecto de Discord.
 
 3. Ejecutar en modo desarrollo:
+
    ```bash
    npm run dev
    ```
@@ -68,10 +71,11 @@ El build se generará en la carpeta `dist/`.
    - Cambia `base: '/'` a `base: '/nombre-repo/'`
 
 3. **Build y deploy:**
+
    ```bash
    npm run build
    ```
-   
+
    Luego:
    - Si usas GitHub Actions: configura un workflow para hacer build automático
    - Si usas manual: copia el contenido de `dist/` a la rama `gh-pages` o carpeta `docs/`
@@ -91,11 +95,11 @@ El build se generará en la carpeta `dist/`.
 
 ## 📝 Notas
 
-- **Chat en tiempo real:** 
+- **Chat en tiempo real:**
   - **Socket.IO** (prioridad): Se conecta automáticamente a `https://unaspartidillas.online` para chat en tiempo real
   - **Firebase** (fallback): Si Firebase está configurado, se usa como alternativa
   - **Local** (fallback): Si ninguna de las anteriores está disponible, funciona solo entre pestañas del mismo navegador
-- **Usuarios:** 
+- **Usuarios:**
   - Los usuarios de Discord se cargan automáticamente usando sus IDs reales
   - Cada dispositivo obtiene un usuario único y aleatorio que se guarda en `localStorage`
 - **Mensajes:** Se sincronizan en tiempo real a través de Socket.IO o Firebase (si está configurado).
@@ -126,6 +130,7 @@ El build se generará en la carpeta `dist/`.
    ```
 
 **Ventajas:**
+
 - ✅ No requiere token
 - ✅ Más seguro (no expone credenciales)
 - ✅ Funciona inmediatamente
@@ -159,6 +164,7 @@ Si quieres que los nombres se actualicen automáticamente desde Discord:
 5. Agrega las credenciales a tu archivo `.env` (ver arriba)
 
 **Reglas de seguridad recomendadas para Realtime Database:**
+
 ```json
 {
   "rules": {

@@ -57,7 +57,7 @@ export function useSwipe(handlers: SwipeHandlers, threshold = 50) {
 
   useEffect(() => {
     const element = document.body;
-    
+
     element.addEventListener('touchstart', onTouchStart, { passive: true });
     element.addEventListener('touchmove', onTouchMove, { passive: true });
     element.addEventListener('touchend', onTouchEnd, { passive: true });

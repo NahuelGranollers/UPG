@@ -10,21 +10,24 @@ interface UserProfileModalProps {
   onLoginWithDiscord: () => void;
 }
 
-const UserProfileModal: React.FC<UserProfileModalProps> = ({ 
-  isOpen, 
-  onClose, 
+const UserProfileModal: React.FC<UserProfileModalProps> = ({
+  isOpen,
+  onClose,
   user,
-  onLoginWithDiscord 
+  onLoginWithDiscord,
 }) => {
   if (!isOpen) return null;
 
   const isGuest = user.isGuest || user.username.startsWith('Invitado');
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div 
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
         className="bg-discord-sidebar rounded-lg shadow-xl max-w-md w-full overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div className="relative h-24 bg-gradient-to-r from-purple-500 to-pink-500">
@@ -47,12 +50,17 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 className="w-24 h-24 rounded-full border-8 border-discord-sidebar object-cover"
                 fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=5865F2&color=fff&size=200`}
               />
-              <div className={`absolute bottom-1 right-1 w-6 h-6 border-[4px] border-discord-sidebar rounded-full ${
-                user.status === 'online' ? 'bg-green-500' : 
-                user.status === 'idle' ? 'bg-yellow-500' : 
-                user.status === 'dnd' ? 'bg-red-500' : 
-                'bg-gray-500'
-              }`} />
+              <div
+                className={`absolute bottom-1 right-1 w-6 h-6 border-[4px] border-discord-sidebar rounded-full ${
+                  user.status === 'online'
+                    ? 'bg-green-500'
+                    : user.status === 'idle'
+                      ? 'bg-yellow-500'
+                      : user.status === 'dnd'
+                        ? 'bg-red-500'
+                        : 'bg-gray-500'
+                }`}
+              />
             </div>
           </div>
 
@@ -62,15 +70,11 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
               <h2 className="text-xl font-bold text-white mb-1" style={{ color: user.color }}>
                 {user.username}
               </h2>
-              <p className="text-sm text-discord-text-muted">
-                {user.id}
-              </p>
-              
+              <p className="text-sm text-discord-text-muted">{user.id}</p>
+
               {isGuest && (
                 <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded">
-                  <p className="text-sm text-yellow-200">
-                    👋 Estás navegando como invitado
-                  </p>
+                  <p className="text-sm text-yellow-200">👋 Estás navegando como invitado</p>
                 </div>
               )}
             </div>
@@ -114,10 +118,13 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
               <div className="bg-discord-dark rounded p-3">
                 <p className="text-xs text-discord-text-muted uppercase">Estado</p>
                 <p className="text-sm font-semibold text-white capitalize">
-                  {user.status === 'online' ? 'Disponible' : 
-                   user.status === 'idle' ? 'Ausente' : 
-                   user.status === 'dnd' ? 'No molestar' : 
-                   'Desconectado'}
+                  {user.status === 'online'
+                    ? 'Disponible'
+                    : user.status === 'idle'
+                      ? 'Ausente'
+                      : user.status === 'dnd'
+                        ? 'No molestar'
+                        : 'Desconectado'}
                 </p>
               </div>
               <div className="bg-discord-dark rounded p-3">

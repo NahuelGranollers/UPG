@@ -92,7 +92,13 @@ class SocketService {
     }
   }
 
-  sendMessage(channelId: string, content: string, userId: string, username?: string, avatar?: string): void {
+  sendMessage(
+    channelId: string,
+    content: string,
+    userId: string,
+    username?: string,
+    avatar?: string
+  ): void {
     if (!this.isConnected || !this.socket) {
       console.warn('Socket.IO no está conectado. No se puede enviar el mensaje.');
       return;
@@ -161,4 +167,3 @@ export const initSocket = (serverUrl?: string): SocketService => {
   service.connect();
   return service;
 };
-

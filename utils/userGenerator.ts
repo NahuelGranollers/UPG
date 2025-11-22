@@ -3,7 +3,7 @@ import { User } from '../types';
 // Generar un ID único para el dispositivo
 const getDeviceId = (): string => {
   let deviceId = localStorage.getItem('upg_device_id');
-  
+
   if (!deviceId) {
     // Generar un ID único usando timestamp + random + user agent hash
     const timestamp = Date.now();
@@ -12,28 +12,60 @@ const getDeviceId = (): string => {
       .split('')
       .reduce((acc, char) => acc + char.charCodeAt(0), 0)
       .toString(36);
-    
+
     deviceId = `device-${timestamp}-${random}-${userAgentHash.substring(0, 8)}`;
     localStorage.setItem('upg_device_id', deviceId);
   }
-  
+
   return deviceId;
 };
 
 // Nombres aleatorios para usuarios
 const USERNAMES = [
-  'GamerPro', 'LunaSky', 'NoobMaster', 'ChillGuy', 'TechWizard',
-  'ShadowHunter', 'DragonSlayer', 'NightOwl', 'CodeNinja', 'PixelWarrior',
-  'CyberGhost', 'StarRunner', 'FireStorm', 'IceQueen', 'ThunderBolt',
-  'DarkKnight', 'LightBringer', 'SwiftArrow', 'IronFist', 'SilverFox',
-  'BluePhoenix', 'RedDragon', 'GreenGiant', 'PurpleHaze', 'GoldenEagle'
+  'GamerPro',
+  'LunaSky',
+  'NoobMaster',
+  'ChillGuy',
+  'TechWizard',
+  'ShadowHunter',
+  'DragonSlayer',
+  'NightOwl',
+  'CodeNinja',
+  'PixelWarrior',
+  'CyberGhost',
+  'StarRunner',
+  'FireStorm',
+  'IceQueen',
+  'ThunderBolt',
+  'DarkKnight',
+  'LightBringer',
+  'SwiftArrow',
+  'IronFist',
+  'SilverFox',
+  'BluePhoenix',
+  'RedDragon',
+  'GreenGiant',
+  'PurpleHaze',
+  'GoldenEagle',
 ];
 
 // Colores para usuarios
 const USER_COLORS = [
-  '#3ba55c', '#5865F2', '#faa61a', '#ed4245', '#eb459e',
-  '#57f287', '#fee75c', '#ff78a4', '#ff7b7b', '#ffcc17',
-  '#ff4d0a', '#00d4ff', '#ff9300', '#ff006e', '#8338ec'
+  '#3ba55c',
+  '#5865F2',
+  '#faa61a',
+  '#ed4245',
+  '#eb459e',
+  '#57f287',
+  '#fee75c',
+  '#ff78a4',
+  '#ff7b7b',
+  '#ffcc17',
+  '#ff4d0a',
+  '#00d4ff',
+  '#ff9300',
+  '#ff006e',
+  '#8338ec',
 ];
 
 // Generar avatar único basado en el ID del usuario
@@ -47,7 +79,7 @@ const generateAvatar = (userId: string): string => {
 export const generateRandomUser = (): User => {
   const deviceId = getDeviceId();
   const savedUser = localStorage.getItem('upg_current_user');
-  
+
   // Si ya existe un usuario guardado, usarlo
   if (savedUser) {
     try {
@@ -60,15 +92,15 @@ export const generateRandomUser = (): User => {
       // Si hay error parseando, generar uno nuevo
     }
   }
-  
+
   // Generar un ID único basado en el device ID
   const userId = `user-${deviceId}-${Date.now()}`;
-  
+
   // Seleccionar nombre y color basados en el hash del device ID
   const hash = deviceId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const usernameIndex = hash % USERNAMES.length;
   const colorIndex = hash % USER_COLORS.length;
-  
+
   const user: User = {
     id: userId,
     username: `${USERNAMES[usernameIndex]}${Math.floor(Math.random() * 1000)}`,
@@ -76,10 +108,10 @@ export const generateRandomUser = (): User => {
     status: 'online',
     color: USER_COLORS[colorIndex],
   };
-  
+
   // Guardar en localStorage
   localStorage.setItem('upg_current_user', JSON.stringify(user));
-  
+
   return user;
 };
 
@@ -87,4 +119,3 @@ export const generateRandomUser = (): User => {
 export const getOrCreateUser = (): User => {
   return generateRandomUser();
 };
-

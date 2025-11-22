@@ -3,15 +3,14 @@ import { useSocket } from '../context/SocketContext';
 import { Home, Plus, Compass, Shield } from 'lucide-react';
 import SafeImage from './SafeImage';
 import AdminPanel from './AdminPanel';
-import { UserRole } from '../types';
+import { UserRole, User } from '../types';
 
 interface SidebarProps {
-  currentUser: any;
-  setCurrentUser: (user: any) => void;
-  isConnected: boolean;
+  currentUser: User | null;
+  setCurrentUser: (user: User | null) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = memo(({ currentUser, setCurrentUser, isConnected }) => {
+const Sidebar: React.FC<SidebarProps> = memo(({ currentUser, setCurrentUser: _setCurrentUser }) => {
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const isAdmin = currentUser?.role === UserRole.ADMIN;
 
@@ -33,15 +32,15 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentUser, setCurrentUser, isC
       <div className="group relative">
         <div className="absolute left-0 bg-white rounded-r-md w-1 h-10 top-1/2 -translate-y-1/2 -ml-1" />
         <button className="w-12 h-12 bg-discord-chat text-discord-green hover:bg-discord-yellow hover:text-white rounded-[24px] hover:rounded-[16px] transition-all duration-200 flex items-center justify-center">
-           <SafeImage 
-             src="/upg.png" 
-             alt="UPG" 
-             className="object-cover w-full h-full"
-             fallbackSrc="https://ui-avatars.com/api/?name=UPG&background=ffcc17&color=ffcc17&size=128"
-           />
+          <SafeImage
+            src="/upg.png"
+            alt="UPG"
+            className="object-cover w-full h-full"
+            fallbackSrc="https://ui-avatars.com/api/?name=UPG&background=ffcc17&color=ffcc17&size=128"
+          />
         </button>
       </div>
-      
+
       <div className="w-8 h-[2px] bg-discord-chat rounded-lg mx-auto" />
 
       <button className="w-12 h-12 bg-discord-chat text-discord-green hover:bg-discord-green hover:text-white rounded-[24px] hover:rounded-[16px] transition-all duration-200 flex items-center justify-center">
@@ -56,7 +55,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentUser, setCurrentUser, isC
       {isAdmin && (
         <>
           <div className="w-8 h-[2px] bg-discord-chat rounded-lg mx-auto mt-auto" />
-          <button 
+          <button
             onClick={() => setShowAdminPanel(true)}
             className="w-12 h-12 bg-red-600 hover:bg-red-700 text-white rounded-[24px] hover:rounded-[16px] transition-all duration-200 flex items-center justify-center"
             title="Panel de Administraci├│n"
@@ -68,7 +67,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentUser, setCurrentUser, isC
 
       {/* Admin Panel Modal */}
       {isAdmin && (
-        <AdminPanel 
+        <AdminPanel
           isOpen={showAdminPanel}
           onClose={() => setShowAdminPanel(false)}
           currentUser={currentUser}

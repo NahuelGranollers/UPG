@@ -3,17 +3,20 @@
 ## 📦 Archivos modificados
 
 ### 1. `App.tsx` (Frontend)
+
 **Problema original**: El usuario volvía a "Invitado" después de hacer login con Discord.
 **Problema descubierto**: El backend sobrescribía el usuario Discord con invitado al conectar Socket.IO.
 
 **Cambios implementados**:
 
 #### a) Estado inicial de `currentUser` mejorado
+
 - ✅ Añadido log: `🔐 [Init] Using cached Discord user from localStorage` cuando se encuentra usuario guardado
 - ✅ Añadido log: `👤 [Init] No valid user found, creating guest` cuando se crea invitado
 - ✅ Verificación más robusta: ahora también verifica que `id` no empiece con `guest-`
 
 #### b) `useEffect` de `checkAuth` mejorado con logs
+
 - ✅ Log inicial: `🔐 checkAuth running. URL: ...`
 - ✅ Log de storage: `🔐 checkAuth start - currentUser in storage: ...`
 - ✅ Log antes de fetch: `🔄 Fetching /auth/user with credentials from ...`
@@ -24,9 +27,11 @@
 - ✅ Log de error: `❌ Error in checkAuth: ...`
 
 #### c) Fallback inteligente cuando `/auth/user` falla
+
 **ANTES**: Si `/auth/user` devolvía 401 → creaba invitado inmediatamente
 
-**AHORA**: 
+**AHORA**:
+
 ```typescript
 if (response not ok) {
   // 1. Intentar usar usuario Discord guardado
@@ -42,9 +47,11 @@ if (response not ok) {
 Esto significa que **incluso si la cookie falla**, el usuario puede seguir usando su cuenta Discord desde `localStorage`.
 
 #### d) Protección de usuario Discord en `user:registered` ⭐ **CRÍTICO**
+
 **ANTES**: El socket devolvía `user:registered` con datos del servidor → **sobrescribía** usuario Discord con invitado
 
 **AHORA**:
+
 ```typescript
 socket.on('user:registered', (userData: User) => {
   // Si ya estamos autenticados con Discord
@@ -69,24 +76,28 @@ Esto **previene** que el backend sobrescriba tu usuario Discord con un invitado 
 **Cambios implementados**:
 
 #### a) CORS mejorado con manejo de preflight
+
 ```javascript
 // Handle preflight requests
 if (req.method === 'OPTIONS') {
   return res.sendStatus(204);
 }
 ```
+
 Esto previene errores de CORS con peticiones OPTIONS antes de GET/POST.
 
 #### b) Detección de usuarios Discord en `user:join` ⭐ **CRÍTICO**
+
 **ANTES**: Todos los usuarios se identificaban por IP → usuarios Discord eran reemplazados por invitados
 
 **AHORA**:
+
 ```javascript
 socket.on("user:join", (userData) => {
   // Detectar si es usuario Discord (no guest-XXXX)
-  const isDiscordUser = userData.id && !userData.id.startsWith('guest-') 
+  const isDiscordUser = userData.id && !userData.id.startsWith('guest-')
                         && !userData.username.startsWith('Invitado');
-  
+
   if (isDiscordUser) {
     // Usuario Discord - usar sus datos directamente
     finalUserData = { ...userData, role, socketId, ... };
@@ -102,9 +113,11 @@ socket.on("user:join", (userData) => {
 Esto **previene** que el servidor cree un nuevo invitado para usuarios Discord.
 
 #### c) No registrar usuarios Discord por IP
+
 **ANTES**: Todos los usuarios se registraban en `registeredUsers` por IP
 
 **AHORA**:
+
 ```javascript
 // Solo registrar por IP si es usuario invitado (no Discord)
 if (!isDiscordUser) {
@@ -115,19 +128,25 @@ if (!isDiscordUser) {
 Los usuarios Discord mantienen su identidad única, no dependen de la IP.
 
 #### d) Log mejorado en `/auth/user`
-**ANTES**: 
+
+**ANTES**:
+
 ```javascript
 logger.info(`✅ Discord user session found: ${req.session.discordUser.username}`);
 ```
 
 **AHORA**:
+
 ```javascript
-logger.info(`✅ Discord user session found (ID: ${req.session.discordUser.id}, username: ${req.session.discordUser.username})`);
+logger.info(
+  `✅ Discord user session found (ID: ${req.session.discordUser.id}, username: ${req.session.discordUser.username})`
+);
 ```
 
 Ahora incluye el ID para mejor debugging.
 
 #### e) Configuración de sesión verificada
+
 ✅ Sin `domain` en cookie (permite cross-domain)
 ✅ `sameSite: 'none'` en producción (permite cross-domain con HTTPS)
 ✅ `secure: true` en producción (solo HTTPS)
@@ -138,6 +157,7 @@ Ahora incluye el ID para mejor debugging.
 ## 🎯 Resultado esperado
 
 ### Antes de los cambios:
+
 1. Usuario hace login con Discord ✅
 2. Socket.IO se conecta → Backend crea "Invitado7139" por IP ❌
 3. Frontend recibe `user:registered` → Sobrescribe "popogamer3" con "Invitado7139" ❌
@@ -145,6 +165,7 @@ Ahora incluye el ID para mejor debugging.
 5. Logs en consola: confusos, sin detalles ❌
 
 ### Después de los cambios:
+
 1. Usuario hace login con Discord → `popogamer3` ✅
 2. Socket.IO se conecta → Backend **reconoce** usuario Discord ✅
 3. Backend mantiene "popogamer3", NO crea invitado ✅
@@ -158,6 +179,7 @@ Ahora incluye el ID para mejor debugging.
 ## 🧪 Cómo probar
 
 ### Opción A: Flujo normal (debe funcionar)
+
 1. Abre ventana privada
 2. Ve a `https://unaspartidillas.online`
 3. Haz login con Discord
@@ -166,12 +188,14 @@ Ahora incluye el ID para mejor debugging.
 6. Verifica que **NO vuelve a invitado** ✅
 
 ### Opción B: Simular fallo de cookie (nuevo fallback)
+
 1. Abre DevTools → Application → Cookies
 2. Elimina la cookie `upg.sid` de `mensajeria-ksc7.onrender.com`
 3. **Recarga la página**
 4. Aunque la cookie no existe, debería **seguir mostrando tu usuario Discord** desde `localStorage` ✅
 
 ### Opción C: Logout funciona
+
 1. Estando logueado con Discord
 2. Haz clic en el botón **LogOut** (rojo, en la barra inferior)
 3. Deberías volver a "Invitado" ✅
@@ -182,6 +206,7 @@ Ahora incluye el ID para mejor debugging.
 ## 📊 Logs que verás en la consola
 
 ### Login exitoso:
+
 ```
 🔐 checkAuth running. URL: https://unaspartidillas.online/?auth=success
 🔐 checkAuth start - currentUser in storage: {...}
@@ -193,6 +218,7 @@ Ahora incluye el ID para mejor debugging.
 ```
 
 ### Recarga con sesión válida:
+
 ```
 🔐 [Init] Using cached Discord user from localStorage: TuUsername
 🔐 checkAuth running. URL: https://unaspartidillas.online/
@@ -200,6 +226,7 @@ Ahora incluye el ID para mejor debugging.
 ```
 
 ### Fallo de cookie pero localStorage OK (nuevo):
+
 ```
 🔐 checkAuth running. URL: https://unaspartidillas.online/?auth=success
 🔄 Fetching /auth/user with credentials from https://mensajeria-ksc7.onrender.com
@@ -209,6 +236,7 @@ Ahora incluye el ID para mejor debugging.
 ```
 
 ### No hay sesión (invitado):
+
 ```
 🔐 [Init] No valid user found, creating guest
 🔐 checkAuth running. URL: https://unaspartidillas.online/
@@ -239,6 +267,7 @@ Ahora incluye el ID para mejor debugging.
 ## ⚠️ Importante
 
 Los cambios en el código **NO resolverán** problemas de:
+
 - Variables de entorno mal configuradas
 - Redirect URI incorrecta en Discord Developer Portal
 - Problemas de HTTPS/certificados

@@ -1,16 +1,39 @@
 import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getDatabase, Database, ref, push, onValue, off, set, serverTimestamp, onDisconnect, connectDatabaseEmulator } from 'firebase/database';
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import {
+  getDatabase,
+  Database,
+  ref,
+  push,
+  onValue,
+  off,
+  set,
+  serverTimestamp,
+  onDisconnect,
+  connectDatabaseEmulator,
+} from 'firebase/database';
+import {
+  getStorage,
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
+} from 'firebase/storage';
 import { User, Message } from '../types';
 
 // Firebase configuration - usar variables de entorno
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || '',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || process.env.VITE_FIREBASE_AUTH_DOMAIN || '',
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || process.env.VITE_FIREBASE_DATABASE_URL || '',
+  authDomain:
+    import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || process.env.VITE_FIREBASE_AUTH_DOMAIN || '',
+  databaseURL:
+    import.meta.env.VITE_FIREBASE_DATABASE_URL || process.env.VITE_FIREBASE_DATABASE_URL || '',
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || '',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || process.env.VITE_FIREBASE_STORAGE_BUCKET || '',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
+  storageBucket:
+    import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || process.env.VITE_FIREBASE_STORAGE_BUCKET || '',
+  messagingSenderId:
+    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID ||
+    process.env.VITE_FIREBASE_MESSAGING_SENDER_ID ||
+    '',
   appId: import.meta.env.VITE_FIREBASE_APP_ID || process.env.VITE_FIREBASE_APP_ID || '',
 };
 
@@ -49,7 +72,7 @@ export const sendMessage = async (
 
   const messagesRef = ref(firebase.database, `channels/${channelId}/messages`);
   const newMessageRef = push(messagesRef);
-  
+
   await set(newMessageRef, {
     ...message,
     userId,
@@ -69,47 +92,51 @@ export const subscribeToMessages = (
   }
 
   const messagesRef = ref(firebase.database, `channels/${channelId}/messages`);
-  
-  const unsubscribe = onValue(messagesRef, (snapshot) => {
-    const data = snapshot.val();
-    if (!data) {
-      callback([]);
-      return;
-    }
 
-    const messages: Message[] = Object.entries(data)
-      .map(([id, msg]: [string, any]) => {
-        // Firebase serverTimestamp() retorna un objeto, no un número directamente
-        // Si es un objeto, usar la fecha actual, si es un número, convertir a Date
-        let timestamp: Date;
-        if (msg.timestamp) {
-          if (typeof msg.timestamp === 'object' && msg.timestamp !== null) {
-            // Es un objeto de Firebase, usar fecha actual
-            timestamp = new Date();
-          } else if (typeof msg.timestamp === 'number') {
-            timestamp = new Date(msg.timestamp);
+  const unsubscribe = onValue(
+    messagesRef,
+    snapshot => {
+      const data = snapshot.val();
+      if (!data) {
+        callback([]);
+        return;
+      }
+
+      const messages: Message[] = Object.entries(data)
+        .map(([id, msg]: [string, any]) => {
+          // Firebase serverTimestamp() retorna un objeto, no un número directamente
+          // Si es un objeto, usar la fecha actual, si es un número, convertir a Date
+          let timestamp: Date;
+          if (msg.timestamp) {
+            if (typeof msg.timestamp === 'object' && msg.timestamp !== null) {
+              // Es un objeto de Firebase, usar fecha actual
+              timestamp = new Date();
+            } else if (typeof msg.timestamp === 'number') {
+              timestamp = new Date(msg.timestamp);
+            } else {
+              timestamp = new Date(msg.timestamp);
+            }
           } else {
-            timestamp = new Date(msg.timestamp);
+            timestamp = new Date();
           }
-        } else {
-          timestamp = new Date();
-        }
-        
-        return {
-          id,
-          userId: msg.userId,
-          content: msg.content,
-          timestamp,
-          channelId,
-          attachments: msg.attachments || [],
-        };
-      })
-      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
-    callback(messages);
-  }, (error) => {
-    console.error('Error suscribiéndose a mensajes:', error);
-  });
+          return {
+            id,
+            userId: msg.userId,
+            content: msg.content,
+            timestamp,
+            channelId,
+            attachments: msg.attachments || [],
+          };
+        })
+        .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
+      callback(messages);
+    },
+    error => {
+      console.error('Error suscribiéndose a mensajes:', error);
+    }
+  );
 
   return () => {
     off(messagesRef);
@@ -124,7 +151,7 @@ export const setUserOnline = (user: User): (() => void) => {
   }
 
   const userRef = ref(firebase.database, `users/${user.id}`);
-  
+
   // Establecer usuario como online
   set(userRef, {
     ...user,
@@ -148,38 +175,40 @@ export const setUserOnline = (user: User): (() => void) => {
   };
 };
 
-export const subscribeToOnlineUsers = (
-  callback: (users: User[]) => void
-): (() => void) => {
+export const subscribeToOnlineUsers = (callback: (users: User[]) => void): (() => void) => {
   const firebase = initFirebase();
   if (!firebase) {
     return () => {};
   }
 
   const usersRef = ref(firebase.database, 'users');
-  
-  const unsubscribe = onValue(usersRef, (snapshot) => {
-    const data = snapshot.val();
-    if (!data) {
-      callback([]);
-      return;
+
+  const unsubscribe = onValue(
+    usersRef,
+    snapshot => {
+      const data = snapshot.val();
+      if (!data) {
+        callback([]);
+        return;
+      }
+
+      const users: User[] = Object.entries(data)
+        .map(([id, userData]: [string, any]) => ({
+          id,
+          username: userData.username || 'Usuario',
+          avatar: userData.avatar || '',
+          status: userData.isOnline ? userData.status || 'online' : 'offline',
+          color: userData.color || '#3ba55c',
+          isBot: userData.isBot || false,
+        }))
+        .filter(user => user.id !== 'bot'); // Excluir bot de la lista de usuarios online
+
+      callback(users);
+    },
+    error => {
+      console.error('Error suscribiéndose a usuarios online:', error);
     }
-
-    const users: User[] = Object.entries(data)
-      .map(([id, userData]: [string, any]) => ({
-        id,
-        username: userData.username || 'Usuario',
-        avatar: userData.avatar || '',
-        status: userData.isOnline ? (userData.status || 'online') : 'offline',
-        color: userData.color || '#3ba55c',
-        isBot: userData.isBot || false,
-      }))
-      .filter((user) => user.id !== 'bot'); // Excluir bot de la lista de usuarios online
-
-    callback(users);
-  }, (error) => {
-    console.error('Error suscribiéndose a usuarios online:', error);
-  });
+  );
 
   return () => {
     off(usersRef);
@@ -192,10 +221,7 @@ export const isFirebaseConfigured = (): boolean => {
 };
 
 // Storage para imágenes de perfil
-export const uploadProfileImage = async (
-  file: File,
-  userId: string
-): Promise<string> => {
+export const uploadProfileImage = async (file: File, userId: string): Promise<string> => {
   const firebase = initFirebase();
   if (!firebase) {
     throw new Error('Firebase no está configurado');
@@ -208,7 +234,7 @@ export const uploadProfileImage = async (
 
   // Subir imagen
   await uploadBytes(imageRef, file);
-  
+
   // Obtener URL de descarga
   const downloadURL = await getDownloadURL(imageRef);
   return downloadURL;
@@ -244,4 +270,3 @@ export const validateImageFile = (file: File): { valid: boolean; error?: string 
 
   return { valid: true };
 };
-

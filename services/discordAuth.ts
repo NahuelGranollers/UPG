@@ -1,7 +1,8 @@
 // Discord OAuth2 Authentication Service
 
 const DISCORD_CLIENT_ID = import.meta.env.VITE_DISCORD_CLIENT_ID || '';
-const DISCORD_REDIRECT_URI = import.meta.env.VITE_DISCORD_REDIRECT_URI || window.location.origin + '/auth/callback';
+const DISCORD_REDIRECT_URI =
+  import.meta.env.VITE_DISCORD_REDIRECT_URI || window.location.origin + '/auth/callback';
 
 export interface DiscordUser {
   id: string;
@@ -14,13 +15,17 @@ export interface DiscordUser {
 /**
  * Obtiene la URL del avatar de Discord
  */
-export function getDiscordAvatarUrl(userId: string, avatarHash: string | null, size: number = 128): string {
+export function getDiscordAvatarUrl(
+  userId: string,
+  avatarHash: string | null,
+  size: number = 128
+): string {
   if (!avatarHash) {
     // Avatar por defecto basado en el discriminador
     const defaultAvatarNum = parseInt(userId) % 5;
     return `https://cdn.discordapp.com/embed/avatars/${defaultAvatarNum}.png`;
   }
-  
+
   const extension = avatarHash.startsWith('a_') ? 'gif' : 'png';
   return `https://cdn.discordapp.com/avatars/${userId}/${avatarHash}.${extension}?size=${size}`;
 }
@@ -50,7 +55,11 @@ export function handleDiscordCallback(): string | null {
 
   if (accessToken) {
     // Limpiar el hash de la URL
-    window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+    window.history.replaceState(
+      {},
+      document.title,
+      window.location.pathname + window.location.search
+    );
     return accessToken;
   }
 

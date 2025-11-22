@@ -3,7 +3,7 @@ import { Lock, ArrowRight, AlertCircle } from 'lucide-react';
 
 // SHA-256 Hash de la contraseña correcta (pre-calculado para máxima eficiencia)
 // Nunca almacenar la contraseña real en el código
-const TARGET_HASH = "fc0b2a5f6669b54193a2c3db48cd26c3a4649be6e9f7b7fb958df4aa39b05402";
+const TARGET_HASH = 'fc0b2a5f6669b54193a2c3db48cd26c3a4649be6e9f7b7fb958df4aa39b05402';
 
 interface LockScreenProps {
   onUnlock: () => void;
@@ -57,44 +57,49 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
     return hexString;
   }, []);
 
-  const handleLogin = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
 
-    // Validación rápida: no procesar si está vacío
-    if (!password.trim()) {
-      setError(true);
-      return;
-    }
-
-    setError(false);
-    setLoading(true);
-
-    try {
-      // Hashear input (operación criptográfica rápida ~1ms)
-      const inputHash = await hashPassword(password);
-
-      // Comparación constante en tiempo para evitar timing attacks
-      if (inputHash === TARGET_HASH) {
-        // Éxito - Entrada instantánea sin delay
-        onUnlock();
-      } else {
-        // Fallo - delay artificial para prevenir ataques de fuerza bruta
-        setTimeout(() => {
-          setError(true);
-          setLoading(false);
-          setPassword(''); // Limpiar input en error
-        }, 300);
+      // Validación rápida: no procesar si está vacío
+      if (!password.trim()) {
+        setError(true);
+        return;
       }
-    } catch (err) {
-      console.error("Error de verificación:", err);
-      setError(true);
-      setLoading(false);
-    }
-  }, [password, hashPassword, onUnlock]);
+
+      setError(false);
+      setLoading(true);
+
+      try {
+        // Hashear input (operación criptográfica rápida ~1ms)
+        const inputHash = await hashPassword(password);
+
+        // Comparación constante en tiempo para evitar timing attacks
+        if (inputHash === TARGET_HASH) {
+          // Éxito - Entrada instantánea sin delay
+          onUnlock();
+        } else {
+          // Fallo - delay artificial para prevenir ataques de fuerza bruta
+          setTimeout(() => {
+            setError(true);
+            setLoading(false);
+            setPassword(''); // Limpiar input en error
+          }, 300);
+        }
+      } catch {
+        // Password verification error handling
+        setError(true);
+        setLoading(false);
+      }
+    },
+    [password, hashPassword, onUnlock]
+  );
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-y-auto w-full min-h-screen p-4 sm:p-6" style={{ backgroundColor: '#ffcc17' }}>
-
+    <div
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-y-auto w-full min-h-screen p-4 sm:p-6"
+      style={{ backgroundColor: '#ffcc17' }}
+    >
       <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto my-auto">
         {/* Animated Logo */}
         <img
@@ -103,7 +108,9 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           alt="UPG Logo"
           className="object-cover mb-4 sm:mb-6 md:mb-8 w-[100px] h-[100px] sm:w-[150px] sm:h-[150px] md:w-[200px] md:h-[200px] lg:w-[300px] lg:h-[300px] block flex-shrink-0"
           style={{ transition: 'transform 0.1s linear' }}
-          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+          onError={e => {
+            e.currentTarget.style.display = 'none';
+          }}
         />
 
         {/* Work in Progress Text */}
@@ -113,13 +120,17 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
             color: '#ff4d0a',
             fontFamily: '"Arial Black", Arial, sans-serif',
             textShadow: '2px 2px 0px #ff9300',
-            letterSpacing: '-1px'
-          }}>
+            letterSpacing: '-1px',
+          }}
+        >
           WORK IN PROGRESS
         </div>
 
         {/* Password Form */}
-        <form onSubmit={handleLogin} className="w-full max-w-md flex flex-col items-center relative z-10 px-4 sm:px-0">
+        <form
+          onSubmit={handleLogin}
+          className="w-full max-w-md flex flex-col items-center relative z-10 px-4 sm:px-0"
+        >
           <div className="relative w-full">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <Lock size={20} className="text-[#ff4d0a] sm:w-6 sm:h-6" />
@@ -127,7 +138,7 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
             <input
               type="password"
               value={password}
-              onChange={(e) => {
+              onChange={e => {
                 setPassword(e.target.value);
                 if (error) setError(false);
               }}

@@ -3,7 +3,7 @@ import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider, useSocket } from './context/SocketContext';
 import { useChat } from './hooks/useChat';
-import { AppView, ChannelData } from './types';
+import { AppView, ChannelData, User } from './types';
 
 // Componentes críticos (carga inmediata)
 import LockScreen from './components/LockScreen';
@@ -19,12 +19,14 @@ const WhoWeAre = lazy(() => import('./components/WhoWeAre'));
 const Voting = lazy(() => import('./components/Voting'));
 
 function MainApp() {
-  const { currentUser, isAuthenticated, isLoading, loginWithDiscord, logout } = useAuth();
+  const { currentUser, isLoading, loginWithDiscord, logout } = useAuth();
   const { isConnected } = useSocket();
 
   const [activeView, setActiveView] = useState<AppView>(AppView.CHAT);
   const [currentChannel, setCurrentChannel] = useState<ChannelData>({
-    id: 'general', name: 'general', description: 'Chat general'
+    id: 'general',
+    name: 'general',
+    description: 'Chat general',
   });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileActiveTab, setMobileActiveTab] = useState<'channels' | 'chat' | 'users'>('chat');
@@ -35,7 +37,7 @@ function MainApp() {
   const { messages, setMessages, sendMessage } = useChat(currentChannel.id);
 
   // Mock de usuarios (idealmente mover a un UsersContext o Hook)
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
 
   // Estado de voz
   const [voiceStates, setVoiceStates] = useState<Record<string, string>>({});
@@ -50,16 +52,23 @@ function MainApp() {
   const { socket } = useSocket();
   React.useEffect(() => {
     if (!socket) return;
-    socket.on('users:list', (list) => setUsers(list));
-    socket.on('user:online', (u) => setUsers(prev => {
-      const exists = prev.find(x => x.id === u.id);
-      if (exists) return prev.map(x => x.id === u.id ? { ...u, online: true, status: 'online' } : x);
-      return [...prev, u];
-    }));
-    socket.on('user:offline', ({ userId }) => setUsers(prev => prev.map(u => u.id === userId ? { ...u, online: false, status: 'offline' } : u)));
+    socket.on('users:list', list => setUsers(list));
+    socket.on('user:online', u =>
+      setUsers(prev => {
+        const exists = prev.find(x => x.id === u.id);
+        if (exists)
+          return prev.map(x => (x.id === u.id ? { ...u, online: true, status: 'online' } : x));
+        return [...prev, u];
+      })
+    );
+    socket.on('user:offline', ({ userId }) =>
+      setUsers(prev =>
+        prev.map(u => (u.id === userId ? { ...u, online: false, status: 'offline' } : u))
+      )
+    );
 
     // Escuchar cambios en canales de voz
-    socket.on('voice:state', (states) => setVoiceStates(states));
+    socket.on('voice:state', states => setVoiceStates(states));
 
     // Solicitar usuarios iniciales
     socket.emit('users:request');
@@ -73,15 +82,30 @@ function MainApp() {
   }, [socket]);
 
   // Mostrar LockScreen si está bloqueado, independientemente de la autenticación
-  if (isLocked) return <LockScreen onUnlock={() => {
-    setIsLocked(false);
-    sessionStorage.setItem('app_unlocked', 'true');
-  }} />;
+  if (isLocked)
+    return (
+      <LockScreen
+        onUnlock={() => {
+          setIsLocked(false);
+          sessionStorage.setItem('app_unlocked', 'true');
+        }}
+      />
+    );
 
-  if (isLoading) return <div className="flex h-screen items-center justify-center bg-[#313338] text-white">Cargando...</div>;
+  if (isLoading)
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#313338] text-white">
+        Cargando...
+      </div>
+    );
 
   // Si no hay usuario (caso raro tras isLoading), mostrar loading o error
-  if (!currentUser) return <div className="flex h-screen items-center justify-center bg-[#313338] text-white">Error de autenticación</div>;
+  if (!currentUser)
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#313338] text-white">
+        Error de autenticación
+      </div>
+    );
 
   return (
     <div className="flex h-screen w-full bg-[#313338] font-sans antialiased overflow-hidden relative text-white">
@@ -89,7 +113,7 @@ function MainApp() {
       <div className="hidden md:flex h-full w-full">
         <Sidebar
           currentUser={currentUser}
-          setCurrentUser={() => { }} // Ya no se usa localmente
+          setCurrentUser={() => {}} // Ya no se usa localmente
           isConnected={isConnected}
         />
         <ChannelList
@@ -123,8 +147,8 @@ function MainApp() {
               <UserList users={users} currentUserId={currentUser.id} />
             </>
           )}
-          {activeView === AppView.WHO_WE_ARE && <WhoWeAre onMenuToggle={() => { }} />}
-          {activeView === AppView.VOTING && <Voting onMenuToggle={() => { }} />}
+          {activeView === AppView.WHO_WE_ARE && <WhoWeAre onMenuToggle={() => {}} />}
+          {activeView === AppView.VOTING && <Voting onMenuToggle={() => {}} />}
         </div>
       </div>
 
@@ -132,7 +156,11 @@ function MainApp() {
       <div className="flex md:hidden h-full w-full flex-col relative overflow-hidden pb-16">
         {mobileActiveTab === 'channels' && (
           <div className="flex h-full w-full">
-            <Sidebar currentUser={currentUser} setCurrentUser={() => { }} isConnected={isConnected} />
+            <Sidebar
+              currentUser={currentUser}
+              setCurrentUser={() => {}}
+              isConnected={isConnected}
+            />
             <ChannelList
               activeView={activeView}
               currentChannelId={currentChannel.id}
@@ -143,7 +171,7 @@ function MainApp() {
               }}
               currentUser={currentUser}
               activeVoiceChannel={null}
-              onVoiceJoin={() => { }}
+              onVoiceJoin={() => {}}
               voiceStates={{}}
               users={users}
               onLoginWithDiscord={loginWithDiscord}
@@ -164,9 +192,7 @@ function MainApp() {
           />
         )}
 
-        {mobileActiveTab === 'users' && (
-          <UserList users={users} currentUserId={currentUser.id} />
-        )}
+        {mobileActiveTab === 'users' && <UserList users={users} currentUserId={currentUser.id} />}
 
         <MobileTabBar
           activeTab={mobileActiveTab}

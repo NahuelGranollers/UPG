@@ -3,11 +3,13 @@
 ## ✅ Servidores Corriendo
 
 ### **Frontend (Vite Dev Server)**
+
 - 🌐 URL: http://localhost:3000/
 - 📡 Network: http://192.168.1.132:3000/
 - ✅ Estado: **CORRIENDO**
 
 ### **Backend (Socket.IO Server)**
+
 - 🔌 Puerto: 3001
 - ✅ Estado: **CORRIENDO**
 
@@ -16,6 +18,7 @@
 ## 🧪 Cómo Probar las Funcionalidades
 
 ### **1. Abrir la Aplicación**
+
 1. Abre tu navegador
 2. Ve a: **http://localhost:3000/**
 3. Deberías ver la pantalla de login
@@ -23,12 +26,14 @@
 ### **2. Probar Autocompletado de Menciones**
 
 #### Paso 1: Entrar al Chat
+
 - Ingresa con un usuario (o usa Discord login)
 - Entra a cualquier canal
 
 #### Paso 2: Escribir una Mención
+
 1. Click en el input de mensaje (abajo)
-2. Escribe **`@`** 
+2. Escribe **`@`**
 3. **Deberías ver:**
    - 🎯 Panel desplegable con usuarios
    - 🤖 Bot UPG en la lista
@@ -36,34 +41,41 @@
    - ⚫ Usuarios offline con punto gris
 
 #### Paso 3: Autocompletar
+
 - **Opción A:** Escribe más letras para filtrar → `@upg`
 - **Opción B:** Usa **flechas ↑↓** para navegar
 - **Opción C:** Presiona **Tab** o **Enter**
 - **Opción D:** Haz **Click** en cualquier usuario
 
 #### Resultado Esperado:
+
 ```
-@UPG 
+@UPG
 ```
+
 (Con espacio automático al final)
 
 ### **3. Probar Resaltado de Mensajes**
 
 #### Paso 1: Abrir en Dos Navegadores
+
 1. **Navegador 1:** http://localhost:3000/
    - Login como "Usuario1"
-   
 2. **Navegador 2 (incógnito):** http://localhost:3000/
    - Login como "Usuario2"
 
 #### Paso 2: Enviar Mención
+
 En **Navegador 1** (Usuario1), escribe:
+
 ```
 @Usuario2 hola, ¿cómo estás?
 ```
 
 #### Paso 3: Ver el Resultado
+
 En **Navegador 2** (Usuario2), deberías ver:
+
 - 🟡 **Mensaje con fondo amarillo**
 - 📍 **Borde amarillo a la izquierda**
 - 🏷️ **Badge "MENCIÓN"** en amarillo
@@ -72,7 +84,9 @@ En **Navegador 2** (Usuario2), deberías ver:
 ### **4. Probar Bot Agresivo**
 
 #### Mencionar al Bot:
+
 Escribe cualquiera de estos:
+
 ```
 @UPG hola
 @upg como estas
@@ -81,6 +95,7 @@ Escribe cualquiera de estos:
 ```
 
 #### Resultado Esperado:
+
 1. **Mientras esperas:**
    - Avatar del bot
    - 3 puntos animados
@@ -92,6 +107,7 @@ Escribe cualquiera de estos:
    - Tono tosco y maleducado
 
 #### Ejemplos de Respuestas:
+
 - "¿Qué coño quieres, tío? 🙄"
 - "Hola, retrasado. ¿En qué mierda te ayudo ahora?"
 - "Fatal, gracias por preguntar, capullo. 😤"
@@ -101,6 +117,7 @@ Escribe cualquiera de estos:
 ## 🔍 Verificar que Todo Funciona
 
 ### **Checklist:**
+
 - [ ] Panel de menciones aparece al escribir `@`
 - [ ] Puedes filtrar usuarios escribiendo después del `@`
 - [ ] Tab/Enter/Click autocompletan la mención
@@ -118,22 +135,26 @@ Escribe cualquiera de estos:
 ## 🐛 Si No Funciona
 
 ### **El panel @ no aparece:**
+
 1. Presiona **Ctrl + Shift + R** (hard refresh)
 2. Limpia la caché del navegador
 3. Cierra y abre de nuevo el navegador
 
 ### **No veo usuarios en el panel:**
+
 1. Verifica que otros usuarios estén conectados
 2. Abre DevTools (F12) → Console
 3. Busca errores en rojo
 4. Verifica que Socket.IO está conectado
 
 ### **Bot no responde:**
+
 1. Verifica que el servidor backend está corriendo (puerto 3001)
 2. Mira los logs del servidor en la terminal
 3. Asegúrate de mencionar `@UPG` (no solo "upg")
 
 ### **Resaltado no funciona:**
+
 1. Asegúrate de usar el username exacto
 2. Debe tener el formato `@username` con el @
 3. Prueba con dos usuarios diferentes
@@ -142,11 +163,11 @@ Escribe cualquiera de estos:
 
 ## 📝 URLs de Acceso
 
-| Servicio | URL | Puerto |
-|----------|-----|--------|
-| Frontend (Dev) | http://localhost:3000/ | 3000 |
-| Frontend (Network) | http://192.168.1.132:3000/ | 3000 |
-| Backend | Socket.IO | 3001 |
+| Servicio           | URL                        | Puerto |
+| ------------------ | -------------------------- | ------ |
+| Frontend (Dev)     | http://localhost:3000/     | 3000   |
+| Frontend (Network) | http://192.168.1.132:3000/ | 3000   |
+| Backend            | Socket.IO                  | 3001   |
 
 ---
 

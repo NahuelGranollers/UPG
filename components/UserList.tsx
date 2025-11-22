@@ -8,69 +8,76 @@ interface UserListProps {
   isMobileView?: boolean;
 }
 
-const UserItem: React.FC<{ user: User; isCurrentUser?: boolean }> = memo(({ user, isCurrentUser }) => {
-  // Determinar si el usuario est├í offline
-  const isOffline = user.online === false || user.status === 'offline';
-  
-  return (
-    <div 
-      className={`flex items-center py-2 sm:py-1.5 px-2 hover:bg-discord-hover rounded cursor-pointer group opacity-90 hover:opacity-100 min-h-[48px] sm:min-h-0 ${
-        isCurrentUser ? 'bg-discord-hover/50 border border-discord-blurple/30' : ''
-      }`}
-    >
-      <div className="relative mr-3">
-        <SafeImage 
-          src={user.avatar} 
-          alt={user.username} 
-          className={`w-9 h-9 sm:w-8 sm:h-8 rounded-full object-cover ${isOffline ? 'grayscale opacity-60' : ''}`}
-          fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=5865F2&color=fff&size=128`}
-        />
-        {!isOffline && (
-            <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 sm:w-3 sm:h-3 border-[3px] sm:border-[2.5px] border-[#2b2d31] rounded-full ${
-                user.status === 'online' ? 'bg-green-500' : 
-                user.status === 'idle' ? 'bg-yellow-500' : 
-                'bg-red-500'
-            }`}></div>
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center">
-            <span className={`font-medium text-sm sm:text-[13px] truncate ${isOffline ? 'text-discord-text-muted' : ''}`} style={{ color: !isOffline ? user.color : undefined }}>
-            {user.username}
+const UserItem: React.FC<{ user: User; isCurrentUser?: boolean }> = memo(
+  ({ user, isCurrentUser }) => {
+    // Determinar si el usuario est├í offline
+    const isOffline = user.online === false || user.status === 'offline';
+
+    return (
+      <div
+        className={`flex items-center py-2 sm:py-1.5 px-2 hover:bg-discord-hover rounded cursor-pointer group opacity-90 hover:opacity-100 min-h-[48px] sm:min-h-0 ${
+          isCurrentUser ? 'bg-discord-hover/50 border border-discord-blurple/30' : ''
+        }`}
+      >
+        <div className="relative mr-3">
+          <SafeImage
+            src={user.avatar}
+            alt={user.username}
+            className={`w-9 h-9 sm:w-8 sm:h-8 rounded-full object-cover ${isOffline ? 'grayscale opacity-60' : ''}`}
+            fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=5865F2&color=fff&size=128`}
+          />
+          {!isOffline && (
+            <div
+              className={`absolute bottom-0 right-0 w-3.5 h-3.5 sm:w-3 sm:h-3 border-[3px] sm:border-[2.5px] border-[#2b2d31] rounded-full ${
+                user.status === 'online'
+                  ? 'bg-green-500'
+                  : user.status === 'idle'
+                    ? 'bg-yellow-500'
+                    : 'bg-red-500'
+              }`}
+            ></div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center">
+            <span
+              className={`font-medium text-sm sm:text-[13px] truncate ${isOffline ? 'text-discord-text-muted' : ''}`}
+              style={{ color: !isOffline ? user.color : undefined }}
+            >
+              {user.username}
             </span>
             {user.isBot && (
-                <span className="ml-1.5 bg-[#5865F2] text-white text-[9px] sm:text-[10px] px-1 rounded-[3px] uppercase font-bold leading-tight py-[1px]">
-                    Bot
-                </span>
+              <span className="ml-1.5 bg-[#5865F2] text-white text-[9px] sm:text-[10px] px-1 rounded-[3px] uppercase font-bold leading-tight py-[1px]">
+                Bot
+              </span>
             )}
-        </div>
-        <div className="text-xs sm:text-[11px] text-discord-text-muted truncate h-4 opacity-0 group-hover:opacity-100 transition-opacity">
+          </div>
+          <div className="text-xs sm:text-[11px] text-discord-text-muted truncate h-4 opacity-0 group-hover:opacity-100 transition-opacity">
             {user.status === 'dnd' ? 'No molestar' : user.status === 'idle' ? 'Ausente' : ''}
+          </div>
         </div>
       </div>
-    </div>
-  );
-});
+    );
+  }
+);
 
 UserItem.displayName = 'UserItem';
 
 const UserList: React.FC<UserListProps> = memo(({ users, currentUserId, isMobileView = false }) => {
-  // Forzar inclusión del bot UPG si no está presente
-  const botUser = {
-    id: 'bot',
-    username: 'UPG',
-    avatar: '/upg.png',
-    status: 'online',
-    isBot: true,
-    color: '#5865F2',
-    role: 'bot',
-    online: true
-  };
   const usersWithBot = useMemo(() => {
+    // Forzar inclusión del bot UPG si no está presente
+    const botUser = {
+      id: 'bot',
+      username: 'UPG',
+      avatar: '/upg.png',
+      status: 'online',
+      isBot: true,
+      color: '#5865F2',
+      role: 'bot',
+      online: true,
+    };
     // Si hay bot, fuerza isBot: true
-    const usersFixed = users.map(u =>
-      u.id === 'bot' ? { ...u, isBot: true } : u
-    );
+    const usersFixed = users.map(u => (u.id === 'bot' ? { ...u, isBot: true } : u));
     const hasBot = usersFixed.some(u => u.id === 'bot');
     return hasBot ? usersFixed : [...usersFixed, botUser];
   }, [users]);
@@ -79,7 +86,7 @@ const UserList: React.FC<UserListProps> = memo(({ users, currentUserId, isMobile
   const onlineUsers = usersWithBot.filter(u => {
     // El bot nunca debe aparecer en Disponible
     if (u.isBot) return false;
-    return (u.online === true || (u.online === undefined && u.status === 'online'));
+    return u.online === true || (u.online === undefined && u.status === 'online');
   });
 
   const bots = usersWithBot.filter(u => u.isBot);
@@ -87,44 +94,46 @@ const UserList: React.FC<UserListProps> = memo(({ users, currentUserId, isMobile
   const offlineUsers = usersWithBot.filter(u => {
     // El bot nunca debe aparecer en Desconectado
     if (u.isBot) return false;
-    return (u.online === false || u.status === 'offline');
+    return u.online === false || u.status === 'offline';
   });
 
   return (
-    <div className={`${
-      isMobileView 
-        ? 'w-full bg-discord-dark h-full' 
-        : 'w-60 bg-discord-sidebar shrink-0 hidden lg:flex'
-    } flex flex-col p-2 sm:p-3 overflow-y-auto custom-scrollbar border-l border-gray-900/20`}>
-       {/* Online Category */}
-       <div className="mb-5 sm:mb-6">
-         <h2 className="text-xs font-bold text-discord-text-muted uppercase mb-2 px-2 tracking-wide">Disponible — {onlineUsers.length}</h2>
-         {onlineUsers.map(user => (
-           <UserItem 
-             key={user.id} 
-             user={user} 
-             isCurrentUser={user.id === currentUserId}
-           />
-         ))}
-       </div>
+    <div
+      className={`${
+        isMobileView
+          ? 'w-full bg-discord-dark h-full'
+          : 'w-60 bg-discord-sidebar shrink-0 hidden lg:flex'
+      } flex flex-col p-2 sm:p-3 overflow-y-auto custom-scrollbar border-l border-gray-900/20`}
+    >
+      {/* Online Category */}
+      <div className="mb-5 sm:mb-6">
+        <h2 className="text-xs font-bold text-discord-text-muted uppercase mb-2 px-2 tracking-wide">
+          Disponible — {onlineUsers.length}
+        </h2>
+        {onlineUsers.map(user => (
+          <UserItem key={user.id} user={user} isCurrentUser={user.id === currentUserId} />
+        ))}
+      </div>
 
-       {/* Bots Category */}
-       <div className="mb-5 sm:mb-6">
-         <h2 className="text-xs font-bold text-discord-text-muted uppercase mb-2 px-2 tracking-wide">Bots — {bots.length}</h2>
-         {bots.map(user => <UserItem key={user.id} user={user} />)}
-       </div>
+      {/* Bots Category */}
+      <div className="mb-5 sm:mb-6">
+        <h2 className="text-xs font-bold text-discord-text-muted uppercase mb-2 px-2 tracking-wide">
+          Bots — {bots.length}
+        </h2>
+        {bots.map(user => (
+          <UserItem key={user.id} user={user} />
+        ))}
+      </div>
 
-       {/* Offline Category */}
-       <div>
-         <h2 className="text-xs font-bold text-discord-text-muted uppercase mb-2 px-2 tracking-wide">Desconectado — {offlineUsers.length}</h2>
-         {offlineUsers.map(user => (
-           <UserItem 
-             key={user.id} 
-             user={user}
-             isCurrentUser={user.id === currentUserId}
-           />
-         ))}
-       </div>
+      {/* Offline Category */}
+      <div>
+        <h2 className="text-xs font-bold text-discord-text-muted uppercase mb-2 px-2 tracking-wide">
+          Desconectado — {offlineUsers.length}
+        </h2>
+        {offlineUsers.map(user => (
+          <UserItem key={user.id} user={user} isCurrentUser={user.id === currentUserId} />
+        ))}
+      </div>
     </div>
   );
 });

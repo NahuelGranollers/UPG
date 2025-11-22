@@ -12,28 +12,35 @@ const STORAGE_KEYS = {
   USER_ID: 'upg_user_id',
   USERNAME: 'upg_username',
   AVATAR: 'upg_avatar',
-  ROLE: 'upg_role'
+  ROLE: 'upg_role',
 } as const;
 
 /**
  * Utilidad para parsear cookies en un objeto
  */
 export function parseCookies(): Record<string, string> {
-  return document.cookie.split('; ').reduce((acc, cookie) => {
-    const [key, value] = cookie.split('=');
-    if (key && value) {
-      acc[key] = value;
-    }
-    return acc;
-  }, {} as Record<string, string>);
+  return document.cookie.split('; ').reduce(
+    (acc, cookie) => {
+      const [key, value] = cookie.split('=');
+      if (key && value) {
+        acc[key] = value;
+      }
+      return acc;
+    },
+    {} as Record<string, string>
+  );
 }
 
 /**
  * Utilidad para establecer una cookie con expiración
  */
-export function setCookie(name: string, value: string, days: number = COOKIE_EXPIRATION_DAYS): void {
+export function setCookie(
+  name: string,
+  value: string,
+  days: number = COOKIE_EXPIRATION_DAYS
+): void {
   const date = new Date();
-  date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+  date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
   const expires = `expires=${date.toUTCString()}`;
   document.cookie = `${name}=${value}; ${expires}; path=/`;
 }
@@ -57,8 +64,10 @@ export function deleteCookie(name: string): void {
  * Eliminar todas las cookies relacionadas con UPG
  */
 export function clearAllCookies(): void {
-  document.cookie.split(";").forEach(c => {
-    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+  document.cookie.split(';').forEach(c => {
+    document.cookie = c
+      .replace(/^ +/, '')
+      .replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
   });
 }
 
@@ -82,19 +91,19 @@ export function saveUserData(user: User): void {
 export function loadUserData(): User | null {
   // Intentar cargar desde cookies primero
   const cookies = parseCookies();
-  
+
   if (cookies[STORAGE_KEYS.USERNAME] && cookies[STORAGE_KEYS.AVATAR]) {
     const username = decodeURIComponent(cookies[STORAGE_KEYS.USERNAME]);
     const role = (cookies[STORAGE_KEYS.ROLE] as UserRole) || UserRole.USER;
     const isAdmin = role === UserRole.ADMIN;
-    
+
     return {
       id: cookies[STORAGE_KEYS.USER_ID] || `user-${Date.now()}`,
       username,
       avatar: decodeURIComponent(cookies[STORAGE_KEYS.AVATAR]),
       status: 'online',
       color: isAdmin ? '#ff4d0a' : '#3ba55c',
-      role
+      role,
     };
   }
 
@@ -117,7 +126,7 @@ export function loadUserData(): User | null {
  */
 export function updateUserRole(role: UserRole): void {
   setCookie(STORAGE_KEYS.ROLE, role);
-  
+
   // Actualizar en localStorage también
   const saved = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
   if (saved) {
@@ -157,7 +166,7 @@ export function clearUserData(): void {
   // Limpiar localStorage
   localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
   localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
-  
+
   // Limpiar todas las cookies
   clearAllCookies();
 }

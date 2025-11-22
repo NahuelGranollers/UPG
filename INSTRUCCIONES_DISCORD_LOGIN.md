@@ -3,11 +3,13 @@
 ## ✅ Cambios implementados en el código
 
 ### Frontend (`App.tsx`)
+
 1. ✅ **Logs detallados** añadidos para debugging del flujo de autenticación
 2. ✅ **Lógica mejorada** para no pisar usuario Discord guardado con invitado
 3. ✅ **Fallback inteligente** que intenta usar usuario guardado antes de crear invitado cuando falla `/auth/user`
 
 ### Backend (`server/index.js`)
+
 1. ✅ **Manejo de preflight OPTIONS** añadido para CORS
 2. ✅ **Log mejorado** en `/auth/user` con ID y username del usuario
 3. ✅ **Configuración de sesión verificada** (sin `domain`, con `sameSite: none` en producción)
@@ -28,6 +30,7 @@ NODE_ENV=production
 ```
 
 ### ⚠️ Importante:
+
 - `DISCORD_REDIRECT_URI` debe ser **exactamente** `https://mensajeria-ksc7.onrender.com/auth/callback` (sin barra final)
 - `FRONTEND_URL` debe ser **exactamente** `https://unaspartidillas.online` (sin barra final)
 
@@ -49,14 +52,17 @@ NODE_ENV=production
 ## 🧪 Paso 3: Probar el flujo completo
 
 ### A) Preparación
+
 1. Abre Chrome/Firefox en **modo incógnito** (ventana privada)
 2. Abre **DevTools** (F12)
 3. Ve a la pestaña **Console**
 4. Ve también a la pestaña **Network**
 
 ### B) Flujo de prueba
+
 1. **Navega** a `https://unaspartidillas.online`
 2. **Observa la consola**, deberías ver:
+
    ```
    🔐 [Init] No valid user found, creating guest
    🔐 checkAuth running. URL: https://unaspartidillas.online/
@@ -80,6 +86,7 @@ NODE_ENV=production
    ```
 
 ### C) Verificación en Network
+
 1. En la pestaña **Network**, filtra por `auth/user`
 2. Selecciona la petición `GET https://mensajeria-ksc7.onrender.com/auth/user`
 3. En **Request Headers**, busca `Cookie:` y verifica que hay una cookie `upg.sid=...`
@@ -94,13 +101,16 @@ NODE_ENV=production
    ```
 
 ### D) Verificación visual
+
 En la **esquina inferior izquierda** de la aplicación:
+
 - ✅ Debe aparecer tu **foto de Discord** (avatar)
 - ✅ Debe aparecer tu **nombre de Discord**
 - ✅ El botón **LogIn** debe haber desaparecido
 - ✅ Debe aparecer un botón **LogOut** (rojo)
 
 ### E) Verificación de persistencia
+
 1. **Recarga la página** (F5)
 2. **Observa la consola**, deberías ver:
    ```
@@ -115,11 +125,13 @@ En la **esquina inferior izquierda** de la aplicación:
 ## ❌ Problemas comunes y soluciones
 
 ### Problema 1: `/auth/user` devuelve 401
+
 **Síntoma**: En Network ves `401 Unauthorized`
 
 **Causa**: La cookie de sesión no se está enviando o la sesión no se guardó correctamente
 
 **Soluciones**:
+
 1. Verifica que en **Request Headers** de `/auth/user` hay una cookie `upg.sid`
 2. Si NO hay cookie:
    - Verifica que `DISCORD_REDIRECT_URI` en Render coincide EXACTAMENTE con la configurada en Discord
@@ -131,30 +143,36 @@ En la **esquina inferior izquierda** de la aplicación:
    - Puede ser que la sesión expire muy rápido (poco probable con `maxAge: 30 días`)
 
 ### Problema 2: Vuelve a crear invitado después del login
+
 **Síntoma**: Logeas con Discord pero inmediatamente vuelve a "Invitado1234"
 
 **Causa**: El código está creando un nuevo invitado en lugar de usar el usuario Discord
 
 **Solución**:
+
 1. Verifica en la consola que `/auth/user` devuelve **200** (no 401)
 2. Verifica que ves el log `✅ Logged in as Discord user`
 3. Si ves `👤 Using guest user`, significa que `/auth/user` falló (ver Problema 1)
 
 ### Problema 3: Vuelve a invitado al recargar la página
+
 **Síntoma**: El login funciona, pero al recargar (F5) vuelve a invitado
 
 **Causa**: `localStorage` no está guardando el usuario correctamente
 
 **Solución**:
+
 1. Abre DevTools → Application → Local Storage → `https://unaspartidillas.online`
 2. Busca la clave que contiene datos de usuario
 3. Verifica que contiene tu usuario Discord (no un invitado)
 4. Si no hay nada o hay un invitado, revisa que `storage.saveUserData(newUser)` se está ejecutando (añade un `console.log` ahí si es necesario)
 
 ### Problema 4: Error de CORS
+
 **Síntoma**: En consola ves errores como "CORS policy blocked" o "No 'Access-Control-Allow-Origin'"
 
 **Solución**:
+
 1. Verifica que en el backend, el origen de tu frontend está en `allowedOrigins`
 2. Verifica que el middleware CORS está ANTES de las rutas
 3. Verifica que `credentials: true` está en ambos lados (backend y frontend)
@@ -171,6 +189,7 @@ Para ver los logs del servidor en tiempo real:
 4. Filtra por "Discord" o "auth" para ver solo logs relevantes
 
 Deberías ver mensajes como:
+
 ```
 ✅ [SUCCESS] Access token obtained successfully
 👤 [USER] Discord user authenticated: TuUsername#0000 (ID: 123456789)
@@ -208,6 +227,7 @@ Después de implementar estos cambios y verificar la configuración:
 ---
 
 **Nota**: Si después de seguir todos estos pasos el problema persiste, captura:
+
 1. Screenshot de las variables de entorno en Render (oculta los secretos)
 2. Screenshot de la configuración OAuth2 en Discord
 3. Screenshot de la pestaña Network mostrando la petición `/auth/user`

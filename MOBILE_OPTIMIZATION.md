@@ -9,12 +9,14 @@ Se ha implementado una optimización completa de la aplicación para dispositivo
 ### **index.css** - Mejoras CSS Globales
 
 #### Optimizaciones Táctiles
+
 - ✅ Eliminado resaltado táctil (`-webkit-tap-highlight-color: transparent`)
 - ✅ Deshabilitado callout en iOS (`-webkit-touch-callout: none`)
 - ✅ Prevención de zoom en inputs (`-webkit-text-size-adjust: 100%`)
 - ✅ Smooth scrolling habilitado
 
 #### Viewport Dinámico
+
 ```css
 html {
   height: -webkit-fill-available;
@@ -25,15 +27,18 @@ body {
   overscroll-behavior: none; /* Prevenir bounce en iOS */
 }
 #root {
-  width: 100dvw;  /* Dynamic viewport width */
+  width: 100dvw; /* Dynamic viewport width */
   height: 100dvh; /* Dynamic viewport height */
 }
 ```
 
 #### Touch Targets
+
 ```css
 @media (max-width: 768px) {
-  button, a, [role="button"] {
+  button,
+  a,
+  [role='button'] {
     min-height: 44px; /* Estándar iOS */
     min-width: 44px;
   }
@@ -41,6 +46,7 @@ body {
 ```
 
 #### Scrollbars Móviles
+
 - Reducidos de 8px a 4px en móvil
 - Scrollbar custom semi-transparente para mejor UX
 
@@ -51,23 +57,27 @@ body {
 ### 1. **ChatInterface.tsx** ✨
 
 #### Header
+
 - **Altura**: `h-12` → `h-12 sm:h-14` (más grande en móvil para touch)
 - **Botón menú**: `min-w-[44px] min-h-[44px]` (touch target)
 - **Badge ADMIN**: Oculto en móvil con `hidden sm:flex`
 - **Texto canal**: `text-sm sm:text-base` (escalado fluido)
 
 #### Mensajes
+
 - **Avatares**: `w-8 h-8 sm:w-10 sm:h-10` (ligeramente más grandes en móvil)
 - **Spacing**: `mt-3 sm:mt-4`, `pr-2 sm:pr-4`
 - **Texto username**: `text-sm sm:text-base`
 - **Contenido mensaje**: `text-sm sm:text-base`, `leading-[1.3rem] sm:leading-[1.375rem]`
 
 #### Botones Admin
+
 - **Touch targets**: `min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0`
 - **Iconos**: `size={16}` con clase `sm:w-3.5 sm:h-3.5`
 - **Spacing**: `gap-0.5 sm:gap-1`
 
 #### Input Box
+
 - **Padding**: `px-3 sm:px-4`, `py-2.5 sm:py-3`
 - **Texto**: `text-sm sm:text-base`
 - **Min-height**: `min-h-[44px]` (fácil de tocar)
@@ -78,6 +88,7 @@ body {
 ### 2. **UserList.tsx** 👥
 
 #### UserItem
+
 - **Container**: `min-h-[48px] sm:min-h-0` (touch-friendly)
 - **Padding**: `py-2 sm:py-1.5`
 - **Avatares**: `w-9 h-9 sm:w-8 sm:h-8` (más grandes en móvil)
@@ -86,6 +97,7 @@ body {
 - **Bot badge**: `text-[9px] sm:text-[10px]`
 
 #### Container
+
 - **Padding**: `p-2 sm:p-3`
 - **Categorías spacing**: `mb-5 sm:mb-6`
 - **Headers**: `tracking-wide` para mejor legibilidad
@@ -95,12 +107,14 @@ body {
 ### 3. **ChannelList.tsx** 📋
 
 #### TextChannelItem
+
 - **Touch target**: `min-h-[44px] sm:min-h-0`
 - **Padding**: `py-2 sm:py-[6px]`
 - **Iconos**: `mr-2 sm:mr-1.5` con `shrink-0` (no se comprimen)
 - **Texto**: `text-sm sm:text-[15px]`
 
 #### VoiceChannelItem
+
 - **Touch target**: `min-h-[44px] sm:min-h-0`
 - **Usuarios en canal**:
   - Altura: `min-h-[36px] sm:min-h-0`
@@ -108,6 +122,7 @@ body {
   - Username: `text-sm sm:text-[13px]`
 
 #### Footer Usuario
+
 - **Altura**: `h-[60px] sm:h-[52px]` (más espacio en móvil)
 - **Avatar**: `w-9 h-9 sm:w-8 sm:h-8`
 - **Botones**:
@@ -121,15 +136,18 @@ body {
 ### 4. **WhoWeAre.tsx** ℹ️
 
 #### Container
+
 - **Padding**: `p-4 sm:p-6 md:p-8` (escalado progresivo)
 
 #### Header
+
 - **Título**: `text-2xl sm:text-3xl md:text-4xl`
 - **Descripción**: `text-sm sm:text-base md:text-lg`
 - **Padding**: `px-2` en móvil para evitar corte
 - **Spacing**: `mb-8 sm:mb-10 md:mb-12`
 
 #### Grid Cards
+
 - **Layout**: `grid-cols-1 md:grid-cols-2` (1 columna en móvil)
 - **Gap**: `gap-4 sm:gap-5 md:gap-6`
 - **Padding cards**: `p-4 sm:p-5 md:p-6`
@@ -138,6 +156,7 @@ body {
 - **Texto**: `text-sm sm:text-base`
 
 #### Staff Section
+
 - **Título**: `text-xl sm:text-2xl`
 - **Grid**: `grid-cols-1 sm:grid-cols-2 md:grid-cols-4`
 - **Gap**: `gap-3 sm:gap-4`
@@ -149,14 +168,17 @@ body {
 ### 5. **Voting.tsx** 🗳️
 
 #### Container
+
 - **Padding horizontal**: `px-4` para evitar corte de bordes
 
 #### Logo Animado
+
 - **Tamaños**: `w-[150px] h-[150px]` → `sm:w-[200px]` → `md:w-[300px]` → `lg:w-[400px]`
 - **Spacing**: `mb-6 sm:mb-8 md:mb-10`
 - **Fallback circle**: Mismos tamaños responsivos
 
 #### "Coming Soon" Text
+
 - **Font size**: `text-[1.5em] sm:text-[1.7em] md:text-[2.5em] lg:text-[3em]`
 - **Shadow**: `2px 2px 0px #ff9300` (reducido de 3px en móvil)
 - **Letter spacing**: `1px` (reducido de 2px para móvil)
@@ -174,6 +196,7 @@ xl: 1280px  /* Desktop */
 ```
 
 ### Estrategia de Diseño
+
 1. **Mobile-first**: Diseño base optimizado para 320px+
 2. **sm (640px)**: Ajustes para smartphones grandes
 3. **md (768px)**: Transición a tablets, layout desktop aparece
@@ -184,11 +207,13 @@ xl: 1280px  /* Desktop */
 ## 📐 Estándares de Touch Targets
 
 ### Mínimos Recomendados (iOS/Android)
+
 - **iOS HIG**: 44×44 pt (puntos)
 - **Android Material**: 48×48 dp (density-independent pixels)
 - **WCAG 2.1**: 44×44 CSS pixels (AAA nivel)
 
 ### Implementación
+
 ```css
 /* Aplicado a todos los botones en móvil */
 min-h-[44px]
@@ -214,6 +239,7 @@ sm:min-w-0
 ## 🧪 Testing
 
 ### Tamaños de Pantalla Probados
+
 - ✅ **320px**: iPhone SE (1st gen)
 - ✅ **375px**: iPhone 12/13 Mini
 - ✅ **390px**: iPhone 14/15 Pro
@@ -222,6 +248,7 @@ sm:min-w-0
 - ✅ **1024px**: iPad Pro
 
 ### Browsers
+
 - ✅ Safari iOS
 - ✅ Chrome Android
 - ✅ Chrome Desktop
@@ -236,6 +263,7 @@ npm run build
 ```
 
 **Resultado**: ✅ Build exitoso sin errores
+
 - **CSS**: 36.22 kB (6.95 kB gzip)
 - **JS**: 299.98 kB (89.83 kB gzip)
 - **Tiempo**: 1.51s
@@ -266,7 +294,7 @@ npm run build
 
 - **Tailwind CSS**: Utilidades responsive
 - **React Hooks**: useCallback, useMemo para performance
-- **CSS Variables**: env(safe-area-inset-*) para notches
+- **CSS Variables**: env(safe-area-inset-\*) para notches
 - **Flexbox/Grid**: Layouts adaptables
 - **Media Queries**: Via clases Tailwind (sm:, md:, lg:)
 

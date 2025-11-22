@@ -9,6 +9,7 @@ Se ha realizado una optimización completa del código de la aplicación para me
 ## 🚀 Resultados del Build
 
 ### Bundle Size (Optimizado)
+
 ```
 dist/index.html                   2.41 kB │ gzip:  0.94 kB
 dist/assets/index-_KLBF8L2.css   36.22 kB │ gzip:  6.95 kB
@@ -24,6 +25,7 @@ dist/assets/index-CLC6pVzf.js   299.98 kB │ gzip: 89.83 kB
 ### 1. **App.tsx** - Componente Principal
 
 #### **Lazy Loading de Componentes**
+
 ```tsx
 // ANTES: Carga síncrona (todos los componentes en el bundle inicial)
 import Sidebar from './components/Sidebar';
@@ -40,24 +42,26 @@ const Voting = lazy(() => import('./components/Voting'));
 ```
 
 **Beneficios**:
+
 - ✅ Reducción del bundle inicial
 - ✅ Carga bajo demanda de componentes
 - ✅ Mejora del First Contentful Paint (FCP)
 - ✅ Chunks separados por ruta
 
 #### **Suspense Boundary**
+
 ```tsx
-<Suspense fallback={<LoadingSpinner />}>
-  {/* Componentes lazy-loaded */}
-</Suspense>
+<Suspense fallback={<LoadingSpinner />}>{/* Componentes lazy-loaded */}</Suspense>
 ```
 
 **Beneficios**:
+
 - ✅ UX mejorada durante carga de componentes
 - ✅ Feedback visual al usuario
 - ✅ Prevención de flash de contenido
 
 #### **Memoización de Listas**
+
 ```tsx
 // Memoizar lista de todos los usuarios
 const allUsers = useMemo(() => {
@@ -76,26 +80,35 @@ const currentChannelMessages = useMemo(
 ```
 
 **Impacto**:
+
 - 🔥 Evita recalcular listas en cada render
 - 🔥 Reduce complejidad de O(n) en cada render a O(1) cuando deps no cambian
 
 #### **Callbacks Memoizados**
+
 ```tsx
 // Todos los handlers memoizados con useCallback
-const handleChannelSelect = useCallback((view, channel) => {
-  // ...
-}, [isConnected, currentUser, currentChannel.id]);
+const handleChannelSelect = useCallback(
+  (view, channel) => {
+    // ...
+  },
+  [isConnected, currentUser, currentChannel.id]
+);
 
-const handleSendMessage = useCallback((content) => {
-  // ...
-}, [isConnected, currentChannel.id, currentUser]);
+const handleSendMessage = useCallback(
+  content => {
+    // ...
+  },
+  [isConnected, currentChannel.id, currentUser]
+);
 
-const handleVoiceJoin = useCallback((channelName) => {
+const handleVoiceJoin = useCallback(channelName => {
   // ...
 }, []);
 ```
 
 **Beneficios**:
+
 - ✅ Evita re-creación de funciones
 - ✅ Componentes hijos no se re-renderizan innecesariamente
 - ✅ Mejora performance de componentes memoizados
@@ -107,48 +120,53 @@ const handleVoiceJoin = useCallback((channelName) => {
 #### **Optimizaciones Implementadas**
 
 1. **Imports Optimizados**:
+
 ```tsx
 import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 ```
 
 2. **Memoización de Valores Calculados**:
-```tsx
-const isAdmin = useMemo(() => 
-  currentUser?.role === UserRole.ADMIN, 
-  [currentUser?.role]
-);
 
-const getSocket = useCallback(() => 
-  (window as any).socketInstance, 
-  []
-);
+```tsx
+const isAdmin = useMemo(() => currentUser?.role === UserRole.ADMIN, [currentUser?.role]);
+
+const getSocket = useCallback(() => (window as any).socketInstance, []);
 ```
 
 3. **Callbacks Memoizados**:
+
 ```tsx
 // handleSendMessage
-const handleSendMessage = useCallback((e: React.FormEvent) => {
-  e.preventDefault();
-  if (!inputText.trim()) return;
-  onSendMessage(inputText);
-  setInputText('');
-}, [inputText, onSendMessage]);
+const handleSendMessage = useCallback(
+  (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputText.trim()) return;
+    onSendMessage(inputText);
+    setInputText('');
+  },
+  [inputText, onSendMessage]
+);
 
 // handleDeleteMessage
-const handleDeleteMessage = useCallback((messageId: string) => {
-  // ...
-}, [isAdmin, currentUser, currentChannel.id]);
+const handleDeleteMessage = useCallback(
+  (messageId: string) => {
+    // ...
+  },
+  [isAdmin, currentUser, currentChannel.id]
+);
 
 // handleClearChannel, handleBanUser, handleKickUser
 // Todos con useCallback
 ```
 
 4. **Componente Exportado con Memo**:
+
 ```tsx
 export default memo(ChatInterface);
 ```
 
 **Impacto**:
+
 - 🔥 **85% menos re-renders** cuando props no cambian
 - 🔥 Funciones admin no se re-crean en cada render
 - 🔥 Socket no se re-obtiene innecesariamente
@@ -181,11 +199,13 @@ const VoiceChannelItem = React.memo(({ name }) => {
 ```
 
 **Beneficios**:
+
 - ✅ Canal items solo se re-renderizan si SUS props cambian
 - ✅ Filtro de usuarios en canal voice solo se recalcula cuando cambian usuarios o estados
 - ✅ Lista de canales no se re-renderiza completamente al cambiar estado de voz
 
 **Impacto Medido**:
+
 - 🔥 **70% menos re-renders** de items individuales
 - 🔥 Filtros de usuarios ejecutados solo cuando necesario
 
@@ -197,16 +217,18 @@ Ya estaba parcialmente optimizado con `memo`, pero se agregaron mejoras:
 
 ```tsx
 // UserItem ya estaba con memo
-const UserItem: React.FC<{ user: User; isCurrentUser?: boolean }> = memo(({ user, isCurrentUser }) => {
-  // ...
-});
+const UserItem: React.FC<{ user: User; isCurrentUser?: boolean }> = memo(
+  ({ user, isCurrentUser }) => {
+    // ...
+  }
+);
 
 // UserList exportado con memo
 const UserList: React.FC<UserListProps> = memo(({ users, currentUserId, isMobileView }) => {
   // Filtros optimizados
   const onlineUsers = users.filter(u => {
     if (u.isBot) return false;
-    return (u.online === true || (u.online === undefined && u.status === 'online'));
+    return u.online === true || (u.online === undefined && u.status === 'online');
   });
   // ...
 });
@@ -228,12 +250,12 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
 export const getDiscordUser = async (userId: string): Promise<DiscordUser | null> => {
   // Verificar cache primero
   const cached = userCache.get(userId);
-  if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
     return cached.user;
   }
-  
+
   // ... fetch from API or config
-  
+
   // Guardar en cache
   userCache.set(userId, { user, timestamp: Date.now() });
   return user;
@@ -241,11 +263,13 @@ export const getDiscordUser = async (userId: string): Promise<DiscordUser | null
 ```
 
 **Beneficios**:
+
 - ✅ **0 requests** a Discord API para usuarios ya cargados (5 min TTL)
 - ✅ Reduce latencia de carga de avatares y datos
 - ✅ Fallback automático a configuración manual
 
 **Impacto**:
+
 - 🔥 **~500ms** ahorrados por usuario en cache
 - 🔥 Reduce carga en API de Discord
 
@@ -272,19 +296,21 @@ const recentHistory = history.slice(-10);
 const contents = [
   ...recentHistory.map(msg => ({
     role: msg.role === 'user' ? 'user' : 'model',
-    parts: [{ text: msg.content }]
+    parts: [{ text: msg.content }],
   })),
   // ...
 ];
 ```
 
 **Beneficios**:
+
 - ✅ **~30% más rápido** en respuestas del bot
 - ✅ Menos tokens consumidos por request
 - ✅ Historial limitado evita overflow de contexto
 - ✅ Prompt más eficiente reduce tiempo de procesamiento
 
 **Impacto Medido**:
+
 - 🔥 Respuesta promedio: **~2-3s** (antes ~4-5s)
 - 🔥 Reducción de ~40% en tokens por request
 
@@ -301,12 +327,14 @@ export default memo(Voting);
 ```
 
 **Beneficio**:
+
 - ✅ No se re-renderizan al cambiar estado del chat
 - ✅ Carga bajo demanda (lazy loading)
 
 #### **Sidebar.tsx**
 
 Ya estaba con `memo`:
+
 ```tsx
 const Sidebar: React.FC<SidebarProps> = memo(({ currentUser, setCurrentUser, isConnected }) => {
   // ...
@@ -316,10 +344,13 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentUser, setCurrentUser, isC
 #### **MobileTabBar.tsx**
 
 Ya estaba con `memo`:
+
 ```tsx
-const MobileTabBar: React.FC<MobileTabBarProps> = memo(({ activeTab, onTabChange, unreadCount }) => {
-  // ...
-});
+const MobileTabBar: React.FC<MobileTabBarProps> = memo(
+  ({ activeTab, onTabChange, unreadCount }) => {
+    // ...
+  }
+);
 ```
 
 ---
@@ -328,54 +359,59 @@ const MobileTabBar: React.FC<MobileTabBarProps> = memo(({ activeTab, onTabChange
 
 ### **Re-renders Reducidos**
 
-| Componente | Antes | Después | Mejora |
-|------------|-------|---------|--------|
-| ChatInterface | ~20/min | ~3/min | **85%** ↓ |
-| ChannelList | ~15/min | ~4/min | **73%** ↓ |
-| UserList | ~10/min | ~2/min | **80%** ↓ |
-| App.tsx | ~30/min | ~8/min | **73%** ↓ |
+| Componente    | Antes   | Después | Mejora    |
+| ------------- | ------- | ------- | --------- |
+| ChatInterface | ~20/min | ~3/min  | **85%** ↓ |
+| ChannelList   | ~15/min | ~4/min  | **73%** ↓ |
+| UserList      | ~10/min | ~2/min  | **80%** ↓ |
+| App.tsx       | ~30/min | ~8/min  | **73%** ↓ |
 
 ### **Llamadas a API**
 
-| Servicio | Antes | Después | Mejora |
-|----------|-------|---------|--------|
-| Discord API | ~10/min | ~1/min (cache) | **90%** ↓ |
-| Gemini API | ~5s respuesta | ~2.5s respuesta | **50%** ↓ |
+| Servicio    | Antes         | Después         | Mejora    |
+| ----------- | ------------- | --------------- | --------- |
+| Discord API | ~10/min       | ~1/min (cache)  | **90%** ↓ |
+| Gemini API  | ~5s respuesta | ~2.5s respuesta | **50%** ↓ |
 
 ### **Bundle Size**
 
-| Métrica | Valor | Nota |
-|---------|-------|------|
-| JS Bundle (gzip) | 89.83 kB | ✅ Code splitting activo |
-| CSS Bundle (gzip) | 6.95 kB | ✅ Optimizado |
-| Initial Load | ~97 kB | ✅ Lazy loading reduce carga inicial |
-| Build Time | 1.48s | ⚡ Muy rápido |
+| Métrica           | Valor    | Nota                                 |
+| ----------------- | -------- | ------------------------------------ |
+| JS Bundle (gzip)  | 89.83 kB | ✅ Code splitting activo             |
+| CSS Bundle (gzip) | 6.95 kB  | ✅ Optimizado                        |
+| Initial Load      | ~97 kB   | ✅ Lazy loading reduce carga inicial |
+| Build Time        | 1.48s    | ⚡ Muy rápido                        |
 
 ---
 
 ## 🎯 Patrones de Optimización Utilizados
 
 ### 1. **Memoización**
+
 - `useMemo()` para valores calculados
 - `useCallback()` para funciones
 - `React.memo()` para componentes
 
 ### 2. **Code Splitting**
+
 - `React.lazy()` para componentes no críticos
 - `Suspense` para loading states
 - Chunks separados por ruta
 
 ### 3. **Caching**
+
 - Cache en memoria para usuarios Discord (5 min TTL)
 - Map para lookups O(1)
 - Invalidación automática por tiempo
 
 ### 4. **Optimización de Dependencias**
+
 - Arrays de dependencias mínimos
 - Evitar funciones inline en JSX
 - Estabilidad de referencias
 
 ### 5. **Reducción de Complejidad**
+
 - Historial limitado en Gemini (10 mensajes)
 - Filtros memoizados
 - Lookups con Map vs Array.find()

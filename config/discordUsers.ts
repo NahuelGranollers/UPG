@@ -48,4 +48,3 @@ export const DISCORD_USERS_CONFIG: DiscordUserConfig[] = [
     status: 'offline',
   },
 ];
-

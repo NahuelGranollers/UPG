@@ -2,13 +2,18 @@
   "name": "upg-community-hub",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "start": "node index.js",
     "dev": "vite",
     "build": "vite build",
     "copy-dist": "node -e \"require('fs').cpSync('dist/index.html', 'index.html'); require('fs').cpSync('dist/assets', 'assets', {recursive: true})\"",
     "copy-server": "node -e \"const fs = require('fs'); fs.cpSync('server', 'C:/Users/nahue/Documents/GitHub/Mensajeria', {recursive: true}); fs.copyFileSync('package.json', 'C:/Users/nahue/Documents/GitHub/Mensajeria/package.json');\"",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
@@ -35,9 +40,18 @@
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
+    "@typescript-eslint/eslint-plugin": "^8.47.0",
+    "@typescript-eslint/parser": "^8.47.0",
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.20",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
     "postcss": "^8.4.47",
+    "prettier": "^3.6.2",
     "tailwindcss": "^3.4.18",
     "typescript": "~5.8.2",
     "vite": "^6.4.1"

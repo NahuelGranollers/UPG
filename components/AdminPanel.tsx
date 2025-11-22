@@ -1,11 +1,13 @@
 import React, { useState, memo } from 'react';
 import { X, Trash2, MessageSquare, Shield, AlertTriangle } from 'lucide-react';
+import { Socket } from 'socket.io-client';
+import { User } from '../types';
 
 interface AdminPanelProps {
   isOpen: boolean;
   onClose: () => void;
-  currentUser: any;
-  socket: any;
+  currentUser: User | null;
+  socket: Socket | null;
 }
 
 const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUser, socket }) => {
@@ -21,8 +23,17 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
         <div className="bg-discord-sidebar rounded-lg shadow-2xl max-w-md w-full p-8 border border-red-600 flex flex-col items-center">
           <Shield className="w-10 h-10 text-red-600 mb-4" />
           <h2 className="text-xl font-bold text-red-600 mb-2">Error de conexión</h2>
-          <p className="text-base text-white mb-4 text-center">No se ha detectado conexión con el servidor.<br />Verifica tu conexión y recarga la página.</p>
-          <button onClick={onClose} className="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700">Cerrar</button>
+          <p className="text-base text-white mb-4 text-center">
+            No se ha detectado conexión con el servidor.
+            <br />
+            Verifica tu conexión y recarga la página.
+          </p>
+          <button
+            onClick={onClose}
+            className="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700"
+          >
+            Cerrar
+          </button>
         </div>
       </div>
     );
@@ -40,33 +51,50 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
 
     try {
       switch (action) {
-        case 'clear-users':
-          if (currentUser) socket.emit('admin:clear-users', { adminId: currentUser.id });
+        case 'clear-users': {
+          if (currentUser) socket?.emit('admin:clear-users', { adminId: currentUser.id });
           break;
-        case 'clear-messages':
-          if (currentUser) socket.emit('admin:clear-all-messages', { adminId: currentUser.id });
+        }
+        case 'clear-messages': {
+          if (currentUser) socket?.emit('admin:clear-all-messages', { adminId: currentUser.id });
           break;
-        case 'silence-user':
+        }
+        case 'silence-user': {
           // Aquí deberías abrir un modal o selector de usuario, por ahora ejemplo con prompt
           const silenceId = prompt('ID del usuario a silenciar:');
-          if (silenceId && currentUser) socket.emit('admin:silence-user', { userId: silenceId, adminId: currentUser.id });
+          if (silenceId && currentUser)
+            socket?.emit('admin:silence-user', { userId: silenceId, adminId: currentUser.id });
           break;
-        case 'change-color':
+        }
+        case 'change-color': {
           const colorId = prompt('ID del usuario para cambiar color:');
-          const newColor = prompt('Nuevo color HEX (#RRGGBB):', '#'+Math.floor(Math.random()*16777215).toString(16));
-          if (colorId && newColor && currentUser) socket.emit('admin:change-color', { userId: colorId, color: newColor, adminId: currentUser.id });
+          const newColor = prompt(
+            'Nuevo color HEX (#RRGGBB):',
+            '#' + Math.floor(Math.random() * 16777215).toString(16)
+          );
+          if (colorId && newColor && currentUser)
+            socket?.emit('admin:change-color', {
+              userId: colorId,
+              color: newColor,
+              adminId: currentUser.id,
+            });
           break;
-        case 'global-message':
+        }
+        case 'global-message': {
           const msg = prompt('Mensaje global para todos los canales:');
-          if (msg && currentUser) socket.emit('admin:global-message', { content: msg, adminId: currentUser.id });
+          if (msg && currentUser)
+            socket?.emit('admin:global-message', { content: msg, adminId: currentUser.id });
           break;
-        case 'troll-mode':
+        }
+        case 'troll-mode': {
           const trollId = prompt('ID del usuario para modo troll:');
-          if (trollId && currentUser) socket.emit('admin:troll-mode', { userId: trollId, adminId: currentUser.id });
+          if (trollId && currentUser)
+            socket?.emit('admin:troll-mode', { userId: trollId, adminId: currentUser.id });
           break;
+        }
       }
-    } catch (error) {
-      console.error('Error ejecutando acción:', error);
+    } catch {
+      // Error handling for admin actions - could add toast notification here
     } finally {
       setTimeout(() => setIsLoading(false), 1000);
     }
@@ -187,49 +215,40 @@ interface ActionButtonProps {
   variant: 'danger' | 'warning' | 'info' | 'success';
 }
 
-const ActionButton: React.FC<ActionButtonProps> = memo(({ 
-  icon, 
-  title, 
-  description, 
-  onClick, 
-  isConfirming, 
-  isLoading, 
-  variant 
-}) => {
-  const variantStyles = {
-    danger: 'bg-red-600 hover:bg-red-700 border-red-500',
-    warning: 'bg-orange-600 hover:bg-orange-700 border-orange-500',
-    info: 'bg-blue-600 hover:bg-blue-700 border-blue-500',
-    success: 'bg-green-600 hover:bg-green-700 border-green-500'
-  };
+const ActionButton: React.FC<ActionButtonProps> = memo(
+  ({ icon, title, description, onClick, isConfirming, isLoading, variant }) => {
+    const variantStyles = {
+      danger: 'bg-red-600 hover:bg-red-700 border-red-500',
+      warning: 'bg-orange-600 hover:bg-orange-700 border-orange-500',
+      info: 'bg-blue-600 hover:bg-blue-700 border-blue-500',
+      success: 'bg-green-600 hover:bg-green-700 border-green-500',
+    };
 
-  return (
-    <button
-      onClick={onClick}
-      disabled={isLoading}
-      className={`w-full p-4 rounded-lg border-2 transition-all ${
-        isConfirming 
-          ? 'bg-yellow-600 border-yellow-500 animate-pulse' 
-          : variantStyles[variant]
-      } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'} text-left`}
-    >
-      <div className="flex items-start gap-3">
-        <div className="text-white mt-0.5">{icon}</div>
-        <div className="flex-1">
-          <h4 className="text-white font-semibold mb-1">
-            {isConfirming ? '⚠️ Confirmar - Clic nuevamente' : title}
-          </h4>
-          <p className="text-sm text-gray-200 opacity-90">
-            {isConfirming 
-              ? 'Esta acción es irreversible. Haz clic de nuevo para confirmar.' 
-              : description
-            }
-          </p>
+    return (
+      <button
+        onClick={onClick}
+        disabled={isLoading}
+        className={`w-full p-4 rounded-lg border-2 transition-all ${
+          isConfirming ? 'bg-yellow-600 border-yellow-500 animate-pulse' : variantStyles[variant]
+        } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'} text-left`}
+      >
+        <div className="flex items-start gap-3">
+          <div className="text-white mt-0.5">{icon}</div>
+          <div className="flex-1">
+            <h4 className="text-white font-semibold mb-1">
+              {isConfirming ? '⚠️ Confirmar - Clic nuevamente' : title}
+            </h4>
+            <p className="text-sm text-gray-200 opacity-90">
+              {isConfirming
+                ? 'Esta acción es irreversible. Haz clic de nuevo para confirmar.'
+                : description}
+            </p>
+          </div>
         </div>
-      </div>
-    </button>
-  );
-});
+      </button>
+    );
+  }
+);
 
 ActionButton.displayName = 'ActionButton';
 AdminPanel.displayName = 'AdminPanel';

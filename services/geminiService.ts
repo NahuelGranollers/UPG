@@ -8,5 +8,5 @@ export const generateBotResponse = async (
   history: { role: string; content: string }[],
   userMessage: string
 ): Promise<string> => {
-  return "⚠️ Este servicio ya no se usa. El bot ahora responde automáticamente cuando se menciona @upg en el chat.";
+  return '⚠️ Este servicio ya no se usa. El bot ahora responde automáticamente cuando se menciona @upg en el chat.';
 };

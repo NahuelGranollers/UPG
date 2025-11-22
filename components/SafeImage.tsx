@@ -6,14 +6,14 @@ interface SafeImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   showFallbackIcon?: boolean;
 }
 
-const SafeImage: React.FC<SafeImageProps> = ({ 
-  src, 
-  alt, 
-  fallbackSrc, 
+const SafeImage: React.FC<SafeImageProps> = ({
+  src,
+  alt,
+  fallbackSrc,
   showFallbackIcon = true,
   className = '',
   onError,
-  ...props 
+  ...props
 }) => {
   const [hasError, setHasError] = useState(false);
   const [currentSrc, setCurrentSrc] = useState(src);
@@ -36,7 +36,7 @@ const SafeImage: React.FC<SafeImageProps> = ({
   if (hasError) {
     if (showFallbackIcon) {
       return (
-        <div 
+        <div
           className={`bg-discord-hover flex items-center justify-center ${className}`}
           role="img"
           aria-label={alt || 'Imagen no disponible'}
@@ -61,4 +61,3 @@ const SafeImage: React.FC<SafeImageProps> = ({
 };
 
 export default SafeImage;
-

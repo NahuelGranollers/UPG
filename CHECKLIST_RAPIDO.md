@@ -11,7 +11,8 @@
 
 ## 🔍 Problema raíz descubierto
 
-**ANTES**: 
+**ANTES**:
+
 1. Login Discord funciona → `popogamer3` ✅
 2. Socket.IO conecta → Backend busca usuario por IP
 3. Backend no encuentra nada (primera vez) → Crea `Invitado7139`
@@ -19,6 +20,7 @@
 5. Frontend **sobrescribe** `popogamer3` → Aparece `Invitado7139` ❌
 
 **AHORA**:
+
 1. Login Discord funciona → `popogamer3` ✅
 2. Socket.IO conecta → Backend **detecta** que es usuario Discord
 3. Backend **usa** `popogamer3`, NO crea invitado ✅
@@ -30,11 +32,12 @@
 ## 📋 Checklist de configuración (HACER ANTES DE PROBAR)
 
 ### En Render (Backend)
+
 Ve a tu servicio → Environment → Environment Variables
 
 ```
 ✅ DISCORD_CLIENT_ID = <tu_client_id>
-✅ DISCORD_CLIENT_SECRET = <tu_client_secret>  
+✅ DISCORD_CLIENT_SECRET = <tu_client_secret>
 ✅ DISCORD_REDIRECT_URI = https://mensajeria-ksc7.onrender.com/auth/callback
 ✅ FRONTEND_URL = https://unaspartidillas.online
 ✅ SESSION_SECRET = <clave_aleatoria_segura>
@@ -44,6 +47,7 @@ Ve a tu servicio → Environment → Environment Variables
 ⚠️ **Importante**: Sin barras finales `/` en las URLs.
 
 ### En Discord Developer Portal
+
 https://discord.com/developers/applications
 
 1. ✅ Selecciona tu app
@@ -56,6 +60,7 @@ https://discord.com/developers/applications
 ## 🧪 Prueba rápida (5 minutos)
 
 ### 1. Deploy
+
 ```bash
 # Si usas git para deploy:
 git add .
@@ -66,6 +71,7 @@ git push
 ### 2. Espera que Render termine el deploy
 
 ### 3. Prueba en navegador
+
 1. ✅ Abre ventana privada
 2. ✅ Ve a `https://unaspartidillas.online`
 3. ✅ Abre DevTools (F12) → Console
@@ -76,7 +82,9 @@ git push
 8. ✅ Verifica que **NO vuelve a invitado**
 
 ### 4. Verifica logs en consola
+
 Deberías ver:
+
 ```
 🔐 checkAuth running...
 🔄 Fetching /auth/user...
@@ -85,6 +93,7 @@ Deberías ver:
 ```
 
 Al recargar:
+
 ```
 🔐 [Init] Using cached Discord user from localStorage: TuUsername
 ✅ Using cached Discord user TuUsername
@@ -95,6 +104,7 @@ Al recargar:
 ## ❌ Si algo falla
 
 ### Problema: `/auth/user` devuelve 401
+
 1. ✅ Abre Network → auth/user
 2. ✅ Verifica Request Headers → busca `Cookie: upg.sid=...`
 3. ✅ Si NO hay cookie:
@@ -102,11 +112,13 @@ Al recargar:
    - Limpia cookies del navegador y prueba de nuevo
 
 ### Problema: Vuelve a invitado al recargar
+
 1. ✅ Verifica en consola que `/auth/user` devuelve **200** (no 401)
 2. ✅ Verifica en consola que ves: `✅ Logged in as Discord user`
 3. ✅ Si ves `👤 Using guest user`, entonces `/auth/user` falló (ver arriba)
 
 ### Problema: Error de CORS
+
 1. ✅ Verifica que tu dominio está en `allowedOrigins` en `server/index.js`
 2. ✅ Verifica que NO tienes proxy/CDN mal configurado delante del backend
 
@@ -114,13 +126,13 @@ Al recargar:
 
 ## 📊 Resultado final esperado
 
-| Acción | Resultado esperado |
-|--------|-------------------|
-| Login con Discord | ✅ Muestra tu nombre y avatar |
-| Recargar página (F5) | ✅ Sigue mostrando tu cuenta Discord |
-| Cerrar y abrir navegador | ✅ Sesión persiste hasta 30 días |
-| Logout | ✅ Vuelve a invitado (correcto) |
-| Volver a login | ✅ Funciona de nuevo |
+| Acción                   | Resultado esperado                   |
+| ------------------------ | ------------------------------------ |
+| Login con Discord        | ✅ Muestra tu nombre y avatar        |
+| Recargar página (F5)     | ✅ Sigue mostrando tu cuenta Discord |
+| Cerrar y abrir navegador | ✅ Sesión persiste hasta 30 días     |
+| Logout                   | ✅ Vuelve a invitado (correcto)      |
+| Volver a login           | ✅ Funciona de nuevo                 |
 
 ---
 
@@ -134,6 +146,7 @@ Al recargar:
 ## 🎉 Si todo funciona
 
 ¡Perfecto! Tu sistema de login con Discord ahora:
+
 - ✅ Es **persistente** (no vuelve a invitado)
 - ✅ Tiene **logs claros** para debugging
 - ✅ Tiene **fallback inteligente** (localStorage)
@@ -144,6 +157,7 @@ Al recargar:
 ## 🆘 Si necesitas ayuda
 
 Captura y comparte:
+
 1. Screenshot de variables de entorno en Render (oculta secretos)
 2. Screenshot de Network → `/auth/user` (con headers y response)
 3. Logs completos de la consola del navegador
