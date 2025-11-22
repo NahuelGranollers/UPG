@@ -77,7 +77,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
     >
       {/* Sugerencias de menciones */}
       {showMentionSuggestions && mentionSuggestions.length > 0 && (
-        <div className="fixed left-1/2 bottom-[80px] sm:left-1/2 sm:bottom-[100px] w-[90vw] sm:w-[500px] max-w-[500px] -translate-x-1/2 bg-[#2f3136] rounded-lg shadow-2xl border border-gray-800 overflow-hidden max-h-64 overflow-y-auto z-[9999] animate-in fade-in slide-in-from-bottom-2 duration-150">
+        <div className="mention-suggestions z-top" role="listbox" aria-label="Sugerencias de mención">
           <div className="py-2">
             <div className="px-3 py-1 text-xs font-semibold text-discord-text-muted uppercase">
               Mencionar
@@ -90,6 +90,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 onMouseEnter={() => setSelectedSuggestionIndex(globalIndex)}
                 className={`w-full px-3 py-2 flex items-center gap-3 transition-all duration-150 ${globalIndex === selectedSuggestionIndex ? 'bg-discord-blurple scale-[1.02] shadow-lg' : 'hover:bg-[#36373d] hover:scale-[1.01]'}`}
                 aria-label={`Mencionar a ${user.username}`}
+                role="option"
               >
                 <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 bg-gray-600">
                   <img

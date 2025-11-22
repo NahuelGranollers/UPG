@@ -39,6 +39,61 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Tema: variables reutilizables para coherencia visual */
+:root {
+  --bg: #2f3136; /* Base app */
+  --chat-bg: #232428; /* Chat input background */
+  --sidebar-bg: #1f2023;
+  --muted: #9aa0a6;
+  --text: #e6e9ec;
+  --blurple: #5865F2;
+  --accent: rgba(88,101,242,0.12);
+  --surface: #2b2d31;
+  --glass: rgba(255,255,255,0.02);
+  --shadow: 0 6px 18px rgba(0,0,0,0.6);
+}
+
+/* Layout helpers to avoid overlapping elements */
+.app-shell {
+  display: flex;
+  height: 100dvh;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.no-overlap {
+  position: relative;
+  z-index: 0;
+}
+
+/* Ensure inputs and modals sit above normal content but below global overlays */
+.z-base { z-index: 10; }
+.z-top { z-index: 40; }
+.z-overlay { z-index: 90; }
+
+/* Suggestion dropdown styling (positioned absolute relative to input container) */
+.mention-suggestions {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  max-width: 520px;
+  background: var(--surface);
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow: var(--shadow);
+  border-radius: 10px;
+  overflow: hidden;
+  animation: slide-in-up 160ms ease-out;
+}
+
+.mention-suggestions .item:hover {
+  background: rgba(88,101,242,0.14);
+}
+
+/* Input container safe area so messages never hide under the input */
+.chat-input-safe { padding-bottom: 1.25rem; }
+
+
 #root {
   width: 100vw;
   width: 100dvw; /* Dynamic viewport width */

@@ -372,7 +372,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </div>
       {/* Mensajes */}
       <div
-        className="flex-1 overflow-y-auto px-3 sm:px-4 pt-3 sm:pt-4 flex flex-col"
+        className="flex-1 overflow-y-auto px-3 sm:px-4 pt-3 sm:pt-4 flex flex-col chat-input-safe no-overlap"
         style={{ maxHeight: '100%' }}
       >
         <div className="mt-auto">
@@ -533,8 +533,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <div ref={messagesEndRef} />
         </div>
       </div>
-      {/* Input */}
-      <MessageInput
+      {/* Input: separado y con z-index para evitar solapamientos */}
+      <div className="w-full px-3 sm:px-4 pb-3 sm:pb-4 z-base bg-transparent">
+        <MessageInput
         inputText={inputText}
         setInputText={setInputText}
         handleSendMessage={handleSendMessage}
@@ -547,7 +548,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         renderInputPreview={renderInputPreview}
         currentChannel={currentChannel}
         onInputChange={handleInputChange}
-      />
+        />
+      </div>
     </div>
   );
 };
