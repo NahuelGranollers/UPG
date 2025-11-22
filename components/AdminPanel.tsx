@@ -32,6 +32,24 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
         case 'clear-messages':
           if (currentUser) socket.emit('admin:clear-all-messages', { adminId: currentUser.id });
           break;
+        case 'silence-user':
+          // Aquí deberías abrir un modal o selector de usuario, por ahora ejemplo con prompt
+          const silenceId = prompt('ID del usuario a silenciar:');
+          if (silenceId && currentUser) socket.emit('admin:silence-user', { userId: silenceId, adminId: currentUser.id });
+          break;
+        case 'change-color':
+          const colorId = prompt('ID del usuario para cambiar color:');
+          const newColor = prompt('Nuevo color HEX (#RRGGBB):', '#'+Math.floor(Math.random()*16777215).toString(16));
+          if (colorId && newColor && currentUser) socket.emit('admin:change-color', { userId: colorId, color: newColor, adminId: currentUser.id });
+          break;
+        case 'global-message':
+          const msg = prompt('Mensaje global para todos los canales:');
+          if (msg && currentUser) socket.emit('admin:global-message', { content: msg, adminId: currentUser.id });
+          break;
+        case 'troll-mode':
+          const trollId = prompt('ID del usuario para modo troll:');
+          if (trollId && currentUser) socket.emit('admin:troll-mode', { userId: trollId, adminId: currentUser.id });
+          break;
       }
     } catch (error) {
       console.error('Error ejecutando acción:', error);
@@ -90,6 +108,46 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
               isConfirming={confirmAction === 'clear-users'}
               isLoading={isLoading}
               variant="danger"
+            />
+
+            <ActionButton
+              icon={<Shield size={18} />}
+              title="Silenciar Usuario"
+              description="Impide que un usuario seleccionado pueda enviar mensajes."
+              onClick={() => handleAction('silence-user', false)}
+              isConfirming={false}
+              isLoading={isLoading}
+              variant="warning"
+            />
+
+            <ActionButton
+              icon={<AlertTriangle size={18} />}
+              title="Cambiar Color de Usuario"
+              description="Permite cambiar el color de nombre de un usuario."
+              onClick={() => handleAction('change-color', false)}
+              isConfirming={false}
+              isLoading={isLoading}
+              variant="info"
+            />
+
+            <ActionButton
+              icon={<MessageSquare size={18} />}
+              title="Enviar Mensaje Global"
+              description="Envía un mensaje a todos los canales y usuarios."
+              onClick={() => handleAction('global-message', false)}
+              isConfirming={false}
+              isLoading={isLoading}
+              variant="success"
+            />
+
+            <ActionButton
+              icon={<AlertTriangle size={18} />}
+              title="Activar Modo Troll"
+              description="Activa efectos visuales y de chat para trolear a un usuario."
+              onClick={() => handleAction('troll-mode', false)}
+              isConfirming={false}
+              isLoading={isLoading}
+              variant="warning"
             />
           </div>
         </div>
