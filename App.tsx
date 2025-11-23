@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider, useSocket } from './context/SocketContext';
 import { useChat } from './hooks/useChat';
 import { AppView, ChannelData, User } from './types';
+import useVoice from './hooks/useVoice';
 
 // Componentes críticos (carga inmediata)
 import LockScreen from './components/LockScreen';
@@ -46,9 +47,21 @@ function MainApp() {
   // Estado de colores de usuario
   const [userColors, setUserColors] = useState<Record<string, string>>({});
 
-  const handleVoiceJoin = (channelId: string) => {
-    if (!socket) return;
-    socket.emit('voice:join', { channelId });
+  const voice = useVoice();
+
+  const handleVoiceJoin = async (channelId: string) => {
+    try {
+      await voice.joinChannel(channelId);
+    } catch (err) {
+      console.error('Failed to join voice channel', err);
+    }
+  };
+  const handleToggleMute = () => {
+    try {
+      if ((voice as any).toggleMute) (voice as any).toggleMute();
+    } catch (e) {
+      console.error('Failed to toggle mute', e);
+    }
   };
 
   // Escuchar lista de usuarios globalmente (simplificado para este refactor)
@@ -71,7 +84,22 @@ function MainApp() {
     );
 
     // Escuchar cambios en canales de voz
-    socket.on('voice:state', states => setVoiceStates(states));
+    socket.on('voice:state', states => {
+      setVoiceStates(states);
+      try {
+        // Si estamos en un canal (intentamos unirnos), crear ofertas hacia los usuarios ya presentes
+        if (voice && (voice as any).inChannel) {
+          const myChannel = (voice as any).inChannel as string;
+          const participants = Object.entries(states)
+            .filter(([userId, ch]) => ch === myChannel)
+            .map(([userId]) => userId);
+          // Offer to existing participants (excluding self)
+          (voice as any).offerToUsers(participants);
+        }
+      } catch (e) {
+        console.error('Error while offering to users after voice:state', e);
+      }
+    });
 
     // Escuchar cambios de color de usuario
     socket.on('admin:user-color-changed', ({ userId, color }) => {
@@ -136,6 +164,8 @@ function MainApp() {
           activeVoiceChannel={activeVoiceChannel}
           onVoiceJoin={handleVoiceJoin}
           voiceStates={voiceStates}
+          onToggleMic={handleToggleMute}
+          micActive={(voice as any).isMuted ? false : true}
           users={users}
           onLoginWithDiscord={loginWithDiscord}
           onLogoutDiscord={logout}
@@ -180,9 +210,9 @@ function MainApp() {
                 setMobileActiveTab('chat');
               }}
               currentUser={currentUser}
-              activeVoiceChannel={null}
-              onVoiceJoin={() => {}}
-              voiceStates={{}}
+              activeVoiceChannel={activeVoiceChannel}
+              onVoiceJoin={handleVoiceJoin}
+              voiceStates={voiceStates}
               users={users}
               onLoginWithDiscord={loginWithDiscord}
               onLogoutDiscord={logout}
@@ -191,19 +221,25 @@ function MainApp() {
         )}
 
         {mobileActiveTab === 'chat' && (
-          <ChatInterface
-            currentUser={currentUser}
-            users={users}
-            currentChannel={currentChannel}
-            onSendMessage={sendMessage}
-            messages={messages}
-            setMessages={setMessages}
-            onMenuToggle={() => setMobileActiveTab('channels')}
-            userColors={userColors}
-          />
+          <>
+            {activeView === AppView.CHAT && (
+              <ChatInterface
+                currentUser={currentUser}
+                users={users}
+                currentChannel={currentChannel}
+                onSendMessage={sendMessage}
+                messages={messages}
+                setMessages={setMessages}
+                onMenuToggle={() => setMobileActiveTab('channels')}
+                userColors={userColors}
+              />
+            )}
+            {activeView === AppView.WHO_WE_ARE && <WhoWeAre onMenuToggle={() => setMobileActiveTab('channels')} />}
+            {activeView === AppView.VOTING && <Voting onMenuToggle={() => setMobileActiveTab('channels')} />}
+          </>
         )}
 
-        {mobileActiveTab === 'users' && <UserList users={users} currentUserId={currentUser.id} userColors={userColors} />}
+        {mobileActiveTab === 'users' && <UserList users={users} currentUserId={currentUser.id} userColors={userColors} isMobileView />}
 
         <MobileTabBar
           activeTab={mobileActiveTab}

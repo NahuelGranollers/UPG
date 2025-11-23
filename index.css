@@ -86,6 +86,19 @@ body {
   animation: slide-in-up 160ms ease-out;
 }
 
+@media (max-width: 768px) {
+  .mention-suggestions {
+    max-width: 100%;
+    left: 0;
+    right: 0;
+    bottom: calc(100% + 6px);
+    border-radius: 8px;
+  }
+
+  /* Ensure safe area padding for chat on mobile so inputs don't overlap content */
+  .chat-input-safe { padding-bottom: 3.5rem; }
+}
+
 .mention-suggestions .item:hover {
   background: rgba(88,101,242,0.14);
 }

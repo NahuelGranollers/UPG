@@ -27,6 +27,8 @@ interface ChannelListProps {
   users: User[];
   onLoginWithDiscord?: () => void;
   onLogoutDiscord?: () => void;
+  onToggleMic?: () => void;
+  micActive?: boolean;
 }
 
 const ChannelList: React.FC<ChannelListProps> = ({
@@ -40,8 +42,11 @@ const ChannelList: React.FC<ChannelListProps> = ({
   users,
   onLoginWithDiscord,
   onLogoutDiscord,
+  onToggleMic,
+  micActive,
 }) => {
-  const [micActive, setMicActive] = useState(false);
+  // micActive is now controlled by parent via props; keep local for fallback
+  const [localMicActive, setLocalMicActive] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { updateUser } = useAuth();
   const TextChannelItem = React.memo(
@@ -143,7 +148,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
   VoiceChannelItem.displayName = 'VoiceChannelItem';
 
   return (
-    <div className="w-60 bg-discord-sidebar flex flex-col shrink-0 relative">
+    <div className="w-full md:w-60 bg-discord-sidebar flex flex-col shrink-0 relative">
       {/* Server Header */}
       <div className="h-12 px-4 flex items-center justify-between shadow-sm hover:bg-discord-hover transition-colors cursor-pointer border-b border-gray-900/20 shrink-0">
         <h1 className="font-bold text-discord-text-header text-[15px] truncate">UPG Community</h1>
@@ -151,7 +156,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
       </div>
 
       {/* Scrollable Channels */}
-      <div className="flex-1 overflow-y-auto p-3 custom-scrollbar space-y-5 pb-24">
+      <div className="flex-1 overflow-y-auto p-3 custom-scrollbar space-y-5 pb-28 md:pb-24">
         {/* Category: Important */}
         <div>
           <div className="flex items-center justify-between px-0.5 mb-1 text-xs font-bold text-discord-text-muted hover:text-discord-text-header uppercase tracking-wide cursor-pointer">
@@ -222,8 +227,8 @@ const ChannelList: React.FC<ChannelListProps> = ({
       )}
 
       {/* Bottom Controls (User) */}
-      <div className="bg-[#232428] shrink-0 flex flex-col z-10">
-        <div className="h-[60px] sm:h-[52px] px-2 flex items-center">
+      <div className="bg-[#232428] shrink-0 flex flex-col z-30 md:static fixed bottom-0 left-0 right-0 md:rounded-t-none rounded-t-lg">
+        <div className="h-[64px] sm:h-[52px] px-2 flex items-center">
           <div className="group flex items-center py-1 px-1 pl-0.5 rounded-md hover:bg-discord-hover cursor-pointer mr-2 min-w-0 flex-1">
             <div className="relative w-9 h-9 sm:w-8 sm:h-8 mr-2 ml-1 shrink-0">
               <SafeImage
@@ -268,9 +273,12 @@ const ChannelList: React.FC<ChannelListProps> = ({
               </button>
             )}
             <button
-              onClick={() => setMicActive(s => !s)}
-              className={`hidden sm:flex p-1.5 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${micActive ? 'bg-green-600 text-white' : 'hover:bg-discord-hover text-discord-text-muted hover:text-discord-text-normal'}`}
-              title={micActive ? 'Micrófono activado' : 'Activar micrófono'}
+              onClick={() => {
+                if (onToggleMic) onToggleMic();
+                else setLocalMicActive(s => !s);
+              }}
+              className={`hidden sm:flex p-1.5 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${(micActive || localMicActive) ? 'bg-green-600 text-white' : 'hover:bg-discord-hover text-discord-text-muted hover:text-discord-text-normal'}`}
+              title={(micActive || localMicActive) ? 'Micrófono activado' : 'Activar micrófono'}
             >
               <Mic size={18} />
             </button>
