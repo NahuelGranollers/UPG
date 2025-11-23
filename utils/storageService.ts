@@ -13,6 +13,7 @@ const STORAGE_KEYS = {
   USERNAME: 'upg_username',
   AVATAR: 'upg_avatar',
   ROLE: 'upg_role',
+  COLOR: 'upg_color',
 } as const;
 
 /**
@@ -80,6 +81,8 @@ export function saveUserData(user: User): void {
   setCookie(STORAGE_KEYS.USERNAME, encodeURIComponent(user.username));
   setCookie(STORAGE_KEYS.AVATAR, encodeURIComponent(user.avatar));
   setCookie(STORAGE_KEYS.ROLE, user.role || UserRole.USER);
+  // Guardar color también para compatibilidad con recargas
+  if (user.color) setCookie(STORAGE_KEYS.COLOR, user.color);
 
   // Guardar en localStorage como backup
   localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
@@ -89,25 +92,7 @@ export function saveUserData(user: User): void {
  * Cargar datos del usuario desde cookies o localStorage
  */
 export function loadUserData(): User | null {
-  // Intentar cargar desde cookies primero
-  const cookies = parseCookies();
-
-  if (cookies[STORAGE_KEYS.USERNAME] && cookies[STORAGE_KEYS.AVATAR]) {
-    const username = decodeURIComponent(cookies[STORAGE_KEYS.USERNAME]);
-    const role = (cookies[STORAGE_KEYS.ROLE] as UserRole) || UserRole.USER;
-    const isAdmin = role === UserRole.ADMIN;
-
-    return {
-      id: cookies[STORAGE_KEYS.USER_ID] || `user-${Date.now()}`,
-      username,
-      avatar: decodeURIComponent(cookies[STORAGE_KEYS.AVATAR]),
-      status: 'online',
-      color: isAdmin ? '#ff4d0a' : '#3ba55c',
-      role,
-    };
-  }
-
-  // Fallback a localStorage
+  // Intentar cargar desde localStorage primero (contiene color y preferimos mantenerlo)
   const saved = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
   if (saved) {
     try {
@@ -116,6 +101,25 @@ export function loadUserData(): User | null {
       console.error('Error parseando datos de usuario:', error);
       return null;
     }
+  }
+
+  // Si no hay en localStorage, intentar cargar desde cookies (legacy)
+  const cookies = parseCookies();
+
+  if (cookies[STORAGE_KEYS.USERNAME] && cookies[STORAGE_KEYS.AVATAR]) {
+    const username = decodeURIComponent(cookies[STORAGE_KEYS.USERNAME]);
+    const role = (cookies[STORAGE_KEYS.ROLE] as UserRole) || UserRole.USER;
+    const isAdmin = role === UserRole.ADMIN;
+    const color = cookies[STORAGE_KEYS.COLOR] || (isAdmin ? '#ff4d0a' : '#3ba55c');
+
+    return {
+      id: cookies[STORAGE_KEYS.USER_ID] || `user-${Date.now()}`,
+      username,
+      avatar: decodeURIComponent(cookies[STORAGE_KEYS.AVATAR]),
+      status: 'online',
+      color,
+      role,
+    };
   }
 
   return null;
