@@ -14,6 +14,7 @@ import Sidebar from './components/Sidebar';
 import ChannelList from './components/ChannelList';
 import ChatInterface from './components/ChatInterface';
 import UserList from './components/UserList';
+import HomeScreen from './components/HomeScreen';
 
 // Componentes no críticos (lazy loading)
 const WhoWeAre = lazy(() => import('./components/WhoWeAre'));
@@ -24,11 +25,13 @@ function MainApp() {
   const { isConnected, socket } = useSocket();
 
   const [activeView, setActiveView] = useState<AppView>(AppView.CHAT);
+  const [showHome, setShowHome] = useState(true);
   const [currentChannel, setCurrentChannel] = useState<ChannelData>({
     id: 'general',
     name: 'general',
     description: 'Chat general',
   });
+  const [activeSection, setActiveSection] = useState<'home' | 'chat' | 'who' | 'voting' | 'upg'>(() => 'home');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileActiveTab, setMobileActiveTab] = useState<'channels' | 'chat' | 'users'>('chat');
 
@@ -185,30 +188,61 @@ function MainApp() {
         <Sidebar
           currentUser={currentUser}
           setCurrentUser={() => {}} // Ya no se usa localmente
-          isConnected={isConnected}
-        />
-        <ChannelList
-          activeView={activeView}
-          currentChannelId={currentChannel.id}
-          onChannelSelect={(view, channel) => {
-            setActiveView(view);
-            if (channel) setCurrentChannel(channel);
+          activeSection={activeSection}
+          onNavigate={section => {
+            if (section === 'home') {
+              setShowHome(true);
+              setActiveSection('home');
+            } else if (section === 'chat') {
+              setShowHome(false);
+              setActiveView(AppView.CHAT);
+              setActiveSection('chat');
+            } else if (section === 'who') {
+              setShowHome(false);
+              setActiveView(AppView.WHO_WE_ARE);
+              setActiveSection('who');
+            } else if (section === 'voting') {
+              setShowHome(false);
+              setActiveView(AppView.VOTING);
+              setActiveSection('voting');
+            }
           }}
-          currentUser={currentUser}
-          activeVoiceChannel={activeVoiceChannel}
-          onVoiceJoin={handleVoiceJoin}
-          onVoiceLeave={handleVoiceLeave}
-          voiceStates={voiceStates}
-          onToggleMic={handleToggleMute}
-          micActive={!(voice as any).isMuted}
-          voiceLevel={(voice as any).voiceLevel}
-          users={users}
-          onLoginWithDiscord={loginWithDiscord}
-          onLogoutDiscord={logout}
+          onHomeClick={() => {
+            setShowHome(true);
+            setActiveSection('home');
+          }}
+          onUPGClick={() => {
+            setShowHome(false);
+            setActiveView(AppView.CHAT);
+            setActiveSection('chat');
+          }}
         />
+        {!showHome && (
+          <ChannelList
+            activeView={activeView}
+            currentChannelId={currentChannel.id}
+            onChannelSelect={(view, channel) => {
+              setActiveView(view);
+              if (channel) setCurrentChannel(channel);
+            }}
+            currentUser={currentUser}
+            activeVoiceChannel={activeVoiceChannel}
+            onVoiceJoin={handleVoiceJoin}
+            onVoiceLeave={handleVoiceLeave}
+            voiceStates={voiceStates}
+            onToggleMic={handleToggleMute}
+            micActive={!(voice as any).isMuted}
+            voiceLevel={(voice as any).voiceLevel}
+            users={users}
+            onLoginWithDiscord={loginWithDiscord}
+            onLogoutDiscord={logout}
+          />
+        )}
 
         <div className="flex flex-1 min-w-0 relative">
-          {activeView === AppView.CHAT && (
+          {showHome ? (
+            <HomeScreen onGoToChat={() => { setShowHome(false); setActiveView(AppView.CHAT); }} />
+          ) : activeView === AppView.CHAT ? (
             <>
               <ChatInterface
                 currentUser={currentUser}
@@ -222,7 +256,7 @@ function MainApp() {
               />
               <UserList users={users} currentUserId={currentUser.id} currentUser={currentUser} userColors={userColors} />
             </>
-          )}
+          ) : null}
           {activeView === AppView.WHO_WE_ARE && <WhoWeAre onMenuToggle={() => {}} />}
           {activeView === AppView.VOTING && <Voting onMenuToggle={() => {}} />}
         </div>
@@ -230,58 +264,111 @@ function MainApp() {
 
       {/* Mobile Layout */}
       <div className="flex md:hidden h-full w-full flex-col relative overflow-hidden pb-16">
-        {mobileActiveTab === 'channels' && (
+        {showHome ? (
           <div className="flex h-full w-full">
             <Sidebar
               currentUser={currentUser}
               setCurrentUser={() => {}}
-              isConnected={isConnected}
-            />
-            <ChannelList
-              activeView={activeView}
-              currentChannelId={currentChannel.id}
-              onChannelSelect={(view, channel) => {
-                setActiveView(view);
-                if (channel) setCurrentChannel(channel);
-                setMobileActiveTab('chat');
+              activeSection={activeSection}
+              onNavigate={section => {
+                if (section === 'home') {
+                  setShowHome(true);
+                  setActiveSection('home');
+                } else if (section === 'chat') {
+                  setShowHome(false);
+                  setActiveView(AppView.CHAT);
+                  setActiveSection('chat');
+                } else if (section === 'who') {
+                  setShowHome(false);
+                  setActiveView(AppView.WHO_WE_ARE);
+                  setActiveSection('who');
+                } else if (section === 'voting') {
+                  setShowHome(false);
+                  setActiveView(AppView.VOTING);
+                  setActiveSection('voting');
+                }
               }}
-              currentUser={currentUser}
-              activeVoiceChannel={activeVoiceChannel}
-              onVoiceJoin={handleVoiceJoin}
-              voiceStates={voiceStates}
-              users={users}
-              onLoginWithDiscord={loginWithDiscord}
-              onLogoutDiscord={logout}
+              onHomeClick={() => { setShowHome(true); setActiveSection('home'); }}
+              onUPGClick={() => { setShowHome(false); setActiveView(AppView.CHAT); setActiveSection('chat'); }}
             />
+            <HomeScreen onGoToChat={() => { setShowHome(false); setActiveView(AppView.CHAT); }} />
           </div>
-        )}
-
-        {mobileActiveTab === 'chat' && (
+        ) : (
           <>
-            {activeView === AppView.CHAT && (
-              <ChatInterface
-                currentUser={currentUser}
-                users={users}
-                currentChannel={currentChannel}
-                onSendMessage={sendMessage}
-                messages={messages}
-                setMessages={setMessages}
-                onMenuToggle={() => setMobileActiveTab('channels')}
-                userColors={userColors}
-              />
+            {mobileActiveTab === 'channels' && (
+              <div className="flex h-full w-full">
+                <Sidebar
+                  currentUser={currentUser}
+                  setCurrentUser={() => {}}
+                  activeSection={activeSection}
+                  onNavigate={section => {
+                    if (section === 'home') {
+                      setShowHome(true);
+                      setActiveSection('home');
+                    } else if (section === 'chat') {
+                      setShowHome(false);
+                      setActiveView(AppView.CHAT);
+                      setActiveSection('chat');
+                    } else if (section === 'who') {
+                      setShowHome(false);
+                      setActiveView(AppView.WHO_WE_ARE);
+                      setActiveSection('who');
+                    } else if (section === 'voting') {
+                      setShowHome(false);
+                      setActiveView(AppView.VOTING);
+                      setActiveSection('voting');
+                    }
+                  }}
+                  onHomeClick={() => { setShowHome(true); setActiveSection('home'); }}
+                  onUPGClick={() => { setShowHome(false); setActiveView(AppView.CHAT); setActiveSection('chat'); }}
+                />
+                <ChannelList
+                  activeView={activeView}
+                  currentChannelId={currentChannel.id}
+                  onChannelSelect={(view, channel) => {
+                    setActiveView(view);
+                    if (channel) setCurrentChannel(channel);
+                    setMobileActiveTab('chat');
+                  }}
+                  currentUser={currentUser}
+                  activeVoiceChannel={activeVoiceChannel}
+                  onVoiceJoin={handleVoiceJoin}
+                  voiceStates={voiceStates}
+                  users={users}
+                  onLoginWithDiscord={loginWithDiscord}
+                  onLogoutDiscord={logout}
+                />
+              </div>
             )}
-            {activeView === AppView.WHO_WE_ARE && <WhoWeAre onMenuToggle={() => setMobileActiveTab('channels')} />}
-            {activeView === AppView.VOTING && <Voting onMenuToggle={() => setMobileActiveTab('channels')} />}
+
+            {mobileActiveTab === 'chat' && (
+              <>
+                {activeView === AppView.CHAT && (
+                  <ChatInterface
+                    currentUser={currentUser}
+                    users={users}
+                    currentChannel={currentChannel}
+                    onSendMessage={sendMessage}
+                    messages={messages}
+                    setMessages={setMessages}
+                    onMenuToggle={() => setMobileActiveTab('channels')}
+                    userColors={userColors}
+                  />
+                )}
+                {activeView === AppView.WHO_WE_ARE && <WhoWeAre onMenuToggle={() => setMobileActiveTab('channels')} />}
+                {activeView === AppView.VOTING && <Voting onMenuToggle={() => setMobileActiveTab('channels')} />}
+              </>
+            )}
+
+            {mobileActiveTab === 'users' && <UserList users={users} currentUserId={currentUser.id} currentUser={currentUser} userColors={userColors} isMobileView />}
+
+            <MobileTabBar
+              activeTab={mobileActiveTab}
+              onTabChange={setMobileActiveTab}
+              unreadCount={0}
+            />
           </>
         )}
-
-        {mobileActiveTab === 'users' && <UserList users={users} currentUserId={currentUser.id} currentUser={currentUser} userColors={userColors} isMobileView />}
-
-        <MobileTabBar
-          activeTab={mobileActiveTab}
-          onTabChange={setMobileActiveTab}
-          unreadCount={0}
-        />
       </div>
     </div>
   );

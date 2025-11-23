@@ -173,20 +173,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
             </div>
           </div>
 
-          <TextChannelItem
-            id="quienes-somos"
-            name="quienes-somos"
-            description="Sobre nosotros"
-            icon={Users}
-            view={AppView.WHO_WE_ARE}
-          />
-          <TextChannelItem
-            id="votaciones"
-            name="votaciones"
-            description="Vota por el futuro"
-            icon={Vote}
-            view={AppView.VOTING}
-          />
+          {/* Información moved to Sidebar as separate nodes */}
         </div>
 
         {/* Category: Text Channels */}
