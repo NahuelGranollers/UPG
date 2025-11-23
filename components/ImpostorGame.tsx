@@ -428,7 +428,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
           <aside className="bg-[#071017] p-4 rounded-lg border border-gray-800">
             <div className="text-sm text-white mb-2">Orden de turnos</div>
             {turnOrder.length === 0 ? (
-              <div className="text-sm text-gray-400">Aún no hay orden de turnos</div>
+              <div className="text-sm text-gray-300">Aún no hay orden de turnos</div>
             ) : (
               <ol className="list-decimal list-inside text-sm space-y-2">
                 {turnOrder.map((id, idx) => {
@@ -438,10 +438,10 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                   const revealed = revealInfo && revealInfo.impostorId === id;
                   const innocentRevealed = p && (p as any).revealedInnocent;
                   return (
-                    <li key={id} className={`turn-item flex items-center justify-between px-2 py-1 rounded ${active ? 'active bg-discord-blurple text-white' : innocentRevealed ? 'innocent text-gray-100' : 'text-gray-200'}`}>
+                    <li key={id} className={`turn-item flex items-center justify-between px-2 py-1 rounded ${active ? 'active bg-discord-blurple text-white' : innocentRevealed ? 'innocent text-gray-100' : 'text-white'}`}>
                       <div className="flex items-center gap-2">
                         <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs ${active ? 'bg-white text-black' : revealed ? 'bg-red-600 text-white ring-2 ring-red-400' : innocentRevealed ? 'bg-green-600 text-white ring-2 ring-green-400' : 'bg-gray-700 text-gray-200'}`}>{name.charAt(0).toUpperCase()}</div>
-                        <div className="truncate max-w-[20rem] md:max-w-[24rem]" title={name}>{name}</div>
+                        <div className="truncate max-w-[20rem] md:max-w-[24rem] text-white" title={name}>{name}</div>
                       </div>
                       <div className="text-xs text-gray-400">{idx + 1}</div>
                     </li>
