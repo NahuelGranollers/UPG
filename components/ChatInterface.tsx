@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
+import { readableTextColor } from '../utils/colorUtils';
 import { toast } from 'sonner';
 import { useSocket } from '../context/SocketContext';
 import { Message, User, UserRole } from '../types';
@@ -443,10 +444,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     <span
                       className="font-medium text-sm sm:text-base mr-2"
                       style={{
-                        color:
-                          msg.userId === 'bot'
-                            ? '#5865F2'
-                            : userColors[msg.userId] || msgUser?.color || '#fff',
+                        color: msg.userId === 'bot' ? '#5865F2' : readableTextColor(userColors[msg.userId] || msgUser?.color || '#ffffff'),
                       }}
                     >
                       {msg.username || msgUser?.username}

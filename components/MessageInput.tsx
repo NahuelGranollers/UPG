@@ -146,6 +146,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
           <input
             ref={inputRef}
             type="text"
+            id="message-input"
             value={inputText}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}

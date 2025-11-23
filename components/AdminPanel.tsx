@@ -144,14 +144,14 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
         <div className="space-y-2">
           {(action === 'silence-user' || action === 'change-color' || action === 'troll-mode') && (
             <div>
-              <label className="text-sm text-discord-text-muted">ID del usuario</label>
-              <input value={formValues.userId || ''} onChange={e => setFormValues(v => ({ ...v, userId: e.target.value }))} className="w-full bg-discord-dark border border-gray-800 rounded p-2 text-white" placeholder="user-1234" />
+              <label htmlFor="admin-userid" className="text-sm text-discord-text-muted">ID del usuario</label>
+              <input id="admin-userid" value={formValues.userId || ''} onChange={e => setFormValues(v => ({ ...v, userId: e.target.value }))} className="w-full bg-discord-dark border border-gray-800 rounded p-2 text-white" placeholder="user-1234" />
             </div>
           )}
           {action === 'change-color' && (
             <div>
-              <label className="text-sm text-discord-text-muted">Color HEX</label>
-              <input value={formValues.color || '#'+Math.floor(Math.random()*16777215).toString(16)} onChange={e => setFormValues(v => ({ ...v, color: e.target.value }))} className="w-32 bg-discord-dark border border-gray-800 rounded p-2 text-white" />
+              <label htmlFor="admin-color" className="text-sm text-discord-text-muted">Color HEX</label>
+              <input id="admin-color" value={formValues.color || '#'+Math.floor(Math.random()*16777215).toString(16)} onChange={e => setFormValues(v => ({ ...v, color: e.target.value }))} className="w-32 bg-discord-dark border border-gray-800 rounded p-2 text-white" />
             </div>
           )}
           {action === 'global-message' && (
@@ -159,11 +159,11 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
               <label className="text-sm text-discord-text-muted">Mensaje</label>
               <textarea value={formValues.message || ''} onChange={e => setFormValues(v => ({ ...v, message: e.target.value }))} className="w-full bg-discord-dark border border-gray-800 rounded p-2 text-white" rows={3} />
               <div className="flex items-center gap-3 mt-2">
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={formValues.sendAsBot === 'true' || formValues.sendAsBot === true} onChange={e => setFormValues(v => ({ ...v, sendAsBot: e.target.checked ? 'true' : 'false' }))} />
+                <label htmlFor="admin-sendasbot" className="flex items-center gap-2 text-sm">
+                  <input id="admin-sendasbot" type="checkbox" checked={formValues.sendAsBot === 'true' || formValues.sendAsBot === true} onChange={e => setFormValues(v => ({ ...v, sendAsBot: e.target.checked ? 'true' : 'false' }))} />
                   <span className="text-sm">Enviar como bot</span>
                 </label>
-                <input placeholder="Canal (opcional)" value={formValues.channelId || ''} onChange={e => setFormValues(v => ({ ...v, channelId: e.target.value }))} className="bg-discord-dark border border-gray-800 rounded p-2 text-white" />
+                <input id="admin-channel" placeholder="Canal (opcional)" value={formValues.channelId || ''} onChange={e => setFormValues(v => ({ ...v, channelId: e.target.value }))} className="bg-discord-dark border border-gray-800 rounded p-2 text-white" />
               </div>
             </div>
           )}

@@ -137,6 +137,7 @@ const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
             </div>
             <input
               type="password"
+              id="lock-password"
               value={password}
               onChange={e => {
                 setPassword(e.target.value);

@@ -30,6 +30,8 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
   const [revealPhase, setRevealPhase] = useState<'hidden' | 'enter' | 'visible' | 'exit'>('hidden');
   const [revealedPlayer, setRevealedPlayer] = useState<{ id: string; wasImpostor: boolean; word?: string | null } | null>(null);
   const [cardRevealed, setCardRevealed] = useState(false);
+  const [revealedRoles, setRevealedRoles] = useState<Record<string, 'impostor' | 'crewmate'> | null>(null);
+  const [customWords, setCustomWords] = useState<string[]>([]);
 
   useEffect(() => {
     if (!socket) return;
@@ -38,6 +40,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
       setPlayers(data.players || []);
       setIsHost(data.hostId === currentUser?.id);
       setJoined(true);
+      setCustomWords(data.customWords || []);
     };
 
     const onAssign = (data: any) => {
@@ -96,30 +99,20 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
       setStatusMessage('Ronda iniciada');
     };
 
-    const onReveal = (d: any) => {
-      // Trigger animated reveal overlay
-      setCardRevealed(true);
-      setRevealInfo({ impostorId: d.impostorId, word: d.word });
-      setShowReveal(true);
-      setRevealPhase('enter');
-      // small delay to allow CSS transition to begin
-      setTimeout(() => setRevealPhase('visible'), 80);
-      // auto-hide after 4.5s
-      setTimeout(() => {
-        setRevealPhase('exit');
-        setTimeout(() => {
-          setShowReveal(false);
-          setRevealPhase('hidden');
-          setRevealInfo(null);
-        }, 400);
-      }, 4500);
-      setStatusMessage(`Impostor: ${d.impostorId} — palabra: ${d.word}`);
+    const onRevealAll = (d: any) => {
+      setRevealedRoles(d.players);
+      setStatusMessage('Todas las cartas reveladas');
+    };
+
+    const onPlayerLeft = (d: any) => {
+      setStatusMessage(`${d.username} ha abandonado la sala`);
     };
 
     socket.on('impostor:room-state', onRoomState);
     socket.on('impostor:assign', onAssign);
     socket.on('impostor:started', onStarted);
-    socket.on('impostor:reveal', onReveal);
+    socket.on('impostor:reveal-all', onRevealAll);
+    socket.on('impostor:player-left', onPlayerLeft);
     socket.on('impostor:turn', onTurn);
     socket.on('impostor:turn-order', onTurnOrder);
     socket.on('impostor:voting-start', onVotingStart);
@@ -134,18 +127,20 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
       setVotingResult(null);
       setStatusMessage('Ronda reiniciada');
       setCardRevealed(false);
+      setRevealedRoles(null);
     });
 
     return () => {
       socket.off('impostor:room-state', onRoomState);
       socket.off('impostor:assign', onAssign);
       socket.off('impostor:started', onStarted);
-      socket.off('impostor:reveal', onReveal);
       socket.off('impostor:turn', onTurn);
       socket.off('impostor:turn-order', onTurnOrder);
       socket.off('impostor:voting-start', onVotingStart);
       socket.off('impostor:voting-update', onVotingUpdate);
       socket.off('impostor:voting-result', onVotingResult);
+      socket.off('impostor:reveal-all');
+      socket.off('impostor:player-left');
       socket.off('impostor:restarted');
     };
   }, [socket, currentUser]);
@@ -200,14 +195,6 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
     });
   };
 
-  const handleReveal = () => {
-    if (!socket) return;
-    socket.emit('impostor:reveal', { roomId, hostId: currentUser?.id || '' }, (res: any) => {
-      if (res && res.ok) setStatusMessage('Impostor revelado');
-      else setStatusMessage(res?.error || 'Error al revelar');
-    });
-  };
-
   const handleStartVoting = () => {
     if (!socket) return;
     socket.emit('impostor:start-voting', { roomId, hostId: currentUser?.id || '' }, (res: any) => {
@@ -232,11 +219,28 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
     });
   };
 
+  const handleRevealAll = () => {
+    if (!socket) return;
+    socket.emit('impostor:reveal-all', { roomId, hostId: currentUser?.id || '' }, (res: any) => {
+      if (res && res.ok) setStatusMessage('Todas las cartas reveladas');
+      else setStatusMessage(res?.error || 'Error al revelar todas las cartas');
+    });
+  };
+
   const handleRestart = () => {
     if (!socket) return;
     socket.emit('impostor:restart', { roomId, hostId: currentUser?.id || '' }, (res: any) => {
       if (res && res.ok) setStatusMessage('Ronda reiniciada, espera al host para iniciar otra');
       else setStatusMessage(res?.error || 'No se pudo reiniciar');
+    });
+  };
+
+  const handleAddWord = (word: string) => {
+    if (!socket || !word.trim()) return;
+    socket.emit('impostor:add-word', { roomId, userId: currentUser?.id || '', word: word.trim() }, (res: any) => {
+      if (!res || !res.ok) {
+        setStatusMessage(res?.error || 'Error agregando palabra');
+      }
     });
   };
 
@@ -254,8 +258,8 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
           <div className="panel-glass lg liquid-glass bg-transparent">
             {!joined && (
               <div className="space-y-3">
-                <input className="w-full p-3 rounded glass-input border border-gray-700" placeholder="ID de sala" value={roomId} onChange={e => setRoomId(e.target.value)} />
-                <input className="w-full p-3 rounded glass-input border border-gray-700" placeholder="Tu nombre" value={username} onChange={e => setUsername(e.target.value)} />
+                <input id="impostor-roomid" className="w-full p-3 rounded glass-input border border-gray-700" placeholder="ID de sala" value={roomId} onChange={e => setRoomId(e.target.value)} />
+                <input id="impostor-username" className="w-full p-3 rounded glass-input border border-gray-700" placeholder="Tu nombre" value={username} onChange={e => setUsername(e.target.value)} />
                 <div className="flex gap-3">
                   <button onClick={handleCreate} className="flex-1 px-4 py-3 rounded bg-green-600 text-white">Crear sala</button>
                   <button onClick={handleJoin} className="flex-1 px-4 py-3 rounded bg-blue-600 text-white">Unirse</button>
@@ -279,6 +283,13 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                     ))}
                   </ul>
                 </div>
+
+                {customWords.length > 0 && (
+                  <div className="mt-4">
+                    <div className="text-sm text-gray-400 mb-2">Palabras personalizadas ({customWords.length}):</div>
+                    <div className="text-xs text-gray-300 break-words">{customWords.join(', ')}</div>
+                  </div>
+                )}
 
                 {/* Turn order moved to right column on wide screens */}
                 {/* (right column will show the turn order) */}
@@ -397,7 +408,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
                       <div className="flex gap-3 mt-3">
                         {isHost && !assigned && <button onClick={handleStart} className="glass-btn primary flex-1">Iniciar ronda</button>}
-                        {isHost && assigned && <button onClick={handleReveal} className="glass-btn flex-1" style={{ background: 'linear-gradient(180deg,#ff6b3b,#ff3d00)', color: 'white' }}>Revelar impostor</button>}
+                        {isHost && assigned && <button onClick={handleRevealAll} className="glass-btn flex-1" style={{ background: 'linear-gradient(180deg,#ff8c00,#ff4500)', color: 'white' }}>Revelar todas las cartas</button>}
                         {isHost && <button onClick={handleStartVoting} className="glass-btn">Iniciar votación</button>}
                         {isHost && voting && <button onClick={handleEndVoting} className="glass-btn" style={{ background: '#ff6b6b', color: 'white' }}>Terminar votación</button>}
                         {isHost && <button onClick={handleRestart} className="glass-btn">Reiniciar ronda</button>}
@@ -437,9 +448,43 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                 })}
               </ol>
             )}
+
+            {revealedRoles && (
+              <div className="mt-4">
+                <div className="text-sm text-white mb-2">Cartas reveladas</div>
+                <ul className="text-sm space-y-2">
+                  {revealedRoles.map((player: any, index: number) => (
+                    <li key={index} className="flex items-center justify-between px-2 py-1 rounded bg-gray-800">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${!player.wasInnocent ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'}`}>{player.name.charAt(0).toUpperCase()}</div>
+                        <div className="truncate max-w-[12rem]" title={player.name}>{player.name}</div>
+                      </div>
+                      <div className={`text-xs font-semibold ${!player.wasInnocent ? 'text-red-400' : 'text-blue-400'}`}>{player.wasInnocent ? 'INOCENTE' : 'IMPOSTOR'}</div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </aside>
         </div>
       </div>
+
+      {joined && (
+        <div className="fixed bottom-4 right-4 bg-black/50 p-4 rounded-lg border border-gray-700 max-w-xs">
+          <div className="text-sm text-white mb-2">Agregar palabra</div>
+          <input
+            type="text"
+            placeholder="Nueva palabra"
+            className="w-full p-2 rounded bg-gray-800 text-white border border-gray-600"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleAddWord(e.currentTarget.value);
+                e.currentTarget.value = '';
+              }
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 ﻿import React, { memo, useMemo } from 'react';
+import { readableTextColor } from '../utils/colorUtils';
 import { toast } from 'sonner';
 import { User } from '../types';
 import SafeImage from './SafeImage';
@@ -58,7 +59,7 @@ const UserItem: React.FC<{ user: User; isCurrentUser?: boolean; userColors?: Rec
           <div className="flex items-center">
             <span
               className={`font-medium text-sm sm:text-[13px] truncate ${isOffline ? 'text-discord-text-muted' : ''}`}
-              style={{ color: !isOffline ? (userColors[user.id] || user.color) : undefined }}
+              style={{ color: !isOffline ? readableTextColor(userColors[user.id] || user.color || '#ffffff') : undefined }}
             >
               {user.username}
             </span>

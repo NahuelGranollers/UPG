@@ -49,23 +49,24 @@ const ServerSettings: React.FC<Props> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Editar perfil" size="md">
       <div className="space-y-4">
-        <label className="block">
+        <label className="block" htmlFor="profile-name">
           <div className="text-sm text-discord-text-muted mb-1">Nombre de usuario</div>
-          <input
-            value={name}
-            onChange={e => setName(e.target.value)}
-            className="w-full bg-discord-dark border border-gray-800 rounded p-2 text-white"
-            placeholder="Nombre de usuario"
-          />
         </label>
+        <input
+          id="profile-name"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          className="w-full bg-discord-dark border border-gray-800 rounded p-2 text-white"
+          placeholder="Nombre de usuario"
+        />
 
-        <label className="block">
+        <label className="block" htmlFor="profile-color">
           <div className="text-sm text-discord-text-muted mb-1">Color del nombre</div>
-          <div className="flex items-center gap-3">
-            <input type="color" value={color} onChange={e => setColor(e.target.value)} className="w-12 h-10 p-0 border-0" />
-            <div className="text-sm text-discord-text-muted">Color actual: <span style={{color}} className="font-medium">{color}</span></div>
-          </div>
         </label>
+        <div className="flex items-center gap-3">
+          <input id="profile-color" type="color" value={color} onChange={e => setColor(e.target.value)} className="w-12 h-10 p-0 border-0" />
+          <div className="text-sm text-discord-text-muted">Color actual: <span style={{color}} className="font-medium">{color}</span></div>
+        </div>
 
         <div className="pt-2 border-t border-gray-800" />
 

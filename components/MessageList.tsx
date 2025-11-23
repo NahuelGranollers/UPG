@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import { readableTextColor } from '../utils/colorUtils';
 import { Message, User, UserRole } from '../types';
 import { Trash2, Shield, Ban, UserX, VolumeX, Palette, Zap } from 'lucide-react';
 import SafeImage from './SafeImage';
@@ -62,10 +63,7 @@ const MessageItem: React.FC<MessageItemProps> = memo(
             <span
               className="font-medium text-sm sm:text-base mr-2"
               style={{
-                color:
-                  msg.userId === 'bot'
-                    ? '#5865F2'
-                    : userColors[msg.userId] || msgUser?.color || '#fff',
+                color: msg.userId === 'bot' ? '#5865F2' : readableTextColor(userColors[msg.userId] || msgUser?.color || '#ffffff'),
               }}
             >
               {msg.username || msgUser?.username}
