@@ -94,13 +94,24 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
         }
         case 'global-message': {
           const msg = formValues.message || '';
-          if (msg && currentUser) res = await emitWithAck('admin:global-message', { content: msg, adminId: currentUser.id });
+          if (msg && currentUser) {
+            const payload: any = { content: msg, adminId: currentUser.id };
+            if (formValues.sendAsBot === 'true' || formValues.sendAsBot === true) {
+              payload.sendAsBot = true;
+              if (formValues.channelId) payload.channelId = formValues.channelId;
+            }
+            res = await emitWithAck('admin:global-message', payload);
+          }
           setActiveForm(null);
           break;
         }
         case 'troll-mode': {
           const uid = formValues.userId || '';
-          if (uid && currentUser) res = await emitWithAck('admin:troll-mode', { userId: uid, adminId: currentUser.id });
+          if (uid && currentUser) {
+            let mode = formValues.mode || null;
+            if (mode === 'clear' || mode === '') mode = null;
+            res = await emitWithAck('admin:troll-mode', { userId: uid, mode, adminId: currentUser.id });
+          }
           setActiveForm(null);
           break;
         }
@@ -147,6 +158,35 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
             <div>
               <label className="text-sm text-discord-text-muted">Mensaje</label>
               <textarea value={formValues.message || ''} onChange={e => setFormValues(v => ({ ...v, message: e.target.value }))} className="w-full bg-discord-dark border border-gray-800 rounded p-2 text-white" rows={3} />
+              <div className="flex items-center gap-3 mt-2">
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={formValues.sendAsBot === 'true' || formValues.sendAsBot === true} onChange={e => setFormValues(v => ({ ...v, sendAsBot: e.target.checked ? 'true' : 'false' }))} />
+                  <span className="text-sm">Enviar como bot</span>
+                </label>
+                <input placeholder="Canal (opcional)" value={formValues.channelId || ''} onChange={e => setFormValues(v => ({ ...v, channelId: e.target.value }))} className="bg-discord-dark border border-gray-800 rounded p-2 text-white" />
+              </div>
+            </div>
+          )}
+
+          {action === 'troll-mode' && (
+            <div>
+              <label className="text-sm text-discord-text-muted">Modo Troll</label>
+              <div className="flex gap-2 items-center mt-2">
+                <select value={formValues.mode || ''} onChange={e => setFormValues(v => ({ ...v, mode: e.target.value }))} className="bg-discord-dark border border-gray-800 rounded p-2 text-white">
+                  <option value="">-- Seleccionar modo --</option>
+                  <option value="uwu">UwU (suavizar)</option>
+                  <option value="meow">Meow (gato)</option>
+                  <option value="kawaii">Kawaii (bonito)</option>
+                  <option value="clear">Desactivar modo</option>
+                </select>
+                <div className="flex gap-1">
+                  <button onClick={() => setFormValues(v => ({ ...v, mode: 'uwu' }))} className="px-2 py-1 rounded bg-gray-700 text-white">UwU</button>
+                  <button onClick={() => setFormValues(v => ({ ...v, mode: 'meow' }))} className="px-2 py-1 rounded bg-gray-700 text-white">Meow</button>
+                  <button onClick={() => setFormValues(v => ({ ...v, mode: 'kawaii' }))} className="px-2 py-1 rounded bg-gray-700 text-white">Kawaii</button>
+                  <button onClick={() => setFormValues(v => ({ ...v, mode: '' }))} className="px-2 py-1 rounded bg-red-600 text-white">Off</button>
+                </div>
+              </div>
+              <p className="text-xs text-discord-text-muted mt-2">Selecciona un modo para transformar los mensajes del usuario objetivo. "Desactivar" elimina el efecto.</p>
             </div>
           )}
 
