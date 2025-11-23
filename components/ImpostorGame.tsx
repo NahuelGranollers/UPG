@@ -277,7 +277,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                   <ul className="text-sm space-y-2">
                     {players.map(p => (
                       <li key={p.id} className="flex items-center justify-between">
-                          <span className="truncate max-w-[12rem]" title={p.username}>{p.username}</span>
+                          <span className="truncate max-w-[20rem]" title={p.username}>{p.username}</span>
                           <span className="text-xs text-gray-400">{p.id === currentUser?.id ? 'Tú' : ''}</span>
                         </li>
                     ))}
@@ -386,7 +386,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                               <div key={p.id} className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                   <div className={`w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-sm`}>{p.username.charAt(0).toUpperCase()}</div>
-                                  <div className="truncate max-w-[12rem]" title={p.username}>{p.username}</div>
+                                  <div className="truncate max-w-[20rem]" title={p.username}>{p.username}</div>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <div className="text-sm text-gray-600">{voteCounts[p.id] || 0}</div>
@@ -440,7 +440,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                     <li key={id} className={`turn-item flex items-center justify-between px-2 py-1 rounded ${active ? 'active bg-discord-blurple text-white' : innocentRevealed ? 'innocent text-gray-100' : 'text-gray-300'}`}>
                       <div className="flex items-center gap-2">
                         <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs ${active ? 'bg-white text-black' : revealed ? 'bg-red-600 text-white ring-2 ring-red-400' : innocentRevealed ? 'bg-green-600 text-white ring-2 ring-green-400' : 'bg-gray-700 text-gray-200'}`}>{name.charAt(0).toUpperCase()}</div>
-                        <div className="truncate max-w-[12rem] md:max-w-[18rem]" title={name}>{name}</div>
+                        <div className="truncate max-w-[20rem] md:max-w-[24rem]" title={name}>{name}</div>
                       </div>
                       <div className="text-xs text-gray-400">{idx + 1}</div>
                     </li>
@@ -457,7 +457,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                     <li key={index} className="flex items-center justify-between px-2 py-1 rounded bg-gray-800">
                       <div className="flex items-center gap-2">
                         <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${!player.wasInnocent ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'}`}>{player.name.charAt(0).toUpperCase()}</div>
-                        <div className="truncate max-w-[12rem]" title={player.name}>{player.name}</div>
+                        <div className="truncate max-w-[20rem]" title={player.name}>{player.name}</div>
                       </div>
                       <div className={`text-xs font-semibold ${!player.wasInnocent ? 'text-red-400' : 'text-blue-400'}`}>{player.wasInnocent ? 'INOCENTE' : 'IMPOSTOR'}</div>
                     </li>
