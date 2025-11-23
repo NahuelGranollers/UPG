@@ -24,6 +24,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
   const [votingResult, setVotingResult] = useState<any>(null);
   const [spinning, setSpinning] = useState(false);
   const [currentTurn, setCurrentTurn] = useState<string | null>(null);
+  const [turnOrder, setTurnOrder] = useState<string[]>([]);
 
   useEffect(() => {
     if (!socket) return;
@@ -48,6 +49,10 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
     const onTurn = (d: any) => {
       setCurrentTurn(d.currentTurn || null);
+    };
+
+    const onTurnOrder = (d: any) => {
+      setTurnOrder(d.turnOrder || []);
     };
 
     const onVotingStart = (d: any) => {
@@ -82,6 +87,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
     socket.on('impostor:started', onStarted);
     socket.on('impostor:reveal', onReveal);
     socket.on('impostor:turn', onTurn);
+    socket.on('impostor:turn-order', onTurnOrder);
     socket.on('impostor:voting-start', onVotingStart);
     socket.on('impostor:voting-update', onVotingUpdate);
     socket.on('impostor:voting-result', onVotingResult);
@@ -101,6 +107,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
       socket.off('impostor:started', onStarted);
       socket.off('impostor:reveal', onReveal);
       socket.off('impostor:turn', onTurn);
+      socket.off('impostor:turn-order', onTurnOrder);
       socket.off('impostor:voting-start', onVotingStart);
       socket.off('impostor:voting-update', onVotingUpdate);
       socket.off('impostor:voting-result', onVotingResult);
@@ -235,6 +242,29 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                     ))}
                   </ul>
                 </div>
+
+                {/* Turn order display (ordered list) */}
+                {turnOrder.length > 0 && (
+                  <div className="mt-4 bg-[#071017] p-3 rounded border border-gray-800">
+                    <div className="text-sm text-gray-300 mb-2">Orden de turnos</div>
+                    <ol className="list-decimal list-inside text-sm space-y-2">
+                      {turnOrder.map((id, idx) => {
+                        const p = players.find(x => x.id === id);
+                        const name = p ? p.username : id;
+                        const active = id === currentTurn;
+                        return (
+                          <li key={id} className={`flex items-center justify-between px-2 py-1 rounded ${active ? 'bg-discord-blurple text-white' : 'text-gray-300'}`}>
+                            <div className="flex items-center gap-2">
+                              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs ${active ? 'bg-white text-black' : 'bg-gray-700 text-gray-200'}`}>{name.charAt(0).toUpperCase()}</div>
+                              <div>{name}</div>
+                            </div>
+                            <div className="text-xs text-gray-400">{idx + 1}</div>
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  </div>
+                )}
 
                 <div>
                   {spinning && (
