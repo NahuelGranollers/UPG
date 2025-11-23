@@ -165,36 +165,81 @@ export function useVoice() {
     setInChannel(channelId);
     pendingOfferRef.current = channelId;
 
-    // Start streaming raw audio chunks to server
+    // Start streaming raw audio chunks to server.
     try {
       if (!audioCtxRef.current) audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       const ctx = audioCtxRef.current;
       const source = ctx.createMediaStreamSource(localStreamRef.current as MediaStream);
-      // Create a silent gain to connect processor to destination to keep the graph alive
+      // Create a silent gain to keep the graph alive when necessary
       const zeroGain = ctx.createGain();
       zeroGain.gain.value = 0;
       zeroGain.connect(ctx.destination);
 
-      const processor = (ctx.createScriptProcessor || (ctx as any).createJavaScriptNode).call(ctx, 4096, 1, 1);
-      processor.onaudioprocess = ev => {
+      // Prefer AudioWorklet (modern, non-deprecated) and fall back to ScriptProcessor if unavailable
+      let usedWorklet = false;
+      if (ctx.audioWorklet && typeof ctx.audioWorklet.addModule === 'function') {
         try {
-          const input = ev.inputBuffer.getChannelData(0);
-          // copy to Float32Array
-          const buffer = new Float32Array(input.length);
-          buffer.set(input);
-          // emit as ArrayBuffer
-          if (socket && buffer.buffer) {
-            socket.emit('voice:chunk', { buffer: buffer.buffer, sampleRate: ctx.sampleRate });
-          }
+          // Load worklet relative to current page so it works on GitHub Pages subpaths
+          const workletUrl = new URL('voice-processor.js', window.location.href).href;
+          await ctx.audioWorklet.addModule(workletUrl);
+          const node: any = new (window as any).AudioWorkletNode(ctx, 'voice-processor', {
+            numberOfInputs: 1,
+            numberOfOutputs: 1,
+            outputChannelCount: [1],
+            processorOptions: { chunkSize: 4096 },
+          });
+          // Listen for chunk & level messages from the worklet
+          node.port.onmessage = (ev: MessageEvent) => {
+            try {
+              const d = ev.data as any;
+              if (d && d.type === 'chunk') {
+                const ab = d.samples as ArrayBuffer;
+                // forward binary buffer to server (socket.io supports binary)
+                if (socket && ab) {
+                  socket.emit('voice:chunk', { buffer: ab, sampleRate: ctx.sampleRate });
+                }
+                if (typeof d.level === 'number') setVoiceLevel(d.level);
+              } else if (d && d.type === 'level') {
+                if (typeof d.level === 'number') setVoiceLevel(d.level);
+              }
+            } catch (e) {
+              console.error('Worklet message handling error', e);
+            }
+          };
+          // connect graph: source -> worklet -> zeroGain (keeps node alive)
+          source.connect(node);
+          node.connect(zeroGain);
+          (localStreamRef as any).processorNode = node;
+          (localStreamRef as any).zeroGain = zeroGain;
+          usedWorklet = true;
         } catch (e) {
-          console.error('Error processing local audio', e);
+          console.warn('AudioWorklet failed, falling back to ScriptProcessor', e);
         }
-      };
-      source.connect(processor);
-      processor.connect(zeroGain);
-      // save nodes for cleanup
-      (localStreamRef as any).processorNode = processor;
-      (localStreamRef as any).zeroGain = zeroGain;
+      }
+
+      if (!usedWorklet) {
+        // Fallback to ScriptProcessor for older browsers
+        const processor = (ctx.createScriptProcessor || (ctx as any).createJavaScriptNode).call(ctx, 4096, 1, 1);
+        processor.onaudioprocess = ev => {
+          try {
+            const input = ev.inputBuffer.getChannelData(0);
+            // copy to Float32Array
+            const buffer = new Float32Array(input.length);
+            buffer.set(input);
+            // emit as ArrayBuffer
+            if (socket && buffer.buffer) {
+              socket.emit('voice:chunk', { buffer: buffer.buffer, sampleRate: ctx.sampleRate });
+            }
+          } catch (e) {
+            console.error('Error processing local audio', e);
+          }
+        };
+        source.connect(processor);
+        processor.connect(zeroGain);
+        // save nodes for cleanup
+        (localStreamRef as any).processorNode = processor;
+        (localStreamRef as any).zeroGain = zeroGain;
+      }
     } catch (e) {
       console.error('Failed to start audio chunking', e);
     }
@@ -256,8 +301,11 @@ export function useVoice() {
       const proc = (localStreamRef as any).processorNode;
       const zg = (localStreamRef as any).zeroGain;
       if (proc) {
-        proc.disconnect();
-        try { proc.onaudioprocess = null; } catch(e){}
+        try {
+          proc.disconnect();
+        } catch (e) {}
+        try { if ((proc as any).onaudioprocess) (proc as any).onaudioprocess = null; } catch(e){}
+        try { if ((proc as any).port) (proc as any).port.onmessage = null; } catch(e){}
         delete (localStreamRef as any).processorNode;
       }
       if (zg) {
