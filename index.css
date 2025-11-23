@@ -94,12 +94,14 @@ body {
 
 /* Liquid glass styling (backdrop blur + sheen + subtle borders) */
 .liquid-glass {
-  background: linear-gradient(180deg, rgba(255,255,255,0.72), rgba(255,255,255,0.42));
-  -webkit-backdrop-filter: blur(10px) saturate(140%) contrast(105%);
-  backdrop-filter: blur(10px) saturate(140%) contrast(105%);
-  border: 1px solid rgba(255,255,255,0.35);
-  box-shadow: 0 8px 30px rgba(10,10,10,0.12), inset 0 1px 0 rgba(255,255,255,0.35);
+  --glass-radius: 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.75), rgba(255,255,255,0.44));
+  -webkit-backdrop-filter: blur(14px) saturate(150%) contrast(110%);
+  backdrop-filter: blur(14px) saturate(150%) contrast(110%);
+  border: 1px solid rgba(255,255,255,0.45);
+  box-shadow: 0 12px 40px rgba(6,10,20,0.16), inset 0 1px 0 rgba(255,255,255,0.38);
   color: var(--impostor-text);
+  border-radius: var(--glass-radius);
 }
 
 /* Sheen pseudo-element for liquid look */
@@ -112,6 +114,39 @@ body {
   pointer-events: none;
   mix-blend-mode: overlay;
 }
+
+/* Glassy buttons and inputs */
+.glass-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1rem;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--impostor-text);
+  box-shadow: 0 6px 18px rgba(3,6,10,0.15);
+  transition: transform 140ms ease, box-shadow 140ms ease, background 120ms ease;
+}
+.glass-btn:active { transform: translateY(1px); }
+.glass-btn.primary { background: linear-gradient(180deg, var(--impostor-accent), #ff7a3b); color: white; border-color: rgba(0,0,0,0.06); }
+
+.glass-input {
+  background: rgba(255,255,255,0.6);
+  border: 1px solid rgba(0,0,0,0.06);
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  color: var(--impostor-text);
+}
+
+/* Panels & cards use rounded glass by default inside theme */
+.impostor-theme .panel-glass { position: relative; }
+.impostor-theme .panel-glass.lg { padding: 1.25rem; }
+
+/* Turn item polish */
+.turn-item { transition: transform 260ms ease, box-shadow 260ms ease, background 260ms ease, border-radius 160ms; border-radius: 10px; }
+.turn-item.active { transform: translateX(6px) scale(1.02); box-shadow: 0 12px 28px rgba(0,0,0,0.18); }
+.turn-item.innocent { box-shadow: 0 8px 20px rgba(6,80,30,0.12); }
 
 /* Higher contrast for text and interactive elements inside theme */
 .impostor-theme { color: var(--impostor-text); }

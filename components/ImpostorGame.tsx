@@ -240,16 +240,16 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-extrabold">Impostor — Sala</h1>
           <div className="flex items-center gap-2">
-            <button onClick={() => { if (joined) handleLeave(); if (onClose) onClose(); }} className="text-xs px-3 py-2 rounded bg-gray-700">{joined ? 'Salir' : 'Cerrar'}</button>
+            <button onClick={() => { if (joined) handleLeave(); if (onClose) onClose(); }} className="glass-btn">{joined ? 'Salir' : 'Cerrar'}</button>
           </div>
         </div>
 
         <div className="impostor-grid">
-          <div className="bg-[#0f1316] p-4 rounded-lg border border-gray-800">
+          <div className="panel-glass lg liquid-glass bg-transparent">
             {!joined && (
               <div className="space-y-3">
-                <input className="w-full p-3 rounded bg-[#0b0f12] border border-gray-700" placeholder="ID de sala" value={roomId} onChange={e => setRoomId(e.target.value)} />
-                <input className="w-full p-3 rounded bg-[#0b0f12] border border-gray-700" placeholder="Tu nombre" value={username} onChange={e => setUsername(e.target.value)} />
+                <input className="w-full p-3 rounded glass-input border border-gray-700" placeholder="ID de sala" value={roomId} onChange={e => setRoomId(e.target.value)} />
+                <input className="w-full p-3 rounded glass-input border border-gray-700" placeholder="Tu nombre" value={username} onChange={e => setUsername(e.target.value)} />
                 <div className="flex gap-3">
                   <button onClick={handleCreate} className="flex-1 px-4 py-3 rounded bg-green-600 text-white">Crear sala</button>
                   <button onClick={handleJoin} className="flex-1 px-4 py-3 rounded bg-blue-600 text-white">Unirse</button>
@@ -262,7 +262,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                 <div className="text-sm text-gray-300">Sala: <strong>{roomId}</strong></div>
                 <div className="text-sm text-gray-300">Host: {isHost ? 'Tú' : 'Otro'}</div>
 
-                <div className="bg-[#071017] p-3 rounded max-h-[320px] overflow-auto border border-gray-800">
+                <div className="panel-glass lg liquid-glass bg-transparent p-3 rounded max-h-[320px] overflow-auto" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
                   <div className="text-sm text-gray-400 mb-2">Jugadores:</div>
                   <ul className="text-sm space-y-2">
                     {players.map(p => (
@@ -279,7 +279,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                 {/* Innocent reveal overlay (temporary) */}
                 {revealedPlayer && !revealedPlayer.wasImpostor && (
                   <div className={`fixed bottom-8 right-8 z-50`}>
-                    <div className="bg-white/5 border border-green-600 text-green-200 p-4 rounded-lg shadow-lg backdrop-blur">
+                    <div className="bg-white/5 border border-green-600 text-white p-4 rounded-lg shadow-lg backdrop-blur">
                       <div className="text-sm uppercase text-green-300 font-semibold">Revelación</div>
                       <div className="text-lg font-bold mt-1">{players.find(p => p.id === revealedPlayer.id)?.username || revealedPlayer.id}</div>
                       <div className="text-sm text-gray-300 mt-1">Era inocente — la ronda continúa</div>
@@ -298,7 +298,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                         <div className="text-left">
                           <div className="text-lg text-red-300 uppercase font-extrabold">Impostor</div>
                           <div className="text-3xl font-bold mt-1">{players.find(p => p.id === revealInfo.impostorId)?.username || revealInfo.impostorId}</div>
-                          <div className="text-sm text-gray-300 mt-2">Palabra: <span className="font-semibold">{revealInfo.word}</span></div>
+                          <div className="text-sm text-contrast mt-2">Palabra: <span className="font-semibold">{revealInfo.word}</span></div>
                         </div>
                       </div>
                       <div className="mt-4 flex justify-center gap-3">
@@ -321,7 +321,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                     <div className="flex items-center justify-center p-6">
                       <div className="flex flex-col items-center">
                         <div className="w-20 h-20 rounded-full border-4 border-t-transparent border-white animate-spin mb-3" />
-                        <div className="text-sm text-gray-300">Asignando carta...</div>
+                        <div className="text-sm text-contrast">Asignando carta...</div>
                       </div>
                     </div>
                   )}
@@ -332,8 +332,8 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                       <div className="impostor-card mb-4" style={{ maxWidth: 520 }}>
                         <div className={`impostor-card-inner ${assigned ? 'flipped' : ''}`}>
                           <div className="impostor-card-face impostor-card-front liquid-glass p-4 rounded-lg border border-gray-800" style={{ position: 'relative' }}>
-                            <div className="text-sm text-gray-400 mb-2">Tu carta</div>
-                            <div className="text-xl font-semibold text-gray-300">Voltear para ver</div>
+                            <div className="text-sm text-contrast mb-2">Tu carta</div>
+                            <div className="text-xl font-semibold text-contrast">Voltear para ver</div>
                           </div>
                           <div className="impostor-card-face impostor-card-back liquid-glass p-4 rounded-lg border border-gray-800" style={{ position: 'relative' }}>
                             {assigned ? (
@@ -350,9 +350,9 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                       </div>
 
                       {/* Voting area */}
-                      <div className="mt-4 bg-[#071018] p-3 rounded border border-gray-800">
+                      <div className="panel-glass lg liquid-glass mt-4 p-3 rounded" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
                         <div className="flex items-center justify-between mb-2">
-                          <div className="text-sm text-gray-300">Votación</div>
+                          <div className="text-sm text-contrast">Votación</div>
                           <div className="text-xs text-gray-400">{voting ? 'Activa' : 'Inactiva'}</div>
                         </div>
 
@@ -361,12 +361,12 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                             {players.map(p => (
                               <div key={p.id} className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                  <div className={`w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-sm`}>{p.username.charAt(0).toUpperCase()}</div>
+                                  <div className={`w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-sm`}>{p.username.charAt(0).toUpperCase()}</div>
                                   <div>{p.username}</div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <div className="text-sm text-gray-400">{voteCounts[p.id] || 0}</div>
-                                  <button disabled={!!myVote} onClick={() => handleCastVote(p.id)} className={`px-2 py-1 rounded text-xs ${myVote ? 'bg-gray-600 text-gray-300' : 'bg-blue-600 text-white'}`}>{myVote === p.id ? 'Votado' : 'Votar'}</button>
+                                  <div className="text-sm text-gray-600">{voteCounts[p.id] || 0}</div>
+                                  <button disabled={!!myVote} onClick={() => handleCastVote(p.id)} className={`glass-btn ${myVote ? '' : 'primary'}`} aria-pressed={!!myVote}>{myVote === p.id ? 'Votado' : 'Votar'}</button>
                                 </div>
                               </div>
                             ))}
@@ -376,19 +376,19 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                         )}
 
                         {votingResult && (
-                          <div className="mt-3 text-sm text-gray-300">
+                          <div className="mt-3 text-sm text-contrast">
                             Resultado: {votingResult.eliminated ? `Eliminado ${votingResult.eliminated}` : 'Empate'}
                           </div>
                         )}
                       </div>
 
                       <div className="flex gap-3 mt-3">
-                        {isHost && !assigned && <button onClick={handleStart} className="flex-1 px-4 py-3 rounded bg-yellow-600 text-black">Iniciar ronda</button>}
-                        {isHost && assigned && <button onClick={handleReveal} className="flex-1 px-4 py-3 rounded bg-red-600 text-white">Revelar impostor</button>}
-                        {isHost && <button onClick={handleStartVoting} className="px-3 py-2 rounded bg-indigo-600 text-white">Iniciar votación</button>}
-                        {isHost && voting && <button onClick={handleEndVoting} className="px-3 py-2 rounded bg-red-500 text-white">Terminar votación</button>}
-                        {isHost && <button onClick={handleRestart} className="px-3 py-2 rounded bg-gray-600 text-white">Reiniciar ronda</button>}
-                        <button onClick={handleLeave} className="flex-1 px-4 py-3 rounded bg-gray-700">Abandonar</button>
+                        {isHost && !assigned && <button onClick={handleStart} className="glass-btn primary flex-1">Iniciar ronda</button>}
+                        {isHost && assigned && <button onClick={handleReveal} className="glass-btn flex-1" style={{ background: 'linear-gradient(180deg,#ff6b3b,#ff3d00)', color: 'white' }}>Revelar impostor</button>}
+                        {isHost && <button onClick={handleStartVoting} className="glass-btn">Iniciar votación</button>}
+                        {isHost && voting && <button onClick={handleEndVoting} className="glass-btn" style={{ background: '#ff6b6b', color: 'white' }}>Terminar votación</button>}
+                        {isHost && <button onClick={handleRestart} className="glass-btn">Reiniciar ronda</button>}
+                        <button onClick={handleLeave} className="glass-btn flex-1">Abandonar</button>
                       </div>
                     </>
                   )}
@@ -396,12 +396,12 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
               </div>
             )}
 
-            {statusMessage && <div className="mt-4 text-sm text-gray-300">{statusMessage}</div>}
+            {statusMessage && <div className="mt-4 text-sm text-contrast">{statusMessage}</div>}
           </div>
 
           {/* Right column: Turn order */}
           <aside className="bg-[#071017] p-4 rounded-lg border border-gray-800">
-            <div className="text-sm text-gray-300 mb-2">Orden de turnos</div>
+            <div className="text-sm text-white mb-2">Orden de turnos</div>
             {turnOrder.length === 0 ? (
               <div className="text-sm text-gray-400">Aún no hay orden de turnos</div>
             ) : (
