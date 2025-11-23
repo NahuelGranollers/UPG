@@ -15,6 +15,7 @@ import ChannelList from './components/ChannelList';
 import ChatInterface from './components/ChatInterface';
 import UserList from './components/UserList';
 import HomeScreen from './components/HomeScreen';
+import ImpostorGame from './components/ImpostorGame';
 
 // Componentes no críticos (lazy loading)
 const WhoWeAre = lazy(() => import('./components/WhoWeAre'));
@@ -197,6 +198,10 @@ function MainApp() {
               setShowHome(false);
               setActiveView(AppView.CHAT);
               setActiveSection('chat');
+            } else if (section === 'impostor') {
+              setShowHome(false);
+              setActiveView(AppView.IMPOSTOR);
+              setActiveSection('impostor');
             } else if (section === 'who') {
               setShowHome(false);
               setActiveView(AppView.WHO_WE_ARE);
@@ -242,6 +247,8 @@ function MainApp() {
         <div className="flex flex-1 min-w-0 relative">
           {showHome ? (
             <HomeScreen onGoToChat={() => { setShowHome(false); setActiveView(AppView.CHAT); }} />
+          ) : activeView === AppView.IMPOSTOR ? (
+            <ImpostorGame onClose={() => { setShowHome(true); setActiveView(AppView.CHAT); setActiveSection('home'); }} />
           ) : activeView === AppView.CHAT ? (
             <>
               <ChatInterface
@@ -278,6 +285,10 @@ function MainApp() {
                   setShowHome(false);
                   setActiveView(AppView.CHAT);
                   setActiveSection('chat');
+                } else if (section === 'impostor') {
+                  setShowHome(false);
+                  setActiveView(AppView.IMPOSTOR);
+                  setActiveSection('impostor');
                 } else if (section === 'who') {
                   setShowHome(false);
                   setActiveView(AppView.WHO_WE_ARE);

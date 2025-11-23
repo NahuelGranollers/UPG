@@ -18,6 +18,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = memo(({ currentUser, setCurrentUser: _setCurrentUser, onHomeClick, onUPGClick, activeSection, onNavigate }) => {
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  // Impostor is now a full page route/view
   const isAdmin = currentUser?.role === UserRole.ADMIN;
 
   // Obtener socket desde el contexto
@@ -80,6 +81,15 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentUser, setCurrentUser: _se
 
       <button className="w-12 h-12 bg-discord-chat text-discord-green hover:bg-discord-green hover:text-white rounded-[24px] hover:rounded-[16px] transition-all duration-200 flex items-center justify-center">
         <Compass size={24} />
+      </button>
+
+      {/* Impostor game (navigate to full page) */}
+      <button onClick={() => onNavigate && onNavigate('impostor')} className={`w-12 h-12 bg-discord-chat text-discord-text-normal hover:bg-discord-blurple hover:text-white rounded-[24px] hover:rounded-[16px] transition-all duration-200 flex items-center justify-center`} title="Impostor">
+        {/* Inline knife / among-us SVG icon (simple silhouette) */}
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+          <path d="M2 21c0 .55.45 1 1 1h4l9-9-5-5L2 20v1z" fill="#ffffff" opacity="0.9" />
+          <path d="M14 7l3-3 4 4-3 3-4-4z" fill="#ff4d4f" opacity="0.95" />
+        </svg>
       </button>
 
       {/* New direct nodes: Quiénes somos & Votaciones */}
@@ -146,6 +156,8 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentUser, setCurrentUser: _se
           socket={socket}
         />
       )}
+
+      {/* Impostor is displayed as a full page in App when selected */}
     </div>
   );
 });
