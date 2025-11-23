@@ -84,6 +84,52 @@ body {
 .impostor-theme .avatar-accent { background: var(--lock-accent); color: white; }
 .impostor-theme .avatar-initial { background: rgba(0,0,0,0.08); color: var(--lock-text-dark); }
 
+/* Improved contrast tokens for Impostor UI */
+:root {
+  --impostor-surface: #fffdf6; /* light surface to contrast */
+  --impostor-text: #0b0b0b; /* dark text for readability */
+  --impostor-muted: #6b6b6b;
+  --impostor-accent: var(--lock-accent);
+}
+
+/* Liquid glass styling (backdrop blur + sheen + subtle borders) */
+.liquid-glass {
+  background: linear-gradient(180deg, rgba(255,255,255,0.72), rgba(255,255,255,0.42));
+  -webkit-backdrop-filter: blur(10px) saturate(140%) contrast(105%);
+  backdrop-filter: blur(10px) saturate(140%) contrast(105%);
+  border: 1px solid rgba(255,255,255,0.35);
+  box-shadow: 0 8px 30px rgba(10,10,10,0.12), inset 0 1px 0 rgba(255,255,255,0.35);
+  color: var(--impostor-text);
+}
+
+/* Sheen pseudo-element for liquid look */
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(120deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.06) 30%, rgba(255,255,255,0.02) 60%, rgba(255,255,255,0));
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+/* Higher contrast for text and interactive elements inside theme */
+.impostor-theme { color: var(--impostor-text); }
+.impostor-theme .text-contrast { color: var(--impostor-text); }
+.impostor-theme .muted-contrast { color: var(--impostor-muted); }
+.impostor-theme .turn-item { color: var(--impostor-text); }
+
+/* Adjust confetti palette to match lock accent and higher contrast */
+.confetti span { box-shadow: 0 4px 10px rgba(0,0,0,0.12); }
+
+/* Ensure responsive aside width with min/max */
+@media (min-width: 880px) {
+  .impostor-grid { grid-template-columns: 1fr 320px; }
+}
+@media (max-width: 879px) {
+  .impostor-grid { grid-template-columns: 1fr; }
+}
+
 /* Layout helpers to avoid overlapping elements */
 .app-shell {
   display: flex;

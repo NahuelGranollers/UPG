@@ -274,54 +274,8 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                   </ul>
                 </div>
 
-                {/* Turn order display (ordered list) */}
-                {turnOrder.length > 0 && (
-                  <div className="mt-4 bg-[#071017] p-3 rounded border border-gray-800">
-                    <div className="text-sm text-gray-300 mb-2">Orden de turnos</div>
-                    <ol className="list-decimal list-inside text-sm space-y-2">
-                      {turnOrder.map((id, idx) => {
-                        const p = players.find(x => x.id === id);
-                        const name = p ? p.username : id;
-                        const active = id === currentTurn;
-                        const revealed = revealInfo && revealInfo.impostorId === id;
-                        const innocentRevealed = p && (p as any).revealedInnocent;
-                        return (
-                          <li key={id} className={`flex items-center justify-between px-2 py-1 rounded ${active ? 'bg-discord-blurple text-white' : 'text-gray-300'}`}>
-                            <div className="flex items-center gap-2">
-                              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs ${active ? 'bg-white text-black' : revealed ? 'bg-red-600 text-white ring-2 ring-red-400' : innocentRevealed ? 'bg-green-600 text-white ring-2 ring-green-400' : 'bg-gray-700 text-gray-200'}`}>{name.charAt(0).toUpperCase()}</div>
-                              <div>{name}</div>
-                            </div>
-                            <div className="text-xs text-gray-400">{idx + 1}</div>
-                          </li>
-                        );
-                      })}
-                    </ol>
-                  </div>
-                )}
-                {/* Turn order display (ordered list) */}
-                {turnOrder.length > 0 && (
-                  <div className="mt-4 bg-[#071017] p-3 rounded border border-gray-800">
-                    <div className="text-sm text-gray-300 mb-2">Orden de turnos</div>
-                    <ol className="list-decimal list-inside text-sm space-y-2">
-                      {turnOrder.map((id, idx) => {
-                        const p = players.find(x => x.id === id);
-                        const name = p ? p.username : id;
-                        const active = id === currentTurn;
-                        const revealed = revealInfo && revealInfo.impostorId === id;
-                        const innocentRevealed = p && (p as any).revealedInnocent;
-                        return (
-                          <li key={id} className={`turn-item flex items-center justify-between px-2 py-1 rounded ${active ? 'active bg-discord-blurple text-white' : innocentRevealed ? 'innocent text-gray-100' : 'text-gray-300'}`}>
-                            <div className="flex items-center gap-2">
-                              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs ${active ? 'bg-white text-black' : revealed ? 'bg-red-600 text-white ring-2 ring-red-400' : innocentRevealed ? 'bg-green-600 text-white ring-2 ring-green-400' : 'bg-gray-700 text-gray-200'}`}>{name.charAt(0).toUpperCase()}</div>
-                              <div>{name}</div>
-                            </div>
-                            <div className="text-xs text-gray-400">{idx + 1}</div>
-                          </li>
-                        );
-                      })}
-                    </ol>
-                  </div>
-                )}
+                {/* Turn order moved to right column on wide screens */}
+                {/* (right column will show the turn order) */}
                 {/* Innocent reveal overlay (temporary) */}
                 {revealedPlayer && !revealedPlayer.wasImpostor && (
                   <div className={`fixed bottom-8 right-8 z-50`}>
@@ -337,7 +291,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                 {showReveal && revealInfo && (
                   <div className="impostor-reveal-overlay">
                     <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
-                    <div className={`impostor-reveal-panel relative z-60 bg-gradient-to-br from-[#0f1720] to-[#071017] border border-gray-700`}>
+                    <div className={`impostor-reveal-panel liquid-glass relative z-60 border border-gray-700`} style={{ position: 'relative' }}>
                       <div className="text-sm text-gray-400 mb-2">REVELACIÓN</div>
                       <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-4">
                         <div className="w-28 h-28 rounded-full avatar-accent flex items-center justify-center text-5xl font-extrabold shadow-lg">{(players.find(p => p.id === revealInfo.impostorId)?.username || (revealInfo.impostorId || '?!')).charAt(0).toUpperCase()}</div>
@@ -377,11 +331,11 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                       {/* Assignment card with flip animation */}
                       <div className="impostor-card mb-4" style={{ maxWidth: 520 }}>
                         <div className={`impostor-card-inner ${assigned ? 'flipped' : ''}`}>
-                          <div className="impostor-card-face impostor-card-front p-4 rounded-lg border border-gray-800">
+                          <div className="impostor-card-face impostor-card-front liquid-glass p-4 rounded-lg border border-gray-800" style={{ position: 'relative' }}>
                             <div className="text-sm text-gray-400 mb-2">Tu carta</div>
                             <div className="text-xl font-semibold text-gray-300">Voltear para ver</div>
                           </div>
-                          <div className="impostor-card-face impostor-card-back p-4 rounded-lg border border-gray-800">
+                          <div className="impostor-card-face impostor-card-back liquid-glass p-4 rounded-lg border border-gray-800" style={{ position: 'relative' }}>
                             {assigned ? (
                               <div className="text-center w-full">
                                 <div className="text-sm text-gray-400 mb-2">Tu carta</div>
@@ -444,6 +398,33 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
             {statusMessage && <div className="mt-4 text-sm text-gray-300">{statusMessage}</div>}
           </div>
+
+          {/* Right column: Turn order */}
+          <aside className="bg-[#071017] p-4 rounded-lg border border-gray-800">
+            <div className="text-sm text-gray-300 mb-2">Orden de turnos</div>
+            {turnOrder.length === 0 ? (
+              <div className="text-sm text-gray-400">Aún no hay orden de turnos</div>
+            ) : (
+              <ol className="list-decimal list-inside text-sm space-y-2">
+                {turnOrder.map((id, idx) => {
+                  const p = players.find(x => x.id === id);
+                  const name = p ? p.username : id;
+                  const active = id === currentTurn;
+                  const revealed = revealInfo && revealInfo.impostorId === id;
+                  const innocentRevealed = p && (p as any).revealedInnocent;
+                  return (
+                    <li key={id} className={`turn-item flex items-center justify-between px-2 py-1 rounded ${active ? 'active bg-discord-blurple text-white' : innocentRevealed ? 'innocent text-gray-100' : 'text-gray-300'}`}>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs ${active ? 'bg-white text-black' : revealed ? 'bg-red-600 text-white ring-2 ring-red-400' : innocentRevealed ? 'bg-green-600 text-white ring-2 ring-green-400' : 'bg-gray-700 text-gray-200'}`}>{name.charAt(0).toUpperCase()}</div>
+                        <div>{name}</div>
+                      </div>
+                      <div className="text-xs text-gray-400">{idx + 1}</div>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </aside>
         </div>
       </div>
     </div>
