@@ -65,13 +65,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         // Limpiar input cuando llega la confirmación del mensaje del usuario
         setInputText('');
         setShowMentionSuggestions(false);
-        // Remover mensaje local duplicado
+        // Remover mensaje local duplicado: preferir match por localId si viene desde servidor
         setLocalMessages(prev =>
-          prev.filter(
-            local => !(local.id.startsWith('local-') && 
-                      local.timestamp === msg.timestamp && 
-                      local.content === msg.content)
-          )
+          prev.filter(local => {
+            // If server returned localId, remove matching local
+            if ((msg as any).localId && (local as any).localId && (local as any).localId === (msg as any).localId) return false;
+            // Fallback: match by content + proximity in timestamp (5s)
+            try {
+              const localTime = new Date((local as any).timestamp).getTime();
+              const serverTime = new Date(msg.timestamp).getTime();
+              if ((local as any).id && (local as any).id.startsWith('local-') && local.userId === msg.userId && local.content === msg.content && Math.abs(localTime - serverTime) < 5000) {
+                return false;
+              }
+            } catch (e) {}
+            return true;
+          })
         );
       }
     };
@@ -163,21 +171,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       if (!inputText.trim()) return;
       const lowerInput = inputText.toLowerCase();
       const mentionsBot = lowerInput.includes('@upg');
-      onSendMessage(inputText);
+      const localId = 'local-' + Date.now();
+      onSendMessage(inputText, localId);
       // Agregar mensaje local inmediatamente para feedback visual
-      const localMessage: Message = {
-        id: 'local-' + Date.now(),
+      const localMessage: Message & { localId?: string } = {
+        id: localId,
+        localId,
         userId: currentUser.id,
         username: currentUser.username,
         avatar: currentUser.avatar,
         content: inputText,
         timestamp: new Date().toISOString(),
         channelId: currentChannel.id,
-      };
+      } as any;
       setLocalMessages(prev => [...prev, localMessage]);
       // No limpiar input aquí - se limpia cuando llega la confirmación del servidor
-      // setInputText('');
-      // setShowMentionSuggestions(false);
       if (mentionsBot) setIsBotTyping(true);
     },
     [inputText, onSendMessage, currentUser, currentChannel.id]

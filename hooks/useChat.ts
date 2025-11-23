@@ -29,21 +29,28 @@ export const useChat = (channelId: string) => {
       }
     };
 
-    // Escuchar mensajes nuevos en tiempo real
-    const handleNewMessage = (message: Message) => {
-      if (message.channelId === channelId) {
-        setMessages(prev => {
-          // Remover mensaje local duplicado si existe
-          const filtered = prev.filter(
-            local => !(local.id.startsWith('local-') && 
-                      local.timestamp === message.timestamp && 
-                      local.content === message.content &&
-                      local.userId === message.userId)
-          );
-          return [...filtered, message];
-        });
-      }
-    };
+      // Escuchar mensajes nuevos en tiempo real
+      const handleNewMessage = (message: Message) => {
+        if (message.channelId === channelId) {
+          setMessages(prev => {
+            // Remover mensaje local duplicado si existe
+            const filtered = prev.filter(local => {
+              // If local message has a localId and server returned same localId, drop local
+              if (local.id && local.id.startsWith('local-') && (message as any).localId && local.id === (message as any).localId) return false;
+              // Fallback: match by userId + content + timestamp proximity (5s)
+              try {
+                const localTime = new Date(local.timestamp).getTime();
+                const serverTime = new Date(message.timestamp).getTime();
+                if (local.id && local.id.startsWith('local-') && local.userId === message.userId && local.content === message.content && Math.abs(localTime - serverTime) < 5000) {
+                  return false;
+                }
+              } catch (e) {}
+              return true;
+            });
+            return [...filtered, message];
+          });
+        }
+      };
 
     socket.on('channel:history', handleHistory);
     socket.on('message:received', handleNewMessage);
@@ -55,20 +62,22 @@ export const useChat = (channelId: string) => {
   }, [socket, isConnected, channelId, currentUser]);
 
   const sendMessage = useCallback(
-    (content: string) => {
+    (content: string, localId?: string) => {
       if (!socket || !isConnected || !currentUser) {
         toast.error('No hay conexión con el servidor');
         return;
       }
       // Forzar unión al canal antes de enviar el mensaje
       socket.emit('channel:join', { channelId, userId: currentUser.id });
-      socket.emit('message:send', {
+      const payload: any = {
         channelId,
         content,
         userId: currentUser.id,
         username: currentUser.username,
         avatar: currentUser.avatar,
-      });
+      };
+      if (localId) payload.localId = localId;
+      socket.emit('message:send', payload);
       
     },
     [socket, isConnected, channelId, currentUser]
