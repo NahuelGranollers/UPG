@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
+import { toast } from 'sonner';
 import { useSocket } from '../context/SocketContext';
 import { Message, User, UserRole } from '../types';
 import { Hash, Menu, Trash2, Ban, UserX, VolumeX, Palette, Zap } from 'lucide-react';
@@ -166,13 +167,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   );
 
   const handleSendMessage = useCallback(
-    (e: React.FormEvent) => {
+    async (e: React.FormEvent) => {
       e.preventDefault();
       if (!inputText.trim()) return;
       const lowerInput = inputText.toLowerCase();
       const mentionsBot = lowerInput.includes('@upg');
       const localId = 'local-' + Date.now();
-      onSendMessage(inputText, localId);
       // Agregar mensaje local inmediatamente para feedback visual
       const localMessage: Message & { localId?: string } = {
         id: localId,
@@ -185,10 +185,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         channelId: currentChannel.id,
       } as any;
       setLocalMessages(prev => [...prev, localMessage]);
-      // Clear input immediately for better UX; server confirmation will still remove local message
+      // Clear input immediately for better UX
       setInputText('');
       setShowMentionSuggestions(false);
       if (mentionsBot) setIsBotTyping(true);
+
+      try {
+        const res = await onSendMessage(inputText, localId);
+        if (res && res.ok === false) {
+          // Remove optimistic local message on failure
+          setLocalMessages(prev => prev.filter(m => !(m as any).localId || (m as any).localId !== localId));
+          toast.error(res.error || 'Mensaje no enviado');
+        }
+      } catch (e) {
+        setLocalMessages(prev => prev.filter(m => !(m as any).localId || (m as any).localId !== localId));
+        toast.error('Error enviando mensaje');
+      }
     },
     [inputText, onSendMessage, currentUser, currentChannel.id]
   );

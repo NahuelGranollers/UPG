@@ -63,22 +63,34 @@ export const useChat = (channelId: string) => {
 
   const sendMessage = useCallback(
     (content: string, localId?: string) => {
-      if (!socket || !isConnected || !currentUser) {
-        toast.error('No hay conexión con el servidor');
-        return;
-      }
-      // Forzar unión al canal antes de enviar el mensaje
-      socket.emit('channel:join', { channelId, userId: currentUser.id });
-      const payload: any = {
-        channelId,
-        content,
-        userId: currentUser.id,
-        username: currentUser.username,
-        avatar: currentUser.avatar,
-      };
-      if (localId) payload.localId = localId;
-      socket.emit('message:send', payload);
-      
+      return new Promise<any>(resolve => {
+        if (!socket || !isConnected || !currentUser) {
+          toast.error('No hay conexión con el servidor');
+          resolve({ ok: false, error: 'no_connection' });
+          return;
+        }
+        // Forzar unión al canal antes de enviar el mensaje
+        socket.emit('channel:join', { channelId, userId: currentUser.id });
+        const payload: any = {
+          channelId,
+          content,
+          userId: currentUser.id,
+          username: currentUser.username,
+          avatar: currentUser.avatar,
+        };
+        if (localId) payload.localId = localId;
+        try {
+          socket.emit('message:send', payload, (res: any) => {
+            if (res && res.ok === false) {
+              toast.error(res.error || 'Error enviando mensaje');
+            }
+            resolve(res || { ok: true });
+          });
+        } catch (e) {
+          toast.error('Error enviando mensaje');
+          resolve({ ok: false, error: 'emit_exception' });
+        }
+      });
     },
     [socket, isConnected, channelId, currentUser]
   );
