@@ -68,7 +68,15 @@ function MainApp() {
   const { socket } = useSocket();
   React.useEffect(() => {
     if (!socket) return;
-    socket.on('users:list', list => setUsers(list));
+    socket.on('users:list', list => {
+      setUsers(list);
+      // Initialize user colors from list
+      const mapping = (list || []).reduce((acc, u) => {
+        if (u && u.id && u.color) acc[u.id] = u.color;
+        return acc;
+      }, {} as Record<string, string>);
+      setUserColors(prev => ({ ...prev, ...mapping }));
+    });
     socket.on('user:online', u =>
       setUsers(prev => {
         const exists = prev.find(x => x.id === u.id);
@@ -77,6 +85,11 @@ function MainApp() {
         return [...prev, u];
       })
     );
+    // Handle profile updates (name/color)
+    socket.on('user:updated', updated => {
+      setUsers(prev => prev.map(u => (u.id === updated.id ? { ...u, ...updated } : u)));
+      setUserColors(prev => ({ ...prev, [updated.id]: updated.color }));
+    });
     socket.on('user:offline', ({ userId }) =>
       setUsers(prev =>
         prev.map(u => (u.id === userId ? { ...u, online: false, status: 'offline' } : u))
@@ -102,7 +115,7 @@ function MainApp() {
       }
     });
 
-    // Escuchar cambios de color de usuario
+    // Escuchar cambios de color de usuario (legacy/admin and user updates)
     socket.on('admin:user-color-changed', ({ userId, color }) => {
       setUserColors(prev => ({ ...prev, [userId]: color }));
     });

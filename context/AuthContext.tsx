@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               status: 'online',
               online: true,
               role: discordUser.role || UserRole.USER,
-              color: discordUser.role === 'admin' ? '#ff4d0a' : '#5865F2',
+              color: discordUser.color || (discordUser.role === 'admin' ? '#ff4d0a' : '#5865F2'),
               isGuest: false,
             };
             setCurrentUser(newUser);

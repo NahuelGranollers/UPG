@@ -11,6 +11,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import ServerSettings from './ServerSettings';
+import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { AppView, User } from '../types';
 import { ChannelData } from '../types';
@@ -51,6 +52,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
   const [localMicActive, setLocalMicActive] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { updateUser } = useAuth();
+  const { socket } = useSocket();
   const TextChannelItem = React.memo(
     ({
       id,
@@ -303,7 +305,15 @@ const ChannelList: React.FC<ChannelListProps> = ({
         initialColor={currentUser?.color || '#808080'}
         onSave={(name, color) => {
           if (!currentUser) return;
-          updateUser({ ...currentUser, username: name, color });
+          const newUser = { ...currentUser, username: name, color };
+          // Update local auth context and storage
+          updateUser(newUser);
+          // Notify server to persist and broadcast to all clients
+          try {
+            if (socket) socket.emit('user:update', { username: name, color });
+          } catch (e) {
+            console.warn('Failed to emit user:update', e);
+          }
         }}
         onLinkDiscord={onLoginWithDiscord}
         onUnlinkDiscord={onLogoutDiscord}
