@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 interface PlayerInfo {
   id: string;
   username: string;
+  revealedInnocent?: boolean;
 }
 
 export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
@@ -207,7 +208,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
     if (!socket) return;
     socket.emit('impostor:cast-vote', { roomId, voterId: currentUser?.id || '', votedId: targetId }, (res: any) => {
       if (res && res.ok) setMyVote(targetId);
-      else setStatusMessage(res?.error || 'Error votando');
+      else setStatusMessage(res?.error === 'dead_cannot_vote' ? 'Los muertos no pueden votar' : res?.error || 'Error votando');
     });
   };
 
@@ -244,6 +245,9 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
     });
   };
 
+  const currentPlayer = players.find(p => p.id === currentUser?.id);
+  const isCurrentPlayerAlive = !currentPlayer?.revealedInnocent;
+
   return (
     <div className="flex flex-col min-h-screen w-full impostor-theme">
       <div className="max-w-5xl mx-auto w-full py-8 px-4">
@@ -276,8 +280,8 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                   <div className="text-sm text-gray-400 mb-2">Jugadores:</div>
                   <ul className="text-sm space-y-2">
                     {players.map(p => (
-                      <li key={p.id} className="flex items-center justify-between">
-                          <span className="truncate max-w-[20rem]" title={p.username}>{p.username}</span>
+                      <li key={p.id} className="flex items-center justify-between overflow-hidden">
+                          <span className="text-white" title={p.username}>{p.username}</span>
                           <span className="text-xs text-gray-400">{p.id === currentUser?.id ? 'Tú' : ''}</span>
                         </li>
                     ))}
@@ -383,18 +387,25 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
                         {voting ? (
                           <div className="space-y-2">
-                            {players.map(p => (
-                              <div key={p.id} className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className={`w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-sm`}>{p.username.charAt(0).toUpperCase()}</div>
-                                  <div className="truncate max-w-[20rem]" title={p.username}>{p.username}</div>
+                            {players.map(p => {
+                              const isDead = p.revealedInnocent;
+                              const isCurrentUser = p.id === currentUser?.id;
+                              const canVote = !myVote && !isCurrentPlayerAlive && !isDead;
+                              return (
+                                <div key={p.id} className={`flex items-center justify-between overflow-hidden ${isDead ? 'opacity-50' : ''}`}>
+                                  <div className="flex items-center gap-3">
+                                    <div className={`w-8 h-8 rounded-full ${isDead ? 'bg-gray-500' : 'bg-gray-700'} text-white flex items-center justify-center text-sm`}>{p.username.charAt(0).toUpperCase()}</div>
+                                    <div className={`text-white ${isDead ? 'text-gray-500 line-through' : ''}`} title={p.username}>{p.username}{isDead ? ' (Muerto)' : ''}</div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <div className="text-sm text-gray-600">{voteCounts[p.id] || 0}</div>
+                                    {!isDead && (
+                                      <button disabled={!canVote} onClick={() => handleCastVote(p.id)} className={`glass-btn ${canVote ? 'primary' : ''}`} aria-pressed={!!myVote}>{myVote === p.id ? 'Votado' : 'Votar'}</button>
+                                    )}
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <div className="text-sm text-gray-600">{voteCounts[p.id] || 0}</div>
-                                  <button disabled={!!myVote} onClick={() => handleCastVote(p.id)} className={`glass-btn ${myVote ? '' : 'primary'}`} aria-pressed={!!myVote}>{myVote === p.id ? 'Votado' : 'Votar'}</button>
-                                </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         ) : (
                           <div className="text-sm text-gray-400">No hay votación en curso.</div>
@@ -425,7 +436,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
           </div>
 
           {/* Right column: Turn order */}
-          <aside className="bg-[#071017] p-4 rounded-lg border border-gray-800">
+          <aside className="bg-[#071017] p-4 rounded-lg border border-gray-800 overflow-hidden">
             <div className="text-sm text-white mb-2">Orden de turnos</div>
             {turnOrder.length === 0 ? (
               <div className="text-sm text-gray-300">Aún no hay orden de turnos</div>
@@ -438,10 +449,10 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                   const revealed = revealInfo && revealInfo.impostorId === id;
                   const innocentRevealed = p && (p as any).revealedInnocent;
                   return (
-                    <li key={id} className={`turn-item flex items-center justify-between px-2 py-1 rounded ${active ? 'active bg-discord-blurple text-white' : innocentRevealed ? 'innocent text-gray-100' : 'text-white'}`}>
+                    <li key={id} className={`turn-item flex items-center justify-between px-2 py-1 rounded overflow-hidden ${active ? 'active bg-discord-blurple text-white' : innocentRevealed ? 'innocent text-gray-100' : 'text-white'}`}>
                       <div className="flex items-center gap-2">
                         <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs ${active ? 'bg-white text-black' : revealed ? 'bg-red-600 text-white ring-2 ring-red-400' : innocentRevealed ? 'bg-green-600 text-white ring-2 ring-green-400' : 'bg-gray-700 text-gray-200'}`}>{name.charAt(0).toUpperCase()}</div>
-                        <div className="truncate max-w-[20rem] md:max-w-[24rem] text-white" title={name}>{name}</div>
+                        <div className="text-white" title={name}>{name}</div>
                       </div>
                       <div className="text-xs text-gray-400">{idx + 1}</div>
                     </li>
@@ -455,10 +466,10 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                 <div className="text-sm text-white mb-2">Cartas reveladas</div>
                 <ul className="text-sm space-y-2">
                   {revealedRoles.map((player: any, index: number) => (
-                    <li key={index} className="flex items-center justify-between px-2 py-1 rounded bg-gray-800">
+                    <li key={index} className="flex items-center justify-between px-2 py-1 rounded bg-gray-800 overflow-hidden">
                       <div className="flex items-center gap-2">
                         <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${!player.wasInnocent ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'}`}>{player.name.charAt(0).toUpperCase()}</div>
-                        <div className="truncate max-w-[20rem] text-gray-200" title={player.name}>{player.name}</div>
+                        <div className="text-gray-200" title={player.name}>{player.name}</div>
                       </div>
                       <div className={`text-xs font-semibold ${!player.wasInnocent ? 'text-red-400' : 'text-blue-400'}`}>{player.wasInnocent ? 'INOCENTE' : 'IMPOSTOR'}</div>
                     </li>
