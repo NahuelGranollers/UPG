@@ -29,6 +29,7 @@ interface ChannelListProps {
   onLogoutDiscord?: () => void;
   onToggleMic?: () => void;
   micActive?: boolean;
+  voiceLevel?: number;
 }
 
 const ChannelList: React.FC<ChannelListProps> = ({
@@ -44,6 +45,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
   onLogoutDiscord,
   onToggleMic,
   micActive,
+  voiceLevel,
 }) => {
   // micActive is now controlled by parent via props; keep local for fallback
   const [localMicActive, setLocalMicActive] = useState(false);
@@ -277,7 +279,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
                 if (onToggleMic) onToggleMic();
                 else setLocalMicActive(s => !s);
               }}
-              className={`hidden sm:flex p-1.5 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${(micActive || localMicActive) ? 'bg-green-600 text-white' : 'hover:bg-discord-hover text-discord-text-muted hover:text-discord-text-normal'}`}
+              className={`hidden sm:flex p-1.5 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${(micActive || localMicActive) ? 'bg-green-600 text-white' : 'hover:bg-discord-hover text-discord-text-muted hover:text-discord-text-normal'} ${voiceLevel && voiceLevel > 0.03 ? 'animate-glow' : ''}`}
               title={(micActive || localMicActive) ? 'Micrófono activado' : 'Activar micrófono'}
             >
               <Mic size={18} />

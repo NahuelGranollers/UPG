@@ -87,13 +87,14 @@ function MainApp() {
     socket.on('voice:state', states => {
       setVoiceStates(states);
       try {
-        // Si estamos en un canal (intentamos unirnos), crear ofertas hacia los usuarios ya presentes
-        if (voice && (voice as any).inChannel) {
-          const myChannel = (voice as any).inChannel as string;
+        if (!voice) return;
+        const myChannel = (voice as any).inChannel as string | null;
+        // If we just attempted to join this channel, consume the pending flag and offer to existing participants
+        const pending = (voice as any).consumePendingOffer ? (voice as any).consumePendingOffer() : null;
+        if (pending && myChannel === pending) {
           const participants = Object.entries(states)
             .filter(([userId, ch]) => ch === myChannel)
             .map(([userId]) => userId);
-          // Offer to existing participants (excluding self)
           (voice as any).offerToUsers(participants);
         }
       } catch (e) {
@@ -165,7 +166,8 @@ function MainApp() {
           onVoiceJoin={handleVoiceJoin}
           voiceStates={voiceStates}
           onToggleMic={handleToggleMute}
-          micActive={(voice as any).isMuted ? false : true}
+          micActive={!(voice as any).isMuted}
+          voiceLevel={(voice as any).voiceLevel}
           users={users}
           onLoginWithDiscord={loginWithDiscord}
           onLogoutDiscord={logout}

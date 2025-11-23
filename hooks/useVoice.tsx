@@ -15,6 +15,10 @@ export function useVoice() {
   const peersRef = useRef<PeerMap>({});
   const [inChannel, setInChannel] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [voiceLevel, setVoiceLevel] = useState<number>(0);
+  const pendingOfferRef = useRef<string | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
     if (!socket) return;
@@ -75,6 +79,13 @@ export function useVoice() {
           t.getTracks().forEach(track => remoteStream.addTrack(track));
         }
         audioEl.srcObject = remoteStream;
+        // Try to play (some browsers require a user gesture but attempt anyway)
+        const p = audioEl.play();
+        if (p && typeof p.then === 'function') {
+          p.catch(err => {
+            console.warn('Autoplay prevented for remote audio:', err);
+          });
+        }
       } catch (e) {
         console.error('ontrack error', e);
       }
@@ -103,6 +114,30 @@ export function useVoice() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       localStreamRef.current = stream;
+      try {
+        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const source = audioCtxRef.current.createMediaStreamSource(stream);
+        analyserRef.current = audioCtxRef.current.createAnalyser();
+        analyserRef.current.fftSize = 2048;
+        source.connect(analyserRef.current);
+        const data = new Uint8Array(analyserRef.current.frequencyBinCount);
+        const loop = () => {
+          if (!analyserRef.current) return;
+          analyserRef.current.getByteFrequencyData(data);
+          // compute RMS
+          let sum = 0;
+          for (let i = 0; i < data.length; i++) {
+            const v = data[i] / 255;
+            sum += v * v;
+          }
+          const rms = Math.sqrt(sum / data.length);
+          setVoiceLevel(rms);
+          requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
+      } catch (e) {
+        console.warn('Audio analyser not available', e);
+      }
       return stream;
     } catch (err) {
       console.error('getUserMedia error', err);
@@ -122,6 +157,7 @@ export function useVoice() {
 
     // Mark as attempting join; actual state updated from 'voice:state' handler in App
     setInChannel(channelId);
+    pendingOfferRef.current = channelId;
   }
 
   function toggleMute() {
@@ -131,6 +167,12 @@ export function useVoice() {
       track.enabled = !newMuted;
     }
     setIsMuted(newMuted);
+  }
+
+  function consumePendingOffer() {
+    const v = pendingOfferRef.current;
+    pendingOfferRef.current = null;
+    return v;
   }
 
   // Create offers to a list of existing participants (call this when you join and server emits voice:state)
@@ -178,6 +220,8 @@ export function useVoice() {
     inChannel,
     toggleMute,
     isMuted,
+    voiceLevel,
+    consumePendingOffer,
   };
 }
 
