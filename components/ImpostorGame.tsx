@@ -284,12 +284,13 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                   </ul>
                 </div>
 
-                {customWords.length > 0 && (
+                {/* Palabras personalizadas ocultas - funcionalidad sigue activa */}
+                {/* {customWords.length > 0 && (
                   <div className="mt-4">
                     <div className="text-sm text-gray-400 mb-2">Palabras personalizadas ({customWords.length}):</div>
                     <div className="text-xs text-gray-300 break-words">{customWords.join(', ')}</div>
                   </div>
-                )}
+                )} */}
 
                 {/* Turn order moved to right column on wide screens */}
                 {/* (right column will show the turn order) */}
