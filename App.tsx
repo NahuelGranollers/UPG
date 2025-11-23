@@ -219,7 +219,7 @@ function MainApp() {
                 onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
                 userColors={userColors}
               />
-              <UserList users={users} currentUserId={currentUser.id} userColors={userColors} />
+              <UserList users={users} currentUserId={currentUser.id} currentUser={currentUser} userColors={userColors} />
             </>
           )}
           {activeView === AppView.WHO_WE_ARE && <WhoWeAre onMenuToggle={() => {}} />}
@@ -274,7 +274,7 @@ function MainApp() {
           </>
         )}
 
-        {mobileActiveTab === 'users' && <UserList users={users} currentUserId={currentUser.id} userColors={userColors} isMobileView />}
+        {mobileActiveTab === 'users' && <UserList users={users} currentUserId={currentUser.id} currentUser={currentUser} userColors={userColors} isMobileView />}
 
         <MobileTabBar
           activeTab={mobileActiveTab}

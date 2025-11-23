@@ -13,6 +13,11 @@ interface AdminPanelProps {
 const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUser, socket }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState<string | null>(null);
+  const [activeForm, setActiveForm] = useState<
+    | null
+    | { action: 'silence-user' | 'change-color' | 'global-message' | 'troll-mode'; values: Record<string, string> }
+    >(null);
+  const [formValues, setFormValues] = useState<Record<string, string>>({});
 
   if (!isOpen) return null;
 
@@ -60,36 +65,29 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
           break;
         }
         case 'silence-user': {
-          // Aquí deberías abrir un modal o selector de usuario, por ahora ejemplo con prompt
-          const silenceId = prompt('ID del usuario a silenciar:');
-          if (silenceId && currentUser)
-            socket?.emit('admin:silence-user', { userId: silenceId, adminId: currentUser.id });
+          const uid = formValues.userId || '';
+          if (uid && currentUser) socket?.emit('admin:silence-user', { userId: uid, adminId: currentUser.id });
+          setActiveForm(null);
           break;
         }
         case 'change-color': {
-          const colorId = prompt('ID del usuario para cambiar color:');
-          const newColor = prompt(
-            'Nuevo color HEX (#RRGGBB):',
-            '#' + Math.floor(Math.random() * 16777215).toString(16)
-          );
-          if (colorId && newColor && currentUser)
-            socket?.emit('admin:change-color', {
-              userId: colorId,
-              color: newColor,
-              adminId: currentUser.id,
-            });
+          const uid = formValues.userId || '';
+          const color = formValues.color || '';
+          if (uid && color && currentUser)
+            socket?.emit('admin:change-color', { userId: uid, color, adminId: currentUser.id });
+          setActiveForm(null);
           break;
         }
         case 'global-message': {
-          const msg = prompt('Mensaje global para todos los canales:');
-          if (msg && currentUser)
-            socket?.emit('admin:global-message', { content: msg, adminId: currentUser.id });
+          const msg = formValues.message || '';
+          if (msg && currentUser) socket?.emit('admin:global-message', { content: msg, adminId: currentUser.id });
+          setActiveForm(null);
           break;
         }
         case 'troll-mode': {
-          const trollId = prompt('ID del usuario para modo troll:');
-          if (trollId && currentUser)
-            socket?.emit('admin:troll-mode', { userId: trollId, adminId: currentUser.id });
+          const uid = formValues.userId || '';
+          if (uid && currentUser) socket?.emit('admin:troll-mode', { userId: uid, adminId: currentUser.id });
+          setActiveForm(null);
           break;
         }
       }
@@ -98,6 +96,46 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
     } finally {
       setTimeout(() => setIsLoading(false), 1000);
     }
+  };
+
+  const openForm = (action: 'silence-user' | 'change-color' | 'global-message' | 'troll-mode') => {
+    setFormValues({});
+    setActiveForm({ action, values: {} });
+  };
+
+  const renderForm = () => {
+    if (!activeForm) return null;
+    const { action } = activeForm;
+    return (
+      <div className="bg-discord-dark p-4 rounded border border-gray-800">
+        <h3 className="text-lg font-semibold mb-2">{action === 'change-color' ? 'Cambiar color' : action === 'global-message' ? 'Enviar mensaje global' : action === 'silence-user' ? 'Silenciar usuario' : 'Modo troll'}</h3>
+        <div className="space-y-2">
+          {(action === 'silence-user' || action === 'change-color' || action === 'troll-mode') && (
+            <div>
+              <label className="text-sm text-discord-text-muted">ID del usuario</label>
+              <input value={formValues.userId || ''} onChange={e => setFormValues(v => ({ ...v, userId: e.target.value }))} className="w-full bg-discord-dark border border-gray-800 rounded p-2 text-white" placeholder="user-1234" />
+            </div>
+          )}
+          {action === 'change-color' && (
+            <div>
+              <label className="text-sm text-discord-text-muted">Color HEX</label>
+              <input value={formValues.color || '#'+Math.floor(Math.random()*16777215).toString(16)} onChange={e => setFormValues(v => ({ ...v, color: e.target.value }))} className="w-32 bg-discord-dark border border-gray-800 rounded p-2 text-white" />
+            </div>
+          )}
+          {action === 'global-message' && (
+            <div>
+              <label className="text-sm text-discord-text-muted">Mensaje</label>
+              <textarea value={formValues.message || ''} onChange={e => setFormValues(v => ({ ...v, message: e.target.value }))} className="w-full bg-discord-dark border border-gray-800 rounded p-2 text-white" rows={3} />
+            </div>
+          )}
+
+          <div className="flex gap-2 justify-end pt-2">
+            <button onClick={() => setActiveForm(null)} className="px-3 py-1 rounded border border-gray-700">Cancelar</button>
+            <button onClick={() => handleAction(action, false)} className="px-3 py-1 rounded bg-discord-blurple text-white">Enviar</button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -156,7 +194,7 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
               icon={<Shield size={18} />}
               title="Silenciar Usuario"
               description="Impide que un usuario seleccionado pueda enviar mensajes."
-              onClick={() => handleAction('silence-user', false)}
+              onClick={() => openForm('silence-user')}
               isConfirming={false}
               isLoading={isLoading}
               variant="warning"
@@ -166,7 +204,7 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
               icon={<AlertTriangle size={18} />}
               title="Cambiar Color de Usuario"
               description="Permite cambiar el color de nombre de un usuario."
-              onClick={() => handleAction('change-color', false)}
+              onClick={() => openForm('change-color')}
               isConfirming={false}
               isLoading={isLoading}
               variant="info"
@@ -176,7 +214,7 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
               icon={<MessageSquare size={18} />}
               title="Enviar Mensaje Global"
               description="Envía un mensaje a todos los canales y usuarios."
-              onClick={() => handleAction('global-message', false)}
+              onClick={() => openForm('global-message')}
               isConfirming={false}
               isLoading={isLoading}
               variant="success"
@@ -186,12 +224,14 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
               icon={<AlertTriangle size={18} />}
               title="Activar Modo Troll"
               description="Activa efectos visuales y de chat para trolear a un usuario."
-              onClick={() => handleAction('troll-mode', false)}
+              onClick={() => openForm('troll-mode')}
               isConfirming={false}
               isLoading={isLoading}
               variant="warning"
             />
           </div>
+          {/* Inline form for actions that require input */}
+          {renderForm()}
         </div>
 
         {/* Footer */}

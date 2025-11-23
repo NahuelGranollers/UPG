@@ -1,21 +1,36 @@
 ﻿import React, { memo, useMemo } from 'react';
+import { toast } from 'sonner';
 import { User } from '../types';
 import SafeImage from './SafeImage';
 
 interface UserListProps {
   users: User[];
   currentUserId?: string;
+  currentUser?: User | null;
   isMobileView?: boolean;
   userColors?: Record<string, string>;
 }
 
-const UserItem: React.FC<{ user: User; isCurrentUser?: boolean; userColors?: Record<string, string> }> = memo(
-  ({ user, isCurrentUser, userColors = {} }) => {
+const UserItem: React.FC<{ user: User; isCurrentUser?: boolean; userColors?: Record<string, string>; currentUser?: User | null }> = memo(
+  ({ user, isCurrentUser, userColors = {}, currentUser }) => {
     // Determinar si el usuario est├í offline
     const isOffline = user.online === false || user.status === 'offline';
 
+    const isAdmin = currentUser && currentUser.role === 'admin';
+
     return (
       <div
+        onClick={async () => {
+          if (isAdmin) {
+            try {
+              await navigator.clipboard.writeText(user.id);
+              toast.success('ID copiada al portapapeles');
+            } catch (e) {
+              toast.error('No se pudo copiar el ID');
+            }
+          }
+        }}
+        title={isAdmin ? 'Click para copiar ID de usuario' : undefined}
         className={`flex items-center py-2 sm:py-1.5 px-2 hover:bg-discord-hover rounded cursor-pointer group opacity-90 hover:opacity-100 min-h-[48px] sm:min-h-0 ${
           isCurrentUser ? 'bg-discord-hover/50 border border-discord-blurple/30' : ''
         }`}
