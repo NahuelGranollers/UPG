@@ -438,7 +438,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                   const revealed = revealInfo && revealInfo.impostorId === id;
                   const innocentRevealed = p && (p as any).revealedInnocent;
                   return (
-                    <li key={id} className={`turn-item flex items-center justify-between px-2 py-1 rounded ${active ? 'active bg-discord-blurple text-white' : innocentRevealed ? 'innocent text-gray-100' : 'text-gray-300'}`}>
+                    <li key={id} className={`turn-item flex items-center justify-between px-2 py-1 rounded ${active ? 'active bg-discord-blurple text-white' : innocentRevealed ? 'innocent text-gray-100' : 'text-gray-200'}`}>
                       <div className="flex items-center gap-2">
                         <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs ${active ? 'bg-white text-black' : revealed ? 'bg-red-600 text-white ring-2 ring-red-400' : innocentRevealed ? 'bg-green-600 text-white ring-2 ring-green-400' : 'bg-gray-700 text-gray-200'}`}>{name.charAt(0).toUpperCase()}</div>
                         <div className="truncate max-w-[20rem] md:max-w-[24rem]" title={name}>{name}</div>
@@ -458,7 +458,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                     <li key={index} className="flex items-center justify-between px-2 py-1 rounded bg-gray-800">
                       <div className="flex items-center gap-2">
                         <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${!player.wasInnocent ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'}`}>{player.name.charAt(0).toUpperCase()}</div>
-                        <div className="truncate max-w-[20rem]" title={player.name}>{player.name}</div>
+                        <div className="truncate max-w-[20rem] text-gray-200" title={player.name}>{player.name}</div>
                       </div>
                       <div className={`text-xs font-semibold ${!player.wasInnocent ? 'text-red-400' : 'text-blue-400'}`}>{player.wasInnocent ? 'INOCENTE' : 'IMPOSTOR'}</div>
                     </li>
@@ -477,6 +477,10 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
             type="text"
             placeholder="Nueva palabra"
             className="w-full p-2 rounded bg-gray-800 text-white border border-gray-600"
+            autoComplete="off"
+            spellCheck="false"
+            data-form-type="other"
+            aria-autocomplete="none"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 handleAddWord(e.currentTarget.value);
