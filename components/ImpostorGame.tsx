@@ -235,7 +235,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
   };
 
   return (
-    <div className="flex flex-col min-h-screen w-full bg-[#0b0d0f] text-white">
+    <div className="flex flex-col min-h-screen w-full impostor-theme">
       <div className="max-w-5xl mx-auto w-full py-8 px-4">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-extrabold">Impostor — Sala</h1>
@@ -340,7 +340,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                     <div className={`impostor-reveal-panel relative z-60 bg-gradient-to-br from-[#0f1720] to-[#071017] border border-gray-700`}>
                       <div className="text-sm text-gray-400 mb-2">REVELACIÓN</div>
                       <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-4">
-                        <div className="w-28 h-28 rounded-full bg-red-600 flex items-center justify-center text-5xl font-extrabold text-white shadow-lg">{(players.find(p => p.id === revealInfo.impostorId)?.username || (revealInfo.impostorId || '?!')).charAt(0).toUpperCase()}</div>
+                        <div className="w-28 h-28 rounded-full avatar-accent flex items-center justify-center text-5xl font-extrabold shadow-lg">{(players.find(p => p.id === revealInfo.impostorId)?.username || (revealInfo.impostorId || '?!')).charAt(0).toUpperCase()}</div>
                         <div className="text-left">
                           <div className="text-lg text-red-300 uppercase font-extrabold">Impostor</div>
                           <div className="text-3xl font-bold mt-1">{players.find(p => p.id === revealInfo.impostorId)?.username || revealInfo.impostorId}</div>
@@ -348,7 +348,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                         </div>
                       </div>
                       <div className="mt-4 flex justify-center gap-3">
-                        <button onClick={() => { setRevealPhase('exit'); setTimeout(() => { setShowReveal(false); setRevealInfo(null); setRevealPhase('hidden'); }, 300); }} className="px-4 py-2 rounded bg-white/10 hover:bg-white/20">Cerrar</button>
+                        <button onClick={() => { setRevealPhase('exit'); setTimeout(() => { setShowReveal(false); setRevealInfo(null); setRevealPhase('hidden'); }, 300); }} className="px-4 py-2 rounded btn-lock-accent">Cerrar</button>
                       </div>
                       <div className="confetti" aria-hidden>
                         {Array.from({ length: 28 }).map((_, i) => {
@@ -386,7 +386,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                               <div className="text-center w-full">
                                 <div className="text-sm text-gray-400 mb-2">Tu carta</div>
                                 <div className="text-2xl font-bold">{assigned.role === 'impostor' ? 'IMPOSTOR' : assigned.word}</div>
-                                <div className="text-sm text-gray-400 mt-2">{statusMessage}</div>
+                                          <div className="text-sm text-gray-600 mt-2">{statusMessage}</div>
                               </div>
                             ) : (
                               <div className="text-sm text-gray-400">Aún no hay ronda — espera al host para iniciar</div>
