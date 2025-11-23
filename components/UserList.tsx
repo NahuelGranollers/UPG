@@ -18,17 +18,17 @@ const UserItem: React.FC<{ user: User; isCurrentUser?: boolean; userColors?: Rec
 
     const isAdmin = currentUser && currentUser.role === 'admin';
 
-    return (
+      return (
       <div
         onClick={async () => {
-          if (isAdmin) {
-            try {
-              await navigator.clipboard.writeText(user.id);
-              toast.success('ID copiada al portapapeles');
-            } catch (e) {
-              toast.error('No se pudo copiar el ID');
+            if (isAdmin) {
+              try {
+                await navigator.clipboard.writeText(user.id);
+                toast.success('ID copiado con éxito');
+              } catch (e) {
+                toast.error('No se pudo copiar el ID');
+              }
             }
-          }
         }}
         title={isAdmin ? 'Click para copiar ID de usuario' : undefined}
         className={`flex items-center py-2 sm:py-1.5 px-2 hover:bg-discord-hover rounded cursor-pointer group opacity-90 hover:opacity-100 min-h-[48px] sm:min-h-0 ${
@@ -79,7 +79,7 @@ const UserItem: React.FC<{ user: User; isCurrentUser?: boolean; userColors?: Rec
 
 UserItem.displayName = 'UserItem';
 
-const UserList: React.FC<UserListProps> = memo(({ users, currentUserId, isMobileView = false, userColors = {} }) => {
+const UserList: React.FC<UserListProps> = memo(({ users, currentUserId, currentUser, isMobileView = false, userColors = {} }) => {
   const usersWithBot = useMemo(() => {
     // Forzar inclusión del bot UPG si no está presente
     const botUser = {
@@ -123,7 +123,7 @@ const UserList: React.FC<UserListProps> = memo(({ users, currentUserId, isMobile
           Disponible — {onlineUsers.length}
         </h2>
         {onlineUsers.map(user => (
-          <UserItem key={user.id} user={user} isCurrentUser={user.id === currentUserId} userColors={userColors} />
+          <UserItem key={user.id} user={user} isCurrentUser={user.id === currentUserId} userColors={userColors} currentUser={currentUser} />
         ))}
       </div>
 
@@ -133,7 +133,7 @@ const UserList: React.FC<UserListProps> = memo(({ users, currentUserId, isMobile
           Bots — {bots.length}
         </h2>
         {bots.map(user => (
-          <UserItem key={user.id} user={user} userColors={userColors} />
+          <UserItem key={user.id} user={user} userColors={userColors} currentUser={currentUser} />
         ))}
       </div>
 
@@ -143,7 +143,7 @@ const UserList: React.FC<UserListProps> = memo(({ users, currentUserId, isMobile
           Desconectado — {offlineUsers.length}
         </h2>
         {offlineUsers.map(user => (
-          <UserItem key={user.id} user={user} isCurrentUser={user.id === currentUserId} userColors={userColors} />
+          <UserItem key={user.id} user={user} isCurrentUser={user.id === currentUserId} userColors={userColors} currentUser={currentUser} />
         ))}
       </div>
     </div>

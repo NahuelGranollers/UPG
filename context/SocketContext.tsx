@@ -36,7 +36,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      console.log('🔌 Socket conectado correctamente');
       setIsConnected(true);
 
       // Identificarse
@@ -47,7 +46,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
 
     socket.on('disconnect', () => {
-      console.log('🔌 Socket desconectado');
       setIsConnected(false);
     });
 

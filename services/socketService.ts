@@ -42,13 +42,13 @@ class SocketService {
       });
 
       this.socket.on('connect', () => {
-        console.log('Socket.IO conectado:', this.socket.id);
+        // connected
         this.isConnected = true;
         this.connectionCallbacks.forEach(cb => cb(true));
       });
 
       this.socket.on('disconnect', () => {
-        console.log('Socket.IO desconectado');
+        // disconnected
         this.isConnected = false;
         this.connectionCallbacks.forEach(cb => cb(false));
       });

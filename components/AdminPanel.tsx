@@ -1,4 +1,5 @@
 import React, { useState, memo } from 'react';
+import { toast } from 'sonner';
 import { X, Trash2, MessageSquare, Shield, AlertTriangle } from 'lucide-react';
 import { Socket } from 'socket.io-client';
 import { User } from '../types';
@@ -55,18 +56,31 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
     setConfirmAction(null);
 
     try {
+      const emitWithAck = (event: string, payload: any) =>
+        new Promise<any>(resolve => {
+          try {
+            socket?.emit(event, payload, (res: any) => resolve(res));
+            // If server doesn't call the ack, resolve after 2s
+            setTimeout(() => resolve(null), 2000);
+          } catch (e) {
+            resolve({ ok: false, error: 'emit_error' });
+          }
+        });
+
+      let res: any = null;
+
       switch (action) {
         case 'clear-users': {
-          if (currentUser) socket?.emit('admin:clear-users', { adminId: currentUser.id });
+          if (currentUser) res = await emitWithAck('admin:clear-users', { adminId: currentUser.id });
           break;
         }
         case 'clear-messages': {
-          if (currentUser) socket?.emit('admin:clear-all-messages', { adminId: currentUser.id });
+          if (currentUser) res = await emitWithAck('admin:clear-all-messages', { adminId: currentUser.id });
           break;
         }
         case 'silence-user': {
           const uid = formValues.userId || '';
-          if (uid && currentUser) socket?.emit('admin:silence-user', { userId: uid, adminId: currentUser.id });
+          if (uid && currentUser) res = await emitWithAck('admin:silence-user', { userId: uid, adminId: currentUser.id });
           setActiveForm(null);
           break;
         }
@@ -74,25 +88,32 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
           const uid = formValues.userId || '';
           const color = formValues.color || '';
           if (uid && color && currentUser)
-            socket?.emit('admin:change-color', { userId: uid, color, adminId: currentUser.id });
+            res = await emitWithAck('admin:change-color', { userId: uid, color, adminId: currentUser.id });
           setActiveForm(null);
           break;
         }
         case 'global-message': {
           const msg = formValues.message || '';
-          if (msg && currentUser) socket?.emit('admin:global-message', { content: msg, adminId: currentUser.id });
+          if (msg && currentUser) res = await emitWithAck('admin:global-message', { content: msg, adminId: currentUser.id });
           setActiveForm(null);
           break;
         }
         case 'troll-mode': {
           const uid = formValues.userId || '';
-          if (uid && currentUser) socket?.emit('admin:troll-mode', { userId: uid, adminId: currentUser.id });
+          if (uid && currentUser) res = await emitWithAck('admin:troll-mode', { userId: uid, adminId: currentUser.id });
           setActiveForm(null);
           break;
         }
       }
-    } catch {
-      // Error handling for admin actions - could add toast notification here
+
+      // Show feedback according to ack or default
+      if (res && res.ok === false) {
+        toast.error(res.error || 'Error ejecutando la acción');
+      } else {
+        toast.success('Acción enviada con éxito');
+      }
+    } catch (err) {
+      toast.error('Error ejecutando la acción');
     } finally {
       setTimeout(() => setIsLoading(false), 1000);
     }

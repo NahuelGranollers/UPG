@@ -1,4 +1,4 @@
-﻿import React, { useState, lazy, Suspense } from 'react';
+﻿import React, { useState, lazy, Suspense, useCallback } from 'react';
 import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider, useSocket } from './context/SocketContext';
@@ -21,7 +21,7 @@ const Voting = lazy(() => import('./components/Voting'));
 
 function MainApp() {
   const { currentUser, isLoading, loginWithDiscord, logout } = useAuth();
-  const { isConnected } = useSocket();
+  const { isConnected, socket } = useSocket();
 
   const [activeView, setActiveView] = useState<AppView>(AppView.CHAT);
   const [currentChannel, setCurrentChannel] = useState<ChannelData>({
@@ -49,14 +49,15 @@ function MainApp() {
 
   const voice = useVoice();
 
-  const handleVoiceJoin = async (channelId: string) => {
+  const handleVoiceJoin = useCallback(async (channelId: string) => {
     try {
       await voice.joinChannel(channelId);
     } catch (err) {
       console.error('Failed to join voice channel', err);
     }
-  };
-  const handleVoiceLeave = async () => {
+  }, [voice]);
+
+  const handleVoiceLeave = useCallback(async () => {
     try {
       if ((voice as any).closeAll) (voice as any).closeAll();
       // Notify server to toggle leave if necessary
@@ -67,17 +68,17 @@ function MainApp() {
     } catch (e) {
       console.error('Failed to leave voice channel', e);
     }
-  };
-  const handleToggleMute = () => {
+  }, [voice, socket]);
+
+  const handleToggleMute = useCallback(() => {
     try {
       if ((voice as any).toggleMute) (voice as any).toggleMute();
     } catch (e) {
       console.error('Failed to toggle mute', e);
     }
-  };
+  }, [voice]);
 
   // Escuchar lista de usuarios globalmente (simplificado para este refactor)
-  const { socket } = useSocket();
   React.useEffect(() => {
     if (!socket) return;
     socket.on('users:list', list => {

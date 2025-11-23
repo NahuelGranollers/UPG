@@ -31,9 +31,7 @@ export const useChat = (channelId: string) => {
 
     // Escuchar mensajes nuevos en tiempo real
     const handleNewMessage = (message: Message) => {
-      console.log('FRONTEND: Mensaje recibido:', message);
       if (message.channelId === channelId) {
-        console.log('FRONTEND: Agregando mensaje al estado:', message);
         setMessages(prev => {
           // Remover mensaje local duplicado si existe
           const filtered = prev.filter(
@@ -44,7 +42,6 @@ export const useChat = (channelId: string) => {
           );
           return [...filtered, message];
         });
-        console.log('FRONTEND: Mensaje agregado al estado');
       }
     };
 
@@ -63,7 +60,6 @@ export const useChat = (channelId: string) => {
         toast.error('No hay conexión con el servidor');
         return;
       }
-      console.log('Enviando mensaje:', content);
       // Forzar unión al canal antes de enviar el mensaje
       socket.emit('channel:join', { channelId, userId: currentUser.id });
       socket.emit('message:send', {
@@ -73,7 +69,7 @@ export const useChat = (channelId: string) => {
         username: currentUser.username,
         avatar: currentUser.avatar,
       });
-      console.log('Mensaje enviado al servidor');
+      
     },
     [socket, isConnected, channelId, currentUser]
   );
