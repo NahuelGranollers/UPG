@@ -16,7 +16,14 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
   const [players, setPlayers] = useState<PlayerInfo[]>([]);
   const [isHost, setIsHost] = useState(false);
   const [assigned, setAssigned] = useState<{ role: 'impostor' | 'crewmate'; word: string | null } | null>(null);
+  const [pendingAssigned, setPendingAssigned] = useState<any>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [voting, setVoting] = useState(false);
+  const [myVote, setMyVote] = useState<string | null>(null);
+  const [voteCounts, setVoteCounts] = useState<Record<string, number>>({});
+  const [votingResult, setVotingResult] = useState<any>(null);
+  const [spinning, setSpinning] = useState(false);
+  const [currentTurn, setCurrentTurn] = useState<string | null>(null);
 
   useEffect(() => {
     if (!socket) return;
@@ -29,8 +36,37 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
     const onAssign = (data: any) => {
       // data: { role, word }
-      setAssigned(data);
-      setStatusMessage(data.role === 'impostor' ? 'Eres el IMPOSTOR' : `Palabra: ${data.word}`);
+      // show spinner animation then reveal
+      setPendingAssigned(data);
+      setSpinning(true);
+      setTimeout(() => {
+        setAssigned(data);
+        setStatusMessage(data.role === 'impostor' ? 'Eres el IMPOSTOR' : `Palabra: ${data.word}`);
+        setSpinning(false);
+      }, 1400);
+    };
+
+    const onTurn = (d: any) => {
+      setCurrentTurn(d.currentTurn || null);
+    };
+
+    const onVotingStart = (d: any) => {
+      setVoting(true);
+      setMyVote(null);
+      setVoteCounts({});
+      setVotingResult(null);
+      setStatusMessage('Votación iniciada');
+    };
+
+    const onVotingUpdate = (d: any) => {
+      setVoteCounts(d.counts || {});
+    };
+
+    const onVotingResult = (d: any) => {
+      setVoting(false);
+      setVotingResult(d);
+      if (d.eliminated) setStatusMessage(`Jugador eliminado: ${d.eliminated}`);
+      else setStatusMessage('Empate — nadie ha sido eliminado');
     };
 
     const onStarted = (d: any) => {
@@ -45,12 +81,30 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
     socket.on('impostor:assign', onAssign);
     socket.on('impostor:started', onStarted);
     socket.on('impostor:reveal', onReveal);
+    socket.on('impostor:turn', onTurn);
+    socket.on('impostor:voting-start', onVotingStart);
+    socket.on('impostor:voting-update', onVotingUpdate);
+    socket.on('impostor:voting-result', onVotingResult);
+    socket.on('impostor:restarted', () => {
+      setAssigned(null);
+      setPendingAssigned(null);
+      setVoting(false);
+      setMyVote(null);
+      setVoteCounts({});
+      setVotingResult(null);
+      setStatusMessage('Ronda reiniciada');
+    });
 
     return () => {
       socket.off('impostor:room-state', onRoomState);
       socket.off('impostor:assign', onAssign);
       socket.off('impostor:started', onStarted);
       socket.off('impostor:reveal', onReveal);
+      socket.off('impostor:turn', onTurn);
+      socket.off('impostor:voting-start', onVotingStart);
+      socket.off('impostor:voting-update', onVotingUpdate);
+      socket.off('impostor:voting-result', onVotingResult);
+      socket.off('impostor:restarted');
     };
   }, [socket, currentUser]);
 
@@ -110,6 +164,38 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
     });
   };
 
+  const handleStartVoting = () => {
+    if (!socket) return;
+    socket.emit('impostor:start-voting', { roomId, hostId: currentUser?.id || '' }, (res: any) => {
+      if (res && res.ok) setStatusMessage('Votación iniciada');
+      else setStatusMessage(res?.error || 'No se pudo iniciar votación');
+    });
+  };
+
+  const handleCastVote = (targetId: string) => {
+    if (!socket) return;
+    socket.emit('impostor:cast-vote', { roomId, voterId: currentUser?.id || '', votedId: targetId }, (res: any) => {
+      if (res && res.ok) setMyVote(targetId);
+      else setStatusMessage(res?.error || 'Error votando');
+    });
+  };
+
+  const handleEndVoting = () => {
+    if (!socket) return;
+    socket.emit('impostor:end-voting', { roomId, hostId: currentUser?.id || '' }, (res: any) => {
+      if (res && res.ok) setStatusMessage('Votación cerrada');
+      else setStatusMessage(res?.error || 'Error cerrando votación');
+    });
+  };
+
+  const handleRestart = () => {
+    if (!socket) return;
+    socket.emit('impostor:restart', { roomId, hostId: currentUser?.id || '' }, (res: any) => {
+      if (res && res.ok) setStatusMessage('Ronda reiniciada, espera al host para iniciar otra');
+      else setStatusMessage(res?.error || 'No se pudo reiniciar');
+    });
+  };
+
   return (
     <div className="flex flex-col min-h-screen w-full bg-[#0b0d0f] text-white">
       <div className="max-w-5xl mx-auto w-full py-8 px-4">
@@ -151,21 +237,70 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                 </div>
 
                 <div>
-                  {assigned ? (
-                    <div className="p-4 rounded bg-[#051018] text-center border border-gray-800">
-                      <div className="text-sm text-gray-400 mb-2">Tu carta</div>
-                      <div className="text-2xl font-bold">{assigned.role === 'impostor' ? 'IMPOSTOR' : assigned.word}</div>
-                      <div className="text-sm text-gray-400 mt-2">{statusMessage}</div>
+                  {spinning && (
+                    <div className="flex items-center justify-center p-6">
+                      <div className="flex flex-col items-center">
+                        <div className="w-20 h-20 rounded-full border-4 border-t-transparent border-white animate-spin mb-3" />
+                        <div className="text-sm text-gray-300">Asignando carta...</div>
+                      </div>
                     </div>
-                  ) : (
-                    <div className="text-sm text-gray-400">Aún no hay ronda — espera al host para iniciar</div>
                   )}
-                </div>
 
-                <div className="flex gap-3">
-                  {isHost && !assigned && <button onClick={handleStart} className="flex-1 px-4 py-3 rounded bg-yellow-600 text-black">Iniciar ronda</button>}
-                  {isHost && assigned && <button onClick={handleReveal} className="flex-1 px-4 py-3 rounded bg-red-600 text-white">Revelar impostor</button>}
-                  <button onClick={handleLeave} className="flex-1 px-4 py-3 rounded bg-gray-700">Abandonar</button>
+                  {!spinning && (
+                    <>
+                      {assigned ? (
+                        <div className="p-4 rounded bg-[#051018] text-center border border-gray-800">
+                          <div className="text-sm text-gray-400 mb-2">Tu carta</div>
+                          <div className="text-2xl font-bold">{assigned.role === 'impostor' ? 'IMPOSTOR' : assigned.word}</div>
+                          <div className="text-sm text-gray-400 mt-2">{statusMessage}</div>
+                        </div>
+                      ) : (
+                        <div className="text-sm text-gray-400">Aún no hay ronda — espera al host para iniciar</div>
+                      )}
+
+                      {/* Voting area */}
+                      <div className="mt-4 bg-[#071018] p-3 rounded border border-gray-800">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="text-sm text-gray-300">Votación</div>
+                          <div className="text-xs text-gray-400">{voting ? 'Activa' : 'Inactiva'}</div>
+                        </div>
+
+                        {voting ? (
+                          <div className="space-y-2">
+                            {players.map(p => (
+                              <div key={p.id} className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-sm`}>{p.username.charAt(0).toUpperCase()}</div>
+                                  <div>{p.username}</div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <div className="text-sm text-gray-400">{voteCounts[p.id] || 0}</div>
+                                  <button disabled={!!myVote} onClick={() => handleCastVote(p.id)} className={`px-2 py-1 rounded text-xs ${myVote ? 'bg-gray-600 text-gray-300' : 'bg-blue-600 text-white'}`}>{myVote === p.id ? 'Votado' : 'Votar'}</button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-sm text-gray-400">No hay votación en curso.</div>
+                        )}
+
+                        {votingResult && (
+                          <div className="mt-3 text-sm text-gray-300">
+                            Resultado: {votingResult.eliminated ? `Eliminado ${votingResult.eliminated}` : 'Empate'}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex gap-3 mt-3">
+                        {isHost && !assigned && <button onClick={handleStart} className="flex-1 px-4 py-3 rounded bg-yellow-600 text-black">Iniciar ronda</button>}
+                        {isHost && assigned && <button onClick={handleReveal} className="flex-1 px-4 py-3 rounded bg-red-600 text-white">Revelar impostor</button>}
+                        {isHost && <button onClick={handleStartVoting} className="px-3 py-2 rounded bg-indigo-600 text-white">Iniciar votación</button>}
+                        {isHost && voting && <button onClick={handleEndVoting} className="px-3 py-2 rounded bg-red-500 text-white">Terminar votación</button>}
+                        {isHost && <button onClick={handleRestart} className="px-3 py-2 rounded bg-gray-600 text-white">Reiniciar ronda</button>}
+                        <button onClick={handleLeave} className="flex-1 px-4 py-3 rounded bg-gray-700">Abandonar</button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             )}
