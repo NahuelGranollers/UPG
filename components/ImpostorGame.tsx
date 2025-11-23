@@ -50,7 +50,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
       setSpinning(true);
       setTimeout(() => {
         setAssigned(data);
-        setCardRevealed(false);
+        setCardRevealed(true);
         setStatusMessage(data.role === 'impostor' ? 'Eres el IMPOSTOR' : `Palabra: ${data.word}`);
         setSpinning(false);
       }, 1400);
@@ -346,13 +346,13 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                   {!spinning && (
                     <>
                       {/* Assignment card with flip animation */}
-                      <div className="impostor-card mb-4" style={{ maxWidth: 520 }}>
+                      <div className={`impostor-card mb-4 ${cardRevealed ? 'flipped' : ''}`} style={{ maxWidth: 520 }}>
                         <div
                           role="button"
                           tabIndex={0}
                           onClick={() => setCardRevealed(r => !r)}
                           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCardRevealed(r => !r); } }}
-                          className={`impostor-card-inner ${cardRevealed ? 'flipped' : ''}`}
+                          className="impostor-card-inner"
                           aria-pressed={cardRevealed}
                         >
                           <div className="impostor-card-face impostor-card-front liquid-glass p-4 rounded-lg border border-gray-800" style={{ position: 'relative', cursor: 'pointer' }}>
