@@ -25,6 +25,10 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
   const [spinning, setSpinning] = useState(false);
   const [currentTurn, setCurrentTurn] = useState<string | null>(null);
   const [turnOrder, setTurnOrder] = useState<string[]>([]);
+  const [revealInfo, setRevealInfo] = useState<{ impostorId: string | null; word?: string | null } | null>(null);
+  const [showReveal, setShowReveal] = useState(false);
+  const [revealPhase, setRevealPhase] = useState<'hidden' | 'enter' | 'visible' | 'exit'>('hidden');
+  const [revealedPlayer, setRevealedPlayer] = useState<{ id: string; wasImpostor: boolean; word?: string | null } | null>(null);
 
   useEffect(() => {
     if (!socket) return;
@@ -70,8 +74,20 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
     const onVotingResult = (d: any) => {
       setVoting(false);
       setVotingResult(d);
-      if (d.eliminated) setStatusMessage(`Jugador eliminado: ${d.eliminated}`);
-      else setStatusMessage('Empate — nadie ha sido eliminado');
+      if (d.eliminated) {
+        // Show different behaviour depending if eliminated was the impostor
+        if (d.wasImpostor) {
+          setStatusMessage(`El jugador ${d.eliminated} era el impostor — ronda terminada`);
+          // 'impostor:reveal' will also be emitted by server, client will receive it and show overlay
+        } else {
+          setStatusMessage(`El jugador ${d.eliminated} era INOCENTE — la ronda continúa`);
+          // Temporarily show an innocent reveal overlay
+          setRevealedPlayer({ id: d.eliminated, wasImpostor: false, word: null });
+          setTimeout(() => setRevealedPlayer(null), 4500);
+        }
+      } else {
+        setStatusMessage('Empate — nadie ha sido eliminado');
+      }
     };
 
     const onStarted = (d: any) => {
@@ -79,6 +95,21 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
     };
 
     const onReveal = (d: any) => {
+      // Trigger animated reveal overlay
+      setRevealInfo({ impostorId: d.impostorId, word: d.word });
+      setShowReveal(true);
+      setRevealPhase('enter');
+      // small delay to allow CSS transition to begin
+      setTimeout(() => setRevealPhase('visible'), 80);
+      // auto-hide after 4.5s
+      setTimeout(() => {
+        setRevealPhase('exit');
+        setTimeout(() => {
+          setShowReveal(false);
+          setRevealPhase('hidden');
+          setRevealInfo(null);
+        }, 400);
+      }, 4500);
       setStatusMessage(`Impostor: ${d.impostorId} — palabra: ${d.word}`);
     };
 
@@ -213,8 +244,8 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 bg-[#0f1316] p-4 rounded-lg border border-gray-800">
+        <div className="impostor-grid">
+          <div className="bg-[#0f1316] p-4 rounded-lg border border-gray-800">
             {!joined && (
               <div className="space-y-3">
                 <input className="w-full p-3 rounded bg-[#0b0f12] border border-gray-700" placeholder="ID de sala" value={roomId} onChange={e => setRoomId(e.target.value)} />
@@ -252,10 +283,12 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                         const p = players.find(x => x.id === id);
                         const name = p ? p.username : id;
                         const active = id === currentTurn;
+                        const revealed = revealInfo && revealInfo.impostorId === id;
+                        const innocentRevealed = p && (p as any).revealedInnocent;
                         return (
                           <li key={id} className={`flex items-center justify-between px-2 py-1 rounded ${active ? 'bg-discord-blurple text-white' : 'text-gray-300'}`}>
                             <div className="flex items-center gap-2">
-                              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs ${active ? 'bg-white text-black' : 'bg-gray-700 text-gray-200'}`}>{name.charAt(0).toUpperCase()}</div>
+                              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs ${active ? 'bg-white text-black' : revealed ? 'bg-red-600 text-white ring-2 ring-red-400' : innocentRevealed ? 'bg-green-600 text-white ring-2 ring-green-400' : 'bg-gray-700 text-gray-200'}`}>{name.charAt(0).toUpperCase()}</div>
                               <div>{name}</div>
                             </div>
                             <div className="text-xs text-gray-400">{idx + 1}</div>
@@ -263,6 +296,69 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                         );
                       })}
                     </ol>
+                  </div>
+                )}
+                {/* Turn order display (ordered list) */}
+                {turnOrder.length > 0 && (
+                  <div className="mt-4 bg-[#071017] p-3 rounded border border-gray-800">
+                    <div className="text-sm text-gray-300 mb-2">Orden de turnos</div>
+                    <ol className="list-decimal list-inside text-sm space-y-2">
+                      {turnOrder.map((id, idx) => {
+                        const p = players.find(x => x.id === id);
+                        const name = p ? p.username : id;
+                        const active = id === currentTurn;
+                        const revealed = revealInfo && revealInfo.impostorId === id;
+                        const innocentRevealed = p && (p as any).revealedInnocent;
+                        return (
+                          <li key={id} className={`turn-item flex items-center justify-between px-2 py-1 rounded ${active ? 'active bg-discord-blurple text-white' : innocentRevealed ? 'innocent text-gray-100' : 'text-gray-300'}`}>
+                            <div className="flex items-center gap-2">
+                              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs ${active ? 'bg-white text-black' : revealed ? 'bg-red-600 text-white ring-2 ring-red-400' : innocentRevealed ? 'bg-green-600 text-white ring-2 ring-green-400' : 'bg-gray-700 text-gray-200'}`}>{name.charAt(0).toUpperCase()}</div>
+                              <div>{name}</div>
+                            </div>
+                            <div className="text-xs text-gray-400">{idx + 1}</div>
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  </div>
+                )}
+                {/* Innocent reveal overlay (temporary) */}
+                {revealedPlayer && !revealedPlayer.wasImpostor && (
+                  <div className={`fixed bottom-8 right-8 z-50`}>
+                    <div className="bg-white/5 border border-green-600 text-green-200 p-4 rounded-lg shadow-lg backdrop-blur">
+                      <div className="text-sm uppercase text-green-300 font-semibold">Revelación</div>
+                      <div className="text-lg font-bold mt-1">{players.find(p => p.id === revealedPlayer.id)?.username || revealedPlayer.id}</div>
+                      <div className="text-sm text-gray-300 mt-1">Era inocente — la ronda continúa</div>
+                    </div>
+                  </div>
+                )}
+                {/* Reveal overlay */}
+                {/* Reveal overlay (full screen, with confetti) */}
+                {showReveal && revealInfo && (
+                  <div className="impostor-reveal-overlay">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+                    <div className={`impostor-reveal-panel relative z-60 bg-gradient-to-br from-[#0f1720] to-[#071017] border border-gray-700`}>
+                      <div className="text-sm text-gray-400 mb-2">REVELACIÓN</div>
+                      <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-4">
+                        <div className="w-28 h-28 rounded-full bg-red-600 flex items-center justify-center text-5xl font-extrabold text-white shadow-lg">{(players.find(p => p.id === revealInfo.impostorId)?.username || (revealInfo.impostorId || '?!')).charAt(0).toUpperCase()}</div>
+                        <div className="text-left">
+                          <div className="text-lg text-red-300 uppercase font-extrabold">Impostor</div>
+                          <div className="text-3xl font-bold mt-1">{players.find(p => p.id === revealInfo.impostorId)?.username || revealInfo.impostorId}</div>
+                          <div className="text-sm text-gray-300 mt-2">Palabra: <span className="font-semibold">{revealInfo.word}</span></div>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex justify-center gap-3">
+                        <button onClick={() => { setRevealPhase('exit'); setTimeout(() => { setShowReveal(false); setRevealInfo(null); setRevealPhase('hidden'); }, 300); }} className="px-4 py-2 rounded bg-white/10 hover:bg-white/20">Cerrar</button>
+                      </div>
+                      <div className="confetti" aria-hidden>
+                        {Array.from({ length: 28 }).map((_, i) => {
+                          const left = Math.random() * 100;
+                          const delay = Math.random() * 400;
+                          const bg = ['#FF6B6B','#FFB86B','#6BFFB8','#6BC8FF','#D56BFF','#FFD56B'][i % 6];
+                          return <span key={i} style={{ left: `${left}%`, top: `${-10 - Math.random()*20}%`, background: bg, animationDelay: `${delay}ms` }} />;
+                        })}
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -278,15 +374,26 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
                   {!spinning && (
                     <>
-                      {assigned ? (
-                        <div className="p-4 rounded bg-[#051018] text-center border border-gray-800">
-                          <div className="text-sm text-gray-400 mb-2">Tu carta</div>
-                          <div className="text-2xl font-bold">{assigned.role === 'impostor' ? 'IMPOSTOR' : assigned.word}</div>
-                          <div className="text-sm text-gray-400 mt-2">{statusMessage}</div>
+                      {/* Assignment card with flip animation */}
+                      <div className="impostor-card mb-4" style={{ maxWidth: 520 }}>
+                        <div className={`impostor-card-inner ${assigned ? 'flipped' : ''}`}>
+                          <div className="impostor-card-face impostor-card-front p-4 rounded-lg border border-gray-800">
+                            <div className="text-sm text-gray-400 mb-2">Tu carta</div>
+                            <div className="text-xl font-semibold text-gray-300">Voltear para ver</div>
+                          </div>
+                          <div className="impostor-card-face impostor-card-back p-4 rounded-lg border border-gray-800">
+                            {assigned ? (
+                              <div className="text-center w-full">
+                                <div className="text-sm text-gray-400 mb-2">Tu carta</div>
+                                <div className="text-2xl font-bold">{assigned.role === 'impostor' ? 'IMPOSTOR' : assigned.word}</div>
+                                <div className="text-sm text-gray-400 mt-2">{statusMessage}</div>
+                              </div>
+                            ) : (
+                              <div className="text-sm text-gray-400">Aún no hay ronda — espera al host para iniciar</div>
+                            )}
+                          </div>
                         </div>
-                      ) : (
-                        <div className="text-sm text-gray-400">Aún no hay ronda — espera al host para iniciar</div>
-                      )}
+                      </div>
 
                       {/* Voting area */}
                       <div className="mt-4 bg-[#071018] p-3 rounded border border-gray-800">
@@ -337,16 +444,6 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
             {statusMessage && <div className="mt-4 text-sm text-gray-300">{statusMessage}</div>}
           </div>
-
-          <aside className="hidden md:block bg-[#071018] p-4 rounded-lg border border-gray-800">
-            <h4 className="text-sm font-semibold mb-3">Reglas rápidas</h4>
-            <ul className="text-sm space-y-2 text-gray-400">
-              <li>- Todos reciben la misma palabra excepto 1 impostor.</li>
-              <li>- El impostor no recibe la palabra.</li>
-              <li>- Discusión abierta, luego el host puede revelar.</li>
-              <li>- No hay eliminación automática todavía (opcional).</li>
-            </ul>
-          </aside>
         </div>
       </div>
     </div>
