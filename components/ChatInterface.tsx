@@ -185,11 +185,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         channelId: currentChannel.id,
       } as any;
       setLocalMessages(prev => [...prev, localMessage]);
-      // No limpiar input aquí - se limpia cuando llega la confirmación del servidor
+      // Clear input immediately for better UX; server confirmation will still remove local message
+      setInputText('');
+      setShowMentionSuggestions(false);
       if (mentionsBot) setIsBotTyping(true);
     },
     [inputText, onSendMessage, currentUser, currentChannel.id]
   );
+
+  // Auto-scroll to bottom when messages change (including local messages)
+  useEffect(() => {
+    try {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    } catch (e) {}
+  }, [orderedMessages.length]);
 
   // Check if bot is typing (only if last message wasn't from bot)
   const shouldShowBotTyping =
