@@ -56,6 +56,18 @@ function MainApp() {
       console.error('Failed to join voice channel', err);
     }
   };
+  const handleVoiceLeave = async () => {
+    try {
+      if ((voice as any).closeAll) (voice as any).closeAll();
+      // Notify server to toggle leave if necessary
+      if (socket) {
+        const myChannel = (voice as any).inChannel as string | null;
+        if (myChannel) socket.emit('voice:join', { channelId: myChannel });
+      }
+    } catch (e) {
+      console.error('Failed to leave voice channel', e);
+    }
+  };
   const handleToggleMute = () => {
     try {
       if ((voice as any).toggleMute) (voice as any).toggleMute();
@@ -88,7 +100,14 @@ function MainApp() {
     // Handle profile updates (name/color)
     socket.on('user:updated', updated => {
       setUsers(prev => prev.map(u => (u.id === updated.id ? { ...u, ...updated } : u)));
-      setUserColors(prev => ({ ...prev, [updated.id]: updated.color }));
+      if (updated.color) setUserColors(prev => ({ ...prev, [updated.id]: updated.color }));
+    });
+    socket.on('user:color-changed', ({ userId, color }) => {
+      setUserColors(prev => ({ ...prev, [userId]: color }));
+      setUsers(prev => prev.map(u => (u.id === userId ? { ...u, color } : u)));
+    });
+    socket.on('user:profile-updated', updated => {
+      setUsers(prev => prev.map(u => (u.id === updated.id ? { ...u, ...updated } : u)));
     });
     socket.on('user:offline', ({ userId }) =>
       setUsers(prev =>
@@ -177,6 +196,7 @@ function MainApp() {
           currentUser={currentUser}
           activeVoiceChannel={activeVoiceChannel}
           onVoiceJoin={handleVoiceJoin}
+          onVoiceLeave={handleVoiceLeave}
           voiceStates={voiceStates}
           onToggleMic={handleToggleMute}
           micActive={!(voice as any).isMuted}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
+import { toast } from 'sonner';
 
 interface Props {
   isOpen: boolean;
@@ -33,7 +34,15 @@ const ServerSettings: React.FC<Props> = ({
   }, [isOpen, initialName, initialColor]);
 
   const handleSave = () => {
-    onSave(name.trim() || initialName, color);
+    const finalName = name.trim() || initialName;
+    // Validate color hex
+    const colorRegex = /^#[0-9A-Fa-f]{6}$/;
+    if (!colorRegex.test(color)) {
+      toast.error('Color inválido. Usa formato HEX, por ejemplo #ff0000');
+      return;
+    }
+    onSave(finalName, color);
+    toast.success('Perfil actualizado');
     onClose();
   };
 

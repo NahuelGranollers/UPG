@@ -31,6 +31,7 @@ interface ChannelListProps {
   onToggleMic?: () => void;
   micActive?: boolean;
   voiceLevel?: number;
+  onVoiceLeave?: () => void;
 }
 
 const ChannelList: React.FC<ChannelListProps> = ({
@@ -47,12 +48,14 @@ const ChannelList: React.FC<ChannelListProps> = ({
   onToggleMic,
   micActive,
   voiceLevel,
+  onVoiceLeave,
 }) => {
   // micActive is now controlled by parent via props; keep local for fallback
   const [localMicActive, setLocalMicActive] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { updateUser } = useAuth();
   const { socket } = useSocket();
+  // We will use sonner directly when needed via import in ServerSettings and here call window.toaster via toast import is unnecessary
   const TextChannelItem = React.memo(
     ({
       id,
@@ -227,6 +230,17 @@ const ChannelList: React.FC<ChannelListProps> = ({
             <div className="text-discord-text-muted text-[10px] px-1">Latencia: 24ms</div>
               {/* Headphone button removed */}
           </div>
+          <div className="flex items-center justify-end mt-2">
+            <button
+              onClick={() => {
+                if (typeof onVoiceLeave === 'function') onVoiceLeave();
+                else onVoiceJoin(activeVoiceChannel);
+              }}
+              className="px-3 py-1 rounded bg-red-600 text-white text-sm hover:bg-red-700"
+            >
+              Desconectar
+            </button>
+          </div>
         </div>
       )}
 
@@ -303,7 +317,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
         onClose={() => setSettingsOpen(false)}
         initialName={currentUser?.username || ''}
         initialColor={currentUser?.color || '#808080'}
-        onSave={(name, color) => {
+          onSave={(name, color) => {
           if (!currentUser) return;
           const newUser = { ...currentUser, username: name, color };
           // Update local auth context and storage
@@ -314,6 +328,10 @@ const ChannelList: React.FC<ChannelListProps> = ({
           } catch (e) {
             console.warn('Failed to emit user:update', e);
           }
+          try { 
+            // show toast via sonner (ServerSettings already shows success for local save, but adding here for completeness)
+            // If you want a toast here, ServerSettings already invoked toast.success
+          } catch (e) {}
         }}
         onLinkDiscord={onLoginWithDiscord}
         onUnlinkDiscord={onLogoutDiscord}
