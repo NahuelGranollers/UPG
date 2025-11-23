@@ -23,35 +23,41 @@ export function useVoice() {
   useEffect(() => {
     if (!socket) return;
 
-    const handleSignal = async ({ fromUserId, data }: { fromUserId: string; data: any }) => {
-      if (!currentUser) return;
-      // Ensure peer exists
-      let pc = peersRef.current[fromUserId];
-      if (!pc) {
-        pc = createPeerConnection(fromUserId);
-        peersRef.current[fromUserId] = pc;
-      }
-
+    // Handler for incoming relayed audio chunks from server
+    const handleChunk = (payload: { fromUserId: string; buffer: ArrayBuffer; sampleRate: number }) => {
       try {
-        if (data.type === 'offer') {
-          await pc.setRemoteDescription(new RTCSessionDescription(data));
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
-          socket.emit('voice:signal', { toUserId: fromUserId, data: pc.localDescription });
-        } else if (data.type === 'answer') {
-          await pc.setRemoteDescription(new RTCSessionDescription(data));
-        } else if (data.candidate) {
-          await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+        const { fromUserId, buffer, sampleRate } = payload as any;
+        // Convert to Float32Array and play via AudioContext
+        const float32 = new Float32Array(buffer);
+        if (!audioCtxRef.current) {
+          audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         }
-      } catch (err) {
-        console.error('Error handling signal', err);
+        const ctx = audioCtxRef.current;
+        const audioBuffer = ctx.createBuffer(1, float32.length, sampleRate || ctx.sampleRate);
+        audioBuffer.copyToChannel(float32, 0, 0);
+        const src = ctx.createBufferSource();
+        src.buffer = audioBuffer;
+        src.connect(ctx.destination);
+        src.start();
+      } catch (e) {
+        console.error('Error playing remote audio chunk', e);
       }
     };
 
-    socket.on('voice:signal', handleSignal);
+    const handleLevel = (data: { userId: string; level: number }) => {
+      // emit a custom event so App can subscribe if needed; we'll also update local ref
+      try {
+        // store last known levels in a ref for consumers; simplest approach is emitting via socket listener in App
+        // no-op here; App registers its own handler for 'voice:level'
+      } catch (e) {}
+    };
+
+    socket.on('voice:chunk', handleChunk as any);
+    socket.on('voice:level', handleLevel as any);
 
     return () => {
-      socket.off('voice:signal', handleSignal);
+      socket.off('voice:chunk', handleChunk as any);
+      socket.off('voice:level', handleLevel as any);
     };
   }, [socket, currentUser]);
 
@@ -158,6 +164,40 @@ export function useVoice() {
     // Mark as attempting join; actual state updated from 'voice:state' handler in App
     setInChannel(channelId);
     pendingOfferRef.current = channelId;
+
+    // Start streaming raw audio chunks to server
+    try {
+      if (!audioCtxRef.current) audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const ctx = audioCtxRef.current;
+      const source = ctx.createMediaStreamSource(localStreamRef.current as MediaStream);
+      // Create a silent gain to connect processor to destination to keep the graph alive
+      const zeroGain = ctx.createGain();
+      zeroGain.gain.value = 0;
+      zeroGain.connect(ctx.destination);
+
+      const processor = (ctx.createScriptProcessor || (ctx as any).createJavaScriptNode).call(ctx, 4096, 1, 1);
+      processor.onaudioprocess = ev => {
+        try {
+          const input = ev.inputBuffer.getChannelData(0);
+          // copy to Float32Array
+          const buffer = new Float32Array(input.length);
+          buffer.set(input);
+          // emit as ArrayBuffer
+          if (socket && buffer.buffer) {
+            socket.emit('voice:chunk', { buffer: buffer.buffer, sampleRate: ctx.sampleRate });
+          }
+        } catch (e) {
+          console.error('Error processing local audio', e);
+        }
+      };
+      source.connect(processor);
+      processor.connect(zeroGain);
+      // save nodes for cleanup
+      (localStreamRef as any).processorNode = processor;
+      (localStreamRef as any).zeroGain = zeroGain;
+    } catch (e) {
+      console.error('Failed to start audio chunking', e);
+    }
   }
 
   function toggleMute() {
@@ -211,6 +251,20 @@ export function useVoice() {
       localStreamRef.current = null;
     }
     setInChannel(null);
+    // cleanup processor if present
+    try {
+      const proc = (localStreamRef as any).processorNode;
+      const zg = (localStreamRef as any).zeroGain;
+      if (proc) {
+        proc.disconnect();
+        try { proc.onaudioprocess = null; } catch(e){}
+        delete (localStreamRef as any).processorNode;
+      }
+      if (zg) {
+        zg.disconnect();
+        delete (localStreamRef as any).zeroGain;
+      }
+    } catch (e) {}
   }
 
   return {
