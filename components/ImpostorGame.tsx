@@ -29,6 +29,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
   const [showReveal, setShowReveal] = useState(false);
   const [revealPhase, setRevealPhase] = useState<'hidden' | 'enter' | 'visible' | 'exit'>('hidden');
   const [revealedPlayer, setRevealedPlayer] = useState<{ id: string; wasImpostor: boolean; word?: string | null } | null>(null);
+  const [cardRevealed, setCardRevealed] = useState(false);
 
   useEffect(() => {
     if (!socket) return;
@@ -46,6 +47,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
       setSpinning(true);
       setTimeout(() => {
         setAssigned(data);
+        setCardRevealed(false);
         setStatusMessage(data.role === 'impostor' ? 'Eres el IMPOSTOR' : `Palabra: ${data.word}`);
         setSpinning(false);
       }, 1400);
@@ -96,6 +98,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
     const onReveal = (d: any) => {
       // Trigger animated reveal overlay
+      setCardRevealed(true);
       setRevealInfo({ impostorId: d.impostorId, word: d.word });
       setShowReveal(true);
       setRevealPhase('enter');
@@ -130,6 +133,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
       setVoteCounts({});
       setVotingResult(null);
       setStatusMessage('Ronda reiniciada');
+      setCardRevealed(false);
     });
 
     return () => {
@@ -180,8 +184,10 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
       setAssigned(null);
       setIsHost(false);
       setStatusMessage('Has salido de la sala');
+      setCardRevealed(false);
     });
   };
+
 
   const handleStart = () => {
     if (!socket) return;
@@ -267,9 +273,9 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                   <ul className="text-sm space-y-2">
                     {players.map(p => (
                       <li key={p.id} className="flex items-center justify-between">
-                        <span>{p.username}</span>
-                        <span className="text-xs text-gray-400">{p.id === currentUser?.id ? 'Tú' : ''}</span>
-                      </li>
+                          <span className="truncate max-w-[12rem]" title={p.username}>{p.username}</span>
+                          <span className="text-xs text-gray-400">{p.id === currentUser?.id ? 'Tú' : ''}</span>
+                        </li>
                     ))}
                   </ul>
                 </div>
@@ -330,17 +336,24 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                     <>
                       {/* Assignment card with flip animation */}
                       <div className="impostor-card mb-4" style={{ maxWidth: 520 }}>
-                        <div className={`impostor-card-inner ${assigned ? 'flipped' : ''}`}>
-                          <div className="impostor-card-face impostor-card-front liquid-glass p-4 rounded-lg border border-gray-800" style={{ position: 'relative' }}>
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setCardRevealed(r => !r)}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCardRevealed(r => !r); } }}
+                          className={`impostor-card-inner ${cardRevealed ? 'flipped' : ''}`}
+                          aria-pressed={cardRevealed}
+                        >
+                          <div className="impostor-card-face impostor-card-front liquid-glass p-4 rounded-lg border border-gray-800" style={{ position: 'relative', cursor: 'pointer' }}>
                             <div className="text-sm text-contrast mb-2">Tu carta</div>
-                            <div className="text-xl font-semibold text-contrast">Voltear para ver</div>
+                            <div className="text-xl font-semibold text-contrast">Haz click o presiona Enter para voltear</div>
                           </div>
-                          <div className="impostor-card-face impostor-card-back liquid-glass p-4 rounded-lg border border-gray-800" style={{ position: 'relative' }}>
+                          <div className="impostor-card-face impostor-card-back liquid-glass p-4 rounded-lg border border-gray-800" style={{ position: 'relative', cursor: 'pointer' }}>
                             {assigned ? (
                               <div className="text-center w-full">
                                 <div className="text-sm text-gray-400 mb-2">Tu carta</div>
                                 <div className="text-2xl font-bold">{assigned.role === 'impostor' ? 'IMPOSTOR' : assigned.word}</div>
-                                          <div className="text-sm text-gray-600 mt-2">{statusMessage}</div>
+                                <div className="text-sm text-gray-600 mt-2">{statusMessage}</div>
                               </div>
                             ) : (
                               <div className="text-sm text-gray-400">Aún no hay ronda — espera al host para iniciar</div>
@@ -362,7 +375,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                               <div key={p.id} className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                   <div className={`w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-sm`}>{p.username.charAt(0).toUpperCase()}</div>
-                                  <div>{p.username}</div>
+                                  <div className="truncate max-w-[12rem]" title={p.username}>{p.username}</div>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <div className="text-sm text-gray-600">{voteCounts[p.id] || 0}</div>
@@ -416,7 +429,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                     <li key={id} className={`turn-item flex items-center justify-between px-2 py-1 rounded ${active ? 'active bg-discord-blurple text-white' : innocentRevealed ? 'innocent text-gray-100' : 'text-gray-300'}`}>
                       <div className="flex items-center gap-2">
                         <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs ${active ? 'bg-white text-black' : revealed ? 'bg-red-600 text-white ring-2 ring-red-400' : innocentRevealed ? 'bg-green-600 text-white ring-2 ring-green-400' : 'bg-gray-700 text-gray-200'}`}>{name.charAt(0).toUpperCase()}</div>
-                        <div>{name}</div>
+                        <div className="truncate max-w-[12rem] md:max-w-[18rem]" title={name}>{name}</div>
                       </div>
                       <div className="text-xs text-gray-400">{idx + 1}</div>
                     </li>
