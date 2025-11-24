@@ -25,14 +25,14 @@ function MainApp() {
   const { currentUser, isLoading, loginWithDiscord, logout } = useAuth();
   const { isConnected, socket } = useSocket();
 
-  const [activeView, setActiveView] = useState<AppView>(AppView.CHAT);
-  const [showHome, setShowHome] = useState(true);
+  const [activeView, setActiveView] = useState<AppView>(AppView.IMPOSTOR);
+  const [showHome, setShowHome] = useState(false);
   const [currentChannel, setCurrentChannel] = useState<ChannelData>({
     id: 'general',
     name: 'general',
     description: 'Chat general',
   });
-  const [activeSection, setActiveSection] = useState<'home' | 'chat' | 'who' | 'voting' | 'upg'>(() => 'home');
+  const [activeSection, setActiveSection] = useState<'home' | 'chat' | 'who' | 'voting' | 'upg'>('impostor');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileActiveTab, setMobileActiveTab] = useState<'channels' | 'chat' | 'users'>('chat');
 
@@ -222,7 +222,7 @@ function MainApp() {
             setActiveSection('chat');
           }}
         />
-        {!showHome && (
+        {!showHome && activeView !== AppView.IMPOSTOR && (
           <ChannelList
             activeView={activeView}
             currentChannelId={currentChannel.id}
@@ -289,6 +289,7 @@ function MainApp() {
                   setShowHome(false);
                   setActiveView(AppView.IMPOSTOR);
                   setActiveSection('impostor');
+                  setMobileActiveTab('chat');
                 } else if (section === 'who') {
                   setShowHome(false);
                   setActiveView(AppView.WHO_WE_ARE);
@@ -306,7 +307,7 @@ function MainApp() {
           </div>
         ) : (
           <>
-            {mobileActiveTab === 'channels' && (
+            {mobileActiveTab === 'channels' && activeView !== AppView.IMPOSTOR && (
               <div className="flex h-full w-full">
                 <Sidebar
                   currentUser={currentUser}
@@ -320,6 +321,11 @@ function MainApp() {
                       setShowHome(false);
                       setActiveView(AppView.CHAT);
                       setActiveSection('chat');
+                    } else if (section === 'impostor') {
+                      setShowHome(false);
+                      setActiveView(AppView.IMPOSTOR);
+                      setActiveSection('impostor');
+                      setMobileActiveTab('chat');
                     } else if (section === 'who') {
                       setShowHome(false);
                       setActiveView(AppView.WHO_WE_ARE);
@@ -366,6 +372,7 @@ function MainApp() {
                     userColors={userColors}
                   />
                 )}
+                {activeView === AppView.IMPOSTOR && <ImpostorGame onClose={() => { setShowHome(true); setActiveView(AppView.CHAT); setActiveSection('home'); }} />}
                 {activeView === AppView.WHO_WE_ARE && <WhoWeAre onMenuToggle={() => setMobileActiveTab('channels')} />}
                 {activeView === AppView.VOTING && <Voting onMenuToggle={() => setMobileActiveTab('channels')} />}
               </>

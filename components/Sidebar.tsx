@@ -11,9 +11,9 @@ interface SidebarProps {
   onHomeClick?: () => void;
   onUPGClick?: () => void;
   // activeSection allows parent to indicate which sidebar node is active
-  activeSection?: 'home' | 'chat' | 'who' | 'voting' | 'upg';
+  activeSection?: 'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor';
   // navigation callback when clicking a sidebar node
-  onNavigate?: (section: 'home' | 'chat' | 'who' | 'voting' | 'upg') => void;
+  onNavigate?: (section: 'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor') => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = memo(({ currentUser, setCurrentUser: _setCurrentUser, onHomeClick, onUPGClick, activeSection, onNavigate }) => {
@@ -84,13 +84,22 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentUser, setCurrentUser: _se
       </button>
 
       {/* Impostor game (navigate to full page) */}
-      <button onClick={() => onNavigate && onNavigate('impostor')} className={`w-12 h-12 bg-discord-chat text-discord-text-normal hover:bg-discord-blurple hover:text-white rounded-[24px] hover:rounded-[16px] transition-all duration-200 flex items-center justify-center`} title="Impostor">
-        {/* Inline knife / among-us SVG icon (simple silhouette) */}
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-          <path d="M2 21c0 .55.45 1 1 1h4l9-9-5-5L2 20v1z" fill="#ffffff" opacity="0.9" />
-          <path d="M14 7l3-3 4 4-3 3-4-4z" fill="#ff4d4f" opacity="0.95" />
-        </svg>
-      </button>
+      {(() => {
+        const active = activeSection === 'impostor';
+        return (
+          <div className="relative">
+            {active && <div className="absolute left-0 bg-white rounded-r w-1 h-10 top-1/2 -translate-y-1/2 -ml-1" />}
+            <button onClick={() => onNavigate && onNavigate('impostor')} className={`w-12 h-12 ${active ? 'bg-discord-blurple text-white' : 'bg-discord-chat text-discord-text-normal hover:bg-discord-blurple hover:text-white'} rounded-[24px] hover:rounded-[16px] transition-all duration-200 flex items-center justify-center`} title="Impostor" aria-pressed={active}>
+              <SafeImage
+                src="https://cdn3.emoji.gg/emojis/8886-among-us-red.png"
+                alt="Impostor"
+                className="object-cover w-full h-full"
+                fallbackSrc="https://ui-avatars.com/api/?name=Impostor&background=5865f2&color=ffffff&size=128"
+              />
+            </button>
+          </div>
+        );
+      })()}
 
       {/* New direct nodes: Quiénes somos & Votaciones */}
       <div className="mt-2 space-y-2">
