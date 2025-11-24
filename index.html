@@ -72,5 +72,40 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Admin console commands for development (localhost only)
+      window.admin = {
+        on: function() {
+          fetch('/admin/console', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ action: 'on' })
+          }).then(r => r.json()).then(console.log).catch(console.error);
+        },
+        off: function() {
+          fetch('/admin/console', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ action: 'off' })
+          }).then(r => r.json()).then(console.log).catch(console.error);
+        },
+        status: function() {
+          fetch('/admin/console', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ action: 'status' })
+          }).then(r => r.json()).then(console.log).catch(console.error);
+        }
+      };
+    </script>
   </body>
 </html>
