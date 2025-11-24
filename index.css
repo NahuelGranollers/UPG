@@ -65,31 +65,40 @@ body {
 
 /* Theme helper to apply lock-screen colours to game */
 .impostor-theme {
-  background: linear-gradient(180deg, var(--lock-bg), #ffd84d 80%);
-  color: var(--lock-text-dark);
+  background: linear-gradient(180deg, #0f0f0f, #1f1f1f);
+  color: #ffffff;
+  position: relative;
 }
-.impostor-theme .impostor-reveal-panel {
-  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,250,230,0.98));
-  color: var(--lock-text-dark);
-  border-color: rgba(0,0,0,0.06);
+.impostor-theme::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 70% 80%, rgba(88, 101, 242, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 20% 60%, rgba(114, 137, 218, 0.06) 0%, transparent 40%);
+  pointer-events: none;
 }
-.impostor-theme .impostor-card-face {
-  border-color: rgba(0,0,0,0.06);
+.impostor-theme .liquid-glass {
+  background: linear-gradient(180deg, rgba(255,255,255,0.75), rgba(255,255,255,0.44));
+  border: 1px solid rgba(88,101,242,0.45);
+  box-shadow: 0 12px 40px rgba(88,101,242,0.16), inset 0 1px 0 rgba(255,255,255,0.38);
 }
-.impostor-theme .btn-lock-accent {
-  background: var(--lock-accent);
-  color: white;
+.impostor-theme .glass-btn {
+  background: linear-gradient(180deg, rgba(88,101,242,0.2), rgba(88,101,242,0.1));
+  border: 1px solid rgba(88,101,242,0.4);
+  color: #5865F2;
+  text-shadow: 0 0 10px rgba(88,101,242,0.8);
 }
-.impostor-theme .btn-lock-accent:hover { background: var(--lock-hover); }
-.impostor-theme .avatar-accent { background: var(--lock-accent); color: white; }
-.impostor-theme .avatar-initial { background: rgba(0,0,0,0.08); color: var(--lock-text-dark); }
 
 /* Improved contrast tokens for Impostor UI */
 :root {
-  --impostor-surface: #fffdf6; /* light surface to contrast */
-  --impostor-text: #0b0b0b; /* dark text for readability */
-  --impostor-muted: #6b6b6b;
-  --impostor-accent: var(--lock-accent);
+  --impostor-surface: #2b2d31; /* dark surface for dark theme */
+  --impostor-text: #ffffff; /* white text for readability */
+  --impostor-muted: #9aa0a6;
+  --impostor-accent: #5865F2; /* UPG blue accent */
 }
 
 /* Liquid glass styling (backdrop blur + sheen + subtle borders) */
@@ -132,11 +141,11 @@ body {
 .glass-btn.primary { background: linear-gradient(180deg, var(--impostor-accent), #ff7a3b); color: white; border-color: rgba(0,0,0,0.06); }
 
 .glass-input {
-  background: rgba(255,255,255,0.6);
-  border: 1px solid rgba(0,0,0,0.06);
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
   padding: 0.6rem 0.75rem;
   border-radius: 10px;
-  color: var(--impostor-text);
+  color: #ffffff;
 }
 
 /* Panels & cards use rounded glass by default inside theme */
@@ -420,55 +429,490 @@ textarea,
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem;
-}
-@media (min-width: 880px) {
-  .impostor-grid { grid-template-columns: 2fr 360px; }
+  padding: 0.5rem;
 }
 
-/* Turn order item animation */
-.turn-item { transition: transform 260ms ease, box-shadow 260ms ease, background 260ms ease; }
-.turn-item.active { transform: translateX(6px) scale(1.02); box-shadow: 0 8px 24px rgba(0,0,0,0.45); }
-.turn-item.innocent { box-shadow: 0 6px 18px rgba(6,80,30,0.28); }
+/* Mobile first approach - small screens */
+@media (max-width: 479px) {
+  .impostor-grid {
+    gap: 0.75rem;
+    padding: 0.25rem;
+  }
+
+  /* Reduce text sizes on very small screens */
+  .impostor-theme h1 {
+    font-size: 1.5rem;
+  }
+
+  /* Smaller buttons and inputs */
+  .glass-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .glass-input {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.9rem;
+  }
+
+  /* Compact card sizing */
+  .impostor-card {
+    max-width: 100%;
+  }
+
+  /* Smaller spinner */
+  .impostor-spinner {
+    width: 72px;
+    height: 72px;
+    border-width: 4px;
+  }
+
+  /* Adjust reveal panel for small screens */
+  .impostor-reveal-panel {
+    padding: 1.5rem;
+    width: min(380px, 95%);
+  }
+}
+
+/* Medium mobile screens */
+@media (min-width: 480px) and (max-width: 639px) {
+  .impostor-grid {
+    gap: 0.875rem;
+    padding: 0.375rem;
+  }
+
+  .impostor-theme h1 {
+    font-size: 1.75rem;
+  }
+
+  .glass-btn {
+    padding: 0.6rem 1rem;
+    font-size: 1rem;
+  }
+
+  .glass-input {
+    padding: 0.6rem 0.75rem;
+    font-size: 1rem;
+  }
+
+  .impostor-spinner {
+    width: 84px;
+    height: 84px;
+    border-width: 5px;
+  }
+
+  .impostor-reveal-panel {
+    padding: 1.75rem;
+    width: min(420px, 92%);
+  }
+}
+
+/* Large mobile / small tablets */
+@media (min-width: 640px) and (max-width: 879px) {
+  .impostor-grid {
+    gap: 1rem;
+    padding: 0.5rem;
+  }
+
+  .impostor-theme h1 {
+    font-size: 2rem;
+  }
+
+  .glass-btn {
+    padding: 0.7rem 1.25rem;
+    font-size: 1.1rem;
+  }
+
+  .glass-input {
+    padding: 0.7rem 0.875rem;
+    font-size: 1.1rem;
+  }
+
+  .impostor-spinner {
+    width: 90px;
+    height: 90px;
+    border-width: 6px;
+  }
+
+  .impostor-reveal-panel {
+    padding: 2rem;
+    width: min(480px, 90%);
+  }
+}
+
+/* Desktop and larger screens */
+@media (min-width: 880px) {
+  .impostor-grid {
+    grid-template-columns: 2fr 360px;
+    gap: 1.25rem;
+    padding: 0.75rem;
+  }
+
+  .impostor-theme h1 {
+    font-size: 2.25rem;
+  }
+
+  .glass-btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.2rem;
+  }
+
+  .glass-input {
+    padding: 0.75rem 1rem;
+    font-size: 1.2rem;
+  }
+
+  .impostor-spinner {
+    width: 96px;
+    height: 96px;
+    border-width: 6px;
+  }
+
+  .impostor-reveal-panel {
+    padding: 2.25rem;
+    width: min(820px, 85%);
+  }
+}
+
+/* Extra large screens */
+@media (min-width: 1200px) {
+  .impostor-grid {
+    grid-template-columns: 2.5fr 400px;
+    gap: 1.5rem;
+    padding: 1rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .impostor-theme h1 {
+    font-size: 2.5rem;
+  }
+
+  .glass-btn {
+    padding: 0.8rem 1.75rem;
+    font-size: 1.3rem;
+  }
+
+  .glass-input {
+    padding: 0.8rem 1.125rem;
+    font-size: 1.3rem;
+  }
+
+  .impostor-reveal-panel {
+    width: min(900px, 80%);
+  }
+}
+
+/* Ultra wide screens */
+@media (min-width: 1600px) {
+  .impostor-grid {
+    grid-template-columns: 3fr 450px;
+    gap: 2rem;
+    padding: 1.5rem;
+    max-width: 1800px;
+  }
+
+  .impostor-theme h1 {
+    font-size: 2.75rem;
+  }
+}
+
+/* Responsive header and controls */
+.impostor-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.impostor-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.impostor-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* Mobile: stack header vertically */
+@media (max-width: 639px) {
+  .impostor-header {
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .impostor-header-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .impostor-controls {
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  /* Smaller theme selector */
+  .impostor-theme-selector {
+    padding: 0.5rem !important;
+    font-size: 0.9rem !important;
+    min-width: 120px;
+  }
+}
+
+/* Tablet: adjust spacing */
+@media (min-width: 640px) and (max-width: 879px) {
+  .impostor-header {
+    margin-bottom: 1.25rem;
+  }
+
+  .impostor-controls {
+    gap: 0.625rem;
+  }
+
+  .impostor-theme-selector {
+    padding: 0.625rem;
+    font-size: 1rem;
+    min-width: 140px;
+  }
+}
+
+/* Desktop: full spacing */
+@media (min-width: 880px) {
+  .impostor-theme-selector {
+    padding: 0.75rem;
+    font-size: 1.1rem;
+    min-width: 160px;
+  }
+}
+
+/* Responsive button layouts */
+.impostor-button-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.impostor-button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* Mobile: single column for buttons */
+@media (max-width: 479px) {
+  .impostor-button-grid {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .impostor-button-row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .glass-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Small mobile: adjust button sizing */
+@media (max-width: 639px) {
+  .impostor-button-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+}
+
+/* Responsive word input */
+.impostor-word-input {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  left: 1rem;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1rem;
+  max-width: 400px;
+  margin: 0 auto;
+  z-index: 50;
+}
+
+/* Mobile: full width word input */
+@media (max-width: 479px) {
+  .impostor-word-input {
+    left: 0.5rem;
+    right: 0.5rem;
+    padding: 0.75rem;
+    max-width: none;
+  }
+}
+
+/* Tablet: adjust word input */
+@media (min-width: 480px) and (max-width: 879px) {
+  .impostor-word-input {
+    max-width: 350px;
+    padding: 0.875rem;
+  }
+}
+
+/* Desktop: larger word input */
+@media (min-width: 880px) {
+  .impostor-word-input {
+    max-width: 400px;
+    padding: 1rem;
+  }
+}
+
+/* Responsive player list */
+.impostor-player-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Mobile: smaller player list height */
+@media (max-width: 639px) {
+  .impostor-player-list {
+    max-height: 200px;
+  }
+}
+
+/* Responsive voting area */
+.impostor-voting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Mobile: stack voting items vertically */
+@media (max-width: 479px) {
+  .impostor-voting-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .impostor-voting-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .impostor-voting-actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+}
+
+/* Responsive notifications */
+.impostor-notifications {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  left: 1rem;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* Mobile: adjust notification positioning */
+@media (max-width: 639px) {
+  .impostor-notifications {
+    top: 0.5rem;
+    right: 0.5rem;
+    left: 0.5rem;
+  }
+
+  .impostor-notification {
+    margin-bottom: 0.5rem;
+    padding: 0.75rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Desktop: larger notifications */
+@media (min-width: 880px) {
+  .impostor-notifications {
+    top: 1rem;
+    right: 1rem;
+    max-width: 400px;
+  }
+
+  .impostor-notification {
+    padding: 1rem;
+    font-size: 1rem;
+  }
+}
 
 /* Neon Theme */
 .neon-theme {
   --lock-bg: #0a0a0a;
-  --lock-accent: #00ff41;
-  --lock-accent-2: #00ffff;
-  --lock-hover: #00cc33;
-  --lock-shadow: #008000;
+  --lock-accent: #ff4d0a;
+  --lock-accent-2: #ff9300;
+  --lock-hover: #e03e00;
+  --lock-shadow: #cc3300;
   --lock-text-dark: #ffffff;
   background: linear-gradient(180deg, #0a0a0a, #1a1a1a);
+  position: relative;
+}
+.neon-theme::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 70% 80%, rgba(255, 77, 10, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 20% 60%, rgba(255, 147, 0, 0.08) 0%, transparent 40%);
+  pointer-events: none;
 }
 .neon-theme .liquid-glass {
-  background: linear-gradient(180deg, rgba(0,255,65,0.1), rgba(0,255,255,0.05));
-  border: 1px solid rgba(0,255,65,0.3);
-  box-shadow: 0 0 20px rgba(0,255,65,0.2);
+  background: linear-gradient(180deg, rgba(255,255,255,0.75), rgba(255,255,255,0.44));
+  border: 1px solid rgba(255,77,10,0.45);
+  box-shadow: 0 12px 40px rgba(255,77,10,0.16), inset 0 1px 0 rgba(255,255,255,0.38);
 }
 .neon-theme .glass-btn {
-  background: linear-gradient(180deg, rgba(0,255,65,0.2), rgba(0,255,65,0.1));
-  border: 1px solid rgba(0,255,65,0.4);
-  color: #00ff41;
-  text-shadow: 0 0 10px rgba(0,255,65,0.8);
+  background: linear-gradient(180deg, rgba(255,77,10,0.2), rgba(255,77,10,0.1));
+  border: 1px solid rgba(255,77,10,0.4);
+  color: #ff4d0a;
+  text-shadow: 0 0 10px rgba(255,77,10,0.8);
 }
 
 /* Retro Theme */
 .retro-theme {
-  --lock-bg: #8b4513;
+  --lock-bg: #1a1a1a;
   --lock-accent: #ff6347;
   --lock-accent-2: #daa520;
   --lock-hover: #cd5c5c;
   --lock-shadow: #a0522d;
-  --lock-text-dark: #f5deb3;
-  background: linear-gradient(180deg, #8b4513, #a0522d);
+  --lock-text-dark: #ffffff;
+  background: linear-gradient(180deg, #1a1a1a, #2a2a2a);
+  position: relative;
 }
-.retro-theme .liquid-glass {
-  background: linear-gradient(180deg, rgba(245,222,179,0.8), rgba(222,184,135,0.6));
-  border: 1px solid rgba(160,82,45,0.4);
-}
-.retro-theme .glass-btn {
-  background: linear-gradient(180deg, rgba(255,99,71,0.3), rgba(218,165,32,0.2));
-  border: 1px solid rgba(255,99,71,0.5);
-  color: #daa520;
+.retro-theme::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 70% 80%, rgba(255, 99, 71, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 20% 60%, rgba(218, 165, 32, 0.06) 0%, transparent 40%);
+  pointer-events: none;
 }
 

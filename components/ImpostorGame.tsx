@@ -263,25 +263,27 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
   return (
     <div className={`flex flex-col min-h-screen w-full impostor-theme ${theme === 'neon' ? 'neon-theme' : theme === 'retro' ? 'retro-theme' : ''}`}>
-      <div className="max-w-5xl mx-auto w-full py-8 px-4">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-extrabold">Impostor — Sala</h1>
-          <div className="flex items-center gap-2">
-            <select value={theme} onChange={e => setTheme(e.target.value as any)} className="p-2 rounded bg-gray-800 text-white border border-gray-600">
-              <option value="upg">UPG</option>
-              <option value="neon">Neon</option>
-              <option value="retro">Retro</option>
-            </select>
-            <button onClick={() => { if (joined) handleLeave(); if (onClose) onClose(); }} className="glass-btn">{joined ? 'Salir' : 'Cerrar'}</button>
+      <div className="max-w-7xl mx-auto w-full py-4 px-2 sm:py-6 sm:px-4 lg:py-8 lg:px-6">
+        <div className="impostor-header">
+          <div className="impostor-header-top">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold">Impostor — Sala</h1>
+            <div className="impostor-controls">
+              <select value={theme} onChange={e => setTheme(e.target.value as any)} className="impostor-theme-selector p-2 rounded bg-gray-800 text-white border border-gray-600">
+                <option value="upg">UPG</option>
+                <option value="neon">Neon</option>
+                <option value="retro">Retro</option>
+              </select>
+              <button onClick={() => { if (joined) handleLeave(); if (onClose) onClose(); }} className="glass-btn">{joined ? 'Salir' : 'Cerrar'}</button>
+            </div>
           </div>
         </div>
 
         <div className="impostor-grid">
           {/* Notifications */}
           {notifications.length > 0 && (
-            <div className="fixed top-4 right-4 z-50 space-y-2">
+            <div className="impostor-notifications">
               {notifications.map((notif) => (
-                <div key={notif.id} className="bg-blue-600 text-white p-3 rounded shadow-lg">
+                <div key={notif.id} className="impostor-notification bg-blue-600 text-white p-3 rounded shadow-lg">
                   {notif.message}
                 </div>
               ))}
@@ -290,12 +292,12 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
           <div className="panel-glass lg liquid-glass bg-[#071017]">
             {!joined && (
-              <div className="space-y-4">
-                <input id="impostor-roomid" className="w-full p-4 rounded glass-input border border-gray-700 text-lg" placeholder="ID de sala" value={roomId} onChange={e => setRoomId(e.target.value)} />
-                <input id="impostor-username" className="w-full p-4 rounded glass-input border border-gray-700 text-lg" placeholder="Tu nombre" value={username} onChange={e => setUsername(e.target.value)} />
-                <div className="flex gap-4">
-                  <button onClick={handleCreate} className="flex-1 px-6 py-4 rounded bg-green-600 text-white text-lg font-semibold">Crear sala</button>
-                  <button onClick={handleJoin} className="flex-1 px-6 py-4 rounded bg-blue-600 text-white text-lg font-semibold">Unirse</button>
+              <div className="space-y-4 sm:space-y-6">
+                <input id="impostor-roomid" className="w-full p-3 sm:p-4 rounded glass-input border border-gray-700 text-base sm:text-lg" placeholder="ID de sala" value={roomId} onChange={e => setRoomId(e.target.value)} />
+                <input id="impostor-username" className="w-full p-3 sm:p-4 rounded glass-input border border-gray-700 text-base sm:text-lg" placeholder="Tu nombre" value={username} onChange={e => setUsername(e.target.value)} />
+                <div className="impostor-button-row">
+                  <button onClick={handleCreate} className="flex-1 px-4 sm:px-6 py-3 sm:py-4 rounded bg-green-600 text-white text-base sm:text-lg font-semibold">Crear sala</button>
+                  <button onClick={handleJoin} className="flex-1 px-4 sm:px-6 py-3 sm:py-4 rounded bg-blue-600 text-white text-base sm:text-lg font-semibold">Unirse</button>
                 </div>
               </div>
             )}
@@ -307,7 +309,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
                 <div className="panel-glass lg liquid-glass bg-[#071017] p-4 rounded max-h-[400px] overflow-auto" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
                   <div className="text-lg text-gray-400 mb-3 font-semibold">Jugadores:</div>
-                  <ul className="text-base space-y-3">
+                  <ul className="impostor-player-list text-base space-y-3">
                     {players.map(p => (
                       <li key={p.id} className="flex items-center justify-between overflow-hidden py-2">
                           <span className="text-white break-all font-semibold text-lg" style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }} title={p.username}>{p.username}</span>
@@ -417,21 +419,21 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                         </div>
 
                         {voting ? (
-                          <div className="space-y-4">
+                          <div className="space-y-3">
                             {players.map(p => {
                               const isDead = p.revealedInnocent;
                               const isCurrentUser = p.id === currentUser?.id;
                               const canVote = !myVote && isCurrentPlayerAlive && !isDead;
                               return (
-                                <div key={p.id} className={`flex items-center justify-between overflow-hidden ${isDead ? 'opacity-50' : ''}`}>
-                                  <div className="flex items-center gap-4">
-                                    <div className={`w-10 h-10 rounded-full ${isDead ? 'bg-gray-500' : 'bg-gray-700'} text-white flex items-center justify-center text-lg font-semibold`}>{p.username.charAt(0).toUpperCase()}</div>
-                                    <div className={`text-white break-all font-semibold ${isDead ? 'text-gray-500 line-through' : ''}`} style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }} title={p.username}>{p.username}{isDead ? ' (Muerto)' : ''}</div>
+                                <div key={p.id} className={`impostor-voting-item ${isDead ? 'opacity-50' : ''}`}>
+                                  <div className="impostor-voting-info flex items-center gap-3 flex-1 min-w-0">
+                                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm sm:text-lg font-semibold flex-shrink-0 ${isDead ? 'bg-gray-500' : 'bg-gray-700'} text-white`}>{p.username.charAt(0).toUpperCase()}</div>
+                                    <div className={`text-white break-all font-semibold text-sm sm:text-lg flex-1 min-w-0 ${isDead ? 'text-gray-500 line-through' : ''}`} style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }} title={p.username}>{p.username}{isDead ? ' (Muerto)' : ''}</div>
                                   </div>
-                                  <div className="flex items-center gap-3">
-                                    <div className="text-lg text-gray-600 font-semibold">{voteCounts[p.id] || 0}</div>
+                                  <div className="impostor-voting-actions flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                                    <div className="text-sm sm:text-lg text-gray-600 font-semibold">{voteCounts[p.id] || 0}</div>
                                     {!isDead && (
-                                      <button disabled={!canVote} onClick={() => handleCastVote(p.id)} className={`px-6 py-3 rounded text-lg font-semibold ${canVote ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-600 text-gray-400'}`} aria-pressed={!!myVote}>{myVote === p.id ? 'Votado' : 'Votar'}</button>
+                                      <button disabled={!canVote} onClick={() => handleCastVote(p.id)} className={`px-3 sm:px-6 py-2 sm:py-3 rounded text-sm sm:text-lg font-semibold ${canVote ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-600 text-gray-400'}`} aria-pressed={!!myVote}>{myVote === p.id ? 'Votado' : 'Votar'}</button>
                                     )}
                                   </div>
                                 </div>
@@ -449,13 +451,13 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                         )}
                       </div>
 
-                      <div className="flex gap-4 mt-6">
-                        {isHost && !assigned && <button onClick={handleStart} className="glass-btn primary flex-1 px-6 py-4 text-lg font-semibold">Iniciar ronda</button>}
-                        {isHost && assigned && <button onClick={handleRevealAll} className="glass-btn flex-1 px-6 py-4 text-lg font-semibold" style={{ background: 'linear-gradient(180deg,#ff8c00,#ff4500)', color: 'white' }}>Revelar todas las cartas</button>}
-                        {isHost && <button onClick={handleStartVoting} className="glass-btn px-6 py-4 text-lg font-semibold">Iniciar votación</button>}
-                        {isHost && voting && <button onClick={handleEndVoting} disabled={!allAliveVoted} className={`glass-btn px-6 py-4 text-lg font-semibold ${allAliveVoted ? '' : 'opacity-50 cursor-not-allowed'}`} style={{ background: allAliveVoted ? '#ff6b6b' : '#666', color: 'white' }}>Terminar votación ({votesCastCount}/{alivePlayersCount})</button>}
-                        {isHost && <button onClick={handleRestart} className="glass-btn px-6 py-4 text-lg font-semibold">Reiniciar ronda</button>}
-                        <button onClick={handleLeave} className="glass-btn flex-1 px-6 py-4 text-lg font-semibold">Abandonar</button>
+                      <div className="impostor-button-grid mt-6">
+                        {isHost && !assigned && <button onClick={handleStart} className="glass-btn primary px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-lg font-semibold">Iniciar ronda</button>}
+                        {isHost && assigned && <button onClick={handleRevealAll} className="glass-btn px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-lg font-semibold" style={{ background: 'linear-gradient(180deg,#ff8c00,#ff4500)', color: 'white' }}>Revelar todas las cartas</button>}
+                        {isHost && <button onClick={handleStartVoting} className="glass-btn px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-lg font-semibold">Iniciar votación</button>}
+                        {isHost && voting && <button onClick={handleEndVoting} disabled={!allAliveVoted} className={`glass-btn px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-lg font-semibold ${allAliveVoted ? '' : 'opacity-50 cursor-not-allowed'}`} style={{ background: allAliveVoted ? '#ff6b6b' : '#666', color: 'white' }}>Terminar votación ({votesCastCount}/{alivePlayersCount})</button>}
+                        {isHost && <button onClick={handleRestart} className="glass-btn px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-lg font-semibold">Reiniciar ronda</button>}
+                        <button onClick={handleLeave} className="glass-btn px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-lg font-semibold">Abandonar</button>
                       </div>
                     </>
                   )}
@@ -512,12 +514,12 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
       </div>
 
       {joined && (
-        <div className="fixed bottom-4 right-4 bg-black/50 p-5 rounded-lg border border-gray-700 max-w-sm">
-          <div className="text-lg text-white mb-3 font-semibold">Agregar palabra</div>
+        <div className="impostor-word-input">
+          <div className="text-sm sm:text-lg text-white mb-2 sm:mb-3 font-semibold">Agregar palabra</div>
           <input
             type="text"
             placeholder="Nueva palabra"
-            className="w-full p-3 rounded bg-gray-800 text-white border border-gray-600 text-lg"
+            className="w-full p-2 sm:p-3 rounded bg-gray-800 text-white border border-gray-600 text-sm sm:text-lg"
             autoComplete="off"
             spellCheck="false"
             data-form-type="other"
