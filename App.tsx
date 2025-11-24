@@ -293,6 +293,10 @@ function MainApp() {
           onHomeClick={handleHomeClick}
           onUPGClick={handleUPGClick}
         />
+        <div className="flex flex-1 min-w-0 relative">
+          <Suspense
+            fallback={<div className="flex-1 flex items-center justify-center">Cargando...</div>}
+          >
             {showHome ? (
               <HomeScreen
                 onGoToChat={() => {
@@ -319,28 +323,37 @@ function MainApp() {
                 autoJoinPassword={autoJoinPassword}
               />
             ) : activeView === AppView.CHAT ? (
-        <div className="flex flex-1 min-w-0 relative">
-          <Suspense
-            fallback={<div className="flex-1 flex items-center justify-center">Cargando...</div>}
-          >
-            {showHome ? (
-              <HomeScreen
-                onGoToChat={() => {
-                  setShowHome(false);
-                  setActiveView(AppView.CHAT);
-                  setActiveSection('chat');
-                }}
-                onGoToWhoWeAre={() => {
-                  setShowHome(false);
-                  setActiveView(AppView.WHO_WE_ARE);
-                  setActiveSection('who');
-                }}
-              />
-            ) : activeView === AppView.IMPOSTOR ? (
-              <ImpostorGame
-                onClose={() => {
-                  setShowHome(true);
-                  setActiveView(AppView.CHAT);
+              <div className="flex w-full h-full">
+                <ChannelList
+                  currentChannel={currentChannel}
+                  onChannelSelect={setCurrentChannel}
+                  onMenuToggle={() => {}}
+                />
+                <ChatInterface
+                  currentUser={currentUser}
+                  users={users}
+                  currentChannel={currentChannel}
+                  onSendMessage={sendMessage}
+                  messages={messages}
+                  setMessages={setMessages}
+                  onMenuToggle={() => {}}
+                  userColors={userColors}
+                />
+                <UserList
+                  users={users}
+                  currentUserId={currentUser.id}
+                  currentUser={currentUser}
+                  userColors={userColors}
+                />
+              </div>
+            ) : activeView === AppView.WHO_WE_ARE ? (
+              <WhoWeAre />
+            ) : activeView === AppView.VOTING ? (
+              <Voting />
+            ) : activeView === AppView.NEWS ? (
+              <UPGNews />
+            ) : activeView === AppView.HALL_OF_FAME ? (
+              <HallOfFame />
             ) : activeView === AppView.CS16 ? (
               <CS16Game
                 onClose={() => {
@@ -350,38 +363,6 @@ function MainApp() {
                 }}
                 autoJoinRoomId={autoJoinRoomId}
                 autoJoinPassword={autoJoinPassword}
-              />
-            ) : null}rentChannel={currentChannel}
-                  onSendMessage={sendMessage}
-                  messages={messages}
-                  setMessages={setMessages}
-                  onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
-        {showHome ? (
-          <div className="flex h-full w-full">
-            <HomeScreen
-              onGoToChat={() => {
-                setShowHome(false);
-                setActiveView(AppView.CHAT);
-                setActiveSection('chat');
-              }}
-              onGoToWhoWeAre={() => {
-                setShowHome(false);
-                setActiveView(AppView.WHO_WE_ARE);
-                setActiveSection('who');
-                setMobileActiveTab('chat');
-              }}
-              onJoinServer={handleJoinServer}
-              onCreateServer={handleCreateServer}
-            />
-          </div>
-        ) : ( <HallOfFame />
-            ) : activeView === AppView.CS16 ? (
-              <CS16Game
-                onClose={() => {
-                  setShowHome(true);
-                  setActiveView(AppView.CHAT);
-                  setActiveSection('home');
-                }}
               />
             ) : null}
           </Suspense>
@@ -404,39 +385,27 @@ function MainApp() {
                 setActiveSection('who');
                 setMobileActiveTab('chat');
               }}
+              onJoinServer={handleJoinServer}
+              onCreateServer={handleCreateServer}
             />
           </div>
         ) : (
           <>
             {mobileActiveTab === 'channels' && activeView === AppView.CHAT && (
-                {activeView === AppView.IMPOSTOR && (
-                  <ImpostorGame
-                    onClose={() => {
-                      setShowHome(true);
-                      setActiveView(AppView.CHAT);
-                      setActiveSection('home');
-                    }}
-                    autoJoinRoomId={autoJoinRoomId}
-                    autoJoinPassword={autoJoinPassword}
-                  />
-                )}}}
-                  currentUser={currentUser}
-                  activeVoiceChannel={activeVoiceChannel}
-                  onVoiceJoin={handleVoiceJoin}
-                  voiceStates={voiceStates}
-                  users={users}
-                  onLoginWithDiscord={loginWithDiscord}
-                {activeView === AppView.CS16 && (
-                  <CS16Game
-                    onClose={() => {
-                      setShowHome(true);
-                      setActiveView(AppView.CHAT);
-                      setActiveSection('home');
-                    }}
-                    autoJoinRoomId={autoJoinRoomId}
-                    autoJoinPassword={autoJoinPassword}
-                  />
-                )}<ChatInterface
+              <ChannelList
+                currentChannel={currentChannel}
+                onChannelSelect={c => {
+                  setCurrentChannel(c);
+                  setMobileActiveTab('chat');
+                }}
+                onMenuToggle={() => setMobileSidebarOpen(true)}
+              />
+            )}
+
+            {mobileActiveTab === 'chat' && (
+              <>
+                {activeView === AppView.CHAT && (
+                  <ChatInterface
                     currentUser={currentUser}
                     users={users}
                     currentChannel={currentChannel}
@@ -454,6 +423,8 @@ function MainApp() {
                       setActiveView(AppView.CHAT);
                       setActiveSection('home');
                     }}
+                    autoJoinRoomId={autoJoinRoomId}
+                    autoJoinPassword={autoJoinPassword}
                   />
                 )}
                 {activeView === AppView.WHO_WE_ARE && (
@@ -471,6 +442,8 @@ function MainApp() {
                       setActiveView(AppView.CHAT);
                       setActiveSection('home');
                     }}
+                    autoJoinRoomId={autoJoinRoomId}
+                    autoJoinPassword={autoJoinPassword}
                   />
                 )}
               </>

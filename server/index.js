@@ -1041,17 +1041,6 @@ io.on('connection', socket => {
         createdAt: new Date().toISOString(),
         gameState: { started: false }
       });
-      // Register as public server
-      publicServers.get('impostor').set(roomId, {
-        name: safeName,
-        hostId: userId,
-        hostName: username,
-        playerCount: 1,
-        maxPlayers: 10,
-        hasPassword,
-        createdAt: new Date().toISOString(),
-        gameState: { started: false }
-      });
 
       // Track user room for optimization
       userRoomMap.set(userId, { type: 'impostor', roomId });
@@ -1090,9 +1079,6 @@ io.on('connection', socket => {
       // Broadcast updated server list so everyone sees the new player count
       broadcastPublicServers();
 
-      // Broadcast updated server list so everyone sees the new player count
-      broadcastPublicServers();
-
       // Notify all in room of updated players
       const playersList = Array.from(room.players.entries()).map(([id, p]) => ({
         id,
@@ -1116,24 +1102,24 @@ io.on('connection', socket => {
 
   // Leave a room
   socket.on('impostor:leave-room', ({ roomId, userId }, ack) => {
+    try {
+      const room = impostorRooms.get(roomId);
+      if (!room) return ack && ack({ ok: false, error: 'not_found' });
+
+      const leavingPlayer = room.players.get(userId);
+      room.players.delete(userId);
+      userRoomMap.delete(userId);
+
       // If room is now empty, delete it
       if (room.players.size === 0) {
         impostorRooms.delete(roomId);
         publicServers.get('impostor').delete(roomId);
         // Broadcast removal
         broadcastPublicServers();
-        userRoomMap.delete(userId);
         return ack && ack({ ok: true });
       }
+
       // If host left, pick a new host
-      if (room.hostId === userId) {
-        const next = room.players.keys().next();
-        room.hostId = next.value;
-      }
-
-      userRoomMap.delete(userId);
-
-      // Update public server infohost
       if (room.hostId === userId) {
         const next = room.players.keys().next();
         room.hostId = next.value;
@@ -1161,6 +1147,7 @@ io.on('connection', socket => {
           username: leavingPlayer.username,
         });
       }
+      
       // Emit updated room state
       const playersList = Array.from(room.players.entries()).map(([id, p]) => ({
         id,
@@ -1558,6 +1545,12 @@ io.on('connection', socket => {
         bots,
         gameState: {
           gameStarted: false,
+          bombPlanted: false,
+          bombDefused: false,
+          winner: null
+        }
+      });
+
       // Register as public server
       publicServers.get('cs16').set(roomId, {
         name: safeName,
@@ -1573,15 +1566,6 @@ io.on('connection', socket => {
 
       // Track user room for optimization
       userRoomMap.set(userId, { type: 'cs16', roomId });
-
-      broadcastPublicServers();
-        playerCount: 1,
-        maxPlayers: 10,
-        hasPassword,
-        createdAt: new Date().toISOString(),
-        gameState: { started: false },
-        botCount: count
-      });
 
       broadcastPublicServers();
 
@@ -1618,6 +1602,16 @@ io.on('connection', socket => {
 
       if (room.players.size >= 10) return ack && ack({ ok: false, error: 'room_full' });
 
+      room.players.set(userId, {
+        socketId: socket.id,
+        username,
+        position: { x: 0, y: 0, z: 0 },
+        rotation: { x: 0, y: 0, z: 0 },
+        health: 100,
+        team: 'counter-terrorist', // Joiners are CT
+        isAlive: true
+      });
+
       // Update public server info
       const publicServer = publicServers.get('cs16').get(roomId);
       if (publicServer) {
@@ -1628,18 +1622,8 @@ io.on('connection', socket => {
       userRoomMap.set(userId, { type: 'cs16', roomId });
       
       broadcastPublicServers();
-        team: 'counter-terrorist', // Joiners are CT
-        isAlive: true
-      });
 
       socket.join(`cs16:${roomId}`);
-
-      // Update public server info
-      const publicServer = publicServers.get('cs16').get(roomId);
-      if (publicServer) {
-        publicServer.playerCount = room.players.size;
-      }
-      broadcastPublicServers();
 
       // Notify room
       io.to(`cs16:${roomId}`).emit('cs16:player-joined', {

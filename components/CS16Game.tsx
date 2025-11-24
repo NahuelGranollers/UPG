@@ -31,8 +31,10 @@ export default function CS16Game({
   const [publicServers, setPublicServers] = useState<any[]>([]);
   // Only show public server listing by default
   const [showPublicServers, setShowPublicServers] = useState(true);
+  const [showCreateServer, setShowCreateServer] = useState(false);
   const [serverName, setServerName] = useState('');
   const [serverPassword, setServerPassword] = useState('');
+  
   useEffect(() => {
     if (!socket || !currentUser) return;
 
@@ -206,12 +208,15 @@ export default function CS16Game({
   };
 
   // Create public server
-  const handleCreatePublicServer = () => {
+  const handleCreatePublicServer = (explicitRoomId?: string) => {
     if (!socket) return;
-    if (!roomId || !username) return;
+    const finalRoomId = explicitRoomId || roomId || `room_${Date.now()}`;
+    if (!username) return;
+
+    if (finalRoomId !== roomId) setRoomId(finalRoomId);
 
     socket.emit('cs16:create-room', {
-      roomId,
+      roomId: finalRoomId,
       userId: currentUser?.id,
       username,
       botCount,
@@ -254,16 +259,87 @@ export default function CS16Game({
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-discord-text-header">
             CS 1.6 Multiplayer
           </h1>
-          <button
-            onClick={() => {
-              if (joined) handleLeave();
-              if (onClose) onClose();
-            }}
-            className="discord-button secondary"
-          >
-            Cerrar
-          </button>
+          <div className="flex gap-2">
+            {!joined && (
+              <button
+                onClick={() => setShowCreateServer(true)}
+                className="discord-button success"
+              >
+                Crear Servidor
+              </button>
+            )}
+            <button
+              onClick={() => {
+                if (joined) handleLeave();
+                if (onClose) onClose();
+              }}
+              className="discord-button secondary"
+            >
+              Cerrar
+            </button>
+          </div>
         </div>
+
+        {showCreateServer && !joined && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div className="bg-discord-surface p-6 rounded-lg max-w-md w-full space-y-4">
+              <h3 className="text-xl font-bold text-white">Crear Servidor CS 1.6</h3>
+              
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-discord-text-muted uppercase">Nombre del Servidor</label>
+                <input
+                  type="text"
+                  value={serverName}
+                  onChange={(e) => setServerName(e.target.value)}
+                  placeholder={`Sala de ${username}`}
+                  className="w-full bg-discord-input p-2 rounded text-white"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-discord-text-muted uppercase">Contraseña (Opcional)</label>
+                <input
+                  type="password"
+                  value={serverPassword}
+                  onChange={(e) => setServerPassword(e.target.value)}
+                  placeholder="Dejar vacío para público"
+                  className="w-full bg-discord-input p-2 rounded text-white"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-discord-text-muted uppercase">Bots ({botCount})</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="9"
+                  value={botCount}
+                  onChange={(e) => setBotCount(parseInt(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <button
+                  onClick={() => setShowCreateServer(false)}
+                  className="flex-1 discord-button secondary"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    const newId = `room_${Date.now()}`;
+                    handleCreatePublicServer(newId);
+                    setShowCreateServer(false);
+                  }}
+                  className="flex-1 discord-button success"
+                >
+                  Crear
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {!joined ? (
           autoJoinRoomId ? (
