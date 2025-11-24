@@ -1,7 +1,3 @@
-  // Debug: log every time publicServers changes
-  useEffect(() => {
-    console.log('[DEBUG] Lista de servidores públicos actualizada:', publicServers);
-  }, [publicServers]);
 import React, { useEffect, useState } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
@@ -69,6 +65,9 @@ export default function ImpostorGame({
   const [gameStarted, setGameStarted] = useState(false);
   const [joined, setJoined] = useState(false);
   const [userId, setUserId] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState('General');
+  const [selectedTime, setSelectedTime] = useState(0);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
   useEffect(() => {
     if (!socket || !currentUser) return;
@@ -231,6 +230,40 @@ export default function ImpostorGame({
     socket.on('impostor:voting-start', onVotingStart);
     socket.on('impostor:voting-update', onVotingUpdate);
     socket.on('impostor:voting-result', onVotingResult);
+    socket.on('impostor:timer-update', (data: any) => {
+      setTimeLeft(data.timeLeft);
+    });
+    socket.on('impostor:timer-end', () => {
+      setTimeLeft(0);
+      setStatusMessage('¡Tiempo agotado!');
+      setNotifications(prev => [
+        ...prev,
+        { id: Date.now(), type: 'warning', message: '¡Tiempo agotado!', timestamp: new Date() },
+      ]);
+    });
+    socket.on('impostor:game-over', (data: any) => {
+      setGameStarted(false);
+      setVoting(false);
+      setAssigned(null);
+      setCardRevealed(false);
+      
+      let msg = '';
+      let type = 'info';
+      
+      if (data.winner === 'impostor') {
+        msg = `¡El Impostor (${data.impostorName}) gana! Adivinó la palabra: ${data.word}`;
+        type = 'error'; // Bad for crewmates
+      } else {
+        msg = `¡Los Tripulantes ganan! El Impostor (${data.impostorName}) falló al adivinar: ${data.guess} (Era: ${data.word})`;
+        type = 'success';
+      }
+      
+      setStatusMessage(msg);
+      setNotifications(prev => [
+        ...prev,
+        { id: Date.now(), type: type, message: msg, timestamp: new Date() },
+      ]);
+    });
     socket.on('impostor:restarted', () => {
       setAssigned(null);
       setPendingAssigned(null);
@@ -319,7 +352,12 @@ export default function ImpostorGame({
 
   const handleStart = () => {
     if (!socket) return;
-    socket.emit('impostor:start', { roomId, hostId: userId }, (res: any) => {
+    socket.emit('impostor:start', { 
+      roomId, 
+      hostId: userId,
+      category: selectedCategory,
+      timerDuration: selectedTime
+    }, (res: any) => {
       if (res && res.ok) {
         setStatusMessage('Ronda iniciada — revisa tu carta');
       } else {
@@ -480,26 +518,15 @@ export default function ImpostorGame({
   const alivePlayersCount = players.filter(p => !p.revealedInnocent).length;
   const allAliveVoted = totalVotes >= alivePlayersCount;
 
-  // Layout: center horizontally, not vertically
+  // Layout: align to top, not center vertically
   return (
-    <div className="flex flex-row items-center justify-center w-full min-h-screen bg-discord-chat">
-      <div className="w-full max-w-7xl py-4 px-2 sm:py-6 sm:px-4 lg:py-8 lg:px-6">
+    <div className="flex-1 bg-discord-chat custom-scrollbar p-4 sm:p-6 md:p-8">
+      <div className="max-w-7xl mx-auto">
         <div className="impostor-header">
           <div className="impostor-header-top">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-discord-text-header">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-discord-text-header mb-3 sm:mb-4">
               Impostor — Sala
             </h1>
-            <div className="impostor-controls">
-              <button
-                onClick={() => {
-                  if (joined) handleLeave();
-                  if (onClose) onClose();
-                }}
-                className="discord-button secondary"
-              >
-                Cerrar
-              </button>
-            </div>
           </div>
         </div>
 
@@ -628,8 +655,15 @@ export default function ImpostorGame({
                       Host: <span className="text-discord-text-header">{isHost ? 'Tú' : 'Otro'}</span>
                     </div>
                   </div>
-                  <div className="text-sm text-discord-text-muted">
-                    {players.length} jugador{players.length !== 1 ? 'es' : ''}
+                  <div className="flex flex-col items-end">
+                    <div className="text-sm text-discord-text-muted">
+                      {players.length} jugador{players.length !== 1 ? 'es' : ''}
+                    </div>
+                    {timeLeft !== null && timeLeft > 0 && (
+                      <div className="text-xl font-mono font-bold text-yellow-400 mt-1">
+                        {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -734,7 +768,7 @@ export default function ImpostorGame({
                           const delay = Math.random() * 400;
                           const bg = [
                             '#FF6B6B',
-                            '#FFB86B',
+                            '#FFB86L',
                             '#6BFFB8',
                             '#6BC8FF',
                             '#D56BFF',
@@ -905,8 +939,49 @@ export default function ImpostorGame({
 
                       <div className="impostor-button-grid mt-6">
                         {isHost && !assigned && (
-                          <button onClick={handleStart} className="discord-button success">
-                            Iniciar ronda
+                          <div className="flex flex-col gap-3 mb-4 w-full">
+                            <div className="flex gap-2">
+                              <select 
+                                className="discord-input flex-1 cursor-pointer"
+                                value={selectedCategory}
+                                onChange={(e) => setSelectedCategory(e.target.value)}
+                              >
+                                <option className="bg-discord-sidebar text-discord-text-normal" value="General">General</option>
+                                <option className="bg-discord-sidebar text-discord-text-normal" value="Fantasía">Fantasía</option>
+                                <option className="bg-discord-sidebar text-discord-text-normal" value="Transporte">Transporte</option>
+                                <option className="bg-discord-sidebar text-discord-text-normal" value="Objetos">Objetos</option>
+                                <option className="bg-discord-sidebar text-discord-text-normal" value="Lugares">Lugares</option>
+                              </select>
+                              <select 
+                                className="discord-input flex-1 cursor-pointer"
+                                value={selectedTime}
+                                onChange={(e) => setSelectedTime(Number(e.target.value))}
+                              >
+                                <option className="bg-discord-sidebar text-discord-text-normal" value={0}>Sin tiempo</option>
+                                <option className="bg-discord-sidebar text-discord-text-normal" value={180}>3 Minutos</option>
+                                <option className="bg-discord-sidebar text-discord-text-normal" value={300}>5 Minutos</option>
+                                <option className="bg-discord-sidebar text-discord-text-normal" value={600}>10 Minutos</option>
+                              </select>
+                            </div>
+                            <button onClick={handleStart} className="discord-button success w-full">
+                              Iniciar ronda
+                            </button>
+                          </div>
+                        )}
+                        {assigned && assigned.role === 'impostor' && (
+                          <button 
+                            onClick={() => {
+                              const guess = prompt('Adivina la palabra secreta (Si fallas, pierdes):');
+                              if (guess) {
+                                socket.emit('impostor:guess-word', { roomId, userId, guess }, (res: any) => {
+                                  if (!res.ok) alert(res.error);
+                                });
+                              }
+                            }}
+                            className="discord-button"
+                            style={{ background: '#9b59b6', color: 'white' }}
+                          >
+                            Adivinar Palabra
                           </button>
                         )}
                         {isHost && assigned && (

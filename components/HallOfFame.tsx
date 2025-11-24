@@ -87,12 +87,12 @@ const HallOfFame: React.FC = () => {
   const handleMouseLeave = () => setReflect({ x: 0, y: 0, opacity: 0 });
 
   return (
-    <div className="h-full w-full p-6 discord-chat">
-      <div className="max-w-6xl mx-auto">
+    <div className="flex-1 bg-discord-chat custom-scrollbar p-4 sm:p-6 md:p-8">
+      <div className="max-w-4xl mx-auto">
         <header className="discord-header discord-glass-card p-4 mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Salón de la Fama — UPG</h1>
-            <p className="text-sm muted-contrast">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-discord-text-header mb-2">Salón de la Fama — UPG</h1>
+            <p className="text-sm sm:text-base text-discord-text-muted">
               Los logros de la comunidad, preservados en vitrina
             </p>
           </div>
