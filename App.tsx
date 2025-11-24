@@ -370,14 +370,6 @@ function MainApp() {
       <div className="flex md:hidden h-full w-full flex-col relative overflow-hidden">
         {showHome ? (
           <div className="flex h-full w-full">
-            <Sidebar
-              currentUser={currentUser}
-              setCurrentUser={() => {}}
-              activeSection={activeSection}
-              onNavigate={(section) => navigateToSection(section, true)}
-              onHomeClick={handleHomeClick}
-              onUPGClick={handleUPGClick}
-            />
             <HomeScreen
               onGoToChat={() => {
                 setShowHome(false);
@@ -396,14 +388,6 @@ function MainApp() {
           <>
             {mobileActiveTab === 'channels' && activeView === AppView.CHAT && (
               <div className="flex h-full w-full">
-                <Sidebar
-                  currentUser={currentUser}
-                  setCurrentUser={() => {}}
-                  activeSection={activeSection}
-                  onNavigate={(section) => navigateToSection(section, true)}
-                  onHomeClick={handleHomeClick}
-                  onUPGClick={handleUPGClick}
-                />
                 <ChannelList
                   activeView={activeView}
                   currentChannelId={currentChannel.id}
