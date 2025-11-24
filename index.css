@@ -26,8 +26,8 @@ body {
     BlinkMacSystemFont,
     'Segoe UI',
     sans-serif;
-  background-color: #313338;
-  color: #dbdee1;
+  background-color: var(--bg);
+  color: var(--text);
   overflow: hidden;
   /* Altura dinámica para móviles */
   min-height: 100vh;
@@ -39,28 +39,156 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Tema: variables reutilizables para coherencia visual */
+/* Tema: variables reutilizables para coherencia visual estilo Discord */
 :root {
-  --bg: #2f3136; /* Base app */
-  --chat-bg: #232428; /* Chat input background */
-  --sidebar-bg: #1f2023;
-  --muted: #9aa0a6;
-  --text: #e6e9ec;
-  --blurple: #5865F2;
-  --accent: rgba(88,101,242,0.12);
-  --surface: #2b2d31;
-  --glass: rgba(255,255,255,0.02);
-  --shadow: 0 6px 18px rgba(0,0,0,0.6);
+  --bg: #313338; /* Discord chat background */
+  --chat-bg: #313338; /* Chat input background */
+  --sidebar-bg: #2b2d31; /* Discord sidebar */
+  --header-bg: #2b2d31; /* Discord header */
+  --surface: #2b2d31; /* Surface elements */
+  --surface-hover: #35373c; /* Hover states */
+  --muted: #949ba4; /* Discord muted text */
+  --text: #dbdee1; /* Discord normal text */
+  --text-header: #f2f3f5; /* Discord header text */
+  --blurple: #5865F2; /* Discord blurple */
+  --blurple-hover: #4752c4; /* Discord blurple hover */
+  --green: #23a559; /* Discord green */
+  --red: #da373c; /* Discord red */
+  --yellow: #ffcc17; /* UPG accent */
+  --border: #3f4147; /* Discord hover/border */
+  --glass: rgba(255,255,255,0.02); /* Subtle glass effect */
+  --shadow: 0 2px 10px rgba(0,0,0,0.2); /* Discord shadow */
+  --shadow-lg: 0 4px 20px rgba(0,0,0,0.3); /* Discord large shadow */
+  --shadow-xl: 0 8px 32px rgba(0,0,0,0.4); /* Discord extra large shadow */
 }
 
-/* LockScreen color tokens to reuse in Impostor theme */
-:root {
-  --lock-bg: #ffcc17; /* main yellow background */
-  --lock-accent: #ff4d0a; /* orange accent */
-  --lock-accent-2: #ff9300; /* secondary orange */
-  --lock-hover: #e03e00;
-  --lock-shadow: #cc3300;
-  --lock-text-dark: #2b2b2b;
+/* Clases de utilidad estilo Discord */
+.discord-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  transition: all 0.2s ease;
+}
+
+.discord-card:hover {
+  background: var(--surface-hover);
+  box-shadow: var(--shadow-lg);
+}
+
+.discord-button {
+  background: var(--blurple);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.discord-button:hover {
+  background: var(--blurple-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+}
+
+.discord-button:active {
+  transform: translateY(0);
+}
+
+.discord-button.secondary {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.discord-button.secondary:hover {
+  background: var(--surface-hover);
+}
+
+.discord-button.danger {
+  background: var(--red);
+}
+
+.discord-button.danger:hover {
+  background: #c13b40;
+}
+
+.discord-button.success {
+  background: var(--green);
+}
+
+.discord-button.success:hover {
+  background: #1e8c4a;
+}
+
+.discord-input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 8px 12px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.discord-input:focus {
+  outline: none;
+  border-color: var(--blurple);
+  box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.2);
+}
+
+.discord-input::placeholder {
+  color: var(--muted);
+}
+
+.discord-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.discord-header {
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--text-header);
+}
+
+.discord-sidebar {
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+}
+
+.discord-chat {
+  background: var(--chat-bg);
+}
+
+/* Glass morphism effect consistente */
+.discord-glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.discord-glass-subtle {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
 }
 
 /* Theme helper to apply lock-screen colours to game */

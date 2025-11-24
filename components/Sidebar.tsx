@@ -1,6 +1,6 @@
 ﻿import React, { memo, useState } from 'react';
 import { useSocket } from '../context/SocketContext';
-import { Home, Plus, Compass, Shield, Users, Vote } from 'lucide-react';
+import { Home, Shield, Users, Vote, Newspaper } from 'lucide-react';
 import SafeImage from './SafeImage';
 import AdminPanel from './AdminPanel';
 import { UserRole, User } from '../types';
@@ -13,7 +13,7 @@ interface SidebarProps {
   // activeSection allows parent to indicate which sidebar node is active
   activeSection?: 'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor';
   // navigation callback when clicking a sidebar node
-  onNavigate?: (section: 'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor') => void;
+  onNavigate?: (section: 'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor' | 'news') => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = memo(({ currentUser, setCurrentUser: _setCurrentUser, onHomeClick, onUPGClick, activeSection, onNavigate }) => {
@@ -75,14 +75,6 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentUser, setCurrentUser: _se
 
       <div className="w-8 h-[2px] bg-discord-chat rounded-lg mx-auto" />
 
-      <button className="w-12 h-12 bg-discord-chat text-discord-green hover:bg-discord-green hover:text-white rounded-[24px] hover:rounded-[16px] transition-all duration-200 flex items-center justify-center">
-        <Plus size={24} />
-      </button>
-
-      <button className="w-12 h-12 bg-discord-chat text-discord-green hover:bg-discord-green hover:text-white rounded-[24px] hover:rounded-[16px] transition-all duration-200 flex items-center justify-center">
-        <Compass size={24} />
-      </button>
-
       {/* Impostor game (navigate to full page) */}
       {(() => {
         const active = activeSection === 'impostor';
@@ -136,6 +128,25 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentUser, setCurrentUser: _se
                 aria-pressed={active}
               >
                 <Vote size={20} />
+              </button>
+            </div>
+          );
+        })()}
+
+        {(() => {
+          const active = activeSection === 'news';
+          return (
+            <div className="relative">
+              {active && <div className="absolute left-0 bg-white rounded-r w-1 h-10 top-1/2 -translate-y-1/2 -ml-1" />}
+              <button
+                onClick={() => {
+                  if (onNavigate) onNavigate('news');
+                }}
+                className={`w-12 h-12 ${active ? 'bg-discord-blurple text-white' : 'bg-discord-chat text-discord-text-normal hover:bg-discord-hover hover:text-discord-text-normal'} rounded-[24px] hover:rounded-[16px] transition-all duration-200 flex items-center justify-center`}
+                title="Noticias UPG"
+                aria-pressed={active}
+              >
+                <Newspaper size={20} />
               </button>
             </div>
           );

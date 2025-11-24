@@ -31,8 +31,7 @@ const Voting: React.FC = () => {
 
   return (
     <div
-      className="flex-1 flex flex-col items-center justify-center overflow-hidden w-full h-full px-4"
-      style={{ backgroundColor: '#ffcc17' }}
+      className="flex-1 flex flex-col items-center justify-center overflow-hidden w-full h-full px-4 bg-discord-chat"
     >
       <img
         ref={logoRef}
@@ -54,32 +53,16 @@ const Voting: React.FC = () => {
       <div
         id="logo-fallback"
         ref={logoRef as React.RefObject<HTMLDivElement>} // Apply animation here too if img fails
-        className="hidden w-[150px] h-[150px] sm:w-[200px] sm:h-[200px] md:w-[300px] md:h-[300px] lg:w-[400px] lg:h-[400px] bg-orange-500 rounded-full items-center justify-center mb-6 sm:mb-8 md:mb-10 border-4 border-white text-white font-bold text-xl sm:text-2xl"
+        className="hidden w-[150px] h-[150px] sm:w-[200px] sm:h-[200px] md:w-[300px] md:h-[300px] lg:w-[400px] lg:h-[400px] bg-discord-blurple rounded-discord items-center justify-center mb-6 sm:mb-8 md:mb-10 border-4 border-discord-hover text-discord-text-header font-bold text-xl sm:text-2xl"
       >
         UPG
       </div>
 
       <div
-        className="font-black text-center text-[1.5em] sm:text-[1.7em] md:text-[2.5em] lg:text-[3em]"
-        style={{
-          color: '#ff4d0a',
-          fontFamily: '"Arial Black", Arial, sans-serif',
-          textShadow: '2px 2px 0px #ff9300',
-          letterSpacing: '1px',
-        }}
+        className="font-black text-center text-[1.5em] sm:text-[1.7em] md:text-[2.5em] lg:text-[3em] text-discord-text-header"
       >
         coming soon...
       </div>
-
-      {/* Desktop shadow adjustment via style tag for media query specific override if needed, 
-          but generic 3px usually works for both based on your CSS */}
-      <style>{`
-        @media (min-width: 768px) {
-            .coming-text {
-                text-shadow: 3px 3px 0px #ff9300;
-            }
-        }
-      `}</style>
     </div>
   );
 };

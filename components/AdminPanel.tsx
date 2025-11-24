@@ -26,17 +26,17 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
   if (!socket) {
     return (
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
-        <div className="bg-discord-sidebar rounded-lg shadow-2xl max-w-md w-full p-8 border border-red-600 flex flex-col items-center">
+        <div className="discord-card max-w-md w-full p-8 border-red-600 flex flex-col items-center">
           <Shield className="w-10 h-10 text-red-600 mb-4" />
           <h2 className="text-xl font-bold text-red-600 mb-2">Error de conexión</h2>
-          <p className="text-base text-white mb-4 text-center">
+          <p className="text-base text-discord-text-normal mb-4 text-center">
             No se ha detectado conexión con el servidor.
             <br />
             Verifica tu conexión y recarga la página.
           </p>
           <button
             onClick={onClose}
-            className="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700"
+            className="discord-button danger"
           >
             Cerrar
           </button>
@@ -139,31 +139,31 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
     if (!activeForm) return null;
     const { action } = activeForm;
     return (
-      <div className="bg-discord-dark p-4 rounded border border-gray-800">
-        <h3 className="text-lg font-semibold mb-2">{action === 'change-color' ? 'Cambiar color' : action === 'global-message' ? 'Enviar mensaje global' : action === 'silence-user' ? 'Silenciar usuario' : 'Modo troll'}</h3>
+      <div className="discord-panel">
+        <h3 className="text-lg font-semibold mb-2 text-discord-text-header">{action === 'change-color' ? 'Cambiar color' : action === 'global-message' ? 'Enviar mensaje global' : action === 'silence-user' ? 'Silenciar usuario' : 'Modo troll'}</h3>
         <div className="space-y-2">
           {(action === 'silence-user' || action === 'change-color' || action === 'troll-mode') && (
             <div>
               <label htmlFor="admin-userid" className="text-sm text-discord-text-muted">ID del usuario</label>
-              <input id="admin-userid" value={formValues.userId || ''} onChange={e => setFormValues(v => ({ ...v, userId: e.target.value }))} className="w-full bg-discord-dark border border-gray-800 rounded p-2 text-white" placeholder="user-1234" />
+              <input id="admin-userid" value={formValues.userId || ''} onChange={e => setFormValues(v => ({ ...v, userId: e.target.value }))} className="w-full discord-input" placeholder="user-1234" />
             </div>
           )}
           {action === 'change-color' && (
             <div>
               <label htmlFor="admin-color" className="text-sm text-discord-text-muted">Color HEX</label>
-              <input id="admin-color" value={formValues.color || '#'+Math.floor(Math.random()*16777215).toString(16)} onChange={e => setFormValues(v => ({ ...v, color: e.target.value }))} className="w-32 bg-discord-dark border border-gray-800 rounded p-2 text-white" />
+              <input id="admin-color" value={formValues.color || '#'+Math.floor(Math.random()*16777215).toString(16)} onChange={e => setFormValues(v => ({ ...v, color: e.target.value }))} className="w-32 discord-input" />
             </div>
           )}
           {action === 'global-message' && (
             <div>
               <label className="text-sm text-discord-text-muted">Mensaje</label>
-              <textarea value={formValues.message || ''} onChange={e => setFormValues(v => ({ ...v, message: e.target.value }))} className="w-full bg-discord-dark border border-gray-800 rounded p-2 text-white" rows={3} />
+              <textarea value={formValues.message || ''} onChange={e => setFormValues(v => ({ ...v, message: e.target.value }))} className="w-full discord-input" rows={3} />
               <div className="flex items-center gap-3 mt-2">
                 <label htmlFor="admin-sendasbot" className="flex items-center gap-2 text-sm">
                   <input id="admin-sendasbot" type="checkbox" checked={formValues.sendAsBot === 'true' || formValues.sendAsBot === true} onChange={e => setFormValues(v => ({ ...v, sendAsBot: e.target.checked ? 'true' : 'false' }))} />
-                  <span className="text-sm">Enviar como bot</span>
+                  <span className="text-sm text-discord-text-normal">Enviar como bot</span>
                 </label>
-                <input id="admin-channel" placeholder="Canal (opcional)" value={formValues.channelId || ''} onChange={e => setFormValues(v => ({ ...v, channelId: e.target.value }))} className="bg-discord-dark border border-gray-800 rounded p-2 text-white" />
+                <input id="admin-channel" placeholder="Canal (opcional)" value={formValues.channelId || ''} onChange={e => setFormValues(v => ({ ...v, channelId: e.target.value }))} className="discord-input" />
               </div>
             </div>
           )}
@@ -172,7 +172,7 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
             <div>
               <label className="text-sm text-discord-text-muted">Modo Troll</label>
               <div className="flex gap-2 items-center mt-2">
-                <select value={formValues.mode || ''} onChange={e => setFormValues(v => ({ ...v, mode: e.target.value }))} className="bg-discord-dark border border-gray-800 rounded p-2 text-white">
+                <select value={formValues.mode || ''} onChange={e => setFormValues(v => ({ ...v, mode: e.target.value }))} className="discord-input">
                   <option value="">-- Seleccionar modo --</option>
                   <option value="uwu">UwU (suavizar)</option>
                   <option value="meow">Meow (gato)</option>
@@ -180,10 +180,10 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
                   <option value="clear">Desactivar modo</option>
                 </select>
                 <div className="flex gap-1">
-                  <button onClick={() => setFormValues(v => ({ ...v, mode: 'uwu' }))} className="px-2 py-1 rounded bg-gray-700 text-white">UwU</button>
-                  <button onClick={() => setFormValues(v => ({ ...v, mode: 'meow' }))} className="px-2 py-1 rounded bg-gray-700 text-white">Meow</button>
-                  <button onClick={() => setFormValues(v => ({ ...v, mode: 'kawaii' }))} className="px-2 py-1 rounded bg-gray-700 text-white">Kawaii</button>
-                  <button onClick={() => setFormValues(v => ({ ...v, mode: '' }))} className="px-2 py-1 rounded bg-red-600 text-white">Off</button>
+                  <button onClick={() => setFormValues(v => ({ ...v, mode: 'uwu' }))} className="discord-button secondary">UwU</button>
+                  <button onClick={() => setFormValues(v => ({ ...v, mode: 'meow' }))} className="discord-button secondary">Meow</button>
+                  <button onClick={() => setFormValues(v => ({ ...v, mode: 'kawaii' }))} className="discord-button secondary">Kawaii</button>
+                  <button onClick={() => setFormValues(v => ({ ...v, mode: '' }))} className="discord-button danger">Off</button>
                 </div>
               </div>
               <p className="text-xs text-discord-text-muted mt-2">Selecciona un modo para transformar los mensajes del usuario objetivo. "Desactivar" elimina el efecto.</p>
@@ -191,8 +191,8 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
           )}
 
           <div className="flex gap-2 justify-end pt-2">
-            <button onClick={() => setActiveForm(null)} className="px-3 py-1 rounded border border-gray-700">Cancelar</button>
-            <button onClick={() => handleAction(action, false)} className="px-3 py-1 rounded bg-discord-blurple text-white">Enviar</button>
+            <button onClick={() => setActiveForm(null)} className="discord-button secondary">Cancelar</button>
+            <button onClick={() => handleAction(action, false)} className="discord-button">Enviar</button>
           </div>
         </div>
       </div>
@@ -201,9 +201,9 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
-      <div className="bg-discord-sidebar rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-scaleIn border border-gray-800">
+      <div className="discord-card max-w-2xl w-full max-h-[90vh] overflow-hidden animate-scaleIn">
         {/* Header */}
-        <div className="bg-gradient-to-r from-red-600 to-orange-600 p-4 flex items-center justify-between">
+        <div className="bg-discord-blurple p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Shield className="w-6 h-6 text-white" />
             <h2 className="text-xl font-bold text-white">Panel de Administración</h2>
@@ -296,7 +296,7 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
         </div>
 
         {/* Footer */}
-        <div className="bg-discord-dark p-4 border-t border-gray-800">
+        <div className="bg-discord-dark p-4 border-t border-discord-border">
           <p className="text-xs text-discord-text-muted text-center">
             Sesión de admin: {currentUser?.username || 'Unknown'} | IP Hash Verificada
           </p>
@@ -319,18 +319,18 @@ interface ActionButtonProps {
 const ActionButton: React.FC<ActionButtonProps> = memo(
   ({ icon, title, description, onClick, isConfirming, isLoading, variant }) => {
     const variantStyles = {
-      danger: 'bg-red-600 hover:bg-red-700 border-red-500',
-      warning: 'bg-orange-600 hover:bg-orange-700 border-orange-500',
-      info: 'bg-blue-600 hover:bg-blue-700 border-blue-500',
-      success: 'bg-green-600 hover:bg-green-700 border-green-500',
+      danger: 'discord-button danger',
+      warning: 'discord-button warning',
+      info: 'discord-button info',
+      success: 'discord-button success',
     };
 
     return (
       <button
         onClick={onClick}
         disabled={isLoading}
-        className={`w-full p-4 rounded-lg border-2 transition-all ${
-          isConfirming ? 'bg-yellow-600 border-yellow-500 animate-pulse' : variantStyles[variant]
+        className={`w-full p-4 rounded-lg transition-all ${
+          isConfirming ? 'bg-yellow-600 border-yellow-500 animate-pulse text-white' : variantStyles[variant]
         } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'} text-left`}
       >
         <div className="flex items-start gap-3">

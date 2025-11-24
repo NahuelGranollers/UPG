@@ -1,4 +1,4 @@
-﻿import React, { useState, lazy, Suspense, useCallback } from 'react';
+﻿import React, { useState, useCallback } from 'react';
 import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider, useSocket } from './context/SocketContext';
@@ -16,10 +16,9 @@ import ChatInterface from './components/ChatInterface';
 import UserList from './components/UserList';
 import HomeScreen from './components/HomeScreen';
 import ImpostorGame from './components/ImpostorGame';
-
-// Componentes no críticos (lazy loading)
-const WhoWeAre = lazy(() => import('./components/WhoWeAre'));
-const Voting = lazy(() => import('./components/Voting'));
+import WhoWeAre from './components/WhoWeAre';
+import Voting from './components/Voting';
+import UPGNews from './components/UPGNews';
 
 function MainApp() {
   const { currentUser, isLoading, loginWithDiscord, logout } = useAuth();
@@ -32,9 +31,9 @@ function MainApp() {
     name: 'general',
     description: 'Chat general',
   });
-  const [activeSection, setActiveSection] = useState<'home' | 'chat' | 'who' | 'voting' | 'upg'>('impostor');
+  const [activeSection, setActiveSection] = useState<'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor' | 'news'>('impostor');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [mobileActiveTab, setMobileActiveTab] = useState<'channels' | 'chat' | 'users'>('chat');
+  const [mobileActiveTab, setMobileActiveTab] = useState<'channels' | 'chat' | 'users' | 'news'>('chat');
 
   const [isLocked, setIsLocked] = useState(() => !sessionStorage.getItem('app_unlocked'));
 
@@ -210,6 +209,10 @@ function MainApp() {
               setShowHome(false);
               setActiveView(AppView.VOTING);
               setActiveSection('voting');
+            } else if (section === 'news') {
+              setShowHome(false);
+              setActiveView(AppView.NEWS);
+              setActiveSection('news');
             }
           }}
           onHomeClick={() => {
@@ -222,7 +225,7 @@ function MainApp() {
             setActiveSection('chat');
           }}
         />
-        {!showHome && activeView !== AppView.IMPOSTOR && (
+        {!showHome && activeView === AppView.CHAT && (
           <ChannelList
             activeView={activeView}
             currentChannelId={currentChannel.id}
@@ -266,6 +269,7 @@ function MainApp() {
           ) : null}
           {activeView === AppView.WHO_WE_ARE && <WhoWeAre onMenuToggle={() => {}} />}
           {activeView === AppView.VOTING && <Voting onMenuToggle={() => {}} />}
+          {activeView === AppView.NEWS && <UPGNews />}
         </div>
       </div>
 
@@ -294,10 +298,12 @@ function MainApp() {
                   setShowHome(false);
                   setActiveView(AppView.WHO_WE_ARE);
                   setActiveSection('who');
+                  setMobileActiveTab('chat');
                 } else if (section === 'voting') {
                   setShowHome(false);
                   setActiveView(AppView.VOTING);
                   setActiveSection('voting');
+                  setMobileActiveTab('chat');
                 }
               }}
               onHomeClick={() => { setShowHome(true); setActiveSection('home'); }}
@@ -307,7 +313,7 @@ function MainApp() {
           </div>
         ) : (
           <>
-            {mobileActiveTab === 'channels' && activeView !== AppView.IMPOSTOR && (
+            {mobileActiveTab === 'channels' && activeView === AppView.CHAT && (
               <div className="flex h-full w-full">
                 <Sidebar
                   currentUser={currentUser}
@@ -330,10 +336,17 @@ function MainApp() {
                       setShowHome(false);
                       setActiveView(AppView.WHO_WE_ARE);
                       setActiveSection('who');
+                      setMobileActiveTab('chat');
                     } else if (section === 'voting') {
                       setShowHome(false);
                       setActiveView(AppView.VOTING);
                       setActiveSection('voting');
+                      setMobileActiveTab('chat');
+                    } else if (section === 'news') {
+                      setShowHome(false);
+                      setActiveView(AppView.NEWS);
+                      setActiveSection('news');
+                      setMobileActiveTab('chat');
                     }
                   }}
                   onHomeClick={() => { setShowHome(true); setActiveSection('home'); }}
@@ -375,6 +388,7 @@ function MainApp() {
                 {activeView === AppView.IMPOSTOR && <ImpostorGame onClose={() => { setShowHome(true); setActiveView(AppView.CHAT); setActiveSection('home'); }} />}
                 {activeView === AppView.WHO_WE_ARE && <WhoWeAre onMenuToggle={() => setMobileActiveTab('channels')} />}
                 {activeView === AppView.VOTING && <Voting onMenuToggle={() => setMobileActiveTab('channels')} />}
+                {activeView === AppView.NEWS && <UPGNews />}
               </>
             )}
 
@@ -382,8 +396,9 @@ function MainApp() {
 
             <MobileTabBar
               activeTab={mobileActiveTab}
-              onTabChange={setMobileActiveTab}
+              onTabChange={(tab: 'channels' | 'chat' | 'users' | 'news') => setMobileActiveTab(tab)}
               unreadCount={0}
+              showNewsTab={activeView === AppView.CHAT}
             />
           </>
         )}
@@ -397,10 +412,8 @@ export default function App() {
     <ErrorBoundary>
       <AuthProvider>
         <SocketProvider>
-          <Suspense fallback={null}>
-            <MainApp />
-            <Toaster position="top-right" theme="dark" richColors />
-          </Suspense>
+          <MainApp />
+          <Toaster position="top-right" theme="dark" richColors />
         </SocketProvider>
       </AuthProvider>
     </ErrorBoundary>
