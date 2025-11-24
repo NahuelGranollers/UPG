@@ -23,6 +23,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
   const [myVote, setMyVote] = useState<string | null>(null);
   const [voteCounts, setVoteCounts] = useState<Record<string, number>>({});
   const [votingResult, setVotingResult] = useState<any>(null);
+  const [totalVotes, setTotalVotes] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [currentTurn, setCurrentTurn] = useState<string | null>(null);
   const [turnOrder, setTurnOrder] = useState<string[]>([]);
@@ -35,13 +36,14 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
   const [customWords, setCustomWords] = useState<string[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [theme, setTheme] = useState<'upg' | 'neon' | 'retro'>('upg');
+  const [userId, setUserId] = useState<string>('');
 
   useEffect(() => {
     if (!socket) return;
 
     const onRoomState = (data: any) => {
       setPlayers(data.players || []);
-      setIsHost(data.hostId === currentUser?.id);
+      setIsHost(data.hostId === userId);
       setJoined(true);
       setCustomWords(data.customWords || []);
     };
@@ -72,6 +74,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
       setMyVote(null);
       setVoteCounts({});
       setVotingResult(null);
+      setTotalVotes(0);
       setStatusMessage('Votación iniciada');
       setNotifications(prev => [...prev, { id: Date.now(), type: 'warning', message: '¡Votación iniciada!', timestamp: new Date() }]);
       setTimeout(() => setNotifications(prev => prev.slice(1)), 5000);
@@ -79,6 +82,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
     const onVotingUpdate = (d: any) => {
       setVoteCounts(d.counts || {});
+      setTotalVotes(d.totalVotes || 0);
     };
 
     const onVotingResult = (d: any) => {
@@ -134,6 +138,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
       setMyVote(null);
       setVoteCounts({});
       setVotingResult(null);
+      setTotalVotes(0);
       setStatusMessage('Ronda reiniciada');
       setCardRevealed(false);
       setRevealedRoles(null);
@@ -157,7 +162,9 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
   const handleCreate = () => {
     if (!socket) return;
     if (!roomId || !username) return setStatusMessage('Room y nombre requeridos');
-    socket.emit('impostor:create-room', { roomId, userId: currentUser?.id || `guest-${Math.random().toString(36).slice(2,8)}`, username }, (res: any) => {
+    const generatedUserId = currentUser?.id || `guest-${Math.random().toString(36).slice(2,8)}`;
+    setUserId(generatedUserId);
+    socket.emit('impostor:create-room', { roomId, userId: generatedUserId, username }, (res: any) => {
       if (res && res.ok) {
         setJoined(true);
         setStatusMessage('Sala creada. Esperando jugadores...');
@@ -170,7 +177,9 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
   const handleJoin = () => {
     if (!socket) return;
     if (!roomId || !username) return setStatusMessage('Room y nombre requeridos');
-    socket.emit('impostor:join-room', { roomId, userId: currentUser?.id || `guest-${Math.random().toString(36).slice(2,8)}`, username }, (res: any) => {
+    const generatedUserId = currentUser?.id || `guest-${Math.random().toString(36).slice(2,8)}`;
+    setUserId(generatedUserId);
+    socket.emit('impostor:join-room', { roomId, userId: generatedUserId, username }, (res: any) => {
       if (res && res.ok) {
         setJoined(true);
         setStatusMessage('Te has unido a la sala');
@@ -182,20 +191,21 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
   const handleLeave = () => {
     if (!socket) return;
-    socket.emit('impostor:leave-room', { roomId, userId: currentUser?.id || '' }, (res: any) => {
+    socket.emit('impostor:leave-room', { roomId, userId }, (res: any) => {
       setJoined(false);
       setPlayers([]);
       setAssigned(null);
       setIsHost(false);
       setStatusMessage('Has salido de la sala');
       setCardRevealed(false);
+      setUserId('');
     });
   };
 
 
   const handleStart = () => {
     if (!socket) return;
-    socket.emit('impostor:start', { roomId, hostId: currentUser?.id || '' }, (res: any) => {
+    socket.emit('impostor:start', { roomId, hostId: userId }, (res: any) => {
       if (res && res.ok) {
         setStatusMessage('Ronda iniciada — revisa tu carta');
       } else {
@@ -206,7 +216,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
   const handleStartVoting = () => {
     if (!socket) return;
-    socket.emit('impostor:start-voting', { roomId, hostId: currentUser?.id || '' }, (res: any) => {
+    socket.emit('impostor:start-voting', { roomId, hostId: userId }, (res: any) => {
       if (res && res.ok) setStatusMessage('Votación iniciada');
       else setStatusMessage(res?.error || 'No se pudo iniciar votación');
     });
@@ -214,7 +224,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
   const handleCastVote = (targetId: string) => {
     if (!socket) return;
-    socket.emit('impostor:cast-vote', { roomId, voterId: currentUser?.id || '', votedId: targetId }, (res: any) => {
+    socket.emit('impostor:cast-vote', { roomId, voterId: userId, votedId: targetId }, (res: any) => {
       if (res && res.ok) setMyVote(targetId);
       else setStatusMessage(res?.error === 'dead_cannot_vote' ? 'Los muertos no pueden votar' : res?.error || 'Error votando');
     });
@@ -222,7 +232,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
   const handleEndVoting = () => {
     if (!socket) return;
-    socket.emit('impostor:end-voting', { roomId, hostId: currentUser?.id || '' }, (res: any) => {
+    socket.emit('impostor:end-voting', { roomId, hostId: userId }, (res: any) => {
       if (res && res.ok) setStatusMessage('Votación cerrada');
       else setStatusMessage(res?.error || 'Error cerrando votación');
     });
@@ -230,7 +240,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
   const handleRevealAll = () => {
     if (!socket) return;
-    socket.emit('impostor:reveal-all', { roomId, hostId: currentUser?.id || '' }, (res: any) => {
+    socket.emit('impostor:reveal-all', { roomId, hostId: userId }, (res: any) => {
       if (res && res.ok) setStatusMessage('Todas las cartas reveladas');
       else setStatusMessage(res?.error || 'Error al revelar todas las cartas');
     });
@@ -238,7 +248,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
   const handleRestart = () => {
     if (!socket) return;
-    socket.emit('impostor:restart', { roomId, hostId: currentUser?.id || '' }, (res: any) => {
+    socket.emit('impostor:restart', { roomId, hostId: userId }, (res: any) => {
       if (res && res.ok) setStatusMessage('Ronda reiniciada, espera al host para iniciar otra');
       else setStatusMessage(res?.error || 'No se pudo reiniciar');
     });
@@ -246,20 +256,19 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
   const handleAddWord = (word: string) => {
     if (!socket || !word.trim()) return;
-    socket.emit('impostor:add-word', { roomId, userId: currentUser?.id || '', word: word.trim() }, (res: any) => {
+    socket.emit('impostor:add-word', { roomId, userId, word: word.trim() }, (res: any) => {
       if (!res || !res.ok) {
         setStatusMessage(res?.error || 'Error agregando palabra');
       }
     });
   };
 
-  const currentPlayer = players.find(p => p.id === currentUser?.id);
+  const currentPlayer = players.find(p => p.id === userId);
   const isCurrentPlayerAlive = !currentPlayer?.revealedInnocent;
 
   // Calculate if all alive players have voted
   const alivePlayersCount = players.filter(p => !p.revealedInnocent).length;
-  const votesCastCount = Object.keys(voteCounts).length;
-  const allAliveVoted = votesCastCount >= alivePlayersCount;
+  const allAliveVoted = totalVotes >= alivePlayersCount;
 
   return (
     <div className={`flex flex-col min-h-screen w-full impostor-theme ${theme === 'neon' ? 'neon-theme' : theme === 'retro' ? 'retro-theme' : ''}`}>
@@ -313,7 +322,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                     {players.map(p => (
                       <li key={p.id} className="flex items-center justify-between overflow-hidden py-2">
                           <span className="text-white break-all font-semibold text-lg" style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }} title={p.username}>{p.username}</span>
-                          <span className="text-sm text-gray-400">{p.id === currentUser?.id ? 'Tú' : ''}</span>
+                          <span className="text-sm text-gray-400">{p.id === userId ? 'Tú' : ''}</span>
                         </li>
                     ))}
                   </ul>
@@ -414,7 +423,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                         <div className="flex items-center justify-between mb-4">
                           <div className="text-lg text-contrast font-semibold">Votación</div>
                           <div className="text-base text-gray-400">
-                            {voting ? `Votos: ${votesCastCount}/${alivePlayersCount}` : 'Inactiva'}
+                            {voting ? `Votos: ${totalVotes}/${alivePlayersCount}` : 'Inactiva'}
                           </div>
                         </div>
 
@@ -422,7 +431,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                           <div className="space-y-3">
                             {players.map(p => {
                               const isDead = p.revealedInnocent;
-                              const isCurrentUser = p.id === currentUser?.id;
+                              const isCurrentUser = p.id === userId;
                               const canVote = !myVote && isCurrentPlayerAlive && !isDead;
                               return (
                                 <div key={p.id} className={`impostor-voting-item ${isDead ? 'opacity-50' : ''}`}>
@@ -455,7 +464,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                         {isHost && !assigned && <button onClick={handleStart} className="glass-btn primary px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-lg font-semibold">Iniciar ronda</button>}
                         {isHost && assigned && <button onClick={handleRevealAll} className="glass-btn px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-lg font-semibold" style={{ background: 'linear-gradient(180deg,#ff8c00,#ff4500)', color: 'white' }}>Revelar todas las cartas</button>}
                         {isHost && <button onClick={handleStartVoting} className="glass-btn px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-lg font-semibold">Iniciar votación</button>}
-                        {isHost && voting && <button onClick={handleEndVoting} disabled={!allAliveVoted} className={`glass-btn px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-lg font-semibold ${allAliveVoted ? '' : 'opacity-50 cursor-not-allowed'}`} style={{ background: allAliveVoted ? '#ff6b6b' : '#666', color: 'white' }}>Terminar votación ({votesCastCount}/{alivePlayersCount})</button>}
+                        {isHost && voting && <button onClick={handleEndVoting} disabled={!allAliveVoted} className={`glass-btn px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-lg font-semibold ${allAliveVoted ? '' : 'opacity-50 cursor-not-allowed'}`} style={{ background: allAliveVoted ? '#ff6b6b' : '#666', color: 'white' }}>Terminar votación ({totalVotes}/{alivePlayersCount})</button>}
                         {isHost && <button onClick={handleRestart} className="glass-btn px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-lg font-semibold">Reiniciar ronda</button>}
                         <button onClick={handleLeave} className="glass-btn px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-lg font-semibold">Abandonar</button>
                       </div>
