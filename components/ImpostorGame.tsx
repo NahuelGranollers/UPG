@@ -43,7 +43,9 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
     const onRoomState = (data: any) => {
       setPlayers(data.players || []);
-      setIsHost(data.hostId === userId);
+      // Check if current user is host (either by userId or currentUser.id)
+      const isUserHost = data.hostId === userId || (userId === '' && data.hostId === currentUser?.id);
+      setIsHost(isUserHost);
       setJoined(true);
       setCustomWords(data.customWords || []);
     };
@@ -162,7 +164,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
   const handleCreate = () => {
     if (!socket) return;
     if (!roomId || !username) return setStatusMessage('Room y nombre requeridos');
-    const generatedUserId = currentUser?.id || `guest-${Math.random().toString(36).slice(2,8)}`;
+    const generatedUserId = userId || currentUser?.id || `guest-${Math.random().toString(36).slice(2,8)}`;
     setUserId(generatedUserId);
     socket.emit('impostor:create-room', { roomId, userId: generatedUserId, username }, (res: any) => {
       if (res && res.ok) {
@@ -177,7 +179,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
   const handleJoin = () => {
     if (!socket) return;
     if (!roomId || !username) return setStatusMessage('Room y nombre requeridos');
-    const generatedUserId = currentUser?.id || `guest-${Math.random().toString(36).slice(2,8)}`;
+    const generatedUserId = userId || currentUser?.id || `guest-${Math.random().toString(36).slice(2,8)}`;
     setUserId(generatedUserId);
     socket.emit('impostor:join-room', { roomId, userId: generatedUserId, username }, (res: any) => {
       if (res && res.ok) {
@@ -401,18 +403,21 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                           aria-pressed={cardRevealed}
                         >
                           <div className="impostor-card-face impostor-card-front liquid-glass p-6 rounded-lg border border-gray-800" style={{ position: 'relative', cursor: 'pointer' }}>
-                            <div className="text-lg text-contrast mb-3 font-semibold">Tu carta</div>
-                            <div className="text-xl font-semibold text-contrast">Haz click o presiona Enter para voltear</div>
+                            <div className="text-lg text-white mb-3 font-semibold">Tu carta</div>
+                            <div className="text-xl font-semibold text-white">Haz click o presiona Enter para voltear</div>
                           </div>
                           <div className="impostor-card-face impostor-card-back liquid-glass p-6 rounded-lg border border-gray-800" style={{ position: 'relative', cursor: 'pointer' }}>
                             {assigned ? (
                               <div className="text-center w-full">
-                                <div className="text-lg text-gray-400 mb-3 font-semibold">Tu carta</div>
-                                <div className="text-3xl font-bold">{assigned.role === 'impostor' ? 'IMPOSTOR' : assigned.word}</div>
-                                <div className="text-base text-gray-600 mt-3">{statusMessage}</div>
+                                <div className="text-lg text-white mb-3 font-semibold">Tu carta</div>
+                                <div className="text-3xl font-bold text-yellow-400">{assigned.role === 'impostor' ? 'IMPOSTOR' : assigned.word}</div>
+                                <div className="text-base text-gray-300 mt-3">{statusMessage}</div>
                               </div>
                             ) : (
-                              <div className="text-lg text-gray-400 font-semibold">Aún no hay ronda — espera al host para iniciar</div>
+                              <div className="text-center w-full">
+                                <div className="text-lg text-white font-semibold mb-3">Aún no hay ronda</div>
+                                <div className="text-base text-gray-300">{isHost ? 'Haz click en "Iniciar ronda" para comenzar' : 'Espera al host para iniciar'}</div>
+                              </div>
                             )}
                           </div>
                         </div>
@@ -421,7 +426,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                       {/* Voting area */}
                       <div className="panel-glass lg liquid-glass bg-[#071017] mt-6 p-4 rounded" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
                         <div className="flex items-center justify-between mb-4">
-                          <div className="text-lg text-contrast font-semibold">Votación</div>
+                          <div className="text-lg text-white font-semibold">Votación</div>
                           <div className="text-base text-gray-400">
                             {voting ? `Votos: ${totalVotes}/${alivePlayersCount}` : 'Inactiva'}
                           </div>
@@ -454,7 +459,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                         )}
 
                         {votingResult && (
-                          <div className="mt-4 text-lg text-contrast font-semibold">
+                          <div className="mt-4 text-lg text-white font-semibold">
                             Resultado: {votingResult.eliminated ? `Eliminado ${votingResult.eliminated}` : 'Empate'}
                           </div>
                         )}
@@ -474,7 +479,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
               </div>
             )}
 
-            {statusMessage && <div className="mt-4 text-lg text-contrast font-semibold">{statusMessage}</div>}
+            {statusMessage && <div className="mt-4 text-lg text-white font-semibold">{statusMessage}</div>}
           </div>
 
           <aside className="bg-[#071017] p-6 rounded-lg border border-gray-800 overflow-hidden">
