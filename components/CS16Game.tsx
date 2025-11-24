@@ -69,13 +69,13 @@ export default function CS16Game({
 
     // Socket event handlers for multiplayer
     socket.on('cs16:room-state', (data) => {
-      console.log('Room state:', data);
+      // console.log('Room state:', data);
       setJoined(true);
       setIsHost(data.hostId === currentUser?.id);
     });
 
     socket.on('cs16:game-update', (data) => {
-      console.log('Game update:', data);
+      // console.log('Game update:', data);
       const started = data.gameState?.gameStarted || false;
       setGameStarted(started);
       if (started) {
@@ -84,23 +84,23 @@ export default function CS16Game({
     });
 
     socket.on('cs16:player-joined', (data) => {
-      console.log('Player joined:', data);
+      // console.log('Player joined:', data);
     });
 
     socket.on('cs16:player-left', (data) => {
-      console.log('Player left:', data);
+      // console.log('Player left:', data);
     });
 
     socket.on('cs16:player-hit', (data) => {
-      console.log('Player hit:', data);
+      // console.log('Player hit:', data);
     });
 
     socket.on('cs16:bomb-planted', (data) => {
-      console.log('Bomb planted:', data);
+      // console.log('Bomb planted:', data);
     });
 
     socket.on('cs16:bomb-defused', (data) => {
-      console.log('Bomb defused:', data);
+      // console.log('Bomb defused:', data);
     });
 
     return () => {
@@ -117,7 +117,7 @@ export default function CS16Game({
   // Auto-refresh public servers when viewing them
   useEffect(() => {
     if (!showPublicServers) return;
-    const interval = setInterval(fetchPublicServers, 5000); // Refresh every 5 seconds
+    const interval = setInterval(fetchPublicServers, 10000); // Refresh every 10 seconds
     return () => clearInterval(interval);
   }, [showPublicServers]);
 

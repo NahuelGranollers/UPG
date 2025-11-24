@@ -1,180 +1,236 @@
-import React, { memo } from 'react';
-import { Newspaper, Calendar, User, ExternalLink } from 'lucide-react';
+import React, { memo, useEffect, useState } from 'react';
+import { Newspaper, Calendar, User, ExternalLink, Plus, X } from 'lucide-react';
 import SafeImage from './SafeImage';
+import { useAuth } from '../context/AuthContext';
+import { toast } from 'sonner';
 
 interface NewsArticle {
   id: string;
   title: string;
   excerpt: string;
-  author: string;
-  date: string;
-  image?: string;
+  content: string;
+  author_name: string;
+  created_at: string;
+  image_url?: string;
   category: 'announcement' | 'event' | 'update' | 'tournament';
-  readTime?: number;
 }
 
 const UPGNews: React.FC = () => {
-  const articles: NewsArticle[] = [
-    {
-      id: '1',
-      title: 'Nuevo Sistema de Moderación',
-      excerpt:
-        'Implementamos un panel de administración avanzado para mantener la comunidad segura.',
-      author: 'AdminZero',
-      date: '2025-11-24',
-      category: 'update',
-      readTime: 2,
-    },
-    {
-      id: '2',
-      title: 'Torneo Valorant - Diciembre',
-      excerpt:
-        '¡Prepárense! El torneo mensual de Valorant comienza el 1 de diciembre con premios de $500.',
-      author: 'ModLuna',
-      date: '2025-11-23',
-      category: 'tournament',
-      readTime: 3,
-    },
-    {
-      id: '3',
-      title: 'Modo Troll Activado',
-      excerpt:
-        'Nueva función experimental: transforma mensajes de usuarios objetivo. ¡Solo para admins!',
-      author: 'DevKai',
-      date: '2025-11-22',
-      category: 'announcement',
-      readTime: 1,
-    },
-    {
-      id: '4',
-      title: 'Evento Comunidad - Game Night',
-      excerpt:
-        'Únete a nuestra game night semanal este viernes. Juegos variados para todos los niveles.',
-      author: 'ComMgr',
-      date: '2025-11-21',
-      category: 'event',
-      readTime: 2,
-    },
-    {
-      id: '5',
-      title: 'Actualización de Voz en Tiempo Real',
-      excerpt:
-        'Mejoramos la calidad de audio y añadimos indicadores de latencia en canales de voz.',
-      author: 'DevKai',
-      date: '2025-11-20',
-      category: 'update',
-      readTime: 2,
-    },
-  ];
+  const { currentUser } = useAuth();
+  const [articles, setArticles] = useState<NewsArticle[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  
+  // Form state
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [excerpt, setExcerpt] = useState('');
+  const [category, setCategory] = useState('announcement');
 
-  const getCategoryColor = (category: NewsArticle['category']) => {
-    switch (category) {
-      case 'announcement':
-        return 'bg-blue-500';
-      case 'event':
-        return 'bg-green-500';
-      case 'update':
-        return 'bg-purple-500';
-      case 'tournament':
-        return 'bg-yellow-500';
-      default:
-        return 'bg-gray-500';
+  const fetchNews = async () => {
+    try {
+      const res = await fetch('/api/news');
+      const data = await res.json();
+      setArticles(data);
+    } catch (e) {
+      console.error('Error fetching news', e);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getCategoryLabel = (category: NewsArticle['category']) => {
+  useEffect(() => {
+    fetchNews();
+  }, []);
+
+  const handleCreateNews = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, content, excerpt, category })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        toast.success('Noticia creada correctamente');
+        setShowCreateModal(false);
+        setTitle('');
+        setContent('');
+        setExcerpt('');
+        fetchNews();
+      } else {
+        toast.error(data.error || 'Error creando noticia');
+      }
+    } catch (e) {
+      toast.error('Error de conexión');
+    }
+  };
+
+  const canCreate = currentUser && (currentUser.role === 'admin' || currentUser.verified);
+
+  const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'announcement':
-        return 'Anuncio';
-      case 'event':
-        return 'Evento';
-      case 'update':
-        return 'Actualización';
-      case 'tournament':
-        return 'Torneo';
-      default:
-        return 'Noticia';
+      case 'announcement': return 'bg-blue-500';
+      case 'event': return 'bg-green-500';
+      case 'update': return 'bg-purple-500';
+      case 'tournament': return 'bg-yellow-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getCategoryLabel = (category: string) => {
+    switch (category) {
+      case 'announcement': return 'Anuncio';
+      case 'event': return 'Evento';
+      case 'update': return 'Actualización';
+      case 'tournament': return 'Torneo';
+      default: return 'Noticia';
     }
   };
 
   return (
-    <div className="flex-1 bg-discord-chat custom-scrollbar">
+    <div className="flex-1 bg-discord-chat custom-scrollbar overflow-y-auto">
       <div className="max-w-4xl mx-auto p-4 sm:p-6 md:p-8">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 relative">
           <h1 className="text-3xl sm:text-4xl font-black text-discord-text-header mb-4">
             📰 UPG News
           </h1>
           <p className="text-lg text-discord-text-normal max-w-2xl mx-auto">
             Mantente al día con las últimas novedades, anuncios y eventos de la comunidad UPG
           </p>
+          
+          {canCreate && (
+            <button 
+              onClick={() => setShowCreateModal(true)}
+              className="absolute top-0 right-0 discord-button success flex items-center gap-2"
+            >
+              <Plus size={16} /> Crear Noticia
+            </button>
+          )}
         </div>
 
         {/* News Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {articles.map(article => (
-            <article
-              key={article.id}
-              className="discord-card hover:border-discord-blurple/30 transition-colors cursor-pointer group"
-            >
-              {/* Category Badge */}
-              <div className="flex items-center justify-between mb-3">
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-medium text-white ${getCategoryColor(article.category)}`}
-                >
-                  {getCategoryLabel(article.category)}
-                </span>
-                {article.readTime && (
-                  <span className="text-xs text-discord-text-muted flex items-center gap-1">
-                    <User size={10} />
-                    {article.readTime}min de lectura
-                  </span>
-                )}
-              </div>
-
-              {/* Title */}
-              <h3 className="text-xl font-bold text-discord-text-header mb-3 group-hover:text-discord-blurple transition-colors line-clamp-2">
-                {article.title}
-              </h3>
-
-              {/* Excerpt */}
-              <p className="text-sm text-discord-text-normal mb-4 line-clamp-3">
-                {article.excerpt}
-              </p>
-
-              {/* Footer */}
-              <div className="flex items-center justify-between text-xs text-discord-text-muted border-t border-discord-border pt-3">
-                <div className="flex items-center gap-2">
-                  <User size={12} />
-                  <span className="font-medium">{article.author}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar size={12} />
-                  <span>
-                    {new Date(article.date).toLocaleDateString('es-ES', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                    })}
+        {loading ? (
+          <div className="text-center text-discord-text-muted">Cargando noticias...</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {articles.map(article => (
+              <article
+                key={article.id}
+                className="discord-card hover:border-discord-blurple/30 transition-colors cursor-pointer group flex flex-col"
+              >
+                {/* Category Badge */}
+                <div className="flex items-center justify-between mb-3">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-medium text-white ${getCategoryColor(article.category)}`}
+                  >
+                    {getCategoryLabel(article.category)}
                   </span>
                 </div>
-              </div>
 
-              {/* Read More Link */}
-              <div className="mt-4">
-                <button className="flex items-center gap-2 text-sm text-discord-blurple hover:text-discord-blurple-hover transition-colors font-medium">
-                  <span>Leer artículo completo</span>
-                  <ExternalLink size={14} />
+                {/* Title */}
+                <h3 className="text-xl font-bold text-discord-text-header mb-3 group-hover:text-discord-blurple transition-colors line-clamp-2">
+                  {article.title}
+                </h3>
+
+                {/* Excerpt */}
+                <p className="text-sm text-discord-text-normal mb-4 line-clamp-3 flex-grow">
+                  {article.excerpt || article.content.substring(0, 100) + '...'}
+                </p>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between text-xs text-discord-text-muted border-t border-discord-border pt-3 mt-auto">
+                  <div className="flex items-center gap-2">
+                    <User size={12} />
+                    <span className="font-medium">{article.author_name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar size={12} />
+                    <span>
+                      {new Date(article.created_at).toLocaleDateString('es-ES', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+
+        {/* Create Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+            <div className="bg-discord-surface p-6 rounded-lg w-full max-w-lg border border-discord-border">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-discord-text-header">Crear Noticia</h2>
+                <button onClick={() => setShowCreateModal(false)} className="text-discord-text-muted hover:text-white">
+                  <X size={24} />
                 </button>
               </div>
-            </article>
-          ))}
-        </div>
+              
+              <form onSubmit={handleCreateNews} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-discord-text-muted uppercase mb-1">Título</label>
+                  <input 
+                    type="text" 
+                    value={title}
+                    onChange={e => setTitle(e.target.value)}
+                    className="discord-input w-full"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-xs font-bold text-discord-text-muted uppercase mb-1">Categoría</label>
+                  <select 
+                    value={category}
+                    onChange={e => setCategory(e.target.value)}
+                    className="discord-input w-full"
+                  >
+                    <option value="announcement">Anuncio</option>
+                    <option value="event">Evento</option>
+                    <option value="update">Actualización</option>
+                    <option value="tournament">Torneo</option>
+                  </select>
+                </div>
 
-        {/* Load More Button */}
-        <div className="text-center mt-8">
-          <button className="discord-button secondary px-8 py-3">Cargar más noticias</button>
-        </div>
+                <div>
+                  <label className="block text-xs font-bold text-discord-text-muted uppercase mb-1">Resumen (Opcional)</label>
+                  <input 
+                    type="text" 
+                    value={excerpt}
+                    onChange={e => setExcerpt(e.target.value)}
+                    className="discord-input w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-discord-text-muted uppercase mb-1">Contenido</label>
+                  <textarea 
+                    value={content}
+                    onChange={e => setContent(e.target.value)}
+                    className="discord-input w-full h-32 resize-none"
+                    required
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button type="button" onClick={() => setShowCreateModal(false)} className="discord-button secondary">
+                    Cancelar
+                  </button>
+                  <button type="submit" className="discord-button success">
+                    Publicar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

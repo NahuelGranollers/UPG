@@ -41,6 +41,10 @@ function MainApp() {
   );
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
+  // Auto-join state
+  const [autoJoinRoomId, setAutoJoinRoomId] = useState<string | undefined>(undefined);
+  const [autoJoinPassword, setAutoJoinPassword] = useState<string | undefined>(undefined);
+
   const touchState = React.useRef({ startX: 0, startY: 0, started: false });
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -133,6 +137,32 @@ function MainApp() {
     setShowHome(false);
     setActiveView(AppView.CHAT);
     setActiveSection('chat');
+  }, []);
+
+  const handleJoinServer = useCallback((gameType: string, roomId: string, password?: string) => {
+    setAutoJoinRoomId(roomId);
+    setAutoJoinPassword(password);
+    setShowHome(false);
+    if (gameType === 'cs16') {
+      setActiveView(AppView.CS16);
+      setActiveSection('cs16');
+    } else {
+      setActiveView(AppView.IMPOSTOR);
+      setActiveSection('impostor');
+    }
+  }, []);
+
+  const handleCreateServer = useCallback((gameType: string) => {
+    setAutoJoinRoomId(undefined);
+    setAutoJoinPassword(undefined);
+    setShowHome(false);
+    if (gameType === 'cs16') {
+      setActiveView(AppView.CS16);
+      setActiveSection('cs16');
+    } else {
+      setActiveView(AppView.IMPOSTOR);
+      setActiveSection('impostor');
+    }
   }, []);
 
   const handleVoiceJoin = useCallback(

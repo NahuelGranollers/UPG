@@ -37,7 +37,12 @@ export default defineConfig(({ mode }) => {
       // Asegurar que las rutas funcionen correctamente en GitHub Pages
       rollupOptions: {
         output: {
-          manualChunks: undefined,
+          manualChunks: {
+            vendor: ['react', 'react-dom', 'react-router-dom'],
+            babylon: ['babylonjs', 'babylonjs-loaders', 'babylonjs-gui'],
+            socket: ['socket.io-client'],
+            ui: ['lucide-react', 'sonner', 'framer-motion']
+          },
         },
       },
     },
