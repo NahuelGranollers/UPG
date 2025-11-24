@@ -14,10 +14,10 @@ interface AdminPanelProps {
 const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUser, socket }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState<string | null>(null);
-  const [activeForm, setActiveForm] = useState<
-    | null
-    | { action: 'silence-user' | 'change-color' | 'global-message' | 'troll-mode'; values: Record<string, string> }
-    >(null);
+  const [activeForm, setActiveForm] = useState<null | {
+    action: 'silence-user' | 'change-color' | 'global-message' | 'troll-mode';
+    values: Record<string, string>;
+  }>(null);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
 
   if (!isOpen) return null;
@@ -34,10 +34,7 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
             <br />
             Verifica tu conexión y recarga la página.
           </p>
-          <button
-            onClick={onClose}
-            className="discord-button danger"
-          >
+          <button onClick={onClose} className="discord-button danger">
             Cerrar
           </button>
         </div>
@@ -71,16 +68,19 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
 
       switch (action) {
         case 'clear-users': {
-          if (currentUser) res = await emitWithAck('admin:clear-users', { adminId: currentUser.id });
+          if (currentUser)
+            res = await emitWithAck('admin:clear-users', { adminId: currentUser.id });
           break;
         }
         case 'clear-messages': {
-          if (currentUser) res = await emitWithAck('admin:clear-all-messages', { adminId: currentUser.id });
+          if (currentUser)
+            res = await emitWithAck('admin:clear-all-messages', { adminId: currentUser.id });
           break;
         }
         case 'silence-user': {
           const uid = formValues.userId || '';
-          if (uid && currentUser) res = await emitWithAck('admin:silence-user', { userId: uid, adminId: currentUser.id });
+          if (uid && currentUser)
+            res = await emitWithAck('admin:silence-user', { userId: uid, adminId: currentUser.id });
           setActiveForm(null);
           break;
         }
@@ -88,7 +88,11 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
           const uid = formValues.userId || '';
           const color = formValues.color || '';
           if (uid && color && currentUser)
-            res = await emitWithAck('admin:change-color', { userId: uid, color, adminId: currentUser.id });
+            res = await emitWithAck('admin:change-color', {
+              userId: uid,
+              color,
+              adminId: currentUser.id,
+            });
           setActiveForm(null);
           break;
         }
@@ -110,7 +114,11 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
           if (uid && currentUser) {
             let mode = formValues.mode || null;
             if (mode === 'clear' || mode === '') mode = null;
-            res = await emitWithAck('admin:troll-mode', { userId: uid, mode, adminId: currentUser.id });
+            res = await emitWithAck('admin:troll-mode', {
+              userId: uid,
+              mode,
+              adminId: currentUser.id,
+            });
           }
           setActiveForm(null);
           break;
@@ -140,30 +148,71 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
     const { action } = activeForm;
     return (
       <div className="discord-panel">
-        <h3 className="text-lg font-semibold mb-2 text-discord-text-header">{action === 'change-color' ? 'Cambiar color' : action === 'global-message' ? 'Enviar mensaje global' : action === 'silence-user' ? 'Silenciar usuario' : 'Modo troll'}</h3>
+        <h3 className="text-lg font-semibold mb-2 text-discord-text-header">
+          {action === 'change-color'
+            ? 'Cambiar color'
+            : action === 'global-message'
+              ? 'Enviar mensaje global'
+              : action === 'silence-user'
+                ? 'Silenciar usuario'
+                : 'Modo troll'}
+        </h3>
         <div className="space-y-2">
           {(action === 'silence-user' || action === 'change-color' || action === 'troll-mode') && (
             <div>
-              <label htmlFor="admin-userid" className="text-sm text-discord-text-muted">ID del usuario</label>
-              <input id="admin-userid" value={formValues.userId || ''} onChange={e => setFormValues(v => ({ ...v, userId: e.target.value }))} className="w-full discord-input" placeholder="user-1234" />
+              <label htmlFor="admin-userid" className="text-sm text-discord-text-muted">
+                ID del usuario
+              </label>
+              <input
+                id="admin-userid"
+                value={formValues.userId || ''}
+                onChange={e => setFormValues(v => ({ ...v, userId: e.target.value }))}
+                className="w-full discord-input"
+                placeholder="user-1234"
+              />
             </div>
           )}
           {action === 'change-color' && (
             <div>
-              <label htmlFor="admin-color" className="text-sm text-discord-text-muted">Color HEX</label>
-              <input id="admin-color" value={formValues.color || '#'+Math.floor(Math.random()*16777215).toString(16)} onChange={e => setFormValues(v => ({ ...v, color: e.target.value }))} className="w-32 discord-input" />
+              <label htmlFor="admin-color" className="text-sm text-discord-text-muted">
+                Color HEX
+              </label>
+              <input
+                id="admin-color"
+                value={formValues.color || '#' + Math.floor(Math.random() * 16777215).toString(16)}
+                onChange={e => setFormValues(v => ({ ...v, color: e.target.value }))}
+                className="w-32 discord-input"
+              />
             </div>
           )}
           {action === 'global-message' && (
             <div>
               <label className="text-sm text-discord-text-muted">Mensaje</label>
-              <textarea value={formValues.message || ''} onChange={e => setFormValues(v => ({ ...v, message: e.target.value }))} className="w-full discord-input" rows={3} />
+              <textarea
+                value={formValues.message || ''}
+                onChange={e => setFormValues(v => ({ ...v, message: e.target.value }))}
+                className="w-full discord-input"
+                rows={3}
+              />
               <div className="flex items-center gap-3 mt-2">
                 <label htmlFor="admin-sendasbot" className="flex items-center gap-2 text-sm">
-                  <input id="admin-sendasbot" type="checkbox" checked={formValues.sendAsBot === 'true' || formValues.sendAsBot === true} onChange={e => setFormValues(v => ({ ...v, sendAsBot: e.target.checked ? 'true' : 'false' }))} />
+                  <input
+                    id="admin-sendasbot"
+                    type="checkbox"
+                    checked={formValues.sendAsBot === 'true' || formValues.sendAsBot === true}
+                    onChange={e =>
+                      setFormValues(v => ({ ...v, sendAsBot: e.target.checked ? 'true' : 'false' }))
+                    }
+                  />
                   <span className="text-sm text-discord-text-normal">Enviar como bot</span>
                 </label>
-                <input id="admin-channel" placeholder="Canal (opcional)" value={formValues.channelId || ''} onChange={e => setFormValues(v => ({ ...v, channelId: e.target.value }))} className="discord-input" />
+                <input
+                  id="admin-channel"
+                  placeholder="Canal (opcional)"
+                  value={formValues.channelId || ''}
+                  onChange={e => setFormValues(v => ({ ...v, channelId: e.target.value }))}
+                  className="discord-input"
+                />
               </div>
             </div>
           )}
@@ -172,7 +221,11 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
             <div>
               <label className="text-sm text-discord-text-muted">Modo Troll</label>
               <div className="flex gap-2 items-center mt-2">
-                <select value={formValues.mode || ''} onChange={e => setFormValues(v => ({ ...v, mode: e.target.value }))} className="discord-input">
+                <select
+                  value={formValues.mode || ''}
+                  onChange={e => setFormValues(v => ({ ...v, mode: e.target.value }))}
+                  className="discord-input"
+                >
                   <option value="">-- Seleccionar modo --</option>
                   <option value="uwu">UwU (suavizar)</option>
                   <option value="meow">Meow (gato)</option>
@@ -180,19 +233,46 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
                   <option value="clear">Desactivar modo</option>
                 </select>
                 <div className="flex gap-1">
-                  <button onClick={() => setFormValues(v => ({ ...v, mode: 'uwu' }))} className="discord-button secondary">UwU</button>
-                  <button onClick={() => setFormValues(v => ({ ...v, mode: 'meow' }))} className="discord-button secondary">Meow</button>
-                  <button onClick={() => setFormValues(v => ({ ...v, mode: 'kawaii' }))} className="discord-button secondary">Kawaii</button>
-                  <button onClick={() => setFormValues(v => ({ ...v, mode: '' }))} className="discord-button danger">Off</button>
+                  <button
+                    onClick={() => setFormValues(v => ({ ...v, mode: 'uwu' }))}
+                    className="discord-button secondary"
+                  >
+                    UwU
+                  </button>
+                  <button
+                    onClick={() => setFormValues(v => ({ ...v, mode: 'meow' }))}
+                    className="discord-button secondary"
+                  >
+                    Meow
+                  </button>
+                  <button
+                    onClick={() => setFormValues(v => ({ ...v, mode: 'kawaii' }))}
+                    className="discord-button secondary"
+                  >
+                    Kawaii
+                  </button>
+                  <button
+                    onClick={() => setFormValues(v => ({ ...v, mode: '' }))}
+                    className="discord-button danger"
+                  >
+                    Off
+                  </button>
                 </div>
               </div>
-              <p className="text-xs text-discord-text-muted mt-2">Selecciona un modo para transformar los mensajes del usuario objetivo. "Desactivar" elimina el efecto.</p>
+              <p className="text-xs text-discord-text-muted mt-2">
+                Selecciona un modo para transformar los mensajes del usuario objetivo. "Desactivar"
+                elimina el efecto.
+              </p>
             </div>
           )}
 
           <div className="flex gap-2 justify-end pt-2">
-            <button onClick={() => setActiveForm(null)} className="discord-button secondary">Cancelar</button>
-            <button onClick={() => handleAction(action, false)} className="discord-button">Enviar</button>
+            <button onClick={() => setActiveForm(null)} className="discord-button secondary">
+              Cancelar
+            </button>
+            <button onClick={() => handleAction(action, false)} className="discord-button">
+              Enviar
+            </button>
           </div>
         </div>
       </div>
@@ -330,7 +410,9 @@ const ActionButton: React.FC<ActionButtonProps> = memo(
         onClick={onClick}
         disabled={isLoading}
         className={`w-full p-4 rounded-lg transition-all ${
-          isConfirming ? 'bg-yellow-600 border-yellow-500 animate-pulse text-white' : variantStyles[variant]
+          isConfirming
+            ? 'bg-yellow-600 border-yellow-500 animate-pulse text-white'
+            : variantStyles[variant]
         } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'} text-left`}
       >
         <div className="flex items-start gap-3">

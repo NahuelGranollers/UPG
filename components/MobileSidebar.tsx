@@ -21,7 +21,11 @@ const MobileSidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
       >
         <div className="flex items-center justify-between p-4 border-b border-discord-chat/30">
           <div className="text-lg font-bold">UPG</div>
-          <button className="p-2 rounded-md hover:bg-discord-chat/30" onClick={onClose} aria-label="Cerrar sidebar">
+          <button
+            className="p-2 rounded-md hover:bg-discord-chat/30"
+            onClick={onClose}
+            aria-label="Cerrar sidebar"
+          >
             <X size={18} />
           </button>
         </div>
@@ -29,42 +33,60 @@ const MobileSidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
         <nav className="p-3 space-y-2">
           <button
             className="w-full flex items-center gap-3 p-3 rounded-md hover:bg-discord-card"
-            onClick={() => { onNavigate('home'); onClose(); }}
+            onClick={() => {
+              onNavigate('home');
+              onClose();
+            }}
           >
             <Home /> <span>Inicio</span>
           </button>
 
           <button
             className="w-full flex items-center gap-3 p-3 rounded-md hover:bg-discord-card"
-            onClick={() => { onNavigate('chat'); onClose(); }}
+            onClick={() => {
+              onNavigate('chat');
+              onClose();
+            }}
           >
             <Users /> <span>Canales</span>
           </button>
 
           <button
             className="w-full flex items-center gap-3 p-3 rounded-md hover:bg-discord-card"
-            onClick={() => { onNavigate('who'); onClose(); }}
+            onClick={() => {
+              onNavigate('who');
+              onClose();
+            }}
           >
             <Users /> <span>Quiénes somos</span>
           </button>
 
           <button
             className="w-full flex items-center gap-3 p-3 rounded-md hover:bg-discord-card"
-            onClick={() => { onNavigate('voting'); onClose(); }}
+            onClick={() => {
+              onNavigate('voting');
+              onClose();
+            }}
           >
             <Vote /> <span>Votaciones</span>
           </button>
 
           <button
             className="w-full flex items-center gap-3 p-3 rounded-md hover:bg-discord-card"
-            onClick={() => { onNavigate('news'); onClose(); }}
+            onClick={() => {
+              onNavigate('news');
+              onClose();
+            }}
           >
             <Newspaper /> <span>Noticias</span>
           </button>
 
           <button
             className="w-full flex items-center gap-3 p-3 rounded-md hover:bg-discord-card"
-            onClick={() => { onNavigate('hall_of_fame'); onClose(); }}
+            onClick={() => {
+              onNavigate('hall_of_fame');
+              onClose();
+            }}
           >
             <Trophy /> <span>Salón</span>
           </button>

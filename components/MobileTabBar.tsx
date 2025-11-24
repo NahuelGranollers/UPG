@@ -12,7 +12,9 @@ const MobileTabBar: React.FC<MobileTabBarProps> = memo(
   ({ activeTab, onTabChange, unreadCount = 0, showNewsTab = false }) => {
     return (
       <div className="fixed bottom-0 left-0 right-0 bg-discord-sidebar border-t border-gray-900/20 z-30 md:hidden safe-area-bottom">
-        <div className={`flex items-center justify-around h-16 ${showNewsTab ? '' : 'justify-between'}`}>
+        <div
+          className={`flex items-center justify-around h-16 ${showNewsTab ? '' : 'justify-between'}`}
+        >
           {/* Channels Tab */}
           <button
             onClick={() => onTabChange('channels')}

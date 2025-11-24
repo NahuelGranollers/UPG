@@ -780,6 +780,23 @@ textarea,
   }
 }
 
+/* Improve touch and click interaction globally */
+button,
+a,
+[role='button'] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation; /* Reduce click delays on older browsers */
+  -ms-touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Allow text selection for inputs still */
+button[aria-disabled='true'] {
+  pointer-events: none; /* ensure temporary disabling blocks interaction */
+  opacity: 0.9;
+}
+
 /* Animaciones personalizadas iOS 26 */
 @keyframes pulse-subtle {
   0%, 100% {

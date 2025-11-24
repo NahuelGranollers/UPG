@@ -2,6 +2,11 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import ErrorBoundary from './components/ErrorBoundary';
+// Import global click/touch optimizations (delegated handlers)
+import installClickOptimizations from './src/clickOptimizations';
+
+// Install optimizations early
+installClickOptimizations();
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

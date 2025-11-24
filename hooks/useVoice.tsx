@@ -24,7 +24,11 @@ export function useVoice() {
     if (!socket) return;
 
     // Handler for incoming relayed audio chunks from server
-    const handleChunk = (payload: { fromUserId: string; buffer: ArrayBuffer; sampleRate: number }) => {
+    const handleChunk = (payload: {
+      fromUserId: string;
+      buffer: ArrayBuffer;
+      sampleRate: number;
+    }) => {
       try {
         const { fromUserId, buffer, sampleRate } = payload as any;
         // Convert to Float32Array and play via AudioContext
@@ -167,7 +171,8 @@ export function useVoice() {
 
     // Start streaming raw audio chunks to server.
     try {
-      if (!audioCtxRef.current) audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      if (!audioCtxRef.current)
+        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       const ctx = audioCtxRef.current;
       const source = ctx.createMediaStreamSource(localStreamRef.current as MediaStream);
       // Create a silent gain to keep the graph alive when necessary
@@ -219,7 +224,12 @@ export function useVoice() {
 
       if (!usedWorklet) {
         // Fallback to ScriptProcessor for older browsers
-        const processor = (ctx.createScriptProcessor || (ctx as any).createJavaScriptNode).call(ctx, 4096, 1, 1);
+        const processor = (ctx.createScriptProcessor || (ctx as any).createJavaScriptNode).call(
+          ctx,
+          4096,
+          1,
+          1
+        );
         processor.onaudioprocess = ev => {
           try {
             const input = ev.inputBuffer.getChannelData(0);
@@ -273,7 +283,8 @@ export function useVoice() {
       }
       try {
         if (localStreamRef.current) {
-          for (const track of localStreamRef.current.getTracks()) pc.addTrack(track, localStreamRef.current);
+          for (const track of localStreamRef.current.getTracks())
+            pc.addTrack(track, localStreamRef.current);
         }
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
@@ -304,8 +315,12 @@ export function useVoice() {
         try {
           proc.disconnect();
         } catch (e) {}
-        try { if ((proc as any).onaudioprocess) (proc as any).onaudioprocess = null; } catch(e){}
-        try { if ((proc as any).port) (proc as any).port.onmessage = null; } catch(e){}
+        try {
+          if ((proc as any).onaudioprocess) (proc as any).onaudioprocess = null;
+        } catch (e) {}
+        try {
+          if ((proc as any).port) (proc as any).port.onmessage = null;
+        } catch (e) {}
         delete (localStreamRef as any).processorNode;
       }
       if (zg) {

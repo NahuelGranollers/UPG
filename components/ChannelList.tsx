@@ -215,7 +215,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
           </div>
           <div className="flex items-center justify-between">
             <div className="text-discord-text-muted text-[10px] px-1">Latencia: 24ms</div>
-              {/* Headphone button removed */}
+            {/* Headphone button removed */}
           </div>
           <div className="flex items-center justify-end mt-2">
             <button
@@ -282,8 +282,8 @@ const ChannelList: React.FC<ChannelListProps> = ({
                 if (onToggleMic) onToggleMic();
                 else setLocalMicActive(s => !s);
               }}
-              className={`hidden sm:flex p-1.5 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${(micActive || localMicActive) ? 'bg-green-600 text-white' : 'hover:bg-discord-hover text-discord-text-muted hover:text-discord-text-normal'} ${voiceLevel && voiceLevel > 0.03 ? 'animate-glow' : ''}`}
-              title={(micActive || localMicActive) ? 'Micrófono activado' : 'Activar micrófono'}
+              className={`hidden sm:flex p-1.5 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${micActive || localMicActive ? 'bg-green-600 text-white' : 'hover:bg-discord-hover text-discord-text-muted hover:text-discord-text-normal'} ${voiceLevel && voiceLevel > 0.03 ? 'animate-glow' : ''}`}
+              title={micActive || localMicActive ? 'Micrófono activado' : 'Activar micrófono'}
             >
               <Mic size={18} />
             </button>
@@ -298,13 +298,13 @@ const ChannelList: React.FC<ChannelListProps> = ({
           </div>
         </div>
       </div>
-      
+
       <ServerSettings
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         initialName={currentUser?.username || ''}
         initialColor={currentUser?.color || '#808080'}
-          onSave={(name, color) => {
+        onSave={(name, color) => {
           if (!currentUser) return;
           const newUser = { ...currentUser, username: name, color };
           // Update local auth context and storage
@@ -315,7 +315,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
           } catch (e) {
             console.warn('Failed to emit user:update', e);
           }
-          try { 
+          try {
             // show toast via sonner (ServerSettings already shows success for local save, but adding here for completeness)
             // If you want a toast here, ServerSettings already invoked toast.success
           } catch (e) {}

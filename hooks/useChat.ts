@@ -29,28 +29,40 @@ export const useChat = (channelId: string) => {
       }
     };
 
-      // Escuchar mensajes nuevos en tiempo real
-      const handleNewMessage = (message: Message) => {
-        if (message.channelId === channelId) {
-          setMessages(prev => {
-            // Remover mensaje local duplicado si existe
-            const filtered = prev.filter(local => {
-              // If local message has a localId and server returned same localId, drop local
-              if (local.id && local.id.startsWith('local-') && (message as any).localId && local.id === (message as any).localId) return false;
-              // Fallback: match by userId + content + timestamp proximity (5s)
-              try {
-                const localTime = new Date(local.timestamp).getTime();
-                const serverTime = new Date(message.timestamp).getTime();
-                if (local.id && local.id.startsWith('local-') && local.userId === message.userId && local.content === message.content && Math.abs(localTime - serverTime) < 5000) {
-                  return false;
-                }
-              } catch (e) {}
-              return true;
-            });
-            return [...filtered, message];
+    // Escuchar mensajes nuevos en tiempo real
+    const handleNewMessage = (message: Message) => {
+      if (message.channelId === channelId) {
+        setMessages(prev => {
+          // Remover mensaje local duplicado si existe
+          const filtered = prev.filter(local => {
+            // If local message has a localId and server returned same localId, drop local
+            if (
+              local.id &&
+              local.id.startsWith('local-') &&
+              (message as any).localId &&
+              local.id === (message as any).localId
+            )
+              return false;
+            // Fallback: match by userId + content + timestamp proximity (5s)
+            try {
+              const localTime = new Date(local.timestamp).getTime();
+              const serverTime = new Date(message.timestamp).getTime();
+              if (
+                local.id &&
+                local.id.startsWith('local-') &&
+                local.userId === message.userId &&
+                local.content === message.content &&
+                Math.abs(localTime - serverTime) < 5000
+              ) {
+                return false;
+              }
+            } catch (e) {}
+            return true;
           });
-        }
-      };
+          return [...filtered, message];
+        });
+      }
+    };
 
     socket.on('channel:history', handleHistory);
     socket.on('message:received', handleNewMessage);

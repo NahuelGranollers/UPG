@@ -30,9 +30,7 @@ const Voting: React.FC = () => {
   }, []);
 
   return (
-    <div
-      className="flex-1 flex flex-col items-center justify-center overflow-hidden w-full h-full px-4 bg-discord-chat"
-    >
+    <div className="flex-1 flex flex-col items-center justify-center overflow-hidden w-full h-full px-4 bg-discord-chat">
       <img
         ref={logoRef}
         src="/upg.png"
@@ -58,9 +56,7 @@ const Voting: React.FC = () => {
         UPG
       </div>
 
-      <div
-        className="font-black text-center text-[1.5em] sm:text-[1.7em] md:text-[2.5em] lg:text-[3em] text-discord-text-header"
-      >
+      <div className="font-black text-center text-[1.5em] sm:text-[1.7em] md:text-[2.5em] lg:text-[3em] text-discord-text-header">
         coming soon...
       </div>
     </div>

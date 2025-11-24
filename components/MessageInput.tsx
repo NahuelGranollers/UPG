@@ -78,7 +78,11 @@ const MessageInput: React.FC<MessageInputProps> = ({
     >
       {/* Sugerencias de menciones */}
       {showMentionSuggestions && mentionSuggestions.length > 0 && (
-        <div className="mention-suggestions z-top" role="listbox" aria-label="Sugerencias de mención">
+        <div
+          className="mention-suggestions z-top"
+          role="listbox"
+          aria-label="Sugerencias de mención"
+        >
           <div className="py-2">
             <div className="px-3 py-1 text-xs font-semibold text-discord-text-muted uppercase">
               Mencionar

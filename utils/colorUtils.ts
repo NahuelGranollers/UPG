@@ -18,7 +18,9 @@ export function hexToRgb(hex: string) {
 
 export function relativeLuminance({ r, g, b }: { r: number; g: number; b: number }) {
   // Convert sRGB to linear
-  const srgb = [r, g, b].map(v => v / 255).map(c => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)));
+  const srgb = [r, g, b]
+    .map(v => v / 255)
+    .map(c => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)));
   return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
 }
 
@@ -27,7 +29,7 @@ export function readableTextColor(hex: string, lightFallback = '#fff', darkFallb
   if (!rgb) return lightFallback;
   const lum = relativeLuminance(rgb);
   // If color is too dark, return light fallback; otherwise return original color
-  return lum < 0.18 ? lightFallback : `#${(hex.replace('#',''))}`;
+  return lum < 0.18 ? lightFallback : `#${hex.replace('#', '')}`;
 }
 
 export default { hexToRgb, relativeLuminance, readableTextColor };

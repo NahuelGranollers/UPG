@@ -8,15 +8,32 @@ interface PlayerInfo {
   revealedInnocent?: boolean;
 }
 
-export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
+export default function ImpostorGame({ 
+  onClose,
+  autoJoinRoomId,
+  autoJoinPassword
+}: { 
+  onClose?: () => void;
+  autoJoinRoomId?: string;
+  autoJoinPassword?: string;
+}) {
   const { socket } = useSocket();
   const { currentUser } = useAuth();
   const [roomId, setRoomId] = useState('');
   const [username, setUsername] = useState(currentUser?.username || '');
-  const [joined, setJoined] = useState(false);
-  const [players, setPlayers] = useState<PlayerInfo[]>([]);
   const [isHost, setIsHost] = useState(false);
-  const [assigned, setAssigned] = useState<{ role: 'impostor' | 'crewmate'; word: string | null } | null>(null);
+  const [hostId, setHostId] = useState<string>('');
+  const [players, setPlayers] = useState<PlayerInfo[]>([]);
+  const [publicServers, setPublicServers] = useState<any[]>([]);
+  // Only show public server listing by default (no manual create/join UI)
+  const [showPublicServers, setShowPublicServers] = useState(true);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [serverName, setServerName] = useState('');
+  const [serverPassword, setServerPassword] = useState('');
+  const [assigned, setAssigned] = useState<{
+    role: 'impostor' | 'crewmate';
+    word: string | null;
+  } | null>(null);
   const [pendingAssigned, setPendingAssigned] = useState<any>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [voting, setVoting] = useState(false);
@@ -27,25 +44,66 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
   const [spinning, setSpinning] = useState(false);
   const [currentTurn, setCurrentTurn] = useState<string | null>(null);
   const [turnOrder, setTurnOrder] = useState<string[]>([]);
-  const [revealInfo, setRevealInfo] = useState<{ impostorId: string | null; word?: string | null } | null>(null);
+  const [revealInfo, setRevealInfo] = useState<{
+    impostorId: string | null;
+    word?: string | null;
+  } | null>(null);
   const [showReveal, setShowReveal] = useState(false);
   const [revealPhase, setRevealPhase] = useState<'hidden' | 'enter' | 'visible' | 'exit'>('hidden');
-  const [revealedPlayer, setRevealedPlayer] = useState<{ id: string; wasImpostor: boolean; word?: string | null } | null>(null);
+  const [revealedPlayer, setRevealedPlayer] = useState<{
+    id: string;
+    wasImpostor: boolean;
+    word?: string | null;
+  } | null>(null);
   const [cardRevealed, setCardRevealed] = useState(false);
-  const [revealedRoles, setRevealedRoles] = useState<Record<string, 'impostor' | 'crewmate'> | null>(null);
+  const [revealedRoles, setRevealedRoles] = useState<Record<
+    string,
+    'impostor' | 'crewmate'
+  > | null>(null);
   const [customWords, setCustomWords] = useState<string[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [theme, setTheme] = useState<'upg' | 'neon' | 'retro'>('upg');
+  const [gameStarted, setGameStarted] = useState(false);
+  const [joined, setJoined] = useState(false);
   const [userId, setUserId] = useState<string>('');
+
+  useEffect(() => {
+    if (!socket || !currentUser) return;
+
+    // Auto-join logic when props are provided
+    if (autoJoinRoomId && !joined) {
+      setRoomId(autoJoinRoomId);
+      setUsername(currentUser.username || '');
+      
+      // Attempt to join the room
+      setTimeout(() => {
+        const generatedUserId = currentUser?.id || `guest-${Math.random().toString(36).slice(2, 8)}`;
+        setUserId(generatedUserId);
+        socket.emit('impostor:join-room', { 
+          roomId: autoJoinRoomId, 
+          userId: generatedUserId, 
+          username: currentUser.username || '',
+          password: autoJoinPassword
+        }, (res: any) => {
+          if (res && res.ok) {
+            setJoined(true);
+            setStatusMessage('Te has unido a la sala');
+          } else {
+            setStatusMessage(res?.error || 'Error al unirse');
+            // Reset to allow manual joining if auto-join fails
+            setRoomId('');
+            setUserId('');
+          }
+        });
+      }, 100); // Small delay to ensure socket is ready
+    }
+  }, [socket, currentUser, autoJoinRoomId, autoJoinPassword]);
 
   useEffect(() => {
     if (!socket) return;
 
     const onRoomState = (data: any) => {
       setPlayers(data.players || []);
-      // Check if current user is host (either by userId or currentUser.id)
-      const isUserHost = data.hostId === userId || (userId === '' && data.hostId === currentUser?.id);
-      setIsHost(isUserHost);
+      setHostId(data.hostId || '');
       setJoined(true);
       setCustomWords(data.customWords || []);
     };
@@ -78,7 +136,10 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
       setVotingResult(null);
       setTotalVotes(0);
       setStatusMessage('Votación iniciada');
-      setNotifications(prev => [...prev, { id: Date.now(), type: 'warning', message: '¡Votación iniciada!', timestamp: new Date() }]);
+      setNotifications(prev => [
+        ...prev,
+        { id: Date.now(), type: 'warning', message: '¡Votación iniciada!', timestamp: new Date() },
+      ]);
       setTimeout(() => setNotifications(prev => prev.slice(1)), 5000);
     };
 
@@ -94,22 +155,47 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
         // Show different behaviour depending if eliminated was the impostor
         if (d.wasImpostor) {
           setStatusMessage(`El jugador ${d.eliminated} era el impostor — ronda terminada`);
-          setNotifications(prev => [...prev, { id: Date.now(), type: 'success', message: `¡${d.eliminated} era el impostor! Ronda terminada.`, timestamp: new Date() }]);
+          setNotifications(prev => [
+            ...prev,
+            {
+              id: Date.now(),
+              type: 'success',
+              message: `¡${d.eliminated} era el impostor! Ronda terminada.`,
+              timestamp: new Date(),
+            },
+          ]);
         } else {
           setStatusMessage(`El jugador ${d.eliminated} era INOCENTE — la ronda continúa`);
-          setNotifications(prev => [...prev, { id: Date.now(), type: 'error', message: `${d.eliminated} era inocente. La ronda continúa.`, timestamp: new Date() }]);
+          setNotifications(prev => [
+            ...prev,
+            {
+              id: Date.now(),
+              type: 'error',
+              message: `${d.eliminated} era inocente. La ronda continúa.`,
+              timestamp: new Date(),
+            },
+          ]);
         }
         setTimeout(() => setNotifications(prev => prev.slice(1)), 5000);
         // 'impostor:reveal' will also be emitted by server, client will receive it and show overlay
       } else {
         setStatusMessage('Empate — nadie ha sido eliminado');
-        setNotifications(prev => [...prev, { id: Date.now(), type: 'info', message: 'Empate — nadie eliminado.', timestamp: new Date() }]);
+        setNotifications(prev => [
+          ...prev,
+          {
+            id: Date.now(),
+            type: 'info',
+            message: 'Empate — nadie eliminado.',
+            timestamp: new Date(),
+          },
+        ]);
         setTimeout(() => setNotifications(prev => prev.slice(1)), 5000);
       }
     };
 
     const onStarted = (d: any) => {
       setStatusMessage('Ronda iniciada');
+      setGameStarted(true);
     };
 
     const onRevealAll = (d: any) => {
@@ -119,7 +205,15 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
     const onPlayerLeft = (d: any) => {
       setStatusMessage(`${d.username} ha abandonado la sala`);
-      setNotifications(prev => [...prev, { id: Date.now(), type: 'info', message: `${d.username} ha abandonado la sala`, timestamp: new Date() }]);
+      setNotifications(prev => [
+        ...prev,
+        {
+          id: Date.now(),
+          type: 'info',
+          message: `${d.username} ha abandonado la sala`,
+          timestamp: new Date(),
+        },
+      ]);
       setTimeout(() => setNotifications(prev => prev.slice(1)), 5000); // Auto remove after 5s
     };
 
@@ -144,6 +238,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
       setStatusMessage('Ronda reiniciada');
       setCardRevealed(false);
       setRevealedRoles(null);
+      setGameStarted(false);
     });
 
     return () => {
@@ -161,25 +256,37 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
     };
   }, [socket, currentUser]);
 
+  // Update isHost when userId or hostId changes
+  useEffect(() => {
+    const currentUserId = userId || currentUser?.id;
+    setIsHost(hostId === currentUserId);
+  }, [userId, hostId, currentUser?.id]);
+
   const handleCreate = () => {
     if (!socket) return;
     if (!roomId || !username) return setStatusMessage('Room y nombre requeridos');
-    const generatedUserId = userId || currentUser?.id || `guest-${Math.random().toString(36).slice(2,8)}`;
+    const generatedUserId =
+      userId || currentUser?.id || `guest-${Math.random().toString(36).slice(2, 8)}`;
     setUserId(generatedUserId);
-    socket.emit('impostor:create-room', { roomId, userId: generatedUserId, username }, (res: any) => {
-      if (res && res.ok) {
-        setJoined(true);
-        setStatusMessage('Sala creada. Esperando jugadores...');
-      } else {
-        setStatusMessage(res?.error || 'Error creando sala');
+    socket.emit(
+      'impostor:create-room',
+      { roomId, userId: generatedUserId, username },
+      (res: any) => {
+        if (res && res.ok) {
+          setJoined(true);
+          setStatusMessage('Sala creada. Esperando jugadores...');
+        } else {
+          setStatusMessage(res?.error || 'Error creando sala');
+        }
       }
-    });
+    );
   };
 
   const handleJoin = () => {
     if (!socket) return;
     if (!roomId || !username) return setStatusMessage('Room y nombre requeridos');
-    const generatedUserId = userId || currentUser?.id || `guest-${Math.random().toString(36).slice(2,8)}`;
+    const generatedUserId =
+      userId || currentUser?.id || `guest-${Math.random().toString(36).slice(2, 8)}`;
     setUserId(generatedUserId);
     socket.emit('impostor:join-room', { roomId, userId: generatedUserId, username }, (res: any) => {
       if (res && res.ok) {
@@ -198,12 +305,13 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
       setPlayers([]);
       setAssigned(null);
       setIsHost(false);
+      setHostId('');
       setStatusMessage('Has salido de la sala');
       setCardRevealed(false);
       setUserId('');
+      setGameStarted(false);
     });
   };
-
 
   const handleStart = () => {
     if (!socket) return;
@@ -226,10 +334,19 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
   const handleCastVote = (targetId: string) => {
     if (!socket) return;
-    socket.emit('impostor:cast-vote', { roomId, voterId: userId, votedId: targetId }, (res: any) => {
-      if (res && res.ok) setMyVote(targetId);
-      else setStatusMessage(res?.error === 'dead_cannot_vote' ? 'Los muertos no pueden votar' : res?.error || 'Error votando');
-    });
+    socket.emit(
+      'impostor:cast-vote',
+      { roomId, voterId: userId, votedId: targetId },
+      (res: any) => {
+        if (res && res.ok) setMyVote(targetId);
+        else
+          setStatusMessage(
+            res?.error === 'dead_cannot_vote'
+              ? 'Los muertos no pueden votar'
+              : res?.error || 'Error votando'
+          );
+      }
+    );
   };
 
   const handleEndVoting = () => {
@@ -251,8 +368,11 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
   const handleRestart = () => {
     if (!socket) return;
     socket.emit('impostor:restart', { roomId, hostId: userId }, (res: any) => {
-      if (res && res.ok) setStatusMessage('Ronda reiniciada, espera al host para iniciar otra');
-      else setStatusMessage(res?.error || 'No se pudo reiniciar');
+      if (res && res.ok) {
+        setStatusMessage('Ronda reiniciada');
+      } else {
+        setStatusMessage(res?.error || 'Error reiniciando ronda');
+      }
     });
   };
 
@@ -261,6 +381,72 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
     socket.emit('impostor:add-word', { roomId, userId, word: word.trim() }, (res: any) => {
       if (!res || !res.ok) {
         setStatusMessage(res?.error || 'Error agregando palabra');
+      } else {
+        setCustomWords(prev => [...prev, word.trim()]);
+        setStatusMessage('Palabra agregada');
+      }
+    });
+  };
+
+  // Fetch public servers
+  const fetchPublicServers = async () => {
+    try {
+      const response = await fetch('/api/servers');
+      const data = await response.json();
+      setPublicServers(data.servers?.impostor || []);
+    } catch (error) {
+      console.error('Error fetching public servers:', error);
+    }
+  };
+
+  // Create public server
+  const handleCreatePublicServer = () => {
+    if (!socket) return;
+    if (!roomId || !username) return setStatusMessage('Room y nombre requeridos');
+    const generatedUserId =
+      userId || currentUser?.id || `guest-${Math.random().toString(36).slice(2, 8)}`;
+    setUserId(generatedUserId);
+    socket.emit(
+      'impostor:create-room',
+      {
+        roomId,
+        userId: generatedUserId,
+        username,
+        name: serverName || `Sala de ${username}`,
+        password: serverPassword || null
+      },
+      (res: any) => {
+        if (res && res.ok) {
+          setJoined(true);
+          setStatusMessage('Sala pública creada. Esperando jugadores...');
+          fetchPublicServers(); // Refresh the list
+        } else {
+          setStatusMessage(res?.error || 'Error creando sala pública');
+        }
+      }
+    );
+  };
+
+  // Join public server
+  const handleJoinPublicServer = (serverRoomId: string, password?: string) => {
+    if (!socket) return;
+    if (!username) return setStatusMessage('Nombre requerido');
+    const generatedUserId =
+      userId || currentUser?.id || `guest-${Math.random().toString(36).slice(2, 8)}`;
+    setUserId(generatedUserId);
+    setRoomId(serverRoomId);
+    socket.emit('impostor:join-room', {
+      roomId: serverRoomId,
+      userId: generatedUserId,
+      username,
+      password
+    }, (res: any) => {
+      if (res && res.ok) {
+        setJoined(true);
+        setStatusMessage('Te has unido a la sala pública');
+        fetchPublicServers(); // Refresh the list
+      } else {
+        setStatusMessage(res?.error || 'Error al unirse a la sala pública');
       }
     });
   };
@@ -273,18 +459,23 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
   const allAliveVoted = totalVotes >= alivePlayersCount;
 
   return (
-    <div className={`flex flex-col min-h-screen w-full bg-discord-chat`}>
-      <div className="w-full py-4 px-2 sm:py-6 sm:px-4 lg:py-8 lg:px-6">
+    <div className="flex items-center justify-center min-h-screen w-full bg-discord-chat">
+      <div className="w-full max-w-7xl py-4 px-2 sm:py-6 sm:px-4 lg:py-8 lg:px-6">
         <div className="impostor-header">
           <div className="impostor-header-top">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-discord-text-header">Impostor — Sala</h1>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-discord-text-header">
+              Impostor — Sala
+            </h1>
             <div className="impostor-controls">
-              <select value={theme} onChange={e => setTheme(e.target.value as any)} className="discord-input p-2 text-sm">
-                <option value="upg">UPG</option>
-                <option value="neon">Neon</option>
-                <option value="retro">Retro</option>
-              </select>
-              <button onClick={() => { if (joined) handleLeave(); if (onClose) onClose(); }} className="discord-button secondary">Cerrar</button>
+              <button
+                onClick={() => {
+                  if (joined) handleLeave();
+                  if (onClose) onClose();
+                }}
+                className="discord-button secondary"
+              >
+                Cerrar
+              </button>
             </div>
           </div>
         </div>
@@ -293,8 +484,15 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
           {/* Notifications */}
           {notifications.length > 0 && (
             <div className="impostor-notifications">
-              {notifications.map((notif) => (
-                <div key={notif.id} className="impostor-notification bg-blue-600 text-white p-3 rounded shadow-lg">
+              {notifications.map(notif => (
+                <div
+                  key={notif.id}
+                  className={`impostor-notification p-3 rounded shadow-lg ${
+                    notif.type === 'success' ? 'bg-green-600' :
+                    notif.type === 'error' ? 'bg-red-600' :
+                    notif.type === 'warning' ? 'bg-yellow-600' : 'bg-blue-600'
+                  } text-white`}
+                >
                   {notif.message}
                 </div>
               ))}
@@ -304,28 +502,132 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
           <div className="panel-glass lg liquid-glass bg-[#071017]">
             {!joined && (
               <div className="space-y-4 sm:space-y-6">
-                <input id="impostor-roomid" className="w-full discord-input" placeholder="ID de sala" value={roomId} onChange={e => setRoomId(e.target.value)} />
-                <input id="impostor-username" className="w-full discord-input" placeholder="Tu nombre" value={username} onChange={e => setUsername(e.target.value)} />
-                <div className="impostor-button-row">
-                  <button onClick={handleCreate} className="flex-1 discord-button success">Crear sala</button>
-                  <button onClick={handleJoin} className="flex-1 discord-button">Unirse</button>
+                <div className="space-y-4">
+                  <h3 className="text-lg text-discord-text-header font-semibold">Servidores Públicos</h3>
+                  <div className="max-h-96 overflow-y-auto space-y-2">
+                    {publicServers.length === 0 ? (
+                      <div className="text-center text-discord-text-muted py-8">No hay servidores públicos disponibles</div>
+                    ) : (
+                      publicServers.map((server) => (
+                        <div key={server.roomId} className="discord-panel p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h4 className="text-discord-text-header font-semibold">{server.name}</h4>
+                              <p className="text-sm text-discord-text-muted">
+                                Host: {server.hostName} • {server.playerCount}/{server.maxPlayers} jugadores
+                              </p>
+                              {server.hasPassword && (
+                                <span className="text-xs text-yellow-400">🔒 Protegido por contraseña</span>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => {
+                                if (server.hasPassword) {
+                                  const password = prompt('Ingresa la contraseña del servidor:');
+                                  if (password !== null) {
+                                    handleJoinPublicServer(server.roomId, password);
+                                  }
+                                } else {
+                                  handleJoinPublicServer(server.roomId);
+                                }
+                              }}
+                              className="discord-button success"
+                              disabled={server.playerCount >= server.maxPlayers}
+                            >
+                              {server.playerCount >= server.maxPlayers ? 'Lleno' : 'Unirse'}
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <div className="mt-3">
+                    <button
+                      onClick={() => setShowCreateForm(s => !s)}
+                      className="discord-button w-full"
+                    >
+                      {showCreateForm ? 'Cerrar formulario' : 'Crear servidor'}
+                    </button>
+                  </div>
+
+                  {showCreateForm && (
+                    <div className="border-t border-discord-hover pt-4 mt-4">
+                      <h4 className="text-lg text-discord-text-header font-semibold mb-3">Crear Servidor Público</h4>
+                      <div className="space-y-3">
+                        <input
+                          className="w-full discord-input"
+                          placeholder="Nombre del servidor (opcional)"
+                          value={serverName}
+                          onChange={e => setServerName(e.target.value)}
+                        />
+                        <input
+                          className="w-full discord-input"
+                          placeholder="Contraseña (opcional)"
+                          type="password"
+                          value={serverPassword}
+                          onChange={e => setServerPassword(e.target.value)}
+                        />
+                        <input
+                          id="impostor-roomid-public"
+                          className="w-full discord-input"
+                          placeholder="ID de sala"
+                          value={roomId}
+                          onChange={e => setRoomId(e.target.value)}
+                        />
+                        <input
+                          id="impostor-username-public"
+                          className="w-full discord-input"
+                          placeholder="Tu nombre"
+                          value={username}
+                          onChange={e => setUsername(e.target.value)}
+                        />
+                        <button
+                          onClick={handleCreatePublicServer}
+                          className="w-full discord-button success"
+                        >
+                          Crear Servidor Público
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
 
             {joined && (
               <div className="space-y-6">
-                <div className="text-lg text-discord-text-normal">Sala: <strong className="text-discord-text-header">{roomId}</strong></div>
-                <div className="text-lg text-discord-text-normal">Host: <span className="text-discord-text-header">{isHost ? 'Tú' : 'Otro'}</span></div>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="text-lg text-discord-text-normal">
+                      Sala: <strong className="text-discord-text-header">{roomId}</strong>
+                    </div>
+                    <div className="text-lg text-discord-text-normal">
+                      Host: <span className="text-discord-text-header">{isHost ? 'Tú' : 'Otro'}</span>
+                    </div>
+                  </div>
+                  <div className="text-sm text-discord-text-muted">
+                    {players.length} jugador{players.length !== 1 ? 'es' : ''}
+                  </div>
+                </div>
 
                 <div className="discord-panel max-h-[400px] overflow-auto">
-                  <div className="text-lg text-discord-text-normal mb-3 font-semibold">Jugadores:</div>
+                  <div className="text-lg text-discord-text-normal mb-3 font-semibold">
+                    Jugadores:
+                  </div>
                   <ul className="impostor-player-list text-base space-y-3">
                     {players.map(p => (
                       <li key={p.id} className="flex items-center justify-between py-2">
-                          <span className="text-discord-text-normal break-all font-semibold text-lg" style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }} title={p.username}>{p.username}</span>
-                          <span className="text-sm text-discord-text-muted">{p.id === userId ? 'Tú' : ''}</span>
-                        </li>
+                        <span
+                          className="text-discord-text-normal break-all font-semibold text-lg"
+                          style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }}
+                          title={p.username}
+                        >
+                          {p.username}
+                        </span>
+                        <span className="text-sm text-discord-text-muted">
+                          {p.id === userId ? 'Tú' : ''}
+                        </span>
+                      </li>
                     ))}
                   </ul>
                 </div>
@@ -344,35 +646,88 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                 {revealedPlayer && !revealedPlayer.wasImpostor && (
                   <div className={`fixed bottom-8 right-8 z-50`}>
                     <div className="bg-gray-800/90 border border-green-600 text-white p-4 rounded-lg shadow-lg backdrop-blur">
-                      <div className="text-sm uppercase text-green-300 font-semibold">Revelación</div>
-                      <div className="text-lg font-bold mt-1">{players.find(p => p.id === revealedPlayer.id)?.username || revealedPlayer.id}</div>
-                      <div className="text-sm text-gray-300 mt-1">Era inocente — la ronda continúa</div>
+                      <div className="text-sm uppercase text-green-300 font-semibold">
+                        Revelación
+                      </div>
+                      <div className="text-lg font-bold mt-1">
+                        {players.find(p => p.id === revealedPlayer.id)?.username ||
+                          revealedPlayer.id}
+                      </div>
+                      <div className="text-sm text-gray-300 mt-1">
+                        Era inocente — la ronda continúa
+                      </div>
                     </div>
                   </div>
                 )}
                 {/* Reveal overlay */}
                 {showReveal && revealInfo && (
-                  <div className="impostor-reveal-overlay">
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
-                    <div className={`impostor-reveal-panel discord-glass relative z-60 border border-discord-hover`} style={{ position: 'relative' }}>
+                  <div className="impostor-reveal-overlay fixed inset-0 z-60 flex items-center justify-center">
+                      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+                      <div
+                        className={`impostor-reveal-panel discord-glass relative z-70 border border-discord-hover p-6 rounded-lg max-w-3xl w-full mx-4`}
+                      >
                       <div className="text-sm text-discord-text-muted mb-2">REVELACIÓN</div>
                       <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-4">
-                        <div className="w-28 h-28 rounded-full avatar-accent flex items-center justify-center text-5xl font-extrabold shadow-lg">{(players.find(p => p.id === revealInfo.impostorId)?.username || (revealInfo.impostorId || '?!')).charAt(0).toUpperCase()}</div>
+                        <div className="w-28 h-28 rounded-full avatar-accent flex items-center justify-center text-5xl font-extrabold shadow-lg">
+                          {(
+                            players.find(p => p.id === revealInfo.impostorId)?.username ||
+                            revealInfo.impostorId ||
+                            '?!'
+                          )
+                            .charAt(0)
+                            .toUpperCase()}
+                        </div>
                         <div className="text-left">
-                          <div className="text-lg text-red-300 uppercase font-extrabold">Impostor</div>
-                          <div className="text-3xl font-bold mt-1">{players.find(p => p.id === revealInfo.impostorId)?.username || revealInfo.impostorId}</div>
-                          <div className="text-sm text-discord-text-normal mt-2">Palabra: <span className="font-semibold">{revealInfo.word}</span></div>
+                          <div className="text-lg text-red-300 uppercase font-extrabold">
+                            Impostor
+                          </div>
+                          <div className="text-3xl font-bold mt-1">
+                            {players.find(p => p.id === revealInfo.impostorId)?.username ||
+                              revealInfo.impostorId}
+                          </div>
+                          <div className="text-sm text-discord-text-normal mt-2">
+                            Palabra: <span className="font-semibold">{revealInfo.word}</span>
+                          </div>
                         </div>
                       </div>
                       <div className="mt-4 flex justify-center gap-3">
-                        <button onClick={() => { setRevealPhase('exit'); setTimeout(() => { setShowReveal(false); setRevealInfo(null); setRevealPhase('hidden'); }, 300); }} className="discord-button secondary">Cerrar</button>
+                        <button
+                          onClick={() => {
+                            setRevealPhase('exit');
+                            setTimeout(() => {
+                              setShowReveal(false);
+                              setRevealInfo(null);
+                              setRevealPhase('hidden');
+                            }, 300);
+                          }}
+                          className="discord-button secondary"
+                        >
+                          Cerrar
+                        </button>
                       </div>
                       <div className="confetti" aria-hidden>
                         {Array.from({ length: 28 }).map((_, i) => {
                           const left = Math.random() * 100;
                           const delay = Math.random() * 400;
-                          const bg = ['#FF6B6B','#FFB86B','#6BFFB8','#6BC8FF','#D56BFF','#FFD56B'][i % 6];
-                          return <span key={i} style={{ left: `${left}%`, top: `${-10 - Math.random()*20}%`, background: bg, animationDelay: `${delay}ms` }} />;
+                          const bg = [
+                            '#FF6B6B',
+                            '#FFB86B',
+                            '#6BFFB8',
+                            '#6BC8FF',
+                            '#D56BFF',
+                            '#FFD56B',
+                          ][i % 6];
+                          return (
+                            <span
+                              key={i}
+                              style={{
+                                left: `${left}%`,
+                                top: `${-10 - Math.random() * 20}%`,
+                                background: bg,
+                                animationDelay: `${delay}ms`,
+                              }}
+                            />
+                          );
                         })}
                       </div>
                     </div>
@@ -384,7 +739,9 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                     <div className="flex items-center justify-center p-8">
                       <div className="flex flex-col items-center">
                         <div className="w-24 h-24 rounded-full border-4 border-t-transparent border-discord-blurple animate-spin mb-4" />
-                        <div className="text-lg text-discord-text-normal font-semibold">Asignando carta...</div>
+                        <div className="text-lg text-discord-text-normal font-semibold">
+                          Asignando carta...
+                        </div>
                       </div>
                     </div>
                   )}
@@ -392,30 +749,60 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                   {!spinning && (
                     <>
                       {/* Assignment card with flip animation */}
-                      <div className={`impostor-card mb-6 ${cardRevealed ? 'flipped' : ''}`} style={{ maxWidth: 600 }}>
+                      <div
+                        className={`impostor-card mb-6 ${cardRevealed ? 'flipped' : ''}`}
+                        style={{ maxWidth: 600 }}
+                      >
                         <div
                           role="button"
                           tabIndex={0}
                           onClick={() => setCardRevealed(r => !r)}
-                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCardRevealed(r => !r); } }}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setCardRevealed(r => !r);
+                            }
+                          }}
                           className="impostor-card-inner"
                           aria-pressed={cardRevealed}
                         >
-                          <div className="impostor-card-face impostor-card-front discord-glass p-6 rounded-lg" style={{ position: 'relative', cursor: 'pointer' }}>
-                            <div className="text-lg text-discord-text-normal mb-3 font-semibold">Tu carta</div>
-                            <div className="text-xl font-semibold text-discord-text-normal">Haz click o presiona Enter para voltear</div>
+                          <div
+                            className="impostor-card-face impostor-card-front discord-glass p-6 rounded-lg"
+                            style={{ position: 'relative', cursor: 'pointer' }}
+                          >
+                            <div className="text-lg text-discord-text-normal mb-3 font-semibold">
+                              Tu carta
+                            </div>
+                            <div className="text-xl font-semibold text-discord-text-normal">
+                              Haz click o presiona Enter para voltear
+                            </div>
                           </div>
-                          <div className="impostor-card-face impostor-card-back discord-glass p-6 rounded-lg" style={{ position: 'relative', cursor: 'pointer' }}>
+                          <div
+                            className="impostor-card-face impostor-card-back discord-glass p-6 rounded-lg"
+                            style={{ position: 'relative', cursor: 'pointer' }}
+                          >
                             {assigned ? (
                               <div className="text-center w-full">
-                                <div className="text-lg text-discord-text-normal mb-3 font-semibold">Tu carta</div>
-                                <div className="text-3xl font-bold text-yellow-400">{assigned.role === 'impostor' ? 'IMPOSTOR' : assigned.word}</div>
-                                <div className="text-base text-discord-text-muted mt-3">{statusMessage}</div>
+                                <div className="text-lg text-discord-text-normal mb-3 font-semibold">
+                                  Tu carta
+                                </div>
+                                <div className="text-3xl font-bold text-yellow-400">
+                                  {assigned.role === 'impostor' ? 'IMPOSTOR' : assigned.word}
+                                </div>
+                                <div className="text-base text-discord-text-muted mt-3">
+                                  {statusMessage}
+                                </div>
                               </div>
                             ) : (
                               <div className="text-center w-full">
-                                <div className="text-lg text-discord-text-normal font-semibold mb-3">Aún no hay ronda</div>
-                                <div className="text-base text-discord-text-muted">{isHost ? 'Haz click en "Iniciar ronda" para comenzar' : 'Espera al host para iniciar'}</div>
+                                <div className="text-lg text-discord-text-normal font-semibold mb-3">
+                                  Aún no hay ronda
+                                </div>
+                                <div className="text-base text-discord-text-muted">
+                                  {isHost
+                                    ? 'Haz click en "Iniciar ronda" para comenzar'
+                                    : 'Espera al host para iniciar'}
+                                </div>
                               </div>
                             )}
                           </div>
@@ -425,7 +812,9 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                       {/* Voting area */}
                       <div className="discord-panel mt-6">
                         <div className="flex items-center justify-between mb-4">
-                          <div className="text-lg text-discord-text-normal font-semibold">Votación</div>
+                          <div className="text-lg text-discord-text-normal font-semibold">
+                            Votación
+                          </div>
                           <div className="text-base text-discord-text-muted">
                             {voting ? `Votos: ${totalVotes}/${alivePlayersCount}` : 'Inactiva'}
                           </div>
@@ -438,15 +827,37 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                               const isCurrentUser = p.id === userId;
                               const canVote = !myVote && isCurrentPlayerAlive && !isDead;
                               return (
-                                <div key={p.id} className={`impostor-voting-item ${isDead ? 'opacity-50' : ''}`}>
+                                <div
+                                  key={p.id}
+                                  className={`impostor-voting-item ${isDead ? 'opacity-50' : ''}`}
+                                >
                                   <div className="impostor-voting-info flex items-center gap-3 flex-1 min-w-0">
-                                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm sm:text-lg font-semibold flex-shrink-0 ${isDead ? 'bg-gray-500' : 'bg-discord-sidebar'} text-discord-text-normal`}>{p.username.charAt(0).toUpperCase()}</div>
-                                    <div className={`text-discord-text-normal break-all font-semibold text-sm sm:text-lg flex-1 min-w-0 ${isDead ? 'text-discord-text-muted line-through' : ''}`} style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }} title={p.username}>{p.username}{isDead ? ' (Muerto)' : ''}</div>
+                                    <div
+                                      className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm sm:text-lg font-semibold flex-shrink-0 ${isDead ? 'bg-gray-500' : 'bg-discord-sidebar'} text-discord-text-normal`}
+                                    >
+                                      {p.username.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div
+                                      className={`text-discord-text-normal break-all font-semibold text-sm sm:text-lg flex-1 min-w-0 ${isDead ? 'text-discord-text-muted line-through' : ''}`}
+                                      style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }}
+                                      title={p.username}
+                                    >
+                                      {p.username}
+                                      {isDead ? ' (Muerto)' : ''}
+                                    </div>
                                   </div>
                                   <div className="impostor-voting-actions flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                                    <div className="text-sm sm:text-lg text-discord-text-muted font-semibold">{voteCounts[p.id] || 0}</div>
+                                    <div className="text-sm sm:text-lg text-discord-text-muted font-semibold">
+                                      {voteCounts[p.id] || 0}
+                                    </div>
                                     {!isDead && (
-                                      <button disabled={!canVote} onClick={() => handleCastVote(p.id)} className={`discord-button ${canVote ? '' : 'opacity-50 cursor-not-allowed'}`}>{myVote === p.id ? 'Votado' : 'Votar'}</button>
+                                      <button
+                                        disabled={!canVote}
+                                        onClick={() => handleCastVote(p.id)}
+                                        className={`discord-button ${canVote ? '' : 'opacity-50 cursor-not-allowed'}`}
+                                      >
+                                        {myVote === p.id ? 'Votado' : 'Votar'}
+                                      </button>
                                     )}
                                   </div>
                                 </div>
@@ -454,23 +865,61 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                             })}
                           </div>
                         ) : (
-                          <div className="text-lg text-discord-text-muted font-semibold">No hay votación en curso.</div>
+                          <div className="text-lg text-discord-text-muted font-semibold">
+                            No hay votación en curso.
+                          </div>
                         )}
 
                         {votingResult && (
                           <div className="mt-4 text-lg text-discord-text-normal font-semibold">
-                            Resultado: {votingResult.eliminated ? `Eliminado ${votingResult.eliminated}` : 'Empate'}
+                            Resultado:{' '}
+                            {votingResult.eliminated
+                              ? `Eliminado ${votingResult.eliminated}`
+                              : 'Empate'}
                           </div>
                         )}
                       </div>
 
                       <div className="impostor-button-grid mt-6">
-                        {isHost && !assigned && <button onClick={handleStart} className="discord-button success">Iniciar ronda</button>}
-                        {isHost && assigned && <button onClick={handleRevealAll} className="discord-button" style={{ background: 'linear-gradient(180deg,#ff8c00,#ff4500)', color: 'white' }}>Revelar todas las cartas</button>}
-                        {isHost && <button onClick={handleStartVoting} className="discord-button">Iniciar votación</button>}
-                        {isHost && voting && <button onClick={handleEndVoting} disabled={!allAliveVoted} className={`discord-button danger ${allAliveVoted ? '' : 'opacity-50 cursor-not-allowed'}`}>Terminar votación ({totalVotes}/{alivePlayersCount})</button>}
-                        {isHost && <button onClick={handleRestart} className="discord-button secondary">Reiniciar ronda</button>}
-                        <button onClick={handleLeave} className="discord-button secondary">Abandonar</button>
+                        {isHost && !assigned && (
+                          <button onClick={handleStart} className="discord-button success">
+                            Iniciar ronda
+                          </button>
+                        )}
+                        {isHost && assigned && (
+                          <button
+                            onClick={handleRevealAll}
+                            className="discord-button"
+                            style={{
+                              background: 'linear-gradient(180deg,#ff8c00,#ff4500)',
+                              color: 'white',
+                            }}
+                          >
+                            Revelar todas las cartas
+                          </button>
+                        )}
+                        {isHost && (
+                          <button onClick={handleStartVoting} className="discord-button">
+                            Iniciar votación
+                          </button>
+                        )}
+                        {isHost && voting && (
+                          <button
+                            onClick={handleEndVoting}
+                            disabled={!allAliveVoted}
+                            className={`discord-button danger ${allAliveVoted ? '' : 'opacity-50 cursor-not-allowed'}`}
+                          >
+                            Terminar votación ({totalVotes}/{alivePlayersCount})
+                          </button>
+                        )}
+                        {isHost && (
+                          <button onClick={handleRestart} className="discord-button secondary">
+                            Reiniciar ronda
+                          </button>
+                        )}
+                        <button onClick={handleLeave} className="discord-button secondary">
+                          Abandonar
+                        </button>
                       </div>
                     </>
                   )}
@@ -478,13 +927,22 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
               </div>
             )}
 
-            {statusMessage && <div className="mt-4 text-lg text-discord-text-normal font-semibold">{statusMessage}</div>}
+            {statusMessage && (
+              <div className="mt-4 text-lg text-discord-text-normal font-semibold">
+                {statusMessage}
+              </div>
+            )}
           </div>
 
-          <aside className="bg-discord-sidebar p-6 rounded-lg border border-discord-hover overflow-hidden">
-            <div className="text-lg text-discord-text-normal mb-4 font-semibold">Orden de turnos</div>
+          {gameStarted && (
+            <aside className="bg-discord-sidebar p-6 rounded-lg border border-discord-hover overflow-hidden">
+            <div className="text-lg text-discord-text-normal mb-4 font-semibold">
+              Orden de turnos
+            </div>
             {turnOrder.length === 0 ? (
-              <div className="text-lg text-discord-text-muted font-semibold">Aún no hay orden de turnos</div>
+              <div className="text-lg text-discord-text-muted font-semibold">
+                Aún no hay orden de turnos
+              </div>
             ) : (
               <ol className="list-decimal list-inside text-base space-y-3">
                 {turnOrder.map((id, idx) => {
@@ -494,12 +952,27 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                   const revealed = revealInfo && revealInfo.impostorId === id;
                   const innocentRevealed = p && (p as any).revealedInnocent;
                   return (
-                    <li key={id} className={`turn-item flex items-center justify-between px-3 py-2 rounded overflow-hidden ${active ? 'bg-blue-600 text-white border border-blue-400' : innocentRevealed ? 'bg-green-900 text-white border border-green-500' : 'bg-discord-surface text-discord-text-normal border border-discord-hover'}`}>
+                    <li
+                      key={id}
+                      className={`turn-item flex items-center justify-between px-3 py-2 rounded overflow-hidden ${active ? 'bg-blue-600 text-white border border-blue-400' : innocentRevealed ? 'bg-green-900 text-white border border-green-500' : 'bg-discord-surface text-discord-text-normal border border-discord-hover'}`}
+                    >
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${active ? 'bg-yellow-400 text-black font-bold ring-2 ring-yellow-300' : revealed ? 'bg-red-600 text-white ring-2 ring-red-400' : innocentRevealed ? 'bg-green-600 text-white ring-2 ring-green-400' : 'bg-discord-chat text-discord-text-normal'}`}>{name.charAt(0).toUpperCase()}</div>
-                        <div className="text-discord-text-normal break-all font-semibold text-lg" style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }} title={name}>{name}</div>
+                        <div
+                          className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${active ? 'bg-yellow-400 text-black font-bold ring-2 ring-yellow-300' : revealed ? 'bg-red-600 text-white ring-2 ring-red-400' : innocentRevealed ? 'bg-green-600 text-white ring-2 ring-green-400' : 'bg-discord-chat text-discord-text-normal'}`}
+                        >
+                          {name.charAt(0).toUpperCase()}
+                        </div>
+                        <div
+                          className="text-discord-text-normal break-all font-semibold text-lg"
+                          style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }}
+                          title={name}
+                        >
+                          {name}
+                        </div>
                       </div>
-                      <div className="text-base text-discord-text-muted font-semibold">{idx + 1}</div>
+                      <div className="text-base text-discord-text-muted font-semibold">
+                        {idx + 1}
+                      </div>
                     </li>
                   );
                 })}
@@ -508,15 +981,34 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
             {revealedRoles && (
               <div className="mt-6">
-                <div className="text-lg text-discord-text-normal mb-3 font-semibold">Cartas reveladas</div>
+                <div className="text-lg text-discord-text-normal mb-3 font-semibold">
+                  Cartas reveladas
+                </div>
                 <ul className="text-base space-y-3">
                   {revealedRoles.map((player: any, index: number) => (
-                    <li key={index} className="flex items-center justify-between px-3 py-2 rounded bg-discord-surface border border-discord-hover overflow-hidden">
+                    <li
+                      key={index}
+                      className="flex items-center justify-between px-3 py-2 rounded bg-discord-surface border border-discord-hover overflow-hidden"
+                    >
                       <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${!player.wasInnocent ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'}`}>{player.name.charAt(0).toUpperCase()}</div>
-                        <div className="text-discord-text-normal break-all font-semibold text-lg" style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }} title={player.name}>{player.name}</div>
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${!player.wasInnocent ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'}`}
+                        >
+                          {player.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div
+                          className="text-discord-text-normal break-all font-semibold text-lg"
+                          style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }}
+                          title={player.name}
+                        >
+                          {player.name}
+                        </div>
                       </div>
-                      <div className={`text-base font-semibold ${!player.wasInnocent ? 'text-red-400' : 'text-blue-400'}`}>{player.wasInnocent ? 'INOCENTE' : 'IMPOSTOR'}</div>
+                      <div
+                        className={`text-base font-semibold ${!player.wasInnocent ? 'text-red-400' : 'text-blue-400'}`}
+                      >
+                        {player.wasInnocent ? 'INOCENTE' : 'IMPOSTOR'}
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -525,7 +1017,9 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
             {joined && (
               <div className="mt-6">
-                <div className="text-sm sm:text-lg text-discord-text-normal mb-2 sm:mb-3 font-semibold">Agregar palabra</div>
+                <div className="text-sm sm:text-lg text-discord-text-normal mb-2 sm:mb-3 font-semibold">
+                  Agregar palabra
+                </div>
                 <input
                   type="text"
                   placeholder="Nueva palabra"
@@ -534,7 +1028,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                   spellCheck="false"
                   data-form-type="other"
                   aria-autocomplete="none"
-                  onKeyDown={(e) => {
+                  onKeyDown={e => {
                     if (e.key === 'Enter') {
                       handleAddWord(e.currentTarget.value);
                       e.currentTarget.value = '';
@@ -544,6 +1038,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
               </div>
             )}
           </aside>
+          )}
         </div>
       </div>
     </div>

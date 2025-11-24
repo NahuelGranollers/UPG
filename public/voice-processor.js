@@ -2,7 +2,8 @@ class VoiceProcessor extends AudioWorkletProcessor {
   constructor(options) {
     super();
     this._buffer = new Float32Array(0);
-    this._chunkSize = (options && options.processorOptions && options.processorOptions.chunkSize) || 4096;
+    this._chunkSize =
+      (options && options.processorOptions && options.processorOptions.chunkSize) || 4096;
     this._accum = [];
   }
 
@@ -29,7 +30,9 @@ class VoiceProcessor extends AudioWorkletProcessor {
         while (this._buffer.length >= this._chunkSize) {
           const chunk = this._buffer.subarray(0, this._chunkSize);
           // Transfer ArrayBuffer for efficiency
-          this.port.postMessage({ type: 'chunk', samples: chunk.buffer, level: rms }, [chunk.buffer]);
+          this.port.postMessage({ type: 'chunk', samples: chunk.buffer, level: rms }, [
+            chunk.buffer,
+          ]);
           // remove sent samples
           this._buffer = this._buffer.subarray(this._chunkSize);
         }

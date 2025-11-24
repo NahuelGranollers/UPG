@@ -63,7 +63,10 @@ const MessageItem: React.FC<MessageItemProps> = memo(
             <span
               className="font-medium text-sm sm:text-base mr-2"
               style={{
-                color: msg.userId === 'bot' ? '#5865F2' : readableTextColor(userColors[msg.userId] || msgUser?.color || '#ffffff'),
+                color:
+                  msg.userId === 'bot'
+                    ? '#5865F2'
+                    : readableTextColor(userColors[msg.userId] || msgUser?.color || '#ffffff'),
               }}
             >
               {msg.username || msgUser?.username}

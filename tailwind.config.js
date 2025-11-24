@@ -45,19 +45,19 @@ export default {
             primary: '#f2f3f5', // Discord header
             secondary: '#dbdee1', // Discord normal
             muted: '#949ba4', // Discord muted
-          }
-        }
+          },
+        },
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
       },
       borderRadius: {
-        'discord': '8px',
+        discord: '8px',
         'discord-lg': '12px',
         'discord-xl': '16px',
       },
       boxShadow: {
-        'discord': '0 2px 10px rgba(0, 0, 0, 0.2)',
+        discord: '0 2px 10px rgba(0, 0, 0, 0.2)',
         'discord-lg': '0 4px 20px rgba(0, 0, 0, 0.3)',
         'discord-xl': '0 8px 32px rgba(0, 0, 0, 0.4)',
       },
