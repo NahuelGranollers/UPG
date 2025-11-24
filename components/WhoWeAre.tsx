@@ -7,7 +7,7 @@ const WhoWeAre: React.FC = () => {
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8 sm:mb-10 md:mb-12">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-discord-text-header mb-3 sm:mb-4">
-            United Player Group (UPG)
+            Unas Partidillas Gang (UPG)
           </h1>
           <p className="text-sm sm:text-base md:text-lg text-discord-text-muted max-w-2xl mx-auto px-2">
             Somos una comunidad dedicada a unir jugadores de todas las plataformas y niveles.

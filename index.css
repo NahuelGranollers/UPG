@@ -39,7 +39,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Tema: variables reutilizables para coherencia visual estilo Discord */
+/* Tema: variables reutilizables para coherencia visual estilo Discord con Liquid Glass iOS 26 */
 :root {
   --bg: #313338; /* Discord chat background */
   --chat-bg: #313338; /* Chat input background */
@@ -57,59 +57,149 @@ body {
   --yellow: #ffcc17; /* UPG accent */
   --border: #3f4147; /* Discord hover/border */
   --glass: rgba(255,255,255,0.02); /* Subtle glass effect */
-  --shadow: 0 2px 10px rgba(0,0,0,0.2); /* Discord shadow */
-  --shadow-lg: 0 4px 20px rgba(0,0,0,0.3); /* Discord large shadow */
-  --shadow-xl: 0 8px 32px rgba(0,0,0,0.4); /* Discord extra large shadow */
+
+  /* Sombras iOS 26 Liquid Glass */
+  --shadow: 0 4px 16px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.08);
+  --shadow-xl: 0 16px 64px rgba(0,0,0,0.16), 0 8px 32px rgba(0,0,0,0.12);
+  --shadow-2xl: 0 24px 96px rgba(0,0,0,0.2), 0 12px 48px rgba(0,0,0,0.16);
+
+  /* Efectos de profundidad iOS 26 */
+  --depth-1: 0 2px 8px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+  --depth-2: 0 4px 16px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
+  --depth-3: 0 8px 32px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.08);
+  --depth-4: 0 16px 64px rgba(0,0,0,0.16), 0 8px 32px rgba(0,0,0,0.12);
+  --depth-5: 0 24px 96px rgba(0,0,0,0.2), 0 12px 48px rgba(0,0,0,0.16);
+
+  /* Transparencias iOS 26 */
+  --glass-subtle: rgba(255,255,255,0.04);
+  --glass-medium: rgba(255,255,255,0.08);
+  --glass-strong: rgba(255,255,255,0.12);
+  --glass-intense: rgba(255,255,255,0.16);
 }
 
-/* Clases de utilidad estilo Discord */
+/* Clases de utilidad estilo Discord con acabado Liquid Glass iOS 26 */
 .discord-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: var(--shadow);
-  transition: all 0.2s ease;
+  background: linear-gradient(180deg, rgba(43, 45, 49, 0.95), rgba(43, 45, 49, 0.85));
+  backdrop-filter: blur(24px) saturate(180%) contrast(120%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%) contrast(120%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.discord-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.02) 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.01) 75%,
+    rgba(255, 255, 255, 0.04) 100%);
+  pointer-events: none;
 }
 
 .discord-card:hover {
-  background: var(--surface-hover);
-  box-shadow: var(--shadow-lg);
+  background: linear-gradient(180deg, rgba(53, 55, 60, 0.95), rgba(53, 55, 60, 0.85));
+  box-shadow:
+    0 12px 48px rgba(0, 0, 0, 0.16),
+    0 4px 16px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
 }
 
 .discord-button {
-  background: var(--blurple);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 16px;
-  font-weight: 500;
+  background: linear-gradient(180deg, rgba(88, 101, 242, 0.9), rgba(88, 101, 242, 0.8));
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  color: white;
+  box-shadow:
+    0 4px 16px rgba(88, 101, 242, 0.25),
+    0 2px 8px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.discord-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    transparent 100%);
+  pointer-events: none;
 }
 
 .discord-button:hover {
-  background: var(--blurple-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow);
+  background: linear-gradient(180deg, rgba(71, 82, 196, 0.95), rgba(71, 82, 196, 0.85));
+  box-shadow:
+    0 8px 32px rgba(88, 101, 242, 0.4),
+    0 4px 16px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
 }
 
 .discord-button:active {
   transform: translateY(0);
+  box-shadow:
+    0 2px 8px rgba(88, 101, 242, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .discord-button.secondary {
-  background: var(--surface);
+  background: linear-gradient(180deg, rgba(43, 45, 49, 0.8), rgba(43, 45, 49, 0.7));
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--text);
-  border: 1px solid var(--border);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.discord-button.secondary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.02) 50%,
+    transparent 100%);
+  pointer-events: none;
 }
 
 .discord-button.secondary:hover {
-  background: var(--surface-hover);
+  background: linear-gradient(180deg, rgba(53, 55, 60, 0.85), rgba(53, 55, 60, 0.75));
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.16),
+    0 4px 16px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: var(--text-header);
 }
 
 .discord-button.danger {
@@ -120,28 +210,97 @@ body {
   background: #c13b40;
 }
 
-.discord-button.success {
-  background: var(--green);
-}
-
 .discord-button.success:hover {
   background: #1e8c4a;
 }
 
+/* Nuevas clases de utilidad iOS 26 Liquid Glass */
+.discord-glass-card {
+  background: linear-gradient(180deg, rgba(43, 45, 49, 0.9), rgba(43, 45, 49, 0.8));
+  backdrop-filter: blur(24px) saturate(180%) contrast(120%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%) contrast(120%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  box-shadow: var(--depth-3);
+  position: relative;
+  overflow: hidden;
+}
+
+.discord-glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0.02) 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.01) 75%,
+    rgba(255, 255, 255, 0.04) 100%);
+  pointer-events: none;
+}
+
+.discord-depth-1 { box-shadow: var(--depth-1); }
+.discord-depth-2 { box-shadow: var(--depth-2); }
+.discord-depth-3 { box-shadow: var(--depth-3); }
+.discord-depth-4 { box-shadow: var(--depth-4); }
+.discord-depth-5 { box-shadow: var(--depth-5); }
+
+/* Efectos de hover iOS 26 */
+.discord-hover-lift {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.discord-hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--depth-4);
+}
+
+/* Bordes redondeados iOS 26 */
+.discord-rounded-sm { border-radius: 8px; }
+.discord-rounded { border-radius: 12px; }
+.discord-rounded-lg { border-radius: 16px; }
+.discord-rounded-xl { border-radius: 20px; }
+.discord-rounded-2xl { border-radius: 24px; }
+
 .discord-input {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(43, 45, 49, 0.8), rgba(43, 45, 49, 0.7));
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
   color: var(--text);
-  padding: 8px 12px;
+  padding: 12px 16px;
   font-size: 14px;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  position: relative;
+}
+
+.discord-input::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.02) 50%,
+    transparent 100%);
+  pointer-events: none;
 }
 
 .discord-input:focus {
   outline: none;
-  border-color: var(--blurple);
-  box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.2);
+  border-color: rgba(88, 101, 242, 0.4);
+  box-shadow:
+    0 8px 32px rgba(88, 101, 242, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.12),
+    0 0 0 2px rgba(88, 101, 242, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(43, 45, 49, 0.9), rgba(43, 45, 49, 0.8));
 }
 
 .discord-input::placeholder {
@@ -149,46 +308,151 @@ body {
 }
 
 .discord-panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: var(--shadow);
+  background: linear-gradient(180deg, rgba(43, 45, 49, 0.95), rgba(43, 45, 49, 0.85));
+  backdrop-filter: blur(24px) saturate(180%) contrast(120%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%) contrast(120%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow:
+    0 12px 48px rgba(0, 0, 0, 0.15),
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.discord-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0.01) 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.02) 75%,
+    rgba(255, 255, 255, 0.05) 100%);
+  pointer-events: none;
 }
 
 .discord-header {
-  background: var(--header-bg);
-  border-bottom: 1px solid var(--border);
-  padding: 12px 16px;
+  background: linear-gradient(180deg, rgba(43, 45, 49, 0.9), rgba(43, 45, 49, 0.8));
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 16px 20px;
   font-weight: 600;
   font-size: 16px;
   color: var(--text-header);
+  box-shadow:
+    0 2px 16px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  position: relative;
+}
+
+.discord-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.02) 100%);
+  pointer-events: none;
 }
 
 .discord-sidebar {
-  background: var(--sidebar-bg);
-  border-right: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(42, 45, 49, 0.95), rgba(42, 45, 49, 0.85));
+  backdrop-filter: blur(24px) saturate(180%) contrast(120%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%) contrast(120%);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    2px 0 24px rgba(0, 0, 0, 0.08),
+    inset -1px 0 0 rgba(255, 255, 255, 0.04);
+  position: relative;
+}
+
+.discord-sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    rgba(255, 255, 255, 0.02) 0%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.01) 100%);
+  pointer-events: none;
 }
 
 .discord-chat {
-  background: var(--chat-bg);
+  background: linear-gradient(180deg, rgba(49, 51, 56, 0.98), rgba(49, 51, 56, 0.95));
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  position: relative;
 }
 
-/* Glass morphism effect consistente */
+.discord-chat::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(88, 101, 242, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 70% 80%, rgba(114, 137, 218, 0.02) 0%, transparent 40%);
+  pointer-events: none;
+}
+
+/* Glass morphism effect consistente con iOS 26 */
 .discord-glass {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+  backdrop-filter: blur(28px) saturate(200%) contrast(130%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%) contrast(130%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  box-shadow:
+    0 12px 48px rgba(0, 0, 0, 0.15),
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.discord-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(255, 255, 255, 0.04) 30%,
+    transparent 60%,
+    rgba(255, 255, 255, 0.02) 90%);
+  pointer-events: none;
 }
 
 .discord-glass-subtle {
-  background: rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(20px) saturate(180%) contrast(120%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%) contrast(120%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.discord-glass-subtle::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.02) 40%,
+    transparent 100%);
+  pointer-events: none;
 }
 
 /* Theme helper to apply lock-screen colours to game */
@@ -229,16 +493,37 @@ body {
   --impostor-accent: #5865F2; /* UPG blue accent */
 }
 
-/* Liquid glass styling (backdrop blur + sheen + subtle borders) */
+/* Liquid glass styling (backdrop blur + sheen + subtle borders) iOS 26 style */
 .liquid-glass {
-  --glass-radius: 14px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.75), rgba(255,255,255,0.44));
-  -webkit-backdrop-filter: blur(14px) saturate(150%) contrast(110%);
-  backdrop-filter: blur(14px) saturate(150%) contrast(110%);
-  border: 1px solid rgba(255,255,255,0.45);
-  box-shadow: 0 12px 40px rgba(6,10,20,0.16), inset 0 1px 0 rgba(255,255,255,0.38);
+  --glass-radius: 20px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.65));
+  -webkit-backdrop-filter: blur(32px) saturate(220%) contrast(140%);
+  backdrop-filter: blur(32px) saturate(220%) contrast(140%);
+  border: 1px solid rgba(255,255,255,0.25);
+  box-shadow:
+    0 16px 64px rgba(0,0,0,0.12),
+    0 8px 32px rgba(0,0,0,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.4);
   color: var(--impostor-text);
   border-radius: var(--glass-radius);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Sheen pseudo-element for liquid look */
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255,255,255,0.3) 0%,
+    rgba(255,255,255,0.1) 25%,
+    rgba(255,255,255,0.05) 50%,
+    rgba(255,255,255,0.02) 75%,
+    rgba(255,255,255,0.15) 100%);
+  pointer-events: none;
+  mix-blend-mode: overlay;
 }
 
 /* Sheen pseudo-element for liquid look */
@@ -257,23 +542,83 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.6rem 1rem;
-  border-radius: 12px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
-  border: 1px solid rgba(255,255,255,0.08);
+  padding: 12px 20px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+  border: 1px solid rgba(255,255,255,0.12);
   color: var(--impostor-text);
-  box-shadow: 0 6px 18px rgba(3,6,10,0.15);
-  transition: transform 140ms ease, box-shadow 140ms ease, background 120ms ease;
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.12),
+    0 4px 16px rgba(0,0,0,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
-.glass-btn:active { transform: translateY(1px); }
-.glass-btn.primary { background: linear-gradient(180deg, var(--impostor-accent), #ff7a3b); color: white; border-color: rgba(0,0,0,0.06); }
+
+.glass-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255,255,255,0.15) 0%,
+    rgba(255,255,255,0.04) 50%,
+    transparent 100%);
+  pointer-events: none;
+}
+
+.glass-btn:active {
+  transform: translateY(1px);
+  box-shadow:
+    0 4px 16px rgba(0,0,0,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.glass-btn.primary {
+  background: linear-gradient(180deg, rgba(88,101,242,0.9), rgba(88,101,242,0.8));
+  border-color: rgba(255,255,255,0.2);
+  color: white;
+  box-shadow:
+    0 8px 32px rgba(88,101,242,0.25),
+    0 4px 16px rgba(0,0,0,0.1),
+    inset 0 1px 0 rgba(255,255,255,0.15);
+}
 
 .glass-input {
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.1);
-  padding: 0.6rem 0.75rem;
-  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+  border: 1px solid rgba(255,255,255,0.12);
+  padding: 12px 16px;
+  border-radius: 14px;
   color: #ffffff;
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.1),
+    0 4px 16px rgba(0,0,0,0.06),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-input::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255,255,255,0.1) 0%,
+    rgba(255,255,255,0.02) 50%,
+    transparent 100%);
+  pointer-events: none;
+}
+
+.glass-input:focus {
+  border-color: rgba(88,101,242,0.3);
+  box-shadow:
+    0 12px 48px rgba(88,101,242,0.15),
+    0 8px 32px rgba(0,0,0,0.12),
+    0 0 0 2px rgba(88,101,242,0.1),
+    inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
 /* Panels & cards use rounded glass by default inside theme */
@@ -423,48 +768,63 @@ textarea,
   }
 }
 
-/* Animaciones personalizadas */
+/* Animaciones personalizadas iOS 26 */
 @keyframes pulse-subtle {
-  0%,
-  100% {
+  0%, 100% {
     opacity: 1;
+    transform: scale(1);
   }
   50% {
-    opacity: 0.6;
+    opacity: 0.8;
+    transform: scale(0.98);
   }
 }
 
 @keyframes slide-in-up {
   from {
-    transform: translateY(10px);
+    transform: translateY(12px) scale(0.95);
     opacity: 0;
   }
   to {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
 }
 
 @keyframes glow {
-  0%,
-  100% {
-    box-shadow: 0 0 5px rgba(88, 101, 242, 0.3);
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(88, 101, 242, 0.2), var(--depth-2);
   }
   50% {
-    box-shadow: 0 0 20px rgba(88, 101, 242, 0.6);
+    box-shadow: 0 0 24px rgba(88, 101, 242, 0.4), var(--depth-3);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
   }
 }
 
 .animate-slide-in-up {
-  animation: slide-in-up 0.2s ease-out;
+  animation: slide-in-up 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .animate-pulse-subtle {
-  animation: pulse-subtle 1.5s ease-in-out infinite;
+  animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .animate-glow {
-  animation: glow 2s ease-in-out infinite;
+  animation: glow 3s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
 }
 
 /* Impostor game specific animations and visuals */

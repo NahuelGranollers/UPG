@@ -4,13 +4,14 @@ import { ArrowRight } from 'lucide-react';
 
 interface HomeScreenProps {
   onGoToChat: () => void;
+  onGoToWhoWeAre: () => void;
 }
 
-const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat }) => {
+const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre }) => {
   return (
-    <div className="flex-1 flex items-center justify-center p-6 bg-discord-chat min-h-screen">
+    <div className="flex-1 flex items-center justify-center p-8 md:p-12 lg:p-16 bg-discord-chat min-h-screen">
       <div className="max-w-2xl w-full bg-discord-surface backdrop-blur-sm rounded-discord shadow-discord border border-discord-hover overflow-hidden">
-        <div className="p-8 md:p-12 flex flex-col justify-center items-center text-center gap-6">
+        <div className="p-10 md:p-14 lg:p-16 flex flex-col justify-center items-center text-center gap-8">
           <SafeImage src="/upg.png" alt="UPG" className="w-32 h-32 object-cover rounded-discord shadow-discord" fallbackSrc="/upg.png" />
           <h1 className="text-4xl font-black text-discord-text-header">
             Bienvenido a UPG
@@ -26,12 +27,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat }) => {
             >
               Ir al Chat
             </button>
-            <a
+            <button
+              onClick={onGoToWhoWeAre}
               className="discord-button secondary"
-              href="/about"
             >
               ¿Qué es UPG?
-            </a>
+            </button>
           </div>
         </div>
       </div>

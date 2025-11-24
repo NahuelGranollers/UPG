@@ -206,12 +206,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     [inputText, onSendMessage, currentUser, currentChannel.id]
   );
 
-  // Auto-scroll to bottom when messages change (including local messages)
+  // Auto-enfocar el input cuando se entra al chat o cambia de canal
   useEffect(() => {
-    try {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    } catch (e) {}
-  }, [orderedMessages.length]);
+    // Pequeño delay para asegurar que el componente esté completamente renderizado
+    const timeoutId = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [currentChannel.id]);
 
   // Check if bot is typing (only if last message wasn't from bot)
   const shouldShowBotTyping =
@@ -386,27 +389,27 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   return (
     <div className="flex-1 flex flex-col bg-discord-chat min-w-0 h-full">
       {/* Header */}
-      <div className="h-12 flex items-center justify-between px-4 shadow-sm border-b border-gray-900/20 shrink-0">
+      <div className="h-14 flex items-center justify-between px-4 shadow-sm border-b border-gray-900/20 shrink-0">
         <div className="flex items-center text-discord-text-header font-bold truncate">
           <button
             onClick={onMenuToggle}
-            className="md:hidden mr-3 text-discord-text-muted hover:text-white"
+            className="md:hidden mr-4 text-discord-text-muted hover:text-white"
             aria-label="Abrir menú"
             aria-expanded="false"
           >
             <Menu size={24} />
           </button>
-          <Hash size={24} className="text-discord-text-muted mr-2 shrink-0" />
+          <Hash size={24} className="text-discord-text-muted mr-3 shrink-0" />
           <span className="truncate">{currentChannel.name}</span>
         </div>
       </div>
       {/* Mensajes */}
       <div
-        className="flex-1 overflow-y-auto px-3 sm:px-4 pt-3 sm:pt-4 flex flex-col chat-input-safe no-overlap"
+        className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8 flex flex-col chat-input-safe no-overlap"
         style={{ maxHeight: '100%' }}
       >
         <div className="mt-auto">
-          <div className="mb-6 sm:mb-8 mt-3 sm:mt-4">
+          <div className="mb-8 sm:mb-10 lg:mb-12 mt-4 sm:mt-6 lg:mt-8">
             <div className="w-12 h-12 sm:w-16 sm:h-16 bg-discord-text-muted/20 rounded-full flex items-center justify-center mb-3 sm:mb-4">
               <Hash size={32} className="text-white sm:w-10 sm:h-10" />
             </div>
@@ -427,11 +430,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             return (
               <div
                 key={msg.id}
-                className={`group flex pr-2 sm:pr-3 mt-2 sm:mt-3 py-0.5 relative transition-all ${mentioned ? 'bg-yellow-500/10 border-l-4 border-yellow-500 pl-2 -ml-1 hover:bg-yellow-500/15' : 'hover:bg-[rgba(255,255,255,0.02)]'}`}
+                className={`group flex pr-3 sm:pr-4 mt-3 sm:mt-4 lg:mt-5 py-1 relative transition-all ${mentioned ? 'bg-yellow-500/10 border-l-4 border-yellow-500 pl-3 -ml-1 hover:bg-yellow-500/15' : 'hover:bg-[rgba(255,255,255,0.02)]'}`}
                 onMouseEnter={() => setHoveredMessageId(msg.id)}
                 onMouseLeave={() => setHoveredMessageId(null)}
               >
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gray-600 mr-2 sm:mr-3 mt-0.5 overflow-hidden shrink-0 cursor-pointer">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-full bg-gray-600 mr-3 sm:mr-4 mt-0.5 overflow-hidden shrink-0 cursor-pointer">
                   <SafeImage
                     src={msg.avatar || msgUser?.avatar || ''}
                     alt={msg.username || msgUser?.username || ''}
@@ -442,7 +445,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center flex-wrap">
                     <span
-                      className="font-medium text-sm sm:text-base mr-2"
+                      className="font-medium text-sm sm:text-base mr-3"
                       style={{
                         color: msg.userId === 'bot' ? '#5865F2' : readableTextColor(userColors[msg.userId] || msgUser?.color || '#ffffff'),
                       }}
@@ -459,7 +462,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                         MENCIÓN
                       </span>
                     )}
-                    <span className="text-[11px] sm:text-xs text-discord-text-muted ml-1 sm:ml-2 font-medium">
+                    <span className="text-[11px] sm:text-xs text-discord-text-muted ml-2 sm:ml-3 font-medium">
                       {msgTimestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
@@ -520,8 +523,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
           {/* Indicador de "bot escribiendo" */}
           {shouldShowBotTyping && (
-            <div className="flex pr-2 sm:pr-4 mt-3 sm:mt-4 py-0.5">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-600 mr-3 sm:mr-4 mt-0.5 overflow-hidden shrink-0">
+            <div className="flex pr-3 sm:pr-4 mt-4 sm:mt-5 lg:mt-6 py-1">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 lg:w-11 lg:h-11 rounded-full bg-gray-600 mr-4 sm:mr-5 mt-0.5 overflow-hidden shrink-0">
                 <SafeImage
                   src="/upg.png"
                   alt="UPG"
@@ -561,7 +564,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </div>
       {/* Input: separado y con z-index para evitar solapamientos */}
-      <div className="w-full px-3 sm:px-4 pb-3 sm:pb-4 z-base bg-transparent">
+      <div className="w-full px-4 sm:px-6 lg:px-8 pb-4 sm:pb-6 lg:pb-8 z-base bg-transparent">
         <MessageInput
         inputText={inputText}
         setInputText={setInputText}

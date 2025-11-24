@@ -1,6 +1,6 @@
 ﻿import React, { memo, useState } from 'react';
 import { useSocket } from '../context/SocketContext';
-import { Home, Shield, Users, Vote, Newspaper } from 'lucide-react';
+import { Home, Shield, Users, Vote, Newspaper, Trophy } from 'lucide-react';
 import SafeImage from './SafeImage';
 import AdminPanel from './AdminPanel';
 import { UserRole, User } from '../types';
@@ -11,9 +11,9 @@ interface SidebarProps {
   onHomeClick?: () => void;
   onUPGClick?: () => void;
   // activeSection allows parent to indicate which sidebar node is active
-  activeSection?: 'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor';
+  activeSection?: 'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor' | 'news' | 'hall_of_fame';
   // navigation callback when clicking a sidebar node
-  onNavigate?: (section: 'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor' | 'news') => void;
+  onNavigate?: (section: 'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor' | 'news' | 'hall_of_fame') => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = memo(({ currentUser, setCurrentUser: _setCurrentUser, onHomeClick, onUPGClick, activeSection, onNavigate }) => {
@@ -24,7 +24,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentUser, setCurrentUser: _se
   // Obtener socket desde el contexto
   const { socket } = useSocket();
   return (
-    <div className="w-[72px] bg-discord-dark flex flex-col items-center py-3 space-y-2 overflow-y-auto shrink-0">
+    <div className="w-[72px] bg-discord-dark flex flex-col items-center py-4 space-y-3 overflow-y-auto shrink-0">
       {/* Direct Messages / Home */}
       {(() => {
         const active = activeSection === 'home';
@@ -147,6 +147,25 @@ const Sidebar: React.FC<SidebarProps> = memo(({ currentUser, setCurrentUser: _se
                 aria-pressed={active}
               >
                 <Newspaper size={20} />
+              </button>
+            </div>
+          );
+        })()}
+
+        {(() => {
+          const active = activeSection === 'hall_of_fame';
+          return (
+            <div className="relative">
+              {active && <div className="absolute left-0 bg-white rounded-r w-1 h-10 top-1/2 -translate-y-1/2 -ml-1" />}
+              <button
+                onClick={() => {
+                  if (onNavigate) onNavigate('hall_of_fame');
+                }}
+                className={`w-12 h-12 ${active ? 'bg-discord-blurple text-white' : 'bg-discord-chat text-discord-text-normal hover:bg-discord-hover hover:text-discord-text-normal'} rounded-[24px] hover:rounded-[16px] transition-all duration-200 flex items-center justify-center`}
+                title="Salón de la Fama"
+                aria-pressed={active}
+              >
+                <Trophy size={20} />
               </button>
             </div>
           );

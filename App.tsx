@@ -7,7 +7,6 @@ import { AppView, ChannelData, User } from './types';
 import useVoice from './hooks/useVoice';
 
 // Componentes críticos (carga inmediata)
-import LockScreen from './components/LockScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import MobileTabBar from './components/MobileTabBar';
 import Sidebar from './components/Sidebar';
@@ -19,23 +18,22 @@ import ImpostorGame from './components/ImpostorGame';
 import WhoWeAre from './components/WhoWeAre';
 import Voting from './components/Voting';
 import UPGNews from './components/UPGNews';
+import HallOfFame from './components/HallOfFame';
 
 function MainApp() {
   const { currentUser, isLoading, loginWithDiscord, logout } = useAuth();
   const { isConnected, socket } = useSocket();
 
   const [activeView, setActiveView] = useState<AppView>(AppView.IMPOSTOR);
-  const [showHome, setShowHome] = useState(false);
+  const [showHome, setShowHome] = useState(true);
   const [currentChannel, setCurrentChannel] = useState<ChannelData>({
     id: 'general',
     name: 'general',
     description: 'Chat general',
   });
-  const [activeSection, setActiveSection] = useState<'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor' | 'news'>('impostor');
+  const [activeSection, setActiveSection] = useState<'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor' | 'news' | 'hall_of_fame'>('home');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileActiveTab, setMobileActiveTab] = useState<'channels' | 'chat' | 'users' | 'news'>('chat');
-
-  const [isLocked, setIsLocked] = useState(() => !sessionStorage.getItem('app_unlocked'));
 
   // Hook de chat para el canal actual
   const { messages, setMessages, sendMessage } = useChat(currentChannel.id);
@@ -155,17 +153,6 @@ function MainApp() {
     };
   }, [socket]);
 
-  // Mostrar LockScreen si está bloqueado, independientemente de la autenticación
-  if (isLocked)
-    return (
-      <LockScreen
-        onUnlock={() => {
-          setIsLocked(false);
-          sessionStorage.setItem('app_unlocked', 'true');
-        }}
-      />
-    );
-
   if (isLoading)
     return (
       <div className="flex h-screen items-center justify-center bg-[#313338] text-white">
@@ -182,7 +169,7 @@ function MainApp() {
     );
 
   return (
-    <div className="flex h-screen w-full bg-[#313338] font-sans antialiased overflow-hidden relative text-white">
+    <div className="flex h-screen w-full bg-[#313338] font-sans antialiased overflow-hidden relative text-white p-1 sm:p-2 lg:p-3">
       {/* Desktop Layout */}
       <div className="hidden md:flex h-full w-full">
         <Sidebar
@@ -213,6 +200,10 @@ function MainApp() {
               setShowHome(false);
               setActiveView(AppView.NEWS);
               setActiveSection('news');
+            } else if (section === 'hall_of_fame') {
+              setShowHome(false);
+              setActiveView(AppView.HALL_OF_FAME);
+              setActiveSection('hall_of_fame');
             }
           }}
           onHomeClick={() => {
@@ -249,7 +240,10 @@ function MainApp() {
 
         <div className="flex flex-1 min-w-0 relative">
           {showHome ? (
-            <HomeScreen onGoToChat={() => { setShowHome(false); setActiveView(AppView.CHAT); }} />
+            <HomeScreen 
+              onGoToChat={() => { setShowHome(false); setActiveView(AppView.CHAT); setActiveSection('chat'); }} 
+              onGoToWhoWeAre={() => { setShowHome(false); setActiveView(AppView.WHO_WE_ARE); setActiveSection('who'); }}
+            />
           ) : activeView === AppView.IMPOSTOR ? (
             <ImpostorGame onClose={() => { setShowHome(true); setActiveView(AppView.CHAT); setActiveSection('home'); }} />
           ) : activeView === AppView.CHAT ? (
@@ -266,15 +260,20 @@ function MainApp() {
               />
               <UserList users={users} currentUserId={currentUser.id} currentUser={currentUser} userColors={userColors} />
             </>
+          ) : activeView === AppView.WHO_WE_ARE ? (
+            <WhoWeAre onMenuToggle={() => {}} />
+          ) : activeView === AppView.VOTING ? (
+            <Voting onMenuToggle={() => {}} />
+          ) : activeView === AppView.NEWS ? (
+            <UPGNews />
+          ) : activeView === AppView.HALL_OF_FAME ? (
+            <HallOfFame />
           ) : null}
-          {activeView === AppView.WHO_WE_ARE && <WhoWeAre onMenuToggle={() => {}} />}
-          {activeView === AppView.VOTING && <Voting onMenuToggle={() => {}} />}
-          {activeView === AppView.NEWS && <UPGNews />}
         </div>
       </div>
 
       {/* Mobile Layout */}
-      <div className="flex md:hidden h-full w-full flex-col relative overflow-hidden pb-16">
+      <div className="flex md:hidden h-full w-full flex-col relative overflow-hidden pb-20 p-1 sm:p-2">
         {showHome ? (
           <div className="flex h-full w-full">
             <Sidebar
@@ -309,7 +308,10 @@ function MainApp() {
               onHomeClick={() => { setShowHome(true); setActiveSection('home'); }}
               onUPGClick={() => { setShowHome(false); setActiveView(AppView.CHAT); setActiveSection('chat'); }}
             />
-            <HomeScreen onGoToChat={() => { setShowHome(false); setActiveView(AppView.CHAT); }} />
+            <HomeScreen 
+              onGoToChat={() => { setShowHome(false); setActiveView(AppView.CHAT); setActiveSection('chat'); }} 
+              onGoToWhoWeAre={() => { setShowHome(false); setActiveView(AppView.WHO_WE_ARE); setActiveSection('who'); setMobileActiveTab('chat'); }}
+            />
           </div>
         ) : (
           <>
@@ -346,6 +348,11 @@ function MainApp() {
                       setShowHome(false);
                       setActiveView(AppView.NEWS);
                       setActiveSection('news');
+                      setMobileActiveTab('chat');
+                    } else if (section === 'hall_of_fame') {
+                      setShowHome(false);
+                      setActiveView(AppView.HALL_OF_FAME);
+                      setActiveSection('hall_of_fame');
                       setMobileActiveTab('chat');
                     }
                   }}
@@ -389,6 +396,7 @@ function MainApp() {
                 {activeView === AppView.WHO_WE_ARE && <WhoWeAre onMenuToggle={() => setMobileActiveTab('channels')} />}
                 {activeView === AppView.VOTING && <Voting onMenuToggle={() => setMobileActiveTab('channels')} />}
                 {activeView === AppView.NEWS && <UPGNews />}
+                {activeView === AppView.HALL_OF_FAME && <HallOfFame />}
               </>
             )}
 
