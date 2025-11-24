@@ -259,7 +259,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
         </div>
 
         <div className="impostor-grid">
-          <div className="panel-glass lg liquid-glass bg-transparent">
+          <div className="panel-glass lg liquid-glass bg-[#071017]">
             {!joined && (
               <div className="space-y-3">
                 <input id="impostor-roomid" className="w-full p-3 rounded glass-input border border-gray-700" placeholder="ID de sala" value={roomId} onChange={e => setRoomId(e.target.value)} />
@@ -276,12 +276,12 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                 <div className="text-sm text-gray-300">Sala: <strong>{roomId}</strong></div>
                 <div className="text-sm text-gray-300">Host: {isHost ? 'Tú' : 'Otro'}</div>
 
-                <div className="panel-glass lg liquid-glass bg-transparent p-3 rounded max-h-[320px] overflow-auto" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="panel-glass lg liquid-glass bg-[#071017] p-3 rounded max-h-[320px] overflow-auto" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
                   <div className="text-sm text-gray-400 mb-2">Jugadores:</div>
                   <ul className="text-sm space-y-2">
                     {players.map(p => (
                       <li key={p.id} className="flex items-center justify-between overflow-hidden">
-                          <span className="text-white" title={p.username}>{p.username}</span>
+                          <span className="text-white break-all font-semibold" style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }} title={p.username}>{p.username}</span>
                           <span className="text-xs text-gray-400">{p.id === currentUser?.id ? 'Tú' : ''}</span>
                         </li>
                     ))}
@@ -379,7 +379,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                       </div>
 
                       {/* Voting area */}
-                      <div className="panel-glass lg liquid-glass mt-4 p-3 rounded" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div className="panel-glass lg liquid-glass bg-[#071017] mt-4 p-3 rounded" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
                         <div className="flex items-center justify-between mb-2">
                           <div className="text-sm text-contrast">Votación</div>
                           <div className="text-xs text-gray-400">{voting ? 'Activa' : 'Inactiva'}</div>
@@ -390,12 +390,12 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                             {players.map(p => {
                               const isDead = p.revealedInnocent;
                               const isCurrentUser = p.id === currentUser?.id;
-                              const canVote = !myVote && !isCurrentPlayerAlive && !isDead;
+                              const canVote = !myVote && isCurrentPlayerAlive && !isDead;
                               return (
                                 <div key={p.id} className={`flex items-center justify-between overflow-hidden ${isDead ? 'opacity-50' : ''}`}>
                                   <div className="flex items-center gap-3">
                                     <div className={`w-8 h-8 rounded-full ${isDead ? 'bg-gray-500' : 'bg-gray-700'} text-white flex items-center justify-center text-sm`}>{p.username.charAt(0).toUpperCase()}</div>
-                                    <div className={`text-white ${isDead ? 'text-gray-500 line-through' : ''}`} title={p.username}>{p.username}{isDead ? ' (Muerto)' : ''}</div>
+                                    <div className={`text-white break-all font-semibold ${isDead ? 'text-gray-500 line-through' : ''}`} style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }} title={p.username}>{p.username}{isDead ? ' (Muerto)' : ''}</div>
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <div className="text-sm text-gray-600">{voteCounts[p.id] || 0}</div>
@@ -449,10 +449,10 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                   const revealed = revealInfo && revealInfo.impostorId === id;
                   const innocentRevealed = p && (p as any).revealedInnocent;
                   return (
-                    <li key={id} className={`turn-item flex items-center justify-between px-2 py-1 rounded overflow-hidden ${active ? 'active bg-discord-blurple text-white' : innocentRevealed ? 'innocent text-gray-100' : 'text-white'}`}>
+                    <li key={id} className={`turn-item flex items-center justify-between px-2 py-1 rounded overflow-hidden ${active ? 'active bg-discord-blurple text-white' : innocentRevealed ? 'innocent text-white' : 'text-white'}`}>
                       <div className="flex items-center gap-2">
                         <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs ${active ? 'bg-white text-black' : revealed ? 'bg-red-600 text-white ring-2 ring-red-400' : innocentRevealed ? 'bg-green-600 text-white ring-2 ring-green-400' : 'bg-gray-700 text-gray-200'}`}>{name.charAt(0).toUpperCase()}</div>
-                        <div className="text-white" title={name}>{name}</div>
+                        <div className="text-white break-all font-semibold" style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }} title={name}>{name}</div>
                       </div>
                       <div className="text-xs text-gray-400">{idx + 1}</div>
                     </li>
@@ -469,7 +469,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                     <li key={index} className="flex items-center justify-between px-2 py-1 rounded bg-gray-800 overflow-hidden">
                       <div className="flex items-center gap-2">
                         <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${!player.wasInnocent ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'}`}>{player.name.charAt(0).toUpperCase()}</div>
-                        <div className="text-gray-200" title={player.name}>{player.name}</div>
+                        <div className="text-white break-all font-semibold" style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }} title={player.name}>{player.name}</div>
                       </div>
                       <div className={`text-xs font-semibold ${!player.wasInnocent ? 'text-red-400' : 'text-blue-400'}`}>{player.wasInnocent ? 'INOCENTE' : 'IMPOSTOR'}</div>
                     </li>
