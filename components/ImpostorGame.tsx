@@ -68,6 +68,8 @@ export default function ImpostorGame({
   const [selectedCategory, setSelectedCategory] = useState('General');
   const [selectedTime, setSelectedTime] = useState(0);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [guessInput, setGuessInput] = useState('');
+  const [showGuessInput, setShowGuessInput] = useState(false);
 
   useEffect(() => {
     if (!socket || !currentUser) return;
@@ -969,20 +971,56 @@ export default function ImpostorGame({
                           </div>
                         )}
                         {assigned && assigned.role === 'impostor' && (
-                          <button 
-                            onClick={() => {
-                              const guess = prompt('Adivina la palabra secreta (Si fallas, pierdes):');
-                              if (guess) {
-                                socket.emit('impostor:guess-word', { roomId, userId, guess }, (res: any) => {
-                                  if (!res.ok) alert(res.error);
-                                });
-                              }
-                            }}
-                            className="discord-button"
-                            style={{ background: '#9b59b6', color: 'white' }}
-                          >
-                            Adivinar Palabra
-                          </button>
+                          <div className="w-full">
+                            {!showGuessInput ? (
+                              <button 
+                                onClick={() => setShowGuessInput(true)}
+                                className="discord-button w-full"
+                                style={{ background: '#9b59b6', color: 'white' }}
+                              >
+                                Adivinar Palabra
+                              </button>
+                            ) : (
+                              <div className="flex gap-2 animate-fade-in">
+                                <input
+                                  type="text"
+                                  className="discord-input flex-1"
+                                  placeholder="Escribe la palabra..."
+                                  value={guessInput}
+                                  onChange={(e) => setGuessInput(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && guessInput.trim()) {
+                                      socket.emit('impostor:guess-word', { roomId, userId, guess: guessInput }, (res: any) => {
+                                        if (!res.ok) setStatusMessage(res.error);
+                                      });
+                                      setGuessInput('');
+                                      setShowGuessInput(false);
+                                    }
+                                  }}
+                                />
+                                <button
+                                  onClick={() => {
+                                    if (guessInput.trim()) {
+                                      socket.emit('impostor:guess-word', { roomId, userId, guess: guessInput }, (res: any) => {
+                                        if (!res.ok) setStatusMessage(res.error);
+                                      });
+                                      setGuessInput('');
+                                      setShowGuessInput(false);
+                                    }
+                                  }}
+                                  className="discord-button success"
+                                >
+                                  Enviar
+                                </button>
+                                <button
+                                  onClick={() => setShowGuessInput(false)}
+                                  className="discord-button secondary"
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         )}
                         {isHost && assigned && (
                           <button

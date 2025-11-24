@@ -16,7 +16,7 @@ const MobileSidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate }) => {
       <div className={`absolute inset-0 bg-black/50`} onClick={onClose} />
 
       <aside
-        className={`absolute left-0 top-0 h-full w-72 bg-discord-dark shadow-xl transform transition-transform ${isOpen ? 'translate-x-0' : '-translate-x-[-100%]'}`}
+        className={`absolute left-0 top-0 h-full w-72 bg-discord-dark shadow-xl transform transition-transform ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
         style={{ transitionProperty: 'transform', transitionDuration: '220ms' }}
       >
         <div className="flex items-center justify-between p-4 border-b border-discord-chat/30">

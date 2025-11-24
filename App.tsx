@@ -262,100 +262,108 @@ function MainApp() {
     );
 
   return (
-    <div className="flex h-screen w-full bg-[#313338] font-sans antialiased overflow-hidden relative text-white">
-      {/* Sidebar (single instance, fixed left) */}
-      <Sidebar
-        currentUser={currentUser}
-        setCurrentUser={() => {}}
-        activeSection={activeSection}
-        onNavigate={navigateToSection}
-        onHomeClick={handleHomeClick}
-        onUPGClick={handleUPGClick}
-      />
-      {!showHome && activeView === AppView.CHAT && (
-        <ChannelList
-          activeView={activeView}
-          currentChannelId={currentChannel.id}
-          onChannelSelect={(view, channel) => {
-            setActiveView(view);
-            if (channel) setCurrentChannel(channel);
-          }}
+    <div
+      className="flex h-screen w-full bg-[#313338] font-sans antialiased overflow-hidden relative text-white"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Desktop Layout */}
+      <div className="hidden md:flex w-full h-full">
+        {/* Sidebar (single instance, fixed left) */}
+        <Sidebar
           currentUser={currentUser}
-          activeVoiceChannel={activeVoiceChannel}
-          onVoiceJoin={handleVoiceJoin}
-          onVoiceLeave={handleVoiceLeave}
-          voiceStates={voiceStates}
-          onToggleMic={handleToggleMute}
-          micActive={!(voice as any).isMuted}
-          voiceLevel={(voice as any).voiceLevel}
-          users={users}
-          onLoginWithDiscord={loginWithDiscord}
-          onLogoutDiscord={logout}
+          setCurrentUser={() => {}}
+          activeSection={activeSection}
+          onNavigate={navigateToSection}
+          onHomeClick={handleHomeClick}
+          onUPGClick={handleUPGClick}
         />
-      )}
+        {!showHome && activeView === AppView.CHAT && (
+          <ChannelList
+            activeView={activeView}
+            currentChannelId={currentChannel.id}
+            onChannelSelect={(view, channel) => {
+              setActiveView(view);
+              if (channel) setCurrentChannel(channel);
+            }}
+            currentUser={currentUser}
+            activeVoiceChannel={activeVoiceChannel}
+            onVoiceJoin={handleVoiceJoin}
+            onVoiceLeave={handleVoiceLeave}
+            voiceStates={voiceStates}
+            onToggleMic={handleToggleMute}
+            micActive={!(voice as any).isMuted}
+            voiceLevel={(voice as any).voiceLevel}
+            users={users}
+            onLoginWithDiscord={loginWithDiscord}
+            onLogoutDiscord={logout}
+          />
+        )}
 
-      <div className="flex flex-1 min-w-0 relative">
-        <Suspense
-          fallback={<div className="flex-1 flex items-center justify-center">Cargando...</div>}
-        >
-          {showHome ? (
-            <HomeScreen
-              onGoToChat={() => {
-                setShowHome(false);
-                setActiveView(AppView.CHAT);
-                setActiveSection('chat');
-              }}
-              onGoToWhoWeAre={() => {
-                setShowHome(false);
-                setActiveView(AppView.WHO_WE_ARE);
-                setActiveSection('who');
-              }}
-            />
-          ) : activeView === AppView.IMPOSTOR ? (
-            <ImpostorGame
-              onClose={() => {
-                setShowHome(true);
-                setActiveView(AppView.CHAT);
-                setActiveSection('home');
-              }}
-            />
-          ) : activeView === AppView.CHAT ? (
-            <>
-              <ChatInterface
-                currentUser={currentUser}
-                users={users}
-                currentChannel={currentChannel}
-                onSendMessage={sendMessage}
-                messages={messages}
-                setMessages={setMessages}
-                onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
-                userColors={userColors}
+        <div className="flex flex-1 min-w-0 relative">
+          <Suspense
+            fallback={<div className="flex-1 flex items-center justify-center">Cargando...</div>}
+          >
+            {showHome ? (
+              <HomeScreen
+                onGoToChat={() => {
+                  setShowHome(false);
+                  setActiveView(AppView.CHAT);
+                  setActiveSection('chat');
+                }}
+                onGoToWhoWeAre={() => {
+                  setShowHome(false);
+                  setActiveView(AppView.WHO_WE_ARE);
+                  setActiveSection('who');
+                }}
               />
-              <UserList
-                users={users}
-                currentUserId={currentUser.id}
-                currentUser={currentUser}
-                userColors={userColors}
+            ) : activeView === AppView.IMPOSTOR ? (
+              <ImpostorGame
+                onClose={() => {
+                  setShowHome(true);
+                  setActiveView(AppView.CHAT);
+                  setActiveSection('home');
+                }}
               />
-            </>
-          ) : activeView === AppView.WHO_WE_ARE ? (
-            <WhoWeAre onMenuToggle={() => {}} />
-          ) : activeView === AppView.VOTING ? (
-            <Voting onMenuToggle={() => {}} />
-          ) : activeView === AppView.NEWS ? (
-            <UPGNews />
-          ) : activeView === AppView.HALL_OF_FAME ? (
-            <HallOfFame />
-          ) : activeView === AppView.CS16 ? (
-            <CS16Game
-              onClose={() => {
-                setShowHome(true);
-                setActiveView(AppView.CHAT);
-                setActiveSection('home');
-              }}
-            />
-          ) : null}
-        </Suspense>
+            ) : activeView === AppView.CHAT ? (
+              <>
+                <ChatInterface
+                  currentUser={currentUser}
+                  users={users}
+                  currentChannel={currentChannel}
+                  onSendMessage={sendMessage}
+                  messages={messages}
+                  setMessages={setMessages}
+                  onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  userColors={userColors}
+                />
+                <UserList
+                  users={users}
+                  currentUserId={currentUser.id}
+                  currentUser={currentUser}
+                  userColors={userColors}
+                />
+              </>
+            ) : activeView === AppView.WHO_WE_ARE ? (
+              <WhoWeAre onMenuToggle={() => {}} />
+            ) : activeView === AppView.VOTING ? (
+              <Voting onMenuToggle={() => {}} />
+            ) : activeView === AppView.NEWS ? (
+              <UPGNews />
+            ) : activeView === AppView.HALL_OF_FAME ? (
+              <HallOfFame />
+            ) : activeView === AppView.CS16 ? (
+              <CS16Game
+                onClose={() => {
+                  setShowHome(true);
+                  setActiveView(AppView.CHAT);
+                  setActiveSection('home');
+                }}
+              />
+            ) : null}
+          </Suspense>
+        </div>
       </div>
 
       {/* Mobile Layout */}

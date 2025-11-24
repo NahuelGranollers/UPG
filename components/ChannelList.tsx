@@ -155,7 +155,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
   VoiceChannelItem.displayName = 'VoiceChannelItem';
 
   return (
-    <div className="w-full md:w-60 bg-discord-sidebar flex flex-col shrink-0 relative">
+    <div className="flex-1 md:w-60 md:flex-none bg-discord-sidebar flex flex-col shrink-0 relative min-w-0">
       {/* Server Header */}
       <div className="h-12 px-4 flex items-center justify-between shadow-sm hover:bg-discord-hover transition-colors cursor-pointer border-b border-gray-900/20 shrink-0">
         <h1 className="font-bold text-discord-text-header text-[15px] truncate">UPG Community</h1>
