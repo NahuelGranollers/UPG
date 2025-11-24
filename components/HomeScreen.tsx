@@ -16,6 +16,17 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre }) =
           <h1 className="text-4xl font-black text-discord-text-header">
             Bienvenido a UPG
           </h1>
+          {/* JSON-LD structured data for Organization / WebSite */}
+          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "Unas Partidillas Gang (UPG)",
+            "url": "https://unaspartidillas.online/",
+            "logo": "https://unaspartidillas.online/upg.png",
+            "sameAs": [
+              "https://twitter.com/unaspartidillas"
+            ]
+          }) }} />
           <p className="text-lg text-discord-text-normal max-w-lg">
             Esta es la comunidad. Aquí encontrarás canales, eventos y salas de voz. Mantén el respeto y disfruta.
           </p>
