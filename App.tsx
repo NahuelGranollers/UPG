@@ -341,36 +341,40 @@ function MainApp() {
                 onClose={() => {
                   setShowHome(true);
                   setActiveView(AppView.CHAT);
+            ) : activeView === AppView.CS16 ? (
+              <CS16Game
+                onClose={() => {
+                  setShowHome(true);
+                  setActiveView(AppView.CHAT);
                   setActiveSection('home');
                 }}
+                autoJoinRoomId={autoJoinRoomId}
+                autoJoinPassword={autoJoinPassword}
               />
-            ) : activeView === AppView.CHAT ? (
-              <>
-                <ChatInterface
-                  currentUser={currentUser}
-                  users={users}
-                  currentChannel={currentChannel}
+            ) : null}rentChannel={currentChannel}
                   onSendMessage={sendMessage}
                   messages={messages}
                   setMessages={setMessages}
                   onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  userColors={userColors}
-                />
-                <UserList
-                  users={users}
-                  currentUserId={currentUser.id}
-                  currentUser={currentUser}
-                  userColors={userColors}
-                />
-              </>
-            ) : activeView === AppView.WHO_WE_ARE ? (
-              <WhoWeAre onMenuToggle={() => {}} />
-            ) : activeView === AppView.VOTING ? (
-              <Voting onMenuToggle={() => {}} />
-            ) : activeView === AppView.NEWS ? (
-              <UPGNews />
-            ) : activeView === AppView.HALL_OF_FAME ? (
-              <HallOfFame />
+        {showHome ? (
+          <div className="flex h-full w-full">
+            <HomeScreen
+              onGoToChat={() => {
+                setShowHome(false);
+                setActiveView(AppView.CHAT);
+                setActiveSection('chat');
+              }}
+              onGoToWhoWeAre={() => {
+                setShowHome(false);
+                setActiveView(AppView.WHO_WE_ARE);
+                setActiveSection('who');
+                setMobileActiveTab('chat');
+              }}
+              onJoinServer={handleJoinServer}
+              onCreateServer={handleCreateServer}
+            />
+          </div>
+        ) : ( <HallOfFame />
             ) : activeView === AppView.CS16 ? (
               <CS16Game
                 onClose={() => {
@@ -405,30 +409,34 @@ function MainApp() {
         ) : (
           <>
             {mobileActiveTab === 'channels' && activeView === AppView.CHAT && (
-              <div className="flex h-full w-full">
-                <ChannelList
-                  activeView={activeView}
-                  currentChannelId={currentChannel.id}
-                  onChannelSelect={(view, channel) => {
-                    setActiveView(view);
-                    if (channel) setCurrentChannel(channel);
-                    setMobileActiveTab('chat');
-                  }}
+                {activeView === AppView.IMPOSTOR && (
+                  <ImpostorGame
+                    onClose={() => {
+                      setShowHome(true);
+                      setActiveView(AppView.CHAT);
+                      setActiveSection('home');
+                    }}
+                    autoJoinRoomId={autoJoinRoomId}
+                    autoJoinPassword={autoJoinPassword}
+                  />
+                )}}}
                   currentUser={currentUser}
                   activeVoiceChannel={activeVoiceChannel}
                   onVoiceJoin={handleVoiceJoin}
                   voiceStates={voiceStates}
                   users={users}
                   onLoginWithDiscord={loginWithDiscord}
-                  onLogoutDiscord={logout}
-                />
-              </div>
-            )}
-
-            {mobileActiveTab === 'chat' && (
-              <>
-                {activeView === AppView.CHAT && (
-                  <ChatInterface
+                {activeView === AppView.CS16 && (
+                  <CS16Game
+                    onClose={() => {
+                      setShowHome(true);
+                      setActiveView(AppView.CHAT);
+                      setActiveSection('home');
+                    }}
+                    autoJoinRoomId={autoJoinRoomId}
+                    autoJoinPassword={autoJoinPassword}
+                  />
+                )}<ChatInterface
                     currentUser={currentUser}
                     users={users}
                     currentChannel={currentChannel}
