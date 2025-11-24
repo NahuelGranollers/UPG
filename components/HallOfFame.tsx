@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Trophy, Star, Medal, Crown, Award } from 'lucide-react';
 
 interface Achievement {
@@ -24,6 +24,28 @@ const HallOfFame: React.FC = () => {
 
   const shelfRef = useRef<HTMLDivElement | null>(null);
   const [reflect, setReflect] = useState({ x: 0, y: 0, opacity: 0 });
+  const [availableImages, setAvailableImages] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    // Check which trophy images actually exist in `public/assets/hall/` to avoid
+    // rendering <img> tags that cause 404s in the browser console.
+    let mounted = true;
+    (async () => {
+      const map: Record<string, boolean> = {};
+      await Promise.all(
+        achievements.map(async (a) => {
+          try {
+            const resp = await fetch(`/assets/hall/${a.id}.png`, { method: 'HEAD' });
+            map[a.id] = resp.ok;
+          } catch (err) {
+            map[a.id] = false;
+          }
+        })
+      );
+      if (mounted) setAvailableImages(map);
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   const handleMouseMove = (e: React.MouseEvent) => {
     const el = shelfRef.current;
@@ -77,12 +99,13 @@ const HallOfFame: React.FC = () => {
                             onClick={() => setSelected(ach)}
                             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelected(ach); }}
                           >
-                            <img
-                              src={`/assets/hall/${ach.id}.png`}
-                              alt=""
-                              className="object-trophy block w-28 h-28 mx-auto rounded-md"
-                              onError={(ev: any) => { ev.currentTarget.style.display = 'none'; }}
-                            />
+                            {availableImages[ach.id] ? (
+                              <img
+                                src={`/assets/hall/${ach.id}.png`}
+                                alt=""
+                                className="object-trophy block w-28 h-28 mx-auto rounded-md"
+                              />
+                            ) : null}
                             <div className="icon-fallback absolute inset-0 flex items-center justify-center">
                               <ach.icon className="w-12 h-12" style={{ color: ach.color }} />
                             </div>

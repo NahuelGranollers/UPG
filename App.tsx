@@ -8,7 +8,7 @@ import useVoice from './hooks/useVoice';
 
 // Componentes críticos (carga inmediata)
 import ErrorBoundary from './components/ErrorBoundary';
-import MobileTabBar from './components/MobileTabBar';
+import MobileSidebar from './components/MobileSidebar';
 import Sidebar from './components/Sidebar';
 import ChannelList from './components/ChannelList';
 import ChatInterface from './components/ChatInterface';
@@ -34,6 +34,34 @@ function MainApp() {
   const [activeSection, setActiveSection] = useState<'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor' | 'news' | 'hall_of_fame'>('home');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileActiveTab, setMobileActiveTab] = useState<'channels' | 'chat' | 'users' | 'news'>('chat');
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  const touchState = React.useRef({ startX: 0, startY: 0, started: false });
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchState.current = { startX: t.clientX, startY: t.clientY, started: true };
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchState.current.started) return;
+    const t = e.touches[0];
+    const dx = t.clientX - touchState.current.startX;
+    const dy = Math.abs(t.clientY - touchState.current.startY);
+    if (dy > 75) return; // ignore vertical drags
+    if (touchState.current.startX < 30 && dx > 60) {
+      setMobileSidebarOpen(true);
+      touchState.current.started = false;
+    }
+    if (mobileSidebarOpen && dx < -40) {
+      setMobileSidebarOpen(false);
+      touchState.current.started = false;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    touchState.current.started = false;
+  };
 
   // Hook de chat para el canal actual
   const { messages, setMessages, sendMessage } = useChat(currentChannel.id);
@@ -169,53 +197,52 @@ function MainApp() {
     );
 
   return (
-    <div className="flex h-screen w-full bg-[#313338] font-sans antialiased overflow-hidden relative text-white p-1 sm:p-2 lg:p-3">
-      {/* Desktop Layout */}
-      <div className="hidden md:flex h-full w-full">
-        <Sidebar
-          currentUser={currentUser}
-          setCurrentUser={() => {}} // Ya no se usa localmente
-          activeSection={activeSection}
-          onNavigate={section => {
-            if (section === 'home') {
-              setShowHome(true);
-              setActiveSection('home');
-            } else if (section === 'chat') {
-              setShowHome(false);
-              setActiveView(AppView.CHAT);
-              setActiveSection('chat');
-            } else if (section === 'impostor') {
-              setShowHome(false);
-              setActiveView(AppView.IMPOSTOR);
-              setActiveSection('impostor');
-            } else if (section === 'who') {
-              setShowHome(false);
-              setActiveView(AppView.WHO_WE_ARE);
-              setActiveSection('who');
-            } else if (section === 'voting') {
-              setShowHome(false);
-              setActiveView(AppView.VOTING);
-              setActiveSection('voting');
-            } else if (section === 'news') {
-              setShowHome(false);
-              setActiveView(AppView.NEWS);
-              setActiveSection('news');
-            } else if (section === 'hall_of_fame') {
-              setShowHome(false);
-              setActiveView(AppView.HALL_OF_FAME);
-              setActiveSection('hall_of_fame');
-            }
-          }}
-          onHomeClick={() => {
+    <div className="flex h-screen w-full bg-[#313338] font-sans antialiased overflow-hidden relative text-white p-1 sm:p-2 lg:p-3 pl-14 md:pl-[72px]">
+      {/* Sidebar (single instance, fixed left) */}
+      <Sidebar
+        currentUser={currentUser}
+        setCurrentUser={() => {}}
+        activeSection={activeSection}
+        onNavigate={section => {
+          if (section === 'home') {
             setShowHome(true);
             setActiveSection('home');
-          }}
-          onUPGClick={() => {
+          } else if (section === 'chat') {
             setShowHome(false);
             setActiveView(AppView.CHAT);
             setActiveSection('chat');
-          }}
-        />
+          } else if (section === 'impostor') {
+            setShowHome(false);
+            setActiveView(AppView.IMPOSTOR);
+            setActiveSection('impostor');
+          } else if (section === 'who') {
+            setShowHome(false);
+            setActiveView(AppView.WHO_WE_ARE);
+            setActiveSection('who');
+          } else if (section === 'voting') {
+            setShowHome(false);
+            setActiveView(AppView.VOTING);
+            setActiveSection('voting');
+          } else if (section === 'news') {
+            setShowHome(false);
+            setActiveView(AppView.NEWS);
+            setActiveSection('news');
+          } else if (section === 'hall_of_fame') {
+            setShowHome(false);
+            setActiveView(AppView.HALL_OF_FAME);
+            setActiveSection('hall_of_fame');
+          }
+        }}
+        onHomeClick={() => {
+          setShowHome(true);
+          setActiveSection('home');
+        }}
+        onUPGClick={() => {
+          setShowHome(false);
+          setActiveView(AppView.CHAT);
+          setActiveSection('chat');
+        }}
+      />
         {!showHome && activeView === AppView.CHAT && (
           <ChannelList
             activeView={activeView}
@@ -270,7 +297,6 @@ function MainApp() {
             <HallOfFame />
           ) : null}
         </div>
-      </div>
 
       {/* Mobile Layout */}
       <div className="flex md:hidden h-full w-full flex-col relative overflow-hidden pb-20 p-1 sm:p-2">
@@ -402,11 +428,40 @@ function MainApp() {
 
             {mobileActiveTab === 'users' && <UserList users={users} currentUserId={currentUser.id} currentUser={currentUser} userColors={userColors} isMobileView />}
 
-            <MobileTabBar
-              activeTab={mobileActiveTab}
-              onTabChange={(tab: 'channels' | 'chat' | 'users' | 'news') => setMobileActiveTab(tab)}
-              unreadCount={0}
-              showNewsTab={activeView === AppView.CHAT}
+            {/* Mobile bottom bar removed per request. Use swipe from left edge to open navigation. */}
+            <MobileSidebar
+              isOpen={mobileSidebarOpen}
+              onClose={() => setMobileSidebarOpen(false)}
+              onNavigate={(section: string) => {
+                if (section === 'home') {
+                  setShowHome(true);
+                  setActiveSection('home');
+                } else if (section === 'chat') {
+                  setShowHome(false);
+                  setActiveView(AppView.CHAT);
+                  setActiveSection('chat');
+                } else if (section === 'impostor') {
+                  setShowHome(false);
+                  setActiveView(AppView.IMPOSTOR);
+                  setActiveSection('impostor');
+                } else if (section === 'who') {
+                  setShowHome(false);
+                  setActiveView(AppView.WHO_WE_ARE);
+                  setActiveSection('who');
+                } else if (section === 'voting') {
+                  setShowHome(false);
+                  setActiveView(AppView.VOTING);
+                  setActiveSection('voting');
+                } else if (section === 'news') {
+                  setShowHome(false);
+                  setActiveView(AppView.NEWS);
+                  setActiveSection('news');
+                } else if (section === 'hall_of_fame') {
+                  setShowHome(false);
+                  setActiveView(AppView.HALL_OF_FAME);
+                  setActiveSection('hall_of_fame');
+                }
+              }}
             />
           </>
         )}
