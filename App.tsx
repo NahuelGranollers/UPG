@@ -211,22 +211,6 @@ function MainApp() {
     // Escuchar cambios en canales de voz
     socket.on('voice:state', states => {
       setVoiceStates(states);
-      try {
-        if (!voice) return;
-        const myChannel = (voice as any).inChannel as string | null;
-        // If we just attempted to join this channel, consume the pending flag and offer to existing participants
-        const pending = (voice as any).consumePendingOffer
-          ? (voice as any).consumePendingOffer()
-          : null;
-        if (pending && myChannel === pending) {
-          const participants = Object.entries(states)
-            .filter(([userId, ch]) => ch === myChannel)
-            .map(([userId]) => userId);
-          (voice as any).offerToUsers(participants);
-        }
-      } catch (e) {
-        console.error('Error while offering to users after voice:state', e);
-      }
     });
 
     // Escuchar cambios de color de usuario (legacy/admin and user updates)

@@ -82,8 +82,23 @@ export function useVoice() {
 
     socket.on('voice:signal', handleSignal);
 
+    // Handle voice state updates to initiate P2P connections when joining
+    const handleVoiceState = (states: Record<string, string>) => {
+      if (pendingOfferRef.current) {
+        const myChannel = pendingOfferRef.current;
+        const participants = Object.entries(states)
+          .filter(([uid, ch]) => ch === myChannel)
+          .map(([uid]) => uid);
+        
+        offerToUsers(participants);
+        pendingOfferRef.current = null;
+      }
+    };
+    socket.on('voice:state', handleVoiceState);
+
     return () => {
       socket.off('voice:signal', handleSignal);
+      socket.off('voice:state', handleVoiceState);
     };
   }, [socket, currentUser]);
 
