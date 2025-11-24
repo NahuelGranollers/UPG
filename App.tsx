@@ -197,7 +197,7 @@ function MainApp() {
     );
 
   return (
-    <div className="flex h-screen w-full bg-[#313338] font-sans antialiased overflow-hidden relative text-white p-1 sm:p-2 lg:p-3 pl-14 md:pl-[72px]">
+    <div className="flex h-screen w-full bg-[#313338] font-sans antialiased overflow-hidden relative text-white">
       {/* Sidebar (single instance, fixed left) */}
       <Sidebar
         currentUser={currentUser}
@@ -301,7 +301,7 @@ function MainApp() {
         </div>
 
       {/* Mobile Layout */}
-      <div className="flex md:hidden h-full w-full flex-col relative overflow-hidden pb-20 p-1 sm:p-2">
+      <div className="flex md:hidden h-full w-full flex-col relative overflow-hidden pb-20">
         {showHome ? (
           <div className="flex h-full w-full">
             <Sidebar

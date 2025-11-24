@@ -168,9 +168,7 @@ app.use(
 // CORS para rutas Express
 app.use((req, res, next) => {
   const allowedOrigins = [
-    'https://unaspartidillasgang.online',
     'https://unaspartidillas.online',
-    'http://localhost:5173',
   ];
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
@@ -194,10 +192,6 @@ app.use((req, res, next) => {
   }
   next();
 });
-// Sanitización de mensajes para sockets
-function sanitizeMessage(msg) {
-  return xss(msg);
-}
 
 // Simple text transforms for troll modes
 function uwuify(text) {
@@ -258,9 +252,7 @@ app.use(
 const io = new Server(server, {
   cors: {
     origin: [
-      'https://unaspartidillasgang.online',
       'https://unaspartidillas.online',
-      'http://localhost:5173',
     ],
     methods: ['GET', 'POST'],
     credentials: true,

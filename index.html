@@ -41,8 +41,11 @@
     <link rel="stylesheet" href="/index.css" />
     <style>
       body {
+        margin: 0;
+        padding: 0;
         background-color: #313338;
         color: #dbdee1;
+        font-size: 130%;
       }
       /* Custom scrollbar for Webkit */
       ::-webkit-scrollbar {
@@ -74,11 +77,7 @@
     <div id="root"></div>
     <script>
       // API base
-      if (window.location.hostname === 'localhost') {
-        window.API_BASE = 'http://localhost:3000';
-      } else {
-        window.API_BASE = 'https://mensajeria-ksc7.onrender.com';
-      }
+      window.API_BASE = 'https://mensajeria-ksc7.onrender.com';
       // Set window.ADMIN_TOKEN = 'your_token_here' in console for production
     </script>
     <script>
@@ -89,7 +88,7 @@
           const headers = {
             'Content-Type': 'application/json'
           };
-          if (window.location.hostname !== 'localhost' && window.ADMIN_TOKEN) {
+          if (window.ADMIN_TOKEN) {
             headers['Authorization'] = 'Bearer ' + window.ADMIN_TOKEN;
           }
           fetch(window.API_BASE + '/admin/console', {
@@ -106,7 +105,7 @@
           const headers = {
             'Content-Type': 'application/json'
           };
-          if (window.location.hostname !== 'localhost' && window.ADMIN_TOKEN) {
+          if (window.ADMIN_TOKEN) {
             headers['Authorization'] = 'Bearer ' + window.ADMIN_TOKEN;
           }
           fetch(window.API_BASE + '/admin/console', {
@@ -123,71 +122,7 @@
           const headers = {
             'Content-Type': 'application/json'
           };
-          if (window.location.hostname !== 'localhost' && window.ADMIN_TOKEN) {
-            headers['Authorization'] = 'Bearer ' + window.ADMIN_TOKEN;
-          }
-          fetch(window.API_BASE + '/admin/console', {
-            method: 'POST',
-            credentials: 'include',
-            headers: headers,
-            body: JSON.stringify({ action: 'status' })
-          }).then(r => r.json()).then(result => console.log('Admin status:', result)).catch(console.error);
-          return 'Checking status...';
-        }
-      });
-    </script>
-    <script>
-      // API base
-      if (window.location.hostname === 'localhost') {
-        window.API_BASE = 'http://localhost:3000';
-      } else {
-        window.API_BASE = 'https://mensajeria-ksc7.onrender.com';
-      }
-      // Set window.ADMIN_TOKEN = 'your_token_here' in console for production
-    </script>
-    <script>
-      // Admin console commands
-      window.admin = {};
-      Object.defineProperty(window.admin, 'on', {
-        get: function() {
-          const headers = {
-            'Content-Type': 'application/json'
-          };
-          if (window.location.hostname !== 'localhost' && window.ADMIN_TOKEN) {
-            headers['Authorization'] = 'Bearer ' + window.ADMIN_TOKEN;
-          }
-          fetch(window.API_BASE + '/admin/console', {
-            method: 'POST',
-            credentials: 'include',
-            headers: headers,
-            body: JSON.stringify({ action: 'on' })
-          }).then(r => r.json()).then(result => console.log('Admin on:', result)).catch(console.error);
-          return 'Activating admin...';
-        }
-      });
-      Object.defineProperty(window.admin, 'off', {
-        get: function() {
-          const headers = {
-            'Content-Type': 'application/json'
-          };
-          if (window.location.hostname !== 'localhost' && window.ADMIN_TOKEN) {
-            headers['Authorization'] = 'Bearer ' + window.ADMIN_TOKEN;
-          }
-          fetch(window.API_BASE + '/admin/console', {
-            method: 'POST',
-            credentials: 'include',
-            headers: headers,
-            body: JSON.stringify({ action: 'off' })
-          }).then(r => r.json()).then(result => console.log('Admin off:', result)).catch(console.error);
-          return 'Deactivating admin...';
-        }
-      });
-      Object.defineProperty(window.admin, 'status', {
-        get: function() {
-          const headers = {
-            'Content-Type': 'application/json'
-          };
-          if (window.location.hostname !== 'localhost' && window.ADMIN_TOKEN) {
+          if (window.ADMIN_TOKEN) {
             headers['Authorization'] = 'Bearer ' + window.ADMIN_TOKEN;
           }
           fetch(window.API_BASE + '/admin/console', {
