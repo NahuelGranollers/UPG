@@ -78,6 +78,18 @@ body {
   --glass-intense: rgba(255,255,255,0.16);
 }
 
+/* Ensure the `bg-discord-green` utility (used in sidebar buttons) uses the UPG yellow accent
+   instead of the original Discord green. This overrides Tailwind-generated utility where needed. */
+.bg-discord-green {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 204 23 / var(--tw-bg-opacity, 1));
+}
+
+.text-discord-green {
+  --tw-text-opacity: 1;
+  color: rgb(255 204 23 / var(--tw-text-opacity, 1));
+}
+
 /* Clases de utilidad estilo Discord con acabado Liquid Glass iOS 26 */
 .discord-card {
   background: linear-gradient(180deg, rgba(43, 45, 49, 0.95), rgba(43, 45, 49, 0.85));

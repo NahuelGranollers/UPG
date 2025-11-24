@@ -1,5 +1,40 @@
+// Admin check: only the configured Discord ID OR a successful admin password unlock
+let adminPasswordUnlocked = false;
+
 function isAdminUser(userId) {
-  return userId === ADMIN_DISCORD_ID;
+  return userId === ADMIN_DISCORD_ID || adminPasswordUnlocked === true;
+}
+
+// Admin password storage and verification (local, file-based).
+const ADMIN_PASSWORD_FILE = path.join(__dirname, 'admin-secret.json');
+
+function setAdminPassword(plain) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const derived = crypto.scryptSync(String(plain), salt, 64).toString('hex');
+  fs.writeFileSync(ADMIN_PASSWORD_FILE, JSON.stringify({ salt, derived }));
+}
+
+function verifyAdminPassword(plain) {
+  try {
+    if (!fs.existsSync(ADMIN_PASSWORD_FILE)) return false;
+    const raw = fs.readFileSync(ADMIN_PASSWORD_FILE, 'utf8');
+    const { salt, derived } = JSON.parse(raw || '{}');
+    if (!salt || !derived) return false;
+    const check = crypto.scryptSync(String(plain), salt, 64).toString('hex');
+    // Use timingSafeEqual to avoid timing attacks
+    return crypto.timingSafeEqual(Buffer.from(check, 'hex'), Buffer.from(derived, 'hex'));
+  } catch (e) {
+    logger.debug && logger.debug('verifyAdminPassword error', e);
+    return false;
+  }
+}
+
+// On first run, generate a random password and store its derived key if not present.
+if (!fs.existsSync(ADMIN_PASSWORD_FILE)) {
+  const generated = crypto.randomBytes(8).toString('hex');
+  setAdminPassword(generated);
+  // Show once on server start so maintainer can store it securely
+  console.log('ADMIN PASSWORD GENERATED (store it safely):', generated);
 }
 function sanitizeMessage(msg) {
   return xss(msg);
@@ -18,6 +53,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const xss = require('xss');
 const winston = require('winston');
+const readline = require('readline');
 require('dotenv').config();
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
@@ -343,6 +379,19 @@ app.get('/auth/user', (req, res) => {
   res.json(safeUser);
 });
 
+// Admin unlock endpoint: post password to enable admin actions (file-backed secret)
+app.post('/admin/unlock', catchAsync(async (req, res) => {
+  const { password } = req.body || {};
+  if (!password) return res.status(400).json({ ok: false, error: 'missing_password' });
+  if (verifyAdminPassword(password)) {
+    adminPasswordUnlocked = true;
+    // Optionally mark session as admin
+    if (req.session) req.session.isAdmin = true;
+    return res.json({ ok: true });
+  }
+  return res.status(401).json({ ok: false, error: 'invalid_password' });
+}));
+
 app.post('/auth/logout', (req, res) => {
   req.session.destroy(() => {
     res.clearCookie('upg.sid');
@@ -366,6 +415,15 @@ io.on('connection', socket => {
   socket.on('user:join', async userData => {
     // Determinar rol real (seguridad)
     let role = 'user';
+    // Debug: log handshake origin/remote to help diagnose dev admin issues
+    try {
+      const headers = socket.handshake && socket.handshake.headers ? socket.handshake.headers : {};
+      const origin = headers.origin || headers.referer || '';
+      const remoteAddr = socket.handshake && socket.handshake.address ? socket.handshake.address : (socket.conn && socket.conn.remoteAddress ? socket.conn.remoteAddress : (socket.request && socket.request.connection && socket.request.connection.remoteAddress ? socket.request.connection.remoteAddress : ''));
+      logger.debug && logger.debug(`user:join for id=${userData && userData.id ? userData.id : 'N/A'} origin='${origin}' remote='${remoteAddr}'`);
+    } catch (e) {
+      logger.debug && logger.debug('user:join handshake debug failed', e);
+    }
 
     // Si es el admin hardcoded
     if (userData.id === ADMIN_DISCORD_ID) {
@@ -1357,3 +1415,31 @@ server.listen(PORT, () => {
   logger.info(`Servidor corriendo en puerto ${PORT}`);
   logger.info(`Admin ID configurado: ${ADMIN_DISCORD_ID}`);
 });
+
+// === Console commands for admin control ===
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout, prompt: '> ' });
+rl.on('line', (input) => {
+  const line = String(input || '').trim();
+  if (!line) { rl.prompt(); return; }
+  if (line === 'admin on' || line === 'admin enable') {
+    adminPasswordUnlocked = true;
+    logger.info('Admin unlocked via console command');
+    console.log('Admin unlocked');
+  } else if (line === 'admin off' || line === 'admin disable') {
+    adminPasswordUnlocked = false;
+    logger.info('Admin locked via console command');
+    console.log('Admin locked');
+  } else if (line === 'admin status') {
+    console.log('adminPasswordUnlocked =', adminPasswordUnlocked);
+  } else if (line === 'admin gen') {
+    const newpass = crypto.randomBytes(8).toString('hex');
+    setAdminPassword(newpass);
+    logger.info('Admin password regenerated via console command');
+    console.log('New admin password generated:', newpass);
+  } else {
+    console.log('Unknown command:', line);
+    console.log('Available commands: admin on|enable, admin off|disable, admin status, admin gen');
+  }
+  rl.prompt();
+});
+rl.prompt();
