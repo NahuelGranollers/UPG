@@ -1,3 +1,7 @@
+  // Debug: log every time publicServers changes
+  useEffect(() => {
+    console.log('[DEBUG] Lista de servidores públicos actualizada:', publicServers);
+  }, [publicServers]);
 import React, { useEffect, useState } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
