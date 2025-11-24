@@ -272,7 +272,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
   return (
     <div className={`flex flex-col min-h-screen w-full impostor-theme ${theme === 'neon' ? 'neon-theme' : theme === 'retro' ? 'retro-theme' : ''}`}>
-      <div className="max-w-7xl mx-auto w-full py-4 px-2 sm:py-6 sm:px-4 lg:py-8 lg:px-6">
+      <div className="w-full py-4 px-2 sm:py-6 sm:px-4 lg:py-8 lg:px-6">
         <div className="impostor-header">
           <div className="impostor-header-top">
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold">Impostor — Sala</h1>
@@ -341,7 +341,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                 {/* Innocent reveal overlay (temporary) */}
                 {revealedPlayer && !revealedPlayer.wasImpostor && (
                   <div className={`fixed bottom-8 right-8 z-50`}>
-                    <div className="bg-white/5 border border-green-600 text-white p-4 rounded-lg shadow-lg backdrop-blur">
+                    <div className="bg-gray-800/90 border border-green-600 text-white p-4 rounded-lg shadow-lg backdrop-blur">
                       <div className="text-sm uppercase text-green-300 font-semibold">Revelación</div>
                       <div className="text-lg font-bold mt-1">{players.find(p => p.id === revealedPlayer.id)?.username || revealedPlayer.id}</div>
                       <div className="text-sm text-gray-300 mt-1">Era inocente — la ronda continúa</div>
@@ -490,9 +490,9 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                   const revealed = revealInfo && revealInfo.impostorId === id;
                   const innocentRevealed = p && (p as any).revealedInnocent;
                   return (
-                    <li key={id} className={`turn-item flex items-center justify-between px-3 py-2 rounded overflow-hidden ${active ? 'active bg-discord-blurple text-white' : innocentRevealed ? 'innocent text-white' : 'text-white'}`}>
+                    <li key={id} className={`turn-item flex items-center justify-between px-3 py-2 rounded overflow-hidden ${active ? 'active bg-blue-600 text-white border border-blue-400' : innocentRevealed ? 'innocent bg-green-900 text-white border border-green-500' : 'bg-gray-800 text-white border border-gray-700'}`}>
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${active ? 'bg-white text-black' : revealed ? 'bg-red-600 text-white ring-2 ring-red-400' : innocentRevealed ? 'bg-green-600 text-white ring-2 ring-green-400' : 'bg-gray-700 text-gray-200'}`}>{name.charAt(0).toUpperCase()}</div>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${active ? 'bg-yellow-400 text-black font-bold ring-2 ring-yellow-300' : revealed ? 'bg-red-600 text-white ring-2 ring-red-400' : innocentRevealed ? 'bg-green-600 text-white ring-2 ring-green-400' : 'bg-gray-700 text-gray-200'}`}>{name.charAt(0).toUpperCase()}</div>
                         <div className="text-white break-all font-semibold text-lg" style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }} title={name}>{name}</div>
                       </div>
                       <div className="text-base text-gray-400 font-semibold">{idx + 1}</div>
@@ -507,7 +507,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                 <div className="text-lg text-white mb-3 font-semibold">Cartas reveladas</div>
                 <ul className="text-base space-y-3">
                   {revealedRoles.map((player: any, index: number) => (
-                    <li key={index} className="flex items-center justify-between px-3 py-2 rounded bg-gray-800 overflow-hidden">
+                    <li key={index} className="flex items-center justify-between px-3 py-2 rounded bg-gray-800 border border-gray-600 overflow-hidden">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${!player.wasInnocent ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'}`}>{player.name.charAt(0).toUpperCase()}</div>
                         <div className="text-white break-all font-semibold text-lg" style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }} title={player.name}>{player.name}</div>
@@ -518,30 +518,30 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                 </ul>
               </div>
             )}
+
+            {joined && (
+              <div className="mt-6">
+                <div className="text-sm sm:text-lg text-white mb-2 sm:mb-3 font-semibold">Agregar palabra</div>
+                <input
+                  type="text"
+                  placeholder="Nueva palabra"
+                  className="w-full p-2 sm:p-3 rounded bg-gray-800 text-white border border-gray-600 text-sm sm:text-lg"
+                  autoComplete="off"
+                  spellCheck="false"
+                  data-form-type="other"
+                  aria-autocomplete="none"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleAddWord(e.currentTarget.value);
+                      e.currentTarget.value = '';
+                    }
+                  }}
+                />
+              </div>
+            )}
           </aside>
         </div>
       </div>
-
-      {joined && (
-        <div className="impostor-word-input">
-          <div className="text-sm sm:text-lg text-white mb-2 sm:mb-3 font-semibold">Agregar palabra</div>
-          <input
-            type="text"
-            placeholder="Nueva palabra"
-            className="w-full p-2 sm:p-3 rounded bg-gray-800 text-white border border-gray-600 text-sm sm:text-lg"
-            autoComplete="off"
-            spellCheck="false"
-            data-form-type="other"
-            aria-autocomplete="none"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleAddWord(e.currentTarget.value);
-                e.currentTarget.value = '';
-              }
-            }}
-          />
-        </div>
-      )}
     </div>
   );
 }

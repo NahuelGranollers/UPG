@@ -362,12 +362,12 @@ textarea,
   border-radius: 12px;
 }
 .impostor-card-front {
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.18));
+  background: linear-gradient(180deg, rgba(55, 65, 81, 0.8), rgba(31, 41, 55, 0.9));
   transform: rotateY(0deg);
 }
 .impostor-card-back {
   transform: rotateY(180deg);
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(16,16,16,0.34));
+  background: linear-gradient(180deg, rgba(55, 65, 81, 0.8), rgba(17, 24, 39, 0.9));
 }
 
 /* Nice spinner / roulette feel */
@@ -606,14 +606,15 @@ textarea,
 /* Ultra wide screens */
 @media (min-width: 1600px) {
   .impostor-grid {
-    grid-template-columns: 3fr 450px;
-    gap: 2rem;
-    padding: 1.5rem;
-    max-width: 1800px;
+    grid-template-columns: 4fr 500px;
+    gap: 3rem;
+    padding: 2rem;
+    max-width: 2200px;
+    margin: 0 auto;
   }
 
   .impostor-theme h1 {
-    font-size: 2.75rem;
+    font-size: 3rem;
   }
 }
 
@@ -792,8 +793,8 @@ textarea,
   gap: 0.75rem;
   padding: 0.75rem;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(55, 65, 81, 0.8);
+  border: 1px solid rgba(75, 85, 99, 0.5);
 }
 
 /* Mobile: stack voting items vertically */
