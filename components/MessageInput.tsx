@@ -73,8 +73,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
   return (
     <div
-      className="px-4 sm:px-6 lg:px-8 pt-3 shrink-0 relative"
-      style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}
+      className="px-3 sm:px-4 lg:px-6 pt-0 shrink-0 relative"
+      style={{ paddingBottom: 'max(0.25rem, env(safe-area-inset-bottom))' }}
     >
       {/* Sugerencias de menciones */}
       {showMentionSuggestions && mentionSuggestions.length > 0 && (
@@ -132,12 +132,12 @@ const MessageInput: React.FC<MessageInputProps> = ({
       )}
 
       <div
-        className={`bg-[var(--chat-bg)] rounded-lg px-3 sm:px-4 lg:px-6 py-3 flex items-center gap-3 transition-all duration-150 relative z-base ${showMentionSuggestions ? 'ring-1 ring-[var(--blurple)]' : ''}`}
+        className={`bg-[var(--chat-bg)] rounded-md px-3 sm:px-4 lg:px-6 py-1 flex items-center gap-2 transition-all duration-150 relative z-base ${showMentionSuggestions ? 'ring-1 ring-[var(--blurple)]' : ''}`}
       >
         <form onSubmit={handleSendMessage} className="flex-1 flex items-center relative">
           {/* Preview layer */}
           <div
-            className="absolute left-4 right-14 inset-y-0 flex items-center pointer-events-none overflow-hidden whitespace-pre text-sm sm:text-sm text-discord-text-normal"
+            className="absolute left-3 right-10 inset-y-0 flex items-center pointer-events-none overflow-hidden whitespace-pre text-sm text-discord-text-normal"
             aria-hidden="true"
           >
             {renderInputPreview(inputText)}
@@ -151,7 +151,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder={`Enviar mensaje a #${currentChannel.name}`}
-            className={`relative z-10 bg-[var(--chat-bg)] w-full text-sm sm:text-sm outline-none min-h-[44px] pl-4 pr-14 transition-all text-[var(--text)] placeholder-[var(--muted)] rounded`}
+            className={`relative z-10 bg-[var(--chat-bg)] w-full text-sm outline-none min-h-[28px] pl-1 pr-8 transition-all text-[var(--text)] placeholder-[var(--muted)] rounded-md`}
             aria-label="Escribir mensaje"
             maxLength={2000}
             autoComplete="off"
@@ -160,9 +160,9 @@ const MessageInput: React.FC<MessageInputProps> = ({
           <button
             type="submit"
             aria-label="Enviar mensaje"
-            className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent p-2 rounded hover:bg-[rgba(255,255,255,0.03)]"
+            className="absolute right-1 top-1/2 -translate-y-1/2 bg-transparent p-0.5 rounded hover:bg-[rgba(255,255,255,0.03)]"
           >
-            <Send size={16} className="text-[var(--blurple)]" />
+            <Send size={14} className="text-[var(--blurple)]" />
           </button>
         </form>
       </div>
