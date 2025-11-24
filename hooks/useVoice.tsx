@@ -1,11 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 
 type PeerMap = Record<string, RTCPeerConnection>;
 
 const STUN_SERVERS = {
-  iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:global.stun.twilio.com:3478' }
+  ],
 };
 
 export function useVoice() {
@@ -19,49 +22,68 @@ export function useVoice() {
   const pendingOfferRef = useRef<string | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const animationFrameRef = useRef<number>();
 
+  // Cleanup function for audio context and stream
+  const cleanupAudio = useCallback(() => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => track.stop());
+      localStreamRef.current = null;
+    }
+
+    if (audioCtxRef.current) {
+      audioCtxRef.current.close().catch(console.error);
+      audioCtxRef.current = null;
+    }
+    
+    analyserRef.current = null;
+    setVoiceLevel(0);
+  }, []);
+
+  // Handle incoming WebRTC signals
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !currentUser) return;
 
-    // Handler for incoming relayed audio chunks from server
-    const handleChunk = (payload: {
-      fromUserId: string;
-      buffer: ArrayBuffer;
-      sampleRate: number;
-    }) => {
-      try {
-        const { fromUserId, buffer, sampleRate } = payload as any;
-        // Convert to Float32Array and play via AudioContext
-        const float32 = new Float32Array(buffer);
-        if (!audioCtxRef.current) {
-          audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const handleSignal = async ({ fromUserId, data }: { fromUserId: string; data: any }) => {
+      if (!localStreamRef.current) return;
+
+      let pc = peersRef.current[fromUserId];
+
+      // If we receive an offer, we must create the PC if it doesn't exist
+      if (!pc) {
+        if (data.type === 'offer') {
+          pc = createPeerConnection(fromUserId);
+          peersRef.current[fromUserId] = pc;
+        } else {
+          // If we receive an answer or candidate for a non-existent PC, ignore or handle error
+          return;
         }
-        const ctx = audioCtxRef.current;
-        const audioBuffer = ctx.createBuffer(1, float32.length, sampleRate || ctx.sampleRate);
-        audioBuffer.copyToChannel(float32, 0, 0);
-        const src = ctx.createBufferSource();
-        src.buffer = audioBuffer;
-        src.connect(ctx.destination);
-        src.start();
-      } catch (e) {
-        console.error('Error playing remote audio chunk', e);
+      }
+
+      try {
+        if (data.type === 'offer') {
+          await pc.setRemoteDescription(new RTCSessionDescription(data));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          socket.emit('voice:signal', { toUserId: fromUserId, data: pc.localDescription });
+        } else if (data.type === 'answer') {
+          await pc.setRemoteDescription(new RTCSessionDescription(data));
+        } else if (data.candidate) {
+          await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+        }
+      } catch (err) {
+        console.error('Error handling signal from', fromUserId, err);
       }
     };
 
-    const handleLevel = (data: { userId: string; level: number }) => {
-      // emit a custom event so App can subscribe if needed; we'll also update local ref
-      try {
-        // store last known levels in a ref for consumers; simplest approach is emitting via socket listener in App
-        // no-op here; App registers its own handler for 'voice:level'
-      } catch (e) {}
-    };
-
-    socket.on('voice:chunk', handleChunk as any);
-    socket.on('voice:level', handleLevel as any);
+    socket.on('voice:signal', handleSignal);
 
     return () => {
-      socket.off('voice:chunk', handleChunk as any);
-      socket.off('voice:level', handleLevel as any);
+      socket.off('voice:signal', handleSignal);
     };
   }, [socket, currentUser]);
 
@@ -75,43 +97,40 @@ export function useVoice() {
       }
     }
 
-    // Create audio element for remote stream
-    const remoteStream = new MediaStream();
-    const audioEl = document.createElement('audio');
-    audioEl.autoplay = true;
-    audioEl.setAttribute('playsinline', '');
-    audioEl.style.display = 'none';
-    document.body.appendChild(audioEl);
+    // Handle remote stream
+    pc.ontrack = (ev) => {
+      const remoteStream = ev.streams[0];
+      if (!remoteStream) return;
 
-    pc.ontrack = ev => {
-      try {
-        for (const t of ev.streams) {
-          t.getTracks().forEach(track => remoteStream.addTrack(track));
-        }
-        audioEl.srcObject = remoteStream;
-        // Try to play (some browsers require a user gesture but attempt anyway)
-        const p = audioEl.play();
-        if (p && typeof p.then === 'function') {
-          p.catch(err => {
-            console.warn('Autoplay prevented for remote audio:', err);
-          });
-        }
-      } catch (e) {
-        console.error('ontrack error', e);
+      // Create or reuse audio element
+      let audioEl = document.getElementById(`audio-${remoteUserId}`) as HTMLAudioElement;
+      if (!audioEl) {
+        audioEl = document.createElement('audio');
+        audioEl.id = `audio-${remoteUserId}`;
+        audioEl.autoplay = true;
+        audioEl.setAttribute('playsinline', '');
+        audioEl.style.display = 'none';
+        document.body.appendChild(audioEl);
       }
+      audioEl.srcObject = remoteStream;
+      audioEl.play().catch(e => console.warn('Autoplay prevented:', e));
     };
 
-    pc.onicecandidate = ev => {
-      if (ev.candidate && socket && currentUser) {
+    pc.onicecandidate = (ev) => {
+      if (ev.candidate && socket) {
         socket.emit('voice:signal', { toUserId: remoteUserId, data: { candidate: ev.candidate } });
       }
     };
 
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === 'disconnected' || pc.connectionState === 'closed') {
-        // cleanup
-        audioEl.remove();
-        pc.close();
+      if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+        const audioEl = document.getElementById(`audio-${remoteUserId}`);
+        if (audioEl) audioEl.remove();
+        
+        // Only cleanup PC if it's truly dead
+        if (pc.connectionState !== 'closed') {
+           pc.close();
+        }
         delete peersRef.current[remoteUserId];
       }
     };
@@ -122,32 +141,45 @@ export function useVoice() {
   async function ensureLocalStream() {
     if (localStreamRef.current) return localStreamRef.current;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        } 
+      });
       localStreamRef.current = stream;
+
+      // Setup AudioContext for visualizer only
       try {
-        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+        audioCtxRef.current = new AudioContext();
         const source = audioCtxRef.current.createMediaStreamSource(stream);
         analyserRef.current = audioCtxRef.current.createAnalyser();
-        analyserRef.current.fftSize = 2048;
+        analyserRef.current.fftSize = 256;
         source.connect(analyserRef.current);
-        const data = new Uint8Array(analyserRef.current.frequencyBinCount);
-        const loop = () => {
+        
+        const updateLevel = () => {
           if (!analyserRef.current) return;
-          analyserRef.current.getByteFrequencyData(data);
-          // compute RMS
+          const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+          analyserRef.current.getByteFrequencyData(dataArray);
+          
+          // Calculate RMS
           let sum = 0;
-          for (let i = 0; i < data.length; i++) {
-            const v = data[i] / 255;
-            sum += v * v;
+          for(let i = 0; i < dataArray.length; i++) {
+            sum += dataArray[i] * dataArray[i];
           }
-          const rms = Math.sqrt(sum / data.length);
-          setVoiceLevel(rms);
-          requestAnimationFrame(loop);
+          const rms = Math.sqrt(sum / dataArray.length);
+          // Normalize to 0-100 roughly
+          setVoiceLevel(Math.min(100, (rms / 255) * 200));
+          
+          animationFrameRef.current = requestAnimationFrame(updateLevel);
         };
-        requestAnimationFrame(loop);
+        updateLevel();
       } catch (e) {
-        console.warn('Audio analyser not available', e);
+        console.warn('Audio analyser setup failed', e);
       }
+
       return stream;
     } catch (err) {
       console.error('getUserMedia error', err);
@@ -155,112 +187,29 @@ export function useVoice() {
     }
   }
 
-  // Call this to join (or toggle) a voice channel
   async function joinChannel(channelId: string) {
     if (!socket || !currentUser) return;
 
-    // Obtain mic first
-    await ensureLocalStream();
-
-    // Emit join to server which updates voice state
-    socket.emit('voice:join', { channelId });
-
-    // Mark as attempting join; actual state updated from 'voice:state' handler in App
-    setInChannel(channelId);
-    pendingOfferRef.current = channelId;
-
-    // Start streaming raw audio chunks to server.
     try {
-      if (!audioCtxRef.current)
-        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const ctx = audioCtxRef.current;
-      const source = ctx.createMediaStreamSource(localStreamRef.current as MediaStream);
-      // Create a silent gain to keep the graph alive when necessary
-      const zeroGain = ctx.createGain();
-      zeroGain.gain.value = 0;
-      zeroGain.connect(ctx.destination);
-
-      // Prefer AudioWorklet (modern, non-deprecated) and fall back to ScriptProcessor if unavailable
-      let usedWorklet = false;
-      if (ctx.audioWorklet && typeof ctx.audioWorklet.addModule === 'function') {
-        try {
-          // Load worklet relative to current page so it works on GitHub Pages subpaths
-          const workletUrl = new URL('voice-processor.js', window.location.href).href;
-          await ctx.audioWorklet.addModule(workletUrl);
-          const node: any = new (window as any).AudioWorkletNode(ctx, 'voice-processor', {
-            numberOfInputs: 1,
-            numberOfOutputs: 1,
-            outputChannelCount: [1],
-            processorOptions: { chunkSize: 4096 },
-          });
-          // Listen for chunk & level messages from the worklet
-          node.port.onmessage = (ev: MessageEvent) => {
-            try {
-              const d = ev.data as any;
-              if (d && d.type === 'chunk') {
-                const ab = d.samples as ArrayBuffer;
-                // forward binary buffer to server (socket.io supports binary)
-                if (socket && ab) {
-                  socket.emit('voice:chunk', { buffer: ab, sampleRate: ctx.sampleRate });
-                }
-                if (typeof d.level === 'number') setVoiceLevel(d.level);
-              } else if (d && d.type === 'level') {
-                if (typeof d.level === 'number') setVoiceLevel(d.level);
-              }
-            } catch (e) {
-              console.error('Worklet message handling error', e);
-            }
-          };
-          // connect graph: source -> worklet -> zeroGain (keeps node alive)
-          source.connect(node);
-          node.connect(zeroGain);
-          (localStreamRef as any).processorNode = node;
-          (localStreamRef as any).zeroGain = zeroGain;
-          usedWorklet = true;
-        } catch (e) {
-          console.warn('AudioWorklet failed, falling back to ScriptProcessor', e);
-        }
-      }
-
-      if (!usedWorklet) {
-        // Fallback to ScriptProcessor for older browsers
-        const processor = (ctx.createScriptProcessor || (ctx as any).createJavaScriptNode).call(
-          ctx,
-          4096,
-          1,
-          1
-        );
-        processor.onaudioprocess = ev => {
-          try {
-            const input = ev.inputBuffer.getChannelData(0);
-            // copy to Float32Array
-            const buffer = new Float32Array(input.length);
-            buffer.set(input);
-            // emit as ArrayBuffer
-            if (socket && buffer.buffer) {
-              socket.emit('voice:chunk', { buffer: buffer.buffer, sampleRate: ctx.sampleRate });
-            }
-          } catch (e) {
-            console.error('Error processing local audio', e);
-          }
-        };
-        source.connect(processor);
-        processor.connect(zeroGain);
-        // save nodes for cleanup
-        (localStreamRef as any).processorNode = processor;
-        (localStreamRef as any).zeroGain = zeroGain;
-      }
+      await ensureLocalStream();
+      
+      // Emit join to server
+      socket.emit('voice:join', { channelId });
+      
+      setInChannel(channelId);
+      pendingOfferRef.current = channelId;
+      setIsMuted(false);
     } catch (e) {
-      console.error('Failed to start audio chunking', e);
+      console.error('Failed to join voice channel', e);
     }
   }
 
   function toggleMute() {
     if (!localStreamRef.current) return;
     const newMuted = !isMuted;
-    for (const track of localStreamRef.current.getAudioTracks()) {
+    localStreamRef.current.getAudioTracks().forEach(track => {
       track.enabled = !newMuted;
-    }
+    });
     setIsMuted(newMuted);
   }
 
@@ -270,64 +219,41 @@ export function useVoice() {
     return v;
   }
 
-  // Create offers to a list of existing participants (call this when you join and server emits voice:state)
   async function offerToUsers(userIds: string[]) {
     if (!socket || !currentUser) return;
+    
     for (const uid of userIds) {
       if (uid === currentUser.id) continue;
-      // create pc if not exists
-      let pc = peersRef.current[uid];
-      if (!pc) {
-        pc = createPeerConnection(uid);
-        peersRef.current[uid] = pc;
+      
+      // Close existing connection if any
+      if (peersRef.current[uid]) {
+        peersRef.current[uid].close();
       }
+
+      const pc = createPeerConnection(uid);
+      peersRef.current[uid] = pc;
+
       try {
-        if (localStreamRef.current) {
-          for (const track of localStreamRef.current.getTracks())
-            pc.addTrack(track, localStreamRef.current);
-        }
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         socket.emit('voice:signal', { toUserId: uid, data: pc.localDescription });
       } catch (err) {
-        console.error('Error creating offer', err);
+        console.error('Error creating offer for', uid, err);
       }
     }
   }
 
   function closeAll() {
-    for (const k of Object.keys(peersRef.current)) {
-      try {
-        peersRef.current[k].close();
-      } catch (e) {}
-      delete peersRef.current[k];
-    }
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach(t => t.stop());
-      localStreamRef.current = null;
-    }
+    // Close all peer connections
+    Object.entries(peersRef.current).forEach(([uid, pc]) => {
+      pc.close();
+      const audioEl = document.getElementById(`audio-${uid}`);
+      if (audioEl) audioEl.remove();
+    });
+    peersRef.current = {};
+    
+    cleanupAudio();
     setInChannel(null);
-    // cleanup processor if present
-    try {
-      const proc = (localStreamRef as any).processorNode;
-      const zg = (localStreamRef as any).zeroGain;
-      if (proc) {
-        try {
-          proc.disconnect();
-        } catch (e) {}
-        try {
-          if ((proc as any).onaudioprocess) (proc as any).onaudioprocess = null;
-        } catch (e) {}
-        try {
-          if ((proc as any).port) (proc as any).port.onmessage = null;
-        } catch (e) {}
-        delete (localStreamRef as any).processorNode;
-      }
-      if (zg) {
-        zg.disconnect();
-        delete (localStreamRef as any).zeroGain;
-      }
-    } catch (e) {}
   }
 
   return {
