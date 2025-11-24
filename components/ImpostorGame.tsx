@@ -33,6 +33,8 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
   const [cardRevealed, setCardRevealed] = useState(false);
   const [revealedRoles, setRevealedRoles] = useState<Record<string, 'impostor' | 'crewmate'> | null>(null);
   const [customWords, setCustomWords] = useState<string[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [theme, setTheme] = useState<'upg' | 'neon' | 'retro'>('upg');
 
   useEffect(() => {
     if (!socket) return;
@@ -71,6 +73,8 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
       setVoteCounts({});
       setVotingResult(null);
       setStatusMessage('Votación iniciada');
+      setNotifications(prev => [...prev, { id: Date.now(), type: 'warning', message: '¡Votación iniciada!', timestamp: new Date() }]);
+      setTimeout(() => setNotifications(prev => prev.slice(1)), 5000);
     };
 
     const onVotingUpdate = (d: any) => {
@@ -84,15 +88,17 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
         // Show different behaviour depending if eliminated was the impostor
         if (d.wasImpostor) {
           setStatusMessage(`El jugador ${d.eliminated} era el impostor — ronda terminada`);
-          // 'impostor:reveal' will also be emitted by server, client will receive it and show overlay
+          setNotifications(prev => [...prev, { id: Date.now(), type: 'success', message: `¡${d.eliminated} era el impostor! Ronda terminada.`, timestamp: new Date() }]);
         } else {
           setStatusMessage(`El jugador ${d.eliminated} era INOCENTE — la ronda continúa`);
-          // Temporarily show an innocent reveal overlay
-          setRevealedPlayer({ id: d.eliminated, wasImpostor: false, word: null });
-          setTimeout(() => setRevealedPlayer(null), 4500);
+          setNotifications(prev => [...prev, { id: Date.now(), type: 'error', message: `${d.eliminated} era inocente. La ronda continúa.`, timestamp: new Date() }]);
         }
+        setTimeout(() => setNotifications(prev => prev.slice(1)), 5000);
+        // 'impostor:reveal' will also be emitted by server, client will receive it and show overlay
       } else {
         setStatusMessage('Empate — nadie ha sido eliminado');
+        setNotifications(prev => [...prev, { id: Date.now(), type: 'info', message: 'Empate — nadie eliminado.', timestamp: new Date() }]);
+        setTimeout(() => setNotifications(prev => prev.slice(1)), 5000);
       }
     };
 
@@ -107,6 +113,8 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
     const onPlayerLeft = (d: any) => {
       setStatusMessage(`${d.username} ha abandonado la sala`);
+      setNotifications(prev => [...prev, { id: Date.now(), type: 'info', message: `${d.username} ha abandonado la sala`, timestamp: new Date() }]);
+      setTimeout(() => setNotifications(prev => prev.slice(1)), 5000); // Auto remove after 5s
     };
 
     socket.on('impostor:room-state', onRoomState);
@@ -248,41 +256,62 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
   const currentPlayer = players.find(p => p.id === currentUser?.id);
   const isCurrentPlayerAlive = !currentPlayer?.revealedInnocent;
 
+  // Calculate if all alive players have voted
+  const alivePlayersCount = players.filter(p => !p.revealedInnocent).length;
+  const votesCastCount = Object.keys(voteCounts).length;
+  const allAliveVoted = votesCastCount >= alivePlayersCount;
+
   return (
-    <div className="flex flex-col min-h-screen w-full impostor-theme">
+    <div className={`flex flex-col min-h-screen w-full impostor-theme ${theme === 'neon' ? 'neon-theme' : theme === 'retro' ? 'retro-theme' : ''}`}>
       <div className="max-w-5xl mx-auto w-full py-8 px-4">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-extrabold">Impostor — Sala</h1>
           <div className="flex items-center gap-2">
+            <select value={theme} onChange={e => setTheme(e.target.value as any)} className="p-2 rounded bg-gray-800 text-white border border-gray-600">
+              <option value="upg">UPG</option>
+              <option value="neon">Neon</option>
+              <option value="retro">Retro</option>
+            </select>
             <button onClick={() => { if (joined) handleLeave(); if (onClose) onClose(); }} className="glass-btn">{joined ? 'Salir' : 'Cerrar'}</button>
           </div>
         </div>
 
         <div className="impostor-grid">
+          {/* Notifications */}
+          {notifications.length > 0 && (
+            <div className="fixed top-4 right-4 z-50 space-y-2">
+              {notifications.map((notif) => (
+                <div key={notif.id} className="bg-blue-600 text-white p-3 rounded shadow-lg">
+                  {notif.message}
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="panel-glass lg liquid-glass bg-[#071017]">
             {!joined && (
-              <div className="space-y-3">
-                <input id="impostor-roomid" className="w-full p-3 rounded glass-input border border-gray-700" placeholder="ID de sala" value={roomId} onChange={e => setRoomId(e.target.value)} />
-                <input id="impostor-username" className="w-full p-3 rounded glass-input border border-gray-700" placeholder="Tu nombre" value={username} onChange={e => setUsername(e.target.value)} />
-                <div className="flex gap-3">
-                  <button onClick={handleCreate} className="flex-1 px-4 py-3 rounded bg-green-600 text-white">Crear sala</button>
-                  <button onClick={handleJoin} className="flex-1 px-4 py-3 rounded bg-blue-600 text-white">Unirse</button>
+              <div className="space-y-4">
+                <input id="impostor-roomid" className="w-full p-4 rounded glass-input border border-gray-700 text-lg" placeholder="ID de sala" value={roomId} onChange={e => setRoomId(e.target.value)} />
+                <input id="impostor-username" className="w-full p-4 rounded glass-input border border-gray-700 text-lg" placeholder="Tu nombre" value={username} onChange={e => setUsername(e.target.value)} />
+                <div className="flex gap-4">
+                  <button onClick={handleCreate} className="flex-1 px-6 py-4 rounded bg-green-600 text-white text-lg font-semibold">Crear sala</button>
+                  <button onClick={handleJoin} className="flex-1 px-6 py-4 rounded bg-blue-600 text-white text-lg font-semibold">Unirse</button>
                 </div>
               </div>
             )}
 
             {joined && (
-              <div className="space-y-4">
-                <div className="text-sm text-gray-300">Sala: <strong>{roomId}</strong></div>
-                <div className="text-sm text-gray-300">Host: {isHost ? 'Tú' : 'Otro'}</div>
+              <div className="space-y-6">
+                <div className="text-lg text-gray-300">Sala: <strong>{roomId}</strong></div>
+                <div className="text-lg text-gray-300">Host: {isHost ? 'Tú' : 'Otro'}</div>
 
-                <div className="panel-glass lg liquid-glass bg-[#071017] p-3 rounded max-h-[320px] overflow-auto" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div className="text-sm text-gray-400 mb-2">Jugadores:</div>
-                  <ul className="text-sm space-y-2">
+                <div className="panel-glass lg liquid-glass bg-[#071017] p-4 rounded max-h-[400px] overflow-auto" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div className="text-lg text-gray-400 mb-3 font-semibold">Jugadores:</div>
+                  <ul className="text-base space-y-3">
                     {players.map(p => (
-                      <li key={p.id} className="flex items-center justify-between overflow-hidden">
-                          <span className="text-white break-all font-semibold" style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }} title={p.username}>{p.username}</span>
-                          <span className="text-xs text-gray-400">{p.id === currentUser?.id ? 'Tú' : ''}</span>
+                      <li key={p.id} className="flex items-center justify-between overflow-hidden py-2">
+                          <span className="text-white break-all font-semibold text-lg" style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }} title={p.username}>{p.username}</span>
+                          <span className="text-sm text-gray-400">{p.id === currentUser?.id ? 'Tú' : ''}</span>
                         </li>
                     ))}
                   </ul>
@@ -340,10 +369,10 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
 
                 <div>
                   {spinning && (
-                    <div className="flex items-center justify-center p-6">
+                    <div className="flex items-center justify-center p-8">
                       <div className="flex flex-col items-center">
-                        <div className="w-20 h-20 rounded-full border-4 border-t-transparent border-white animate-spin mb-3" />
-                        <div className="text-sm text-contrast">Asignando carta...</div>
+                        <div className="w-24 h-24 rounded-full border-4 border-t-transparent border-white animate-spin mb-4" />
+                        <div className="text-lg text-contrast font-semibold">Asignando carta...</div>
                       </div>
                     </div>
                   )}
@@ -351,7 +380,7 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                   {!spinning && (
                     <>
                       {/* Assignment card with flip animation */}
-                      <div className={`impostor-card mb-4 ${cardRevealed ? 'flipped' : ''}`} style={{ maxWidth: 520 }}>
+                      <div className={`impostor-card mb-6 ${cardRevealed ? 'flipped' : ''}`} style={{ maxWidth: 600 }}>
                         <div
                           role="button"
                           tabIndex={0}
@@ -360,47 +389,49 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                           className="impostor-card-inner"
                           aria-pressed={cardRevealed}
                         >
-                          <div className="impostor-card-face impostor-card-front liquid-glass p-4 rounded-lg border border-gray-800" style={{ position: 'relative', cursor: 'pointer' }}>
-                            <div className="text-sm text-contrast mb-2">Tu carta</div>
+                          <div className="impostor-card-face impostor-card-front liquid-glass p-6 rounded-lg border border-gray-800" style={{ position: 'relative', cursor: 'pointer' }}>
+                            <div className="text-lg text-contrast mb-3 font-semibold">Tu carta</div>
                             <div className="text-xl font-semibold text-contrast">Haz click o presiona Enter para voltear</div>
                           </div>
-                          <div className="impostor-card-face impostor-card-back liquid-glass p-4 rounded-lg border border-gray-800" style={{ position: 'relative', cursor: 'pointer' }}>
+                          <div className="impostor-card-face impostor-card-back liquid-glass p-6 rounded-lg border border-gray-800" style={{ position: 'relative', cursor: 'pointer' }}>
                             {assigned ? (
                               <div className="text-center w-full">
-                                <div className="text-sm text-gray-400 mb-2">Tu carta</div>
-                                <div className="text-2xl font-bold">{assigned.role === 'impostor' ? 'IMPOSTOR' : assigned.word}</div>
-                                <div className="text-sm text-gray-600 mt-2">{statusMessage}</div>
+                                <div className="text-lg text-gray-400 mb-3 font-semibold">Tu carta</div>
+                                <div className="text-3xl font-bold">{assigned.role === 'impostor' ? 'IMPOSTOR' : assigned.word}</div>
+                                <div className="text-base text-gray-600 mt-3">{statusMessage}</div>
                               </div>
                             ) : (
-                              <div className="text-sm text-gray-400">Aún no hay ronda — espera al host para iniciar</div>
+                              <div className="text-lg text-gray-400 font-semibold">Aún no hay ronda — espera al host para iniciar</div>
                             )}
                           </div>
                         </div>
                       </div>
 
                       {/* Voting area */}
-                      <div className="panel-glass lg liquid-glass bg-[#071017] mt-4 p-3 rounded" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="text-sm text-contrast">Votación</div>
-                          <div className="text-xs text-gray-400">{voting ? 'Activa' : 'Inactiva'}</div>
+                      <div className="panel-glass lg liquid-glass bg-[#071017] mt-6 p-4 rounded" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="text-lg text-contrast font-semibold">Votación</div>
+                          <div className="text-base text-gray-400">
+                            {voting ? `Votos: ${votesCastCount}/${alivePlayersCount}` : 'Inactiva'}
+                          </div>
                         </div>
 
                         {voting ? (
-                          <div className="space-y-2">
+                          <div className="space-y-4">
                             {players.map(p => {
                               const isDead = p.revealedInnocent;
                               const isCurrentUser = p.id === currentUser?.id;
                               const canVote = !myVote && isCurrentPlayerAlive && !isDead;
                               return (
                                 <div key={p.id} className={`flex items-center justify-between overflow-hidden ${isDead ? 'opacity-50' : ''}`}>
-                                  <div className="flex items-center gap-3">
-                                    <div className={`w-8 h-8 rounded-full ${isDead ? 'bg-gray-500' : 'bg-gray-700'} text-white flex items-center justify-center text-sm`}>{p.username.charAt(0).toUpperCase()}</div>
+                                  <div className="flex items-center gap-4">
+                                    <div className={`w-10 h-10 rounded-full ${isDead ? 'bg-gray-500' : 'bg-gray-700'} text-white flex items-center justify-center text-lg font-semibold`}>{p.username.charAt(0).toUpperCase()}</div>
                                     <div className={`text-white break-all font-semibold ${isDead ? 'text-gray-500 line-through' : ''}`} style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }} title={p.username}>{p.username}{isDead ? ' (Muerto)' : ''}</div>
                                   </div>
-                                  <div className="flex items-center gap-2">
-                                    <div className="text-sm text-gray-600">{voteCounts[p.id] || 0}</div>
+                                  <div className="flex items-center gap-3">
+                                    <div className="text-lg text-gray-600 font-semibold">{voteCounts[p.id] || 0}</div>
                                     {!isDead && (
-                                      <button disabled={!canVote} onClick={() => handleCastVote(p.id)} className={`glass-btn ${canVote ? 'primary' : ''}`} aria-pressed={!!myVote}>{myVote === p.id ? 'Votado' : 'Votar'}</button>
+                                      <button disabled={!canVote} onClick={() => handleCastVote(p.id)} className={`px-6 py-3 rounded text-lg font-semibold ${canVote ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-600 text-gray-400'}`} aria-pressed={!!myVote}>{myVote === p.id ? 'Votado' : 'Votar'}</button>
                                     )}
                                   </div>
                                 </div>
@@ -408,23 +439,23 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                             })}
                           </div>
                         ) : (
-                          <div className="text-sm text-gray-400">No hay votación en curso.</div>
+                          <div className="text-lg text-gray-400 font-semibold">No hay votación en curso.</div>
                         )}
 
                         {votingResult && (
-                          <div className="mt-3 text-sm text-contrast">
+                          <div className="mt-4 text-lg text-contrast font-semibold">
                             Resultado: {votingResult.eliminated ? `Eliminado ${votingResult.eliminated}` : 'Empate'}
                           </div>
                         )}
                       </div>
 
-                      <div className="flex gap-3 mt-3">
-                        {isHost && !assigned && <button onClick={handleStart} className="glass-btn primary flex-1">Iniciar ronda</button>}
-                        {isHost && assigned && <button onClick={handleRevealAll} className="glass-btn flex-1" style={{ background: 'linear-gradient(180deg,#ff8c00,#ff4500)', color: 'white' }}>Revelar todas las cartas</button>}
-                        {isHost && <button onClick={handleStartVoting} className="glass-btn">Iniciar votación</button>}
-                        {isHost && voting && <button onClick={handleEndVoting} className="glass-btn" style={{ background: '#ff6b6b', color: 'white' }}>Terminar votación</button>}
-                        {isHost && <button onClick={handleRestart} className="glass-btn">Reiniciar ronda</button>}
-                        <button onClick={handleLeave} className="glass-btn flex-1">Abandonar</button>
+                      <div className="flex gap-4 mt-6">
+                        {isHost && !assigned && <button onClick={handleStart} className="glass-btn primary flex-1 px-6 py-4 text-lg font-semibold">Iniciar ronda</button>}
+                        {isHost && assigned && <button onClick={handleRevealAll} className="glass-btn flex-1 px-6 py-4 text-lg font-semibold" style={{ background: 'linear-gradient(180deg,#ff8c00,#ff4500)', color: 'white' }}>Revelar todas las cartas</button>}
+                        {isHost && <button onClick={handleStartVoting} className="glass-btn px-6 py-4 text-lg font-semibold">Iniciar votación</button>}
+                        {isHost && voting && <button onClick={handleEndVoting} disabled={!allAliveVoted} className={`glass-btn px-6 py-4 text-lg font-semibold ${allAliveVoted ? '' : 'opacity-50 cursor-not-allowed'}`} style={{ background: allAliveVoted ? '#ff6b6b' : '#666', color: 'white' }}>Terminar votación ({votesCastCount}/{alivePlayersCount})</button>}
+                        {isHost && <button onClick={handleRestart} className="glass-btn px-6 py-4 text-lg font-semibold">Reiniciar ronda</button>}
+                        <button onClick={handleLeave} className="glass-btn flex-1 px-6 py-4 text-lg font-semibold">Abandonar</button>
                       </div>
                     </>
                   )}
@@ -432,16 +463,15 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
               </div>
             )}
 
-            {statusMessage && <div className="mt-4 text-sm text-contrast">{statusMessage}</div>}
+            {statusMessage && <div className="mt-4 text-lg text-contrast font-semibold">{statusMessage}</div>}
           </div>
 
-          {/* Right column: Turn order */}
-          <aside className="bg-[#071017] p-4 rounded-lg border border-gray-800 overflow-hidden">
-            <div className="text-sm text-white mb-2">Orden de turnos</div>
+          <aside className="bg-[#071017] p-6 rounded-lg border border-gray-800 overflow-hidden">
+            <div className="text-lg text-white mb-4 font-semibold">Orden de turnos</div>
             {turnOrder.length === 0 ? (
-              <div className="text-sm text-gray-300">Aún no hay orden de turnos</div>
+              <div className="text-lg text-gray-300 font-semibold">Aún no hay orden de turnos</div>
             ) : (
-              <ol className="list-decimal list-inside text-sm space-y-2">
+              <ol className="list-decimal list-inside text-base space-y-3">
                 {turnOrder.map((id, idx) => {
                   const p = players.find(x => x.id === id);
                   const name = p ? p.username : id;
@@ -449,12 +479,12 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
                   const revealed = revealInfo && revealInfo.impostorId === id;
                   const innocentRevealed = p && (p as any).revealedInnocent;
                   return (
-                    <li key={id} className={`turn-item flex items-center justify-between px-2 py-1 rounded overflow-hidden ${active ? 'active bg-discord-blurple text-white' : innocentRevealed ? 'innocent text-white' : 'text-white'}`}>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs ${active ? 'bg-white text-black' : revealed ? 'bg-red-600 text-white ring-2 ring-red-400' : innocentRevealed ? 'bg-green-600 text-white ring-2 ring-green-400' : 'bg-gray-700 text-gray-200'}`}>{name.charAt(0).toUpperCase()}</div>
-                        <div className="text-white break-all font-semibold" style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }} title={name}>{name}</div>
+                    <li key={id} className={`turn-item flex items-center justify-between px-3 py-2 rounded overflow-hidden ${active ? 'active bg-discord-blurple text-white' : innocentRevealed ? 'innocent text-white' : 'text-white'}`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${active ? 'bg-white text-black' : revealed ? 'bg-red-600 text-white ring-2 ring-red-400' : innocentRevealed ? 'bg-green-600 text-white ring-2 ring-green-400' : 'bg-gray-700 text-gray-200'}`}>{name.charAt(0).toUpperCase()}</div>
+                        <div className="text-white break-all font-semibold text-lg" style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }} title={name}>{name}</div>
                       </div>
-                      <div className="text-xs text-gray-400">{idx + 1}</div>
+                      <div className="text-base text-gray-400 font-semibold">{idx + 1}</div>
                     </li>
                   );
                 })}
@@ -462,16 +492,16 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
             )}
 
             {revealedRoles && (
-              <div className="mt-4">
-                <div className="text-sm text-white mb-2">Cartas reveladas</div>
-                <ul className="text-sm space-y-2">
+              <div className="mt-6">
+                <div className="text-lg text-white mb-3 font-semibold">Cartas reveladas</div>
+                <ul className="text-base space-y-3">
                   {revealedRoles.map((player: any, index: number) => (
-                    <li key={index} className="flex items-center justify-between px-2 py-1 rounded bg-gray-800 overflow-hidden">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${!player.wasInnocent ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'}`}>{player.name.charAt(0).toUpperCase()}</div>
-                        <div className="text-white break-all font-semibold" style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }} title={player.name}>{player.name}</div>
+                    <li key={index} className="flex items-center justify-between px-3 py-2 rounded bg-gray-800 overflow-hidden">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${!player.wasInnocent ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'}`}>{player.name.charAt(0).toUpperCase()}</div>
+                        <div className="text-white break-all font-semibold text-lg" style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }} title={player.name}>{player.name}</div>
                       </div>
-                      <div className={`text-xs font-semibold ${!player.wasInnocent ? 'text-red-400' : 'text-blue-400'}`}>{player.wasInnocent ? 'INOCENTE' : 'IMPOSTOR'}</div>
+                      <div className={`text-base font-semibold ${!player.wasInnocent ? 'text-red-400' : 'text-blue-400'}`}>{player.wasInnocent ? 'INOCENTE' : 'IMPOSTOR'}</div>
                     </li>
                   ))}
                 </ul>
@@ -482,12 +512,12 @@ export default function ImpostorGame({ onClose }: { onClose?: () => void }) {
       </div>
 
       {joined && (
-        <div className="fixed bottom-4 right-4 bg-black/50 p-4 rounded-lg border border-gray-700 max-w-xs">
-          <div className="text-sm text-white mb-2">Agregar palabra</div>
+        <div className="fixed bottom-4 right-4 bg-black/50 p-5 rounded-lg border border-gray-700 max-w-sm">
+          <div className="text-lg text-white mb-3 font-semibold">Agregar palabra</div>
           <input
             type="text"
             placeholder="Nueva palabra"
-            className="w-full p-2 rounded bg-gray-800 text-white border border-gray-600"
+            className="w-full p-3 rounded bg-gray-800 text-white border border-gray-600 text-lg"
             autoComplete="off"
             spellCheck="false"
             data-form-type="other"

@@ -430,3 +430,45 @@ textarea,
 .turn-item.active { transform: translateX(6px) scale(1.02); box-shadow: 0 8px 24px rgba(0,0,0,0.45); }
 .turn-item.innocent { box-shadow: 0 6px 18px rgba(6,80,30,0.28); }
 
+/* Neon Theme */
+.neon-theme {
+  --lock-bg: #0a0a0a;
+  --lock-accent: #00ff41;
+  --lock-accent-2: #00ffff;
+  --lock-hover: #00cc33;
+  --lock-shadow: #008000;
+  --lock-text-dark: #ffffff;
+  background: linear-gradient(180deg, #0a0a0a, #1a1a1a);
+}
+.neon-theme .liquid-glass {
+  background: linear-gradient(180deg, rgba(0,255,65,0.1), rgba(0,255,255,0.05));
+  border: 1px solid rgba(0,255,65,0.3);
+  box-shadow: 0 0 20px rgba(0,255,65,0.2);
+}
+.neon-theme .glass-btn {
+  background: linear-gradient(180deg, rgba(0,255,65,0.2), rgba(0,255,65,0.1));
+  border: 1px solid rgba(0,255,65,0.4);
+  color: #00ff41;
+  text-shadow: 0 0 10px rgba(0,255,65,0.8);
+}
+
+/* Retro Theme */
+.retro-theme {
+  --lock-bg: #8b4513;
+  --lock-accent: #ff6347;
+  --lock-accent-2: #daa520;
+  --lock-hover: #cd5c5c;
+  --lock-shadow: #a0522d;
+  --lock-text-dark: #f5deb3;
+  background: linear-gradient(180deg, #8b4513, #a0522d);
+}
+.retro-theme .liquid-glass {
+  background: linear-gradient(180deg, rgba(245,222,179,0.8), rgba(222,184,135,0.6));
+  border: 1px solid rgba(160,82,45,0.4);
+}
+.retro-theme .glass-btn {
+  background: linear-gradient(180deg, rgba(255,99,71,0.3), rgba(218,165,32,0.2));
+  border: 1px solid rgba(255,99,71,0.5);
+  color: #daa520;
+}
+
