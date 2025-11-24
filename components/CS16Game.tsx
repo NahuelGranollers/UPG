@@ -76,7 +76,11 @@ export default function CS16Game({
 
     socket.on('cs16:game-update', (data) => {
       console.log('Game update:', data);
-      setGameStarted(data.gameState?.gameStarted || false);
+      const started = data.gameState?.gameStarted || false;
+      setGameStarted(started);
+      if (started) {
+        startCS16Game();
+      }
     });
 
     socket.on('cs16:player-joined', (data) => {

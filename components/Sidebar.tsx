@@ -29,7 +29,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
   }) => {
     const [showAdminPanel, setShowAdminPanel] = useState(false);
     // Temporarily hide the CS 1.6 sidebar entry without deleting code
-    const showCS = false;
+    const showCS = true;
     // Impostor is now a full page route/view
     const isAdmin = currentUser?.role === UserRole.ADMIN;
 
