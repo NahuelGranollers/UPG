@@ -103,6 +103,7 @@ const HallOfFame: React.FC = () => {
                               <img
                                 src={`/assets/hall/${ach.id}.png`}
                                 alt=""
+                                loading="lazy"
                                 className="object-trophy block w-28 h-28 mx-auto rounded-md"
                               />
                             ) : null}

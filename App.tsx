@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback } from 'react';
+﻿import React, { useState, useCallback, Suspense } from 'react';
 import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider, useSocket } from './context/SocketContext';
@@ -13,12 +13,12 @@ import Sidebar from './components/Sidebar';
 import ChannelList from './components/ChannelList';
 import ChatInterface from './components/ChatInterface';
 import UserList from './components/UserList';
-import HomeScreen from './components/HomeScreen';
-import ImpostorGame from './components/ImpostorGame';
-import WhoWeAre from './components/WhoWeAre';
-import Voting from './components/Voting';
-import UPGNews from './components/UPGNews';
-import HallOfFame from './components/HallOfFame';
+const HomeScreen = React.lazy(() => import('./components/HomeScreen'));
+const ImpostorGame = React.lazy(() => import('./components/ImpostorGame'));
+const WhoWeAre = React.lazy(() => import('./components/WhoWeAre'));
+const Voting = React.lazy(() => import('./components/Voting'));
+const UPGNews = React.lazy(() => import('./components/UPGNews'));
+const HallOfFame = React.lazy(() => import('./components/HallOfFame'));
 
 function MainApp() {
   const { currentUser, isLoading, loginWithDiscord, logout } = useAuth();
@@ -266,36 +266,38 @@ function MainApp() {
         )}
 
         <div className="flex flex-1 min-w-0 relative">
-          {showHome ? (
-            <HomeScreen 
-              onGoToChat={() => { setShowHome(false); setActiveView(AppView.CHAT); setActiveSection('chat'); }} 
-              onGoToWhoWeAre={() => { setShowHome(false); setActiveView(AppView.WHO_WE_ARE); setActiveSection('who'); }}
-            />
-          ) : activeView === AppView.IMPOSTOR ? (
-            <ImpostorGame onClose={() => { setShowHome(true); setActiveView(AppView.CHAT); setActiveSection('home'); }} />
-          ) : activeView === AppView.CHAT ? (
-            <>
-              <ChatInterface
-                currentUser={currentUser}
-                users={users}
-                currentChannel={currentChannel}
-                onSendMessage={sendMessage}
-                messages={messages}
-                setMessages={setMessages}
-                onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
-                userColors={userColors}
+          <Suspense fallback={<div className="flex-1 flex items-center justify-center">Cargando...</div>}>
+            {showHome ? (
+              <HomeScreen 
+                onGoToChat={() => { setShowHome(false); setActiveView(AppView.CHAT); setActiveSection('chat'); }} 
+                onGoToWhoWeAre={() => { setShowHome(false); setActiveView(AppView.WHO_WE_ARE); setActiveSection('who'); }}
               />
-              <UserList users={users} currentUserId={currentUser.id} currentUser={currentUser} userColors={userColors} />
-            </>
-          ) : activeView === AppView.WHO_WE_ARE ? (
-            <WhoWeAre onMenuToggle={() => {}} />
-          ) : activeView === AppView.VOTING ? (
-            <Voting onMenuToggle={() => {}} />
-          ) : activeView === AppView.NEWS ? (
-            <UPGNews />
-          ) : activeView === AppView.HALL_OF_FAME ? (
-            <HallOfFame />
-          ) : null}
+            ) : activeView === AppView.IMPOSTOR ? (
+              <ImpostorGame onClose={() => { setShowHome(true); setActiveView(AppView.CHAT); setActiveSection('home'); }} />
+            ) : activeView === AppView.CHAT ? (
+              <>
+                <ChatInterface
+                  currentUser={currentUser}
+                  users={users}
+                  currentChannel={currentChannel}
+                  onSendMessage={sendMessage}
+                  messages={messages}
+                  setMessages={setMessages}
+                  onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  userColors={userColors}
+                />
+                <UserList users={users} currentUserId={currentUser.id} currentUser={currentUser} userColors={userColors} />
+              </>
+            ) : activeView === AppView.WHO_WE_ARE ? (
+              <WhoWeAre onMenuToggle={() => {}} />
+            ) : activeView === AppView.VOTING ? (
+              <Voting onMenuToggle={() => {}} />
+            ) : activeView === AppView.NEWS ? (
+              <UPGNews />
+            ) : activeView === AppView.HALL_OF_FAME ? (
+              <HallOfFame />
+            ) : null}
+          </Suspense>
         </div>
 
       {/* Mobile Layout */}
