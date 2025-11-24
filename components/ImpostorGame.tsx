@@ -388,6 +388,7 @@ export default function ImpostorGame({
     });
   };
 
+
   // Fetch public servers
   const fetchPublicServers = async () => {
     try {
@@ -398,6 +399,23 @@ export default function ImpostorGame({
       console.error('Error fetching public servers:', error);
     }
   };
+
+  // Listen for real-time updates from backend
+  useEffect(() => {
+    if (!socket) return;
+    const handler = (payload: any) => {
+      try {
+        const list = (payload && payload.servers && payload.servers.impostor) || [];
+        setPublicServers(list);
+      } catch (e) {
+        console.error('Error applying servers:updated payload', e);
+      }
+    };
+    socket.on('servers:updated', handler);
+    return () => {
+      socket.off('servers:updated', handler);
+    };
+  }, [socket]);
 
   // Create public server
   const handleCreatePublicServer = () => {
@@ -458,8 +476,9 @@ export default function ImpostorGame({
   const alivePlayersCount = players.filter(p => !p.revealedInnocent).length;
   const allAliveVoted = totalVotes >= alivePlayersCount;
 
+  // Layout: center horizontally, not vertically
   return (
-    <div className="flex items-center justify-center min-h-screen w-full bg-discord-chat">
+    <div className="flex flex-row items-center justify-center w-full min-h-screen bg-discord-chat">
       <div className="w-full max-w-7xl py-4 px-2 sm:py-6 sm:px-4 lg:py-8 lg:px-6">
         <div className="impostor-header">
           <div className="impostor-header-top">
