@@ -108,8 +108,13 @@ export default function ImpostorGame({
 
     const onRoomState = (data: any) => {
       setPlayers(data.players || []);
-      setHostId(data.hostId || '');
+      const hostIdFromData = data.hostId || '';
+      setHostId(hostIdFromData);
+      // Check if current user is host
+      const currentUserId = userId || currentUser?.id;
+      setIsHost(hostIdFromData === currentUserId);
       setJoined(true);
+      setGameStarted(data.started || false);
       setCustomWords(data.customWords || []);
     };
 
@@ -474,6 +479,8 @@ export default function ImpostorGame({
 
     const generatedUserId =
       userId || currentUser?.id || `guest-${Math.random().toString(36).slice(2, 8)}`;
+    
+    // Set userId BEFORE emitting so it's available when room-state arrives
     setUserId(generatedUserId);
 
     socket.emit(
@@ -488,6 +495,8 @@ export default function ImpostorGame({
       (res: any) => {
         if (res && res.ok) {
           setJoined(true);
+          setIsHost(true); // Creator is always host
+          setHostId(generatedUserId);
           fetchPublicServers(); // Refresh the list
         } else {
           alert('Failed to create public room: ' + (res?.error || 'Unknown error'));
