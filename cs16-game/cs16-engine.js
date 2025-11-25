@@ -153,14 +153,14 @@ function loadEnvironmentAssets(assetsManager, scene) {
   const dumpsterTask = assetsManager.addMeshTask("dumpster task", "", "/cs16-assets/obj/dumpster/", "dumpster.babylon");
   dumpsterTask.onSuccess = function (task) {
     const dumpster = task.loadedMeshes[0];
-    dumpster.position = new BABYLON.Vector3(grounSideLength / 4 + 250, dumpster.position.y, grounSideLength / 2 - 150);
+    dumpster.position = new BABYLON.Vector3(GameGlobals.grounSideLength / 4 + 250, dumpster.position.y, GameGlobals.grounSideLength / 2 - 150);
     dumpster.checkCollisions = true;
     const dumpster2 = dumpster.clone();
-    dumpster2.position = new BABYLON.Vector3(grounSideLength / 4 - 250, dumpster.position.y, grounSideLength / 2 - 150);
+    dumpster2.position = new BABYLON.Vector3(GameGlobals.grounSideLength / 4 - 250, dumpster.position.y, GameGlobals.grounSideLength / 2 - 150);
     const dumpster3 = dumpster.clone();
     const dumpster5 = dumpster.clone();
-    dumpster3.position = new BABYLON.Vector3(grounSideLength / 4 - 250, dumpster.position.y, -grounSideLength / 2 + 150);
-    dumpster5.position = new BABYLON.Vector3(grounSideLength / 4 + 250, dumpster.position.y, -grounSideLength / 2 + 150);
+    dumpster3.position = new BABYLON.Vector3(GameGlobals.grounSideLength / 4 - 250, dumpster.position.y, -GameGlobals.grounSideLength / 2 + 150);
+    dumpster5.position = new BABYLON.Vector3(GameGlobals.grounSideLength / 4 + 250, dumpster.position.y, -GameGlobals.grounSideLength / 2 + 150);
   };
 
   // Load trucks
@@ -170,8 +170,8 @@ function loadEnvironmentAssets(assetsManager, scene) {
     truck.checkCollisions = true;
     truck.position = new BABYLON.Vector3(-300, 0, -300);
     truck.rotation.y -= Math.PI / 2;
-    truck.position.x = -grounSideLength / 2 + 300;
-    truck.position.z = -grounSideLength / 2 + 350;
+    truck.position.x = -GameGlobals.grounSideLength / 2 + 300;
+    truck.position.z = -GameGlobals.grounSideLength / 2 + 350;
     const truck2 = truck.clone();
     truck2.position.z += 300;
     const truck4 = truck2.clone();
@@ -182,7 +182,7 @@ function loadEnvironmentAssets(assetsManager, scene) {
   const rubbleTask = assetsManager.addMeshTask("rubble task", "", "/cs16-assets/obj/rubble/", "rubble.babylon");
   rubbleTask.onSuccess = function (task) {
     const rubble = task.loadedMeshes[0];
-    rubble.position = new BABYLON.Vector3(grounSideLength / 2 - 160, rubble.position.y, grounSideLength / 4);
+    rubble.position = new BABYLON.Vector3(GameGlobals.grounSideLength / 2 - 160, rubble.position.y, GameGlobals.grounSideLength / 4);
     rubble.checkCollisions = true;
     rubble.rotation.y = Math.PI / 2;
     const boundingBox = BABYLON.MeshBuilder.CreateBox("car bounding box", { width: 250, height: 50, depth: 90 }, scene);
@@ -209,7 +209,7 @@ function loadEnvironmentAssets(assetsManager, scene) {
 
 // Scene creation functions
 function createScene() {
-  const scene = new BABYLON.Scene(engine);
+  const scene = new BABYLON.Scene(GameGlobals.engine);
   scene.collisionsEnabled = true;
   const light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 611, 0), scene);
   light.intensity = 2;
@@ -440,7 +440,7 @@ function setNotWalledBlocks(scene) {
 }
 
 function fillRandomAmmoLocationsArray() {
-  randomAmmoLocations = [
+  GameGlobals.randomAmmoLocations = [
     { x: 28, y: 13 }, { x: 21, y: 4 }, { x: 16, y: 5 }, { x: 6, y: 4 }, { x: 9, y: 10 },
     { x: 6, y: 6 }, { x: 10, y: 21 }, { x: 6, y: 29 }, { x: 13, y: 27 }, { x: 22, y: 27 },
     { x: 25, y: 24 }, { x: 23, y: 21 }, { x: 20, y: 17 }
@@ -483,9 +483,9 @@ function createEnemy(id, mesh, skeleton, weapon, shootingRangeUnits, accuracy, s
 
 function createCollisionMatrix(numberOfEnemies) {
   for (let i = 0; i < numberOfEnemies; i++) {
-    collisionMatrix[i] = [];
+    GameGlobals.collisionMatrix[i] = [];
     for (let j = 0; j < numberOfEnemies; j++) {
-      collisionMatrix[i][j] = null;
+      GameGlobals.collisionMatrix[i][j] = null;
     }
   }
 }

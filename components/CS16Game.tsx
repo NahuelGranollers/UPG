@@ -199,7 +199,10 @@ export default function CS16Game({
   // Fetch public servers
   const fetchPublicServers = async () => {
     try {
-      const response = await fetch('/api/servers');
+      const API_URL = import.meta.env.DEV 
+        ? 'http://localhost:3000' 
+        : 'https://mensajeria-ksc7.onrender.com';
+      const response = await fetch(`${API_URL}/api/servers`);
       const data = await response.json();
       setPublicServers(data.servers?.cs16 || []);
     } catch (error) {
