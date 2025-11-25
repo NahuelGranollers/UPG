@@ -672,10 +672,7 @@ export default function ImpostorGame({
                       </div>
                     </div>
                   )}
-                </div>
               </div>
-            )}
-
             </div>
           </div>
         ) : (
