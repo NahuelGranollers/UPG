@@ -665,9 +665,9 @@ export default function ImpostorGame({
             </div>
           )
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-7xl mx-auto">
             {/* Main Game Area */}
-            <div className="lg:col-span-3 space-y-4">
+            <div className="md:col-span-3 space-y-4">
               {/* Game Header */}
               <div className="bg-discord-sidebar p-4 rounded-lg border border-discord-hover">
                 <div className="flex justify-between items-center">
