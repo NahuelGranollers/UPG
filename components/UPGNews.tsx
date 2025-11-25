@@ -55,6 +55,7 @@ const UPGNews: React.FC = () => {
       const res = await fetch(`${API_URL}/api/news`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ title, content, excerpt, category })
       });
       const data = await res.json();
