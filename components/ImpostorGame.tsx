@@ -623,54 +623,53 @@ export default function ImpostorGame({
 
               {/* Create Server Button */}
               <div className="mt-4 pt-4 border-t border-discord-hover">
-                    <button
-                      onClick={() => setShowCreateForm(s => !s)}
-                      className="discord-button w-full"
-                    >
-                      {showCreateForm ? 'Cerrar formulario' : 'Crear servidor'}
-                    </button>
-                  </div>
+                <button
+                  onClick={() => setShowCreateForm(s => !s)}
+                  className="discord-button w-full"
+                >
+                  {showCreateForm ? 'Cerrar formulario' : 'Crear servidor'}
+                </button>
 
-                  {showCreateForm && (
-                    <div className="border-t border-discord-hover pt-4 mt-4">
-                      <h4 className="text-lg text-discord-text-header font-semibold mb-3">Crear Servidor Público</h4>
-                      <div className="space-y-3">
-                        <input
-                          className="w-full discord-input"
-                          placeholder="Nombre del servidor (opcional)"
-                          value={serverName}
-                          onChange={e => setServerName(e.target.value)}
-                        />
-                        <input
-                          className="w-full discord-input"
-                          placeholder="Contraseña (opcional)"
-                          type="password"
-                          value={serverPassword}
-                          onChange={e => setServerPassword(e.target.value)}
-                        />
-                        <input
-                          id="impostor-roomid-public"
-                          className="w-full discord-input"
-                          placeholder="ID de sala"
-                          value={roomId}
-                          onChange={e => setRoomId(e.target.value)}
-                        />
-                        <input
-                          id="impostor-username-public"
-                          className="w-full discord-input"
-                          placeholder="Tu nombre"
-                          value={username}
-                          onChange={e => setUsername(e.target.value)}
-                        />
-                        <button
-                          onClick={handleCreatePublicServer}
-                          className="w-full discord-button success"
-                        >
-                          Crear Servidor Público
-                        </button>
-                      </div>
+                {showCreateForm && (
+                  <div className="border-t border-discord-hover pt-4 mt-4">
+                    <h4 className="text-lg text-discord-text-header font-semibold mb-3">Crear Servidor Público</h4>
+                    <div className="space-y-3">
+                      <input
+                        className="w-full discord-input"
+                        placeholder="Nombre del servidor (opcional)"
+                        value={serverName}
+                        onChange={e => setServerName(e.target.value)}
+                      />
+                      <input
+                        className="w-full discord-input"
+                        placeholder="Contraseña (opcional)"
+                        type="password"
+                        value={serverPassword}
+                        onChange={e => setServerPassword(e.target.value)}
+                      />
+                      <input
+                        id="impostor-roomid-public"
+                        className="w-full discord-input"
+                        placeholder="ID de sala"
+                        value={roomId}
+                        onChange={e => setRoomId(e.target.value)}
+                      />
+                      <input
+                        id="impostor-username-public"
+                        className="w-full discord-input"
+                        placeholder="Tu nombre"
+                        value={username}
+                        onChange={e => setUsername(e.target.value)}
+                      />
+                      <button
+                        onClick={handleCreatePublicServer}
+                        className="w-full discord-button success"
+                      >
+                        Crear Servidor Público
+                      </button>
                     </div>
-                  )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
