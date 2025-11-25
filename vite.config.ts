@@ -38,10 +38,10 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks: {
-            vendor: ['react', 'react-dom', 'react-router-dom'],
-            babylon: ['babylonjs', 'babylonjs-loaders', 'babylonjs-gui'],
+            vendor: ['react', 'react-dom'],
+            babylon: ['babylonjs'],
             socket: ['socket.io-client'],
-            ui: ['lucide-react', 'sonner', 'framer-motion']
+            ui: ['lucide-react', 'sonner']
           },
         },
       },

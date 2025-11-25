@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import SafeImage from './SafeImage';
 import { ArrowRight, Gamepad2, Users, Lock, Plus } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 interface HomeScreenProps {
   onGoToChat: () => void;
