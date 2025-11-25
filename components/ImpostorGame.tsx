@@ -436,7 +436,10 @@ export default function ImpostorGame({
   // Fetch public servers
   const fetchPublicServers = async () => {
     try {
-      const response = await fetch('/api/servers');
+      const API_URL = import.meta.env.DEV 
+        ? 'http://localhost:3000' 
+        : 'https://mensajeria-ksc7.onrender.com';
+      const response = await fetch(`${API_URL}/api/servers`);
       const data = await response.json();
       setPublicServers(data.servers?.impostor || []);
     } catch (error) {
@@ -462,16 +465,21 @@ export default function ImpostorGame({
   }, [socket]);
 
   // Create public server
-  const handleCreatePublicServer = () => {
+  const handleCreatePublicServer = (explicitRoomId?: string) => {
     if (!socket) return;
-    if (!roomId || !username) return setStatusMessage('Room y nombre requeridos');
+    const finalRoomId = explicitRoomId || roomId || `room_${Date.now()}`;
+    if (!username) return;
+
+    if (finalRoomId !== roomId) setRoomId(finalRoomId);
+
     const generatedUserId =
       userId || currentUser?.id || `guest-${Math.random().toString(36).slice(2, 8)}`;
     setUserId(generatedUserId);
+
     socket.emit(
       'impostor:create-room',
       {
-        roomId,
+        roomId: finalRoomId,
         userId: generatedUserId,
         username,
         name: serverName || `Sala de ${username}`,
@@ -480,10 +488,9 @@ export default function ImpostorGame({
       (res: any) => {
         if (res && res.ok) {
           setJoined(true);
-          setStatusMessage('Sala pública creada. Esperando jugadores...');
           fetchPublicServers(); // Refresh the list
         } else {
-          setStatusMessage(res?.error || 'Error creando sala pública');
+          alert('Failed to create public room: ' + (res?.error || 'Unknown error'));
         }
       }
     );
@@ -492,7 +499,7 @@ export default function ImpostorGame({
   // Join public server
   const handleJoinPublicServer = (serverRoomId: string, password?: string) => {
     if (!socket) return;
-    if (!username) return setStatusMessage('Nombre requerido');
+    if (!username) return;
     const generatedUserId =
       userId || currentUser?.id || `guest-${Math.random().toString(36).slice(2, 8)}`;
     setUserId(generatedUserId);
@@ -505,10 +512,9 @@ export default function ImpostorGame({
     }, (res: any) => {
       if (res && res.ok) {
         setJoined(true);
-        setStatusMessage('Te has unido a la sala pública');
         fetchPublicServers(); // Refresh the list
       } else {
-        setStatusMessage(res?.error || 'Error al unirse a la sala pública');
+        alert('Failed to join public room: ' + (res?.error || 'Unknown error'));
       }
     });
   };
@@ -520,159 +526,135 @@ export default function ImpostorGame({
   const alivePlayersCount = players.filter(p => !p.revealedInnocent).length;
   const allAliveVoted = totalVotes >= alivePlayersCount;
 
-  // Layout: Modern grid layout similar to CS16Game
   return (
-    <div className="h-screen flex flex-col bg-discord-chat overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 bg-discord-sidebar border-b border-discord-hover shrink-0">
-        <h2 className="text-2xl font-bold text-discord-text-header flex items-center gap-2">
-          <span className="text-3xl">🎭</span>
-          Impostor
-        </h2>
-        <button onClick={onClose} className="discord-button secondary">
-          ✕ Cerrar
-        </button>
-      </div>
+    <div className="flex flex-col min-h-screen w-full bg-discord-chat">
+      <div className="w-full py-4 px-2 sm:py-6 sm:px-4 lg:py-8 lg:px-6">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-discord-text-header">
+            🎭 Impostor
+          </h1>
+          <div className="flex gap-2">
+            {!joined && (
+              <button
+                onClick={() => setShowCreateForm(true)}
+                className="discord-button success"
+              >
+                Crear Servidor
+              </button>
+            )}
+            <button
+              onClick={() => {
+                if (joined) handleLeave();
+                if (onClose) onClose();
+              }}
+              className="discord-button secondary"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto p-6">
-        {!joined ? (
-          <div className="max-w-6xl mx-auto">
-            <div className="bg-discord-sidebar rounded-lg border border-discord-hover p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-discord-text-header">
-                  🌐 Servidores Públicos
-                </h2>
-                <button 
-                  onClick={() => fetchPublicServers()}
-                  className="discord-button secondary"
-                >
-                  🔄 Actualizar
-                </button>
+        {showCreateForm && !joined && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div className="bg-discord-surface p-6 rounded-lg max-w-md w-full space-y-4">
+              <h3 className="text-xl font-bold text-white">Crear Servidor Impostor</h3>
+              
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-discord-text-muted uppercase">Nombre del Servidor</label>
+                <input
+                  type="text"
+                  value={serverName}
+                  onChange={(e) => setServerName(e.target.value)}
+                  placeholder={`Sala de ${username}`}
+                  className="w-full bg-discord-input p-2 rounded text-white"
+                />
               </div>
 
-              {/* Notifications Inline */}
-              {notifications.length > 0 && (
-                <div className="mb-4 space-y-2">
-                  {notifications.map(notif => (
-                    <div
-                      key={notif.id}
-                      className={`p-3 rounded ${
-                        notif.type === 'success' ? 'bg-green-600/20 border border-green-600' :
-                        notif.type === 'error' ? 'bg-red-600/20 border border-red-600' :
-                        notif.type === 'warning' ? 'bg-yellow-600/20 border border-yellow-600' : 
-                        'bg-blue-600/20 border border-blue-600'
-                      } text-white text-sm`}
-                    >
-                      {notif.message}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Server List */}
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {publicServers.length === 0 ? (
-                      <div className="text-center text-discord-text-muted py-8">No hay servidores públicos disponibles</div>
-                    ) : (
-                      publicServers.map((server) => (
-                        <div 
-                          key={server.roomId} 
-                          className="bg-discord-surface p-4 rounded-lg border border-discord-hover hover:border-discord-blurple transition-colors"
-                        >
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <h4 className="text-discord-text-header font-semibold text-lg mb-1">
-                                {server.name}
-                              </h4>
-                              <p className="text-sm text-discord-text-muted">
-                                Host: {server.hostName}
-                              </p>
-                              <div className="flex items-center gap-3 mt-2">
-                                <span className="text-xs px-2 py-1 bg-discord-blurple rounded">
-                                  {server.playerCount}/{server.maxPlayers} jugadores
-                                </span>
-                                {server.hasPassword && (
-                                  <span className="text-xs px-2 py-1 bg-yellow-600 rounded">
-                                    🔒 Protegido
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => {
-                                if (server.hasPassword) {
-                                  const password = prompt('Contraseña del servidor:');
-                                  if (password !== null) {
-                                    handleJoinPublicServer(server.roomId, password);
-                                  }
-                                } else {
-                                  handleJoinPublicServer(server.roomId);
-                                }
-                              }}
-                              className="discord-button success"
-                              disabled={server.playerCount >= server.maxPlayers}
-                            >
-                              {server.playerCount >= server.maxPlayers ? 'Lleno' : 'Unirse'}
-                            </button>
-                          </div>
-                        </div>
-                      ))
-                    )}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-discord-text-muted uppercase">Contraseña (Opcional)</label>
+                <input
+                  type="password"
+                  value={serverPassword}
+                  onChange={(e) => setServerPassword(e.target.value)}
+                  placeholder="Dejar vacío para público"
+                  className="w-full bg-discord-input p-2 rounded text-white"
+                />
               </div>
 
-              {/* Create Server Button */}
-              <div className="mt-4 pt-4 border-t border-discord-hover">
+              <div className="flex gap-2 pt-4">
                 <button
-                  onClick={() => setShowCreateForm(s => !s)}
-                  className="discord-button w-full"
+                  onClick={() => setShowCreateForm(false)}
+                  className="flex-1 discord-button secondary"
                 >
-                  {showCreateForm ? 'Cerrar formulario' : 'Crear servidor'}
+                  Cancelar
                 </button>
-
-                {showCreateForm && (
-                  <div className="border-t border-discord-hover pt-4 mt-4">
-                    <h4 className="text-lg text-discord-text-header font-semibold mb-3">Crear Servidor Público</h4>
-                    <div className="space-y-3">
-                      <input
-                        className="w-full discord-input"
-                        placeholder="Nombre del servidor (opcional)"
-                        value={serverName}
-                        onChange={e => setServerName(e.target.value)}
-                      />
-                      <input
-                        className="w-full discord-input"
-                        placeholder="Contraseña (opcional)"
-                        type="password"
-                        value={serverPassword}
-                        onChange={e => setServerPassword(e.target.value)}
-                      />
-                      <input
-                        id="impostor-roomid-public"
-                        className="w-full discord-input"
-                        placeholder="ID de sala"
-                        value={roomId}
-                        onChange={e => setRoomId(e.target.value)}
-                      />
-                      <input
-                        id="impostor-username-public"
-                        className="w-full discord-input"
-                        placeholder="Tu nombre"
-                        value={username}
-                        onChange={e => setUsername(e.target.value)}
-                      />
-                      <button
-                        onClick={handleCreatePublicServer}
-                        className="w-full discord-button success"
-                      >
-                        Crear Servidor Público
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <button
+                  onClick={() => {
+                    const newId = `room_${Date.now()}`;
+                    handleCreatePublicServer(newId);
+                    setShowCreateForm(false);
+                  }}
+                  className="flex-1 discord-button success"
+                >
+                  Crear
+                </button>
               </div>
             </div>
           </div>
+        )}
+
+        {!joined ? (
+          autoJoinRoomId ? (
+            <div className="panel-glass lg liquid-glass bg-[#071017] p-6 rounded-lg max-w-md mx-auto">
+              <div className="text-center space-y-4">
+                <div className="w-12 h-12 mx-auto border-4 border-t-transparent border-discord-blurple animate-spin rounded-full"></div>
+                <p className="text-discord-text-normal">Uniéndose a la sala {autoJoinRoomId}...</p>
+              </div>
+            </div>
+          ) : (
+            <div className="panel-glass lg liquid-glass bg-[#071017] p-6 rounded-lg max-w-2xl mx-auto">
+              <div className="space-y-4">
+                <h3 className="text-lg text-discord-text-header font-semibold">Servidores Públicos Impostor</h3>
+                <div className="max-h-96 overflow-y-auto space-y-2">
+                  {publicServers.length === 0 ? (
+                    <div className="text-center text-discord-text-muted py-8">No hay servidores públicos disponibles</div>
+                  ) : (
+                    publicServers.map((server) => (
+                      <div key={server.roomId} className="discord-panel p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className="text-discord-text-header font-semibold">{server.name}</h4>
+                            <p className="text-sm text-discord-text-muted">
+                              Host: {server.hostName} • {server.playerCount}/10 jugadores
+                            </p>
+                            {server.hasPassword && (
+                              <span className="text-xs text-yellow-400">🔒 Protegido por contraseña</span>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => {
+                              if (server.hasPassword) {
+                                const password = prompt('Ingresa la contraseña del servidor:');
+                                if (password !== null) {
+                                  handleJoinPublicServer(server.roomId, password);
+                                }
+                              } else {
+                                handleJoinPublicServer(server.roomId);
+                              }
+                            }}
+                            className="discord-button success"
+                            disabled={server.playerCount >= 10}
+                          >
+                            {server.playerCount >= 10 ? 'Lleno' : 'Unirse'}
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
             {/* Main Game Area */}
