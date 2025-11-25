@@ -116,7 +116,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     // Filtrar usuarios normales y bots
     const bots = [botUser];
     // Eliminar el bot de la lista de usuarios normales si está presente
-    const normalUsers = users.filter(u => !u.isBot && u.id !== 'bot');
+    const normalUsers = (users || []).filter(u => !u.isBot && u.id !== 'bot');
     return [...bots, ...normalUsers];
   }, [users]);
 
