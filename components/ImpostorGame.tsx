@@ -714,9 +714,9 @@ export default function ImpostorGame({
                     </div>
                   </div>
                 ) : (
-
-                {/* Palabras personalizadas ocultas - funcionalidad sigue activa */}
-                {/* {customWords.length > 0 && (
+                  <>
+                    {/* Palabras personalizadas ocultas - funcionalidad sigue activa */}
+                    {/* {customWords.length > 0 && (
                   <div className="mt-4">
                     <div className="text-sm text-gray-400 mb-2">Palabras personalizadas ({customWords.length}):</div>
                     <div className="text-xs text-gray-300 break-words">{customWords.join(', ')}</div>
@@ -1082,6 +1082,7 @@ export default function ImpostorGame({
                     </>
                   )}
                   </div>
+                  </>
                 )}
               </div>
             </div>
