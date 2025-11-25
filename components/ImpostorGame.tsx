@@ -116,6 +116,10 @@ export default function ImpostorGame({
       setJoined(true);
       setGameStarted(data.started || false);
       setCustomWords(data.customWords || []);
+      // Update roomId if provided
+      if (data.roomId && data.roomId !== roomId) {
+        setRoomId(data.roomId);
+      }
     };
 
     const onAssign = (data: any) => {
@@ -359,16 +363,18 @@ export default function ImpostorGame({
 
   const handleStart = () => {
     if (!socket) return;
+    console.log('Starting game with:', { roomId, userId, selectedCategory, selectedTime });
     socket.emit('impostor:start', { 
       roomId, 
       hostId: userId,
       category: selectedCategory,
       timerDuration: selectedTime
     }, (res: any) => {
+      console.log('Start response:', res);
       if (res && res.ok) {
         setStatusMessage('Ronda iniciada — revisa tu carta');
       } else {
-        setStatusMessage(res?.error || 'No se pudo iniciar');
+        alert('Error al iniciar: ' + (res?.error || 'No se pudo iniciar'));
       }
     });
   };
@@ -494,6 +500,10 @@ export default function ImpostorGame({
       },
       (res: any) => {
         if (res && res.ok) {
+          // Ensure roomId is set from server response
+          if (res.roomId && res.roomId !== roomId) {
+            setRoomId(res.roomId);
+          }
           setJoined(true);
           setIsHost(true); // Creator is always host
           setHostId(generatedUserId);
