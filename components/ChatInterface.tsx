@@ -10,7 +10,7 @@ interface ChatInterfaceProps {
   currentUser: User;
   users: User[];
   currentChannel: { id: string; name: string };
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string, localId?: string) => Promise<any>;
   messages: Message[];
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   onMenuToggle: () => void;
