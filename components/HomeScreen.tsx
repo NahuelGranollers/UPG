@@ -26,7 +26,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
   useEffect(() => {
     const fetchServers = async () => {
       try {
-        const res = await fetch('/api/servers');
+        const API_URL = import.meta.env.DEV 
+          ? 'http://localhost:3000' 
+          : 'https://mensajeria-ksc7.onrender.com';
+          
+        const res = await fetch(`${API_URL}/api/servers`);
         const data = await res.json();
         const allServers: GameServer[] = [];
         

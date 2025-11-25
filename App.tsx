@@ -201,6 +201,10 @@ function MainApp() {
   React.useEffect(() => {
     if (!socket) return;
     socket.on('users:list', list => {
+      if (!Array.isArray(list)) {
+        console.warn('Received invalid users list:', list);
+        return;
+      }
       setUsers(list);
       // Initialize user colors from list
       const mapping = (list || []).reduce(

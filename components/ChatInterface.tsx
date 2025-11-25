@@ -19,7 +19,7 @@ interface ChatInterfaceProps {
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
   currentUser,
-  users,
+  users = [],
   currentChannel,
   onSendMessage,
   messages,
@@ -41,7 +41,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   // Ordenar mensajes: más antiguo arriba, más reciente abajo
   const orderedMessages = useMemo(() => {
-    const combined = [...messages, ...localMessages];
+    const combined = [...(messages || []), ...localMessages];
     const sorted = combined.sort((a, b) => {
       const ta = new Date(a.timestamp).getTime();
       const tb = new Date(b.timestamp).getTime();
@@ -233,7 +233,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   // Check if bot is typing (only if last message wasn't from bot)
   const shouldShowBotTyping =
-    isBotTyping && (messages.length === 0 || messages[messages.length - 1]?.userId !== 'bot');
+    isBotTyping && ((messages || []).length === 0 || messages[messages.length - 1]?.userId !== 'bot');
 
   // Renderizar preview del input con menciones destacadas en tiempo real
   const renderInputPreview = useCallback(
