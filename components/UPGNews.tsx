@@ -30,9 +30,9 @@ const UPGNews: React.FC = () => {
   const fetchNews = async () => {
     try {
       const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV 
-        ? 'http://localhost:3000' 
-        : 'https://mensajeria-ksc7.onrender.com');
-      const res = await fetch(`${API_URL}/api/news`);
+        ? 'http://localhost:3000/api' 
+        : 'https://mensajeria-ksc7.onrender.com/api');
+      const res = await fetch(`${API_URL}/news`);
       const data = await res.json();
       setArticles(data);
     } catch (e) {
@@ -50,9 +50,9 @@ const UPGNews: React.FC = () => {
     e.preventDefault();
     try {
       const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV 
-        ? 'http://localhost:3000' 
-        : 'https://mensajeria-ksc7.onrender.com');
-      const res = await fetch(`${API_URL}/api/news`, {
+        ? 'http://localhost:3000/api' 
+        : 'https://mensajeria-ksc7.onrender.com/api');
+      const res = await fetch(`${API_URL}/news`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
