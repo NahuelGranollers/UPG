@@ -133,13 +133,7 @@ const MinecraftServerStatus: React.FC = () => {
           {/* Server Icon / Status Indicator */}
           <div className="relative shrink-0">
             <div className={`w-24 h-24 md:w-32 md:h-32 rounded-2xl overflow-hidden border-4 ${isOnline ? 'border-green-500/50' : 'border-red-500/50'} shadow-lg relative group-hover:scale-105 transition-transform duration-300`}>
-              {status?.icon ? (
-                <img src={status.icon} alt="Server Icon" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center">
-                  <Server size={48} className="text-white/20" />
-                </div>
-              )}
+              <img src="https://filterforge.com/filters/11635.jpg" alt="Server Icon" className="w-full h-full object-cover" />
               {/* Online/Offline Badge */}
               <div className={`absolute bottom-0 right-0 w-6 h-6 rounded-full border-4 border-[#0f0f0f] ${isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
             </div>
@@ -150,7 +144,7 @@ const MinecraftServerStatus: React.FC = () => {
             <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-2 mb-2">
               <div>
                 <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight flex items-center gap-3">
-                  Minecraft Server
+                  UPG
                   {isOnline && (
                     <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 text-xs font-bold border border-green-500/30 uppercase tracking-wider">
                       Online
