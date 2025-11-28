@@ -301,7 +301,7 @@ function MainApp() {
 
   return (
     <div
-      className="flex h-screen w-full bg-[#313338] font-sans antialiased overflow-hidden relative text-white"
+      className="flex h-[100dvh] w-full bg-[#313338] font-sans antialiased overflow-hidden relative text-white"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
