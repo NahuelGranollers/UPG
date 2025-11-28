@@ -64,30 +64,26 @@ INSULTOS_INVENTADOS = [
 # In-memory storage for bot conversations (reset on restart)
 bot_conversations = {}
 
-@bot_bp.route('/chat', methods=['POST'])
-def chat_demonio():
+def generate_demonio_response(message, session_id='default'):
+    """
+    Generates a response using the Demonio Gamer persona.
+    Returns the insult string.
+    """
+    if not message:
+        return "¡MENSAJE VACÍO, SUBNORMAL! Escribe algo o vete a pajearte como pajilleroide 💦😂"
+    
+    if session_id not in bot_conversations:
+        bot_conversations[session_id] = []
+    
+    bot_conversations[session_id].append({
+        "role": "user", "content": message, "timestamp": datetime.now().isoformat()
+    })
+    
+    # Añadir insulto inventado random al prompt
+    insulto_random = random.choice(INSULTOS_INVENTADOS)
+    enhanced_prompt = f"{DEMONIO_SYSTEM_PROMPT}\n\nINSULTO INVENTADO OBLIGATORIO: {insulto_random.upper()}\n\nUsuario: {message}"
+    
     try:
-        data = request.json
-        message = data.get('message', '').strip()
-        session_id = data.get('session_id', 'default')
-        
-        if not message:
-            return jsonify({
-                "insulto": "¡MENSAJE VACÍO, SUBNORMAL! Escribe algo o vete a pajearte como pajilleroide 💦😂",
-                "error": "Mensaje vacío"
-            }), 400
-        
-        if session_id not in bot_conversations:
-            bot_conversations[session_id] = []
-        
-        bot_conversations[session_id].append({
-            "role": "user", "content": message, "timestamp": datetime.now().isoformat()
-        })
-        
-        # Añadir insulto inventado random al prompt
-        insulto_random = random.choice(INSULTOS_INVENTADOS)
-        enhanced_prompt = f"{DEMONIO_SYSTEM_PROMPT}\n\nINSULTO INVENTADO OBLIGATORIO: {insulto_random.upper()}\n\nUsuario: {message}"
-        
         response = CLIENT.chat.completions.create(
             model="nousresearch/hermes-2-pro-mistral-7b",
             messages=[
@@ -104,6 +100,25 @@ def chat_demonio():
         bot_conversations[session_id].append({
             "role": "assistant", "content": insulto_demoniaco, "timestamp": datetime.now().isoformat()
         })
+        
+        return insulto_demoniaco
+        
+    except Exception as e:
+        error_msg = f"¡SERVIDOR EXPLOTÓ COMO TNT EN EL CULO DE TU MADRE, TRONCOMÁN! 💣💀 {str(e)}"
+        return error_msg
+
+@bot_bp.route('/chat', methods=['POST'])
+def chat_demonio():
+    try:
+        data = request.json
+        message = data.get('message', '').strip()
+        session_id = data.get('session_id', 'default')
+        
+        insulto_demoniaco = generate_demonio_response(message, session_id)
+        
+        # Retrieve the last insult used (a bit hacky but works for now)
+        # Or just pick a random one for the response metadata
+        insulto_random = random.choice(INSULTOS_INVENTADOS) 
         
         return jsonify({
             "insulto": insulto_demoniaco,

@@ -6,6 +6,7 @@ from game_state import (
     public_servers, user_room_map, trolled_users, ADMIN_DISCORD_ID, BOT_USER,
     IMPOSTOR_WORDS, IMPOSTOR_CATEGORIES
 )
+from routes.bot import generate_demonio_response
 import logging
 import uuid
 from datetime import datetime
@@ -13,7 +14,6 @@ import random
 import time
 import html
 import os
-import google.generativeai as genai
 
 logger = logging.getLogger(__name__)
 
@@ -41,21 +41,12 @@ def apply_troll_transform(user_id, text):
         return text
 
 def register_socket_events(socketio, app=None):
-    # Configure Gemini
-    api_key = os.getenv('GEMINI_API_KEY')
-    model = None
-    if api_key:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-2.0-flash')
-    else:
-        logger.warning("GEMINI_API_KEY not found, bot will not work")
-
+    
     def handle_bot_response(channel_id, user_name, user_message):
-        if not model: return
         try:
-            prompt = f"Eres UPG Bot, el bot más tóxico, agresivo y vacilón de la comunidad 'Unas Partidillas'. Tu objetivo es insultar (sin ser racista ni homófobo), burlarte y humillar al usuario {user_name} que te ha dicho: '{user_message}'. No seas amable, sé cruel, sarcástico y usa insultos fuertes de gamer. Si te preguntan quién eres, di que eres su peor pesadilla digital."
-            response = model.generate_content(prompt)
-            text = response.text
+            # Use the new Demonio Gamer logic
+            # We use channel_id as session_id to keep context per channel
+            text = generate_demonio_response(user_message, session_id=channel_id)
             
             if text:
                 if app:

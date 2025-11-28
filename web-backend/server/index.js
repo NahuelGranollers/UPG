@@ -982,6 +982,50 @@ io.on('connection', socket => {
       // Broadcast to channel
       io.to(channelId).emit('message:received', messageData);
 
+      // 🤖 BOT DEMONIO GAMER INTEGRATION
+      // Detectar mención al bot (@UPG o @bot)
+      const lowerContent = finalContent.toLowerCase();
+      if (lowerContent.includes('@upg') || lowerContent.includes('@bot')) {
+        // Llamar a la API del Demonio Gamer (Flask)
+        try {
+          // Extraer el prompt (mensaje del usuario sin la mención si es posible, o todo el mensaje)
+          const prompt = finalContent.replace(/@upg|@bot/gi, '').trim();
+          
+          // Llamada asíncrona a la API local de Flask
+          // No esperamos con await para no bloquear el ack del mensaje original, 
+          // pero procesamos la respuesta cuando llegue.
+          axios.post('http://127.0.0.1:5000/api/chat', {
+            message: prompt,
+            user_id: userId,
+            user_name: username
+          }).then(async (response) => {
+            if (response.data && response.data.response) {
+               const botMsg = {
+                 id: crypto.randomUUID(),
+                 channelId,
+                 userId: 'bot',
+                 username: 'UPG', 
+                 avatar: BOT_USER.avatar,
+                 content: response.data.response,
+                 timestamp: new Date().toISOString(),
+                 isSystem: false
+               };
+               
+               // Guardar respuesta del bot en DB
+               await db.saveMessage(botMsg);
+               
+               // Enviar respuesta al chat
+               io.to(channelId).emit('message:received', botMsg);
+            }
+          }).catch(err => {
+             logger.error('Error llamando al bot Demonio Gamer:', err.message);
+          });
+          
+        } catch (botError) {
+          logger.error('Error preparando llamada al bot:', botError.message);
+        }
+      }
+
       // Bot commands
       if (finalContent.startsWith('/')) {
         // Simple bot response for testing
