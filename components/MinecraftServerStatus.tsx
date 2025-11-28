@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Wifi, Users, Copy, Check, Server } from 'lucide-react';
+import { Wifi, Users, Copy, Check, Server, Clock } from 'lucide-react';
 
 interface ServerStatus {
   online: boolean;
@@ -21,8 +21,38 @@ const MinecraftServerStatus: React.FC = () => {
   const [status, setStatus] = useState<ServerStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<{days: number, hours: number, minutes: number, seconds: number}>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   const SERVER_IP = 'mc.unaspartidillas.online';
+  // Set target date to 2 days from now (approx Nov 30, 2025 based on context, or just +48h from mount)
+  // For a static "2 days" countdown, I'll set a fixed future date relative to now.
+  // If the user wants a specific date, they can adjust. For now, let's assume 2 days from "now".
+  // However, to make it persistent across reloads for "2 days", I should probably pick a fixed date.
+  // Let's set it to 48 hours from the moment this code runs, or better, a fixed timestamp if I knew the event.
+  // Since I don't, I'll set it to a fixed date 2 days in the future from the current context date (Nov 28).
+  // Target: Nov 30, 2025 18:00:00 (Example)
+  const TARGET_DATE = new Date('2025-11-30T18:00:00').getTime();
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date().getTime();
+      const distance = TARGET_DATE - now;
+
+      if (distance < 0) {
+        clearInterval(timer);
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+      } else {
+        setTimeLeft({
+          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+          seconds: Math.floor((distance % (1000 * 60)) / 1000)
+        });
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -67,7 +97,38 @@ const MinecraftServerStatus: React.FC = () => {
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-green-500/20 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-500/20 rounded-full blur-[100px] pointer-events-none" />
 
-        <div className="relative p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 md:gap-8">
+        {/* Countdown Overlay */}
+        <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center text-center p-6">
+          <div className="mb-4 p-4 rounded-full bg-white/5 border border-white/10 shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+            <Clock size={48} className="text-white animate-pulse" />
+          </div>
+          <h2 className="text-3xl md:text-4xl font-black text-white mb-2 tracking-tight">
+            PRÓXIMAMENTE
+          </h2>
+          <p className="text-white/60 font-mono mb-8 max-w-md">
+            El servidor abrirá sus puertas en:
+          </p>
+          
+          <div className="grid grid-cols-4 gap-4 md:gap-8">
+            {[
+              { label: 'Días', value: timeLeft.days },
+              { label: 'Horas', value: timeLeft.hours },
+              { label: 'Min', value: timeLeft.minutes },
+              { label: 'Seg', value: timeLeft.seconds }
+            ].map((item, i) => (
+              <div key={i} className="flex flex-col items-center">
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-2 shadow-lg backdrop-blur-sm">
+                  <span className="text-2xl md:text-3xl font-bold text-white font-mono">
+                    {item.value.toString().padStart(2, '0')}
+                  </span>
+                </div>
+                <span className="text-xs text-white/40 uppercase tracking-wider font-bold">{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 md:gap-8 opacity-20 pointer-events-none filter blur-sm">
           
           {/* Server Icon / Status Indicator */}
           <div className="relative shrink-0">
