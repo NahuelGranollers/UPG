@@ -20,7 +20,7 @@ class SocketService {
   private connectionCallbacks: Set<(connected: boolean) => void> = new Set();
 
   constructor(serverUrl?: string) {
-    this.serverUrl = serverUrl || (import.meta.env.VITE_SOCKET_URL as string) || 'http://192.168.1.93:5000';
+    this.serverUrl = serverUrl || (import.meta.env.VITE_SOCKET_URL as string) || 'https://api.unaspartidillas.online';
   }
 
   connect(): void {
