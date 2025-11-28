@@ -44,10 +44,11 @@ const CreateServerModal: React.FC<CreateServerModalProps> = ({ gameType, onCreat
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="server-name" className="block text-sm font-medium text-gray-300 mb-2">
               Nombre del Servidor
             </label>
             <input
+              id="server-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -69,23 +70,28 @@ const CreateServerModal: React.FC<CreateServerModalProps> = ({ gameType, onCreat
               Servidor Privado (requiere contraseña)
             </label>
             {usePassword && (
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Contraseña"
-                className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 mt-2"
-                maxLength={20}
-              />
+              <>
+                <label htmlFor="server-password" className="sr-only">Contraseña del servidor</label>
+                <input
+                  id="server-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Contraseña"
+                  className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 mt-2"
+                  maxLength={20}
+                />
+              </>
             )}
           </div>
 
           {gameType === 'cs16' && (
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="bot-count" className="block text-sm font-medium text-gray-300 mb-2">
                 Cantidad de Bots (0-8)
               </label>
               <input
+                id="bot-count"
                 type="number"
                 value={botCount}
                 onChange={(e) => setBotCount(parseInt(e.target.value) || 0)}
