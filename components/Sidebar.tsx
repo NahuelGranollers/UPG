@@ -214,11 +214,16 @@ const Sidebar: React.FC<SidebarProps> = memo(
                   onClick={() => {
                     if (onNavigate) onNavigate('cs16');
                   }}
-                  className={`w-14 h-14 ${active ? 'bg-discord-blurple text-white' : 'bg-discord-chat text-discord-text-normal hover:bg-discord-hover hover:text-discord-text-normal'} rounded-[28px] hover:rounded-[18px] transition-all duration-200 flex items-center justify-center`}
+                  className={`w-14 h-14 ${active ? 'bg-discord-blurple text-white' : 'bg-discord-chat text-discord-text-normal hover:bg-discord-hover hover:text-discord-text-normal'} rounded-[28px] hover:rounded-[18px] transition-all duration-200 flex items-center justify-center overflow-hidden`}
                   title="CS 1.6"
                   aria-pressed={active}
                 >
-                  <Gamepad2 size={24} />
+                  <SafeImage
+                    src="https://img.favpng.com/10/1/11/counter-strike-global-offensive-counter-strike-source-counter-strike-1-6-portable-network-graphics-logo-png-favpng-4WPrt5CzP0ppMqdafyCJtijR9.jpg"
+                    alt="CS 1.6"
+                    className="object-cover w-full h-full"
+                    fallbackSrc="https://ui-avatars.com/api/?name=CS&background=5865f2&color=ffffff&size=128"
+                  />
                 </button>
               </div>
             );
