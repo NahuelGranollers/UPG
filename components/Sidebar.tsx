@@ -219,7 +219,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                   aria-pressed={active}
                 >
                   <SafeImage
-                    src="https://img.favpng.com/10/1/11/counter-strike-global-offensive-counter-strike-source-counter-strike-1-6-portable-network-graphics-logo-png-favpng-4WPrt5CzP0ppMqdafyCJtijR9.jpg"
+                    src="https://pngimg.com/d/counter_strike_PNG78.png"
                     alt="CS 1.6"
                     className="object-contain w-10 h-10"
                     fallbackSrc="https://ui-avatars.com/api/?name=CS&background=5865f2&color=ffffff&size=128"

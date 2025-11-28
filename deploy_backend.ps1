@@ -14,7 +14,8 @@ if ($LASTEXITCODE -eq 0) {
     # Comandos remotos en una sola línea para evitar problemas de saltos de línea (CRLF vs LF)
     # Se añade la instalación de python3-venv y se asegura que el script de servicio tenga permisos correctos
     # También se borra el venv anterior para asegurar una instalación limpia
-    $remoteScript = "cd /home/nahuel/web-backend && echo nahuel | sudo -S apt-get update && echo nahuel | sudo -S apt-get install -y python3-venv python3-full && rm -rf venv && python3 -m venv venv && ./venv/bin/pip install -r requirements.txt && echo nahuel | sudo -S cp web-backend.service /etc/systemd/system/ && echo nahuel | sudo -S chmod 644 /etc/systemd/system/web-backend.service && echo nahuel | sudo -S systemctl daemon-reload && echo nahuel | sudo -S systemctl restart web-backend"
+    # Se borra la base de datos para forzar la recreación del esquema
+    $remoteScript = "cd /home/nahuel/web-backend && echo nahuel | sudo -S apt-get update && echo nahuel | sudo -S apt-get install -y python3-venv python3-full && rm -rf venv instance/database.sqlite && python3 -m venv venv && ./venv/bin/pip install -r requirements.txt && echo nahuel | sudo -S cp web-backend.service /etc/systemd/system/ && echo nahuel | sudo -S chmod 644 /etc/systemd/system/web-backend.service && echo nahuel | sudo -S systemctl daemon-reload && echo nahuel | sudo -S systemctl restart web-backend"
     
     # Ejecutar todo en una sesión SSH
     ssh -t nahuel@192.168.1.93 $remoteScript
