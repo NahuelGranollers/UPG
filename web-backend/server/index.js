@@ -57,11 +57,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const xss = require('xss');
 require('dotenv').config();
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-
-// Inicializar Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+// Gemini eliminado - Ahora usamos el bot Demonio Gamer en Flask (puerto 5000)
 
 // ✅ Importar capa de base de datos
 const db = require('./db');
