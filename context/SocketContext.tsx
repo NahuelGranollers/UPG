@@ -30,7 +30,12 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     const socket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
+      secure: true,
+      withCredentials: true,
+      path: '/socket.io/',
       reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
 
     socketRef.current = socket;
