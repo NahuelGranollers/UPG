@@ -218,11 +218,19 @@ const Sidebar: React.FC<SidebarProps> = memo(
                   title="CS 1.6"
                   aria-pressed={active}
                 >
-                  <SafeImage
-                    src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Counter-Strike_1.6_logo.png/600px-Counter-Strike_1.6_logo.png"
-                    alt="CS 1.6"
-                    className="object-contain w-10 h-10"
-                    fallbackSrc="https://ui-avatars.com/api/?name=CS&background=5865f2&color=ffffff&size=128"
+                  <div
+                    className="w-10 h-10"
+                    style={{
+                      backgroundColor: '#dbdee1',
+                      maskImage: 'url(https://pngimg.com/d/counter_strike_PNG78.png)',
+                      maskSize: 'contain',
+                      maskRepeat: 'no-repeat',
+                      maskPosition: 'center',
+                      WebkitMaskImage: 'url(https://pngimg.com/d/counter_strike_PNG78.png)',
+                      WebkitMaskSize: 'contain',
+                      WebkitMaskRepeat: 'no-repeat',
+                      WebkitMaskPosition: 'center',
+                    }}
                   />
                 </button>
               </div>
