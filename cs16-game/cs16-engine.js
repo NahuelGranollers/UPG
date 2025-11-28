@@ -2,6 +2,12 @@
 // Based on https://github.com/akhawatrahTW/cs1.6.git
 
 import * as BABYLON from 'babylonjs';
+import 'babylonjs-loaders';
+import { SkyMaterial } from 'babylonjs-materials';
+
+// Patch BABYLON namespace for extensions
+BABYLON.SkyMaterial = SkyMaterial;
+
 import { Player } from './Player.js';
 import { Enemy } from './Enemy.js';
 import { AStar, Graph } from './astar.js';
