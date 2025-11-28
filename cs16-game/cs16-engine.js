@@ -4,9 +4,11 @@
 import * as BABYLON from 'babylonjs';
 import 'babylonjs-loaders';
 import { SkyMaterial } from 'babylonjs-materials';
+import * as GUI from 'babylonjs-gui';
 
 // Patch BABYLON namespace for extensions
 BABYLON.SkyMaterial = SkyMaterial;
+BABYLON.GUI = GUI;
 
 import { Player } from './Player.js';
 import { Enemy } from './Enemy.js';
