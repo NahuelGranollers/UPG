@@ -147,6 +147,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
             {renderInputPreview(inputText)}
           </div>
           {/* Input real */}
+          <label htmlFor="message-input" className="sr-only">Escribir mensaje</label>
           <input
             ref={inputRef}
             type="text"

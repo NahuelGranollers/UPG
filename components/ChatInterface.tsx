@@ -170,9 +170,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       setShowMentionSuggestions(false);
       setMentionSearch('');
       setTimeout(() => {
-        const newCursorPos = before.length + user.username.length + 2;
-        inputRef.current?.setSelectionRange(newCursorPos, newCursorPos);
-        inputRef.current?.focus();
+        if (inputRef.current) {
+          const newCursorPos = before.length + user.username.length + 2;
+          inputRef.current.setSelectionRange(newCursorPos, newCursorPos);
+          try {
+            inputRef.current.focus();
+          } catch (e) {
+            // Ignorar errores de foco
+          }
+        }
       }, 0);
     },
     [inputText, mentionStartPos]
@@ -226,7 +232,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   useEffect(() => {
     // Pequeño delay para asegurar que el componente esté completamente renderizado
     const timeoutId = setTimeout(() => {
-      inputRef.current?.focus();
+      if (inputRef.current) {
+        try {
+          inputRef.current.focus();
+        } catch (e) {
+          // Ignorar errores de foco que pueden ser causados por extensiones
+          console.debug('Error focusing input:', e);
+        }
+      }
     }, 100);
 
     return () => clearTimeout(timeoutId);
