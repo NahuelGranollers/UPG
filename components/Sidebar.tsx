@@ -108,7 +108,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                 <SafeImage
                   src="/amogus.png"
                   alt="Impostor"
-                  className="object-cover w-full h-full"
+                  className="object-cover w-10 h-10"
                   fallbackSrc="https://ui-avatars.com/api/?name=Impostor&background=5865f2&color=ffffff&size=128"
                 />
               </button>

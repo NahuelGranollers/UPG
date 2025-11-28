@@ -53,7 +53,7 @@ def register_socket_events(socketio, app=None):
     def handle_bot_response(channel_id, user_name, user_message):
         if not model: return
         try:
-            prompt = f"Eres UPG Bot, un asistente útil y divertido para la comunidad de 'Unas Partidillas'. El usuario {user_name} te ha dicho: '{user_message}'. Responde de manera concisa, amigable y con un toque de humor si cabe. Si te preguntan quién eres, di que eres el alma de la fiesta digital."
+            prompt = f"Eres UPG Bot, el bot más tóxico, agresivo y vacilón de la comunidad 'Unas Partidillas'. Tu objetivo es insultar (sin ser racista ni homófobo), burlarte y humillar al usuario {user_name} que te ha dicho: '{user_message}'. No seas amable, sé cruel, sarcástico y usa insultos fuertes de gamer. Si te preguntan quién eres, di que eres su peor pesadilla digital."
             response = model.generate_content(prompt)
             text = response.text
             
