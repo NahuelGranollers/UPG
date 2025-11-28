@@ -449,7 +449,7 @@ export default function ImpostorGame({
     try {
       const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV 
         ? 'http://localhost:3000/api' 
-        : 'https://mensajeria-ksc7.onrender.com/api');
+        : 'http://192.168.1.93:5000/api');
       const response = await fetch(`${API_URL}/servers`);
       const data = await response.json();
       setPublicServers(data.servers?.impostor || []);

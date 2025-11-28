@@ -31,7 +31,7 @@ const UPGNews: React.FC = () => {
     try {
       const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV 
         ? 'http://localhost:3000/api' 
-        : 'https://mensajeria-ksc7.onrender.com/api');
+        : 'http://192.168.1.93:5000/api');
       const res = await fetch(`${API_URL}/news`);
       const data = await res.json();
       setArticles(data);
@@ -51,7 +51,7 @@ const UPGNews: React.FC = () => {
     try {
       const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV 
         ? 'http://localhost:3000/api' 
-        : 'https://mensajeria-ksc7.onrender.com/api');
+        : 'http://192.168.1.93:5000/api');
       const res = await fetch(`${API_URL}/news`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

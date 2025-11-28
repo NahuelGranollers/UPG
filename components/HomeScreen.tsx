@@ -28,7 +28,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
       try {
         const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV 
           ? 'http://localhost:3000/api' 
-          : 'https://mensajeria-ksc7.onrender.com/api');
+          : 'http://192.168.1.93:5000/api');
           
         const res = await fetch(`${API_URL}/servers`);
         const data = await res.json();

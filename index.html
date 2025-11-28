@@ -77,7 +77,11 @@
     <div id="root"></div>
     <script>
       // API base
-      window.API_BASE = 'https://mensajeria-ksc7.onrender.com';
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        window.API_BASE = 'http://localhost:3000';
+      } else {
+        window.API_BASE = 'http://192.168.1.93:5000';
+      }
       // Set window.ADMIN_TOKEN = 'your_token_here' in console for production
     </script>
     <script>
