@@ -6,9 +6,9 @@ After=network.target
 User=nahuel
 WorkingDirectory=/home/nahuel/web-backend
 # Si usas entorno virtual, descomenta y ajusta la siguiente linea:
-# ExecStart=/home/nahuel/web-backend/venv/bin/python app.py
+ExecStart=/home/nahuel/web-backend/venv/bin/python /home/nahuel/web-backend/app.py
 # Si NO usas entorno virtual (instalaste librerias globales):
-ExecStart=/usr/bin/python3 /home/nahuel/web-backend/app.py
+# ExecStart=/usr/bin/python3 /home/nahuel/web-backend/app.py
 Restart=always
 Environment=PYTHONUNBUFFERED=1
 
