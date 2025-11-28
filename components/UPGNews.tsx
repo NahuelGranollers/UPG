@@ -29,9 +29,9 @@ const UPGNews: React.FC = () => {
 
   const fetchNews = async () => {
     try {
-      const API_URL = import.meta.env.DEV 
+      const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV 
         ? 'http://localhost:3000' 
-        : 'https://mensajeria-ksc7.onrender.com';
+        : 'https://mensajeria-ksc7.onrender.com');
       const res = await fetch(`${API_URL}/api/news`);
       const data = await res.json();
       setArticles(data);
@@ -49,9 +49,9 @@ const UPGNews: React.FC = () => {
   const handleCreateNews = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const API_URL = import.meta.env.DEV 
+      const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV 
         ? 'http://localhost:3000' 
-        : 'https://mensajeria-ksc7.onrender.com';
+        : 'https://mensajeria-ksc7.onrender.com');
       const res = await fetch(`${API_URL}/api/news`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

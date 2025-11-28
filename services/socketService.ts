@@ -19,8 +19,8 @@ class SocketService {
   private messageCallbacks: Map<string, Set<(msg: SocketMessage) => void>> = new Map();
   private connectionCallbacks: Set<(connected: boolean) => void> = new Set();
 
-  constructor(serverUrl: string = 'https://mensajeria-ksc7.onrender.com') {
-    this.serverUrl = serverUrl;
+  constructor(serverUrl?: string) {
+    this.serverUrl = serverUrl || (import.meta.env.VITE_SOCKET_URL as string) || 'https://mensajeria-ksc7.onrender.com';
   }
 
   connect(): void {
