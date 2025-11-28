@@ -106,7 +106,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                 aria-pressed={active}
               >
                 <SafeImage
-                  src="https://cdn3.emoji.gg/emojis/8886-among-us-red.png"
+                  src="/amogus.png"
                   alt="Impostor"
                   className="object-cover w-full h-full"
                   fallbackSrc="https://ui-avatars.com/api/?name=Impostor&background=5865f2&color=ffffff&size=128"

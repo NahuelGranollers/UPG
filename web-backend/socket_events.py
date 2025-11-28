@@ -46,7 +46,7 @@ def register_socket_events(socketio, app=None):
     model = None
     if api_key:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.0-flash')
     else:
         logger.warning("GEMINI_API_KEY not found, bot will not work")
 
@@ -74,6 +74,7 @@ def register_socket_events(socketio, app=None):
                         db.session.commit()
                         socketio.emit('message:received', bot_msg.to_dict(), room=channel_id)
                 else:
+                    logger.error("App context missing in handle_bot_response - Message NOT saved to DB")
                     # Fallback without DB save if app context missing
                     bot_msg_dict = {
                         'id': str(uuid.uuid4()),
