@@ -22,7 +22,7 @@ socketio = SocketIO(app, cors_allowed_origins=Config.CORS_ORIGINS, async_mode='e
 
 app.register_blueprint(api)
 app.register_blueprint(auth)
-register_socket_events(socketio)
+register_socket_events(socketio, app)
 
 with app.app_context():
     db.create_all()

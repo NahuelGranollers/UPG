@@ -7,3 +7,4 @@ eventlet
 requests
 python-dotenv
 waitress
+google-generativeai

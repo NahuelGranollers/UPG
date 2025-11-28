@@ -12,6 +12,8 @@ from datetime import datetime
 import random
 import time
 import html
+import os
+import google.generativeai as genai
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +40,66 @@ def apply_troll_transform(user_id, text):
     except:
         return text
 
-def register_socket_events(socketio):
+def register_socket_events(socketio, app=None):
+    # Configure Gemini
+    api_key = os.getenv('GEMINI_API_KEY')
+    model = None
+    if api_key:
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+    else:
+        logger.warning("GEMINI_API_KEY not found, bot will not work")
+
+    def handle_bot_response(channel_id, user_name, user_message):
+        if not model: return
+        try:
+            prompt = f"Eres UPG Bot, un asistente útil y divertido para la comunidad de 'Unas Partidillas'. El usuario {user_name} te ha dicho: '{user_message}'. Responde de manera concisa, amigable y con un toque de humor si cabe. Si te preguntan quién eres, di que eres el alma de la fiesta digital."
+            response = model.generate_content(prompt)
+            text = response.text
+            
+            if text:
+                if app:
+                    with app.app_context():
+                        bot_msg = Message(
+                            id=str(uuid.uuid4()),
+                            channel_id=channel_id,
+                            user_id='bot',
+                            username='UPG',
+                            avatar=BOT_USER['avatar'],
+                            content=text,
+                            timestamp=datetime.utcnow(),
+                            is_system=False
+                        )
+                        db.session.add(bot_msg)
+                        db.session.commit()
+                        socketio.emit('message:received', bot_msg.to_dict(), room=channel_id)
+                else:
+                    # Fallback without DB save if app context missing
+                    bot_msg_dict = {
+                        'id': str(uuid.uuid4()),
+                        'channelId': channel_id,
+                        'userId': 'bot',
+                        'username': 'UPG',
+                        'avatar': BOT_USER['avatar'],
+                        'content': text,
+                        'timestamp': datetime.utcnow().isoformat(),
+                        'isSystem': False
+                    }
+                    socketio.emit('message:received', bot_msg_dict, room=channel_id)
+
+        except Exception as e:
+            logger.error(f"Bot error: {e}")
+            error_msg = {
+                'id': str(uuid.uuid4()),
+                'channelId': channel_id,
+                'userId': 'bot',
+                'username': 'UPG',
+                'avatar': BOT_USER['avatar'],
+                'content': '¡Ups! Mis circuitos se han cruzado. Inténtalo de nuevo más tarde. 🤖💥',
+                'timestamp': datetime.utcnow().isoformat(),
+                'isSystem': False
+            }
+            socketio.emit('message:received', error_msg, room=channel_id)
     
     @socketio.on('connect')
     def on_connect():
@@ -151,6 +212,10 @@ def register_socket_events(socketio):
             db.session.add(bot_msg)
             db.session.commit()
             socketio.emit('message:received', bot_msg.to_dict(), room=data.get('channelId'))
+
+        # Bot AI
+        if '@upg' in content.lower():
+            socketio.start_background_task(handle_bot_response, data.get('channelId'), data.get('username'), content)
 
         return {'ok': True, 'messageId': msg_id}
 
