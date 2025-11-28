@@ -131,7 +131,18 @@ export default function CS16Game({
 
     try {
       // Initialize the CS 1.6 game engine
-      initCS16Game(canvasRef.current, socket, roomId, currentUser, isHost);
+      initCS16Game(
+        canvasRef.current, 
+        socket, 
+        roomId, 
+        currentUser, 
+        isHost,
+        botCount,
+        (errorMessage: string) => {
+          toast.error(errorMessage);
+          console.error(errorMessage);
+        }
+      );
       setupMultiplayerEvents();
       gameInitializedRef.current = true;
 

@@ -23,14 +23,16 @@ let divFps = null;
 let isLocked = false;
 
 // Initialize the CS 1.6 game
-export function initCS16Game(canvasElement, socketInstance, room, user, isGameHost) {
+export function initCS16Game(canvasElement, socketInstance, room, user, isGameHost, botCount, onLoadError) {
   GameGlobals.init();
   GameGlobals.socket = socketInstance;
   GameGlobals.roomId = room;
   GameGlobals.userId = user.id;
   GameGlobals.currentUser = user;
   GameGlobals.isHost = isGameHost;
+  GameGlobals.botCount = botCount || 0;
   GameGlobals.canvas = canvasElement;
+  GameGlobals.onLoadError = onLoadError;
 
   // Initialize Babylon.js
   GameGlobals.engine = new BABYLON.Engine(GameGlobals.canvas, true);
@@ -59,6 +61,13 @@ function loadGame() {
   registerEvents(scene, GameGlobals.camera, GameGlobals.canvas);
 
   const assetsManager = new BABYLON.AssetsManager(scene);
+
+  assetsManager.onTaskError = function (task) {
+    console.error("Error loading asset task:", task.name, task.errorObject);
+    if (GameGlobals.onLoadError) {
+      GameGlobals.onLoadError(`Error cargando asset: ${task.name}. Verifica que los archivos existan en /public/cs16-assets/`);
+    }
+  };
 
   // Load player model
   const playerTask = assetsManager.addMeshTask("player task", "", "/cs16-assets/obj/player/", "me.babylon");
@@ -463,10 +472,14 @@ function createFirstRoundEnemies(scene) {
     [GameGlobals.grounSideLength / 4 - GameGlobals.unit * 3, GameGlobals.guerilla.position.y + 3, -GameGlobals.grounSideLength / 4 + GameGlobals.unit * 3]
   ];
 
-  enemyPositions.forEach((pos, index) => {
+  // Use configured bot count, limited by available positions (or loop/randomize if we wanted more)
+  const count = Math.min(GameGlobals.botCount, enemyPositions.length);
+
+  for (let i = 0; i < count; i++) {
+    const pos = enemyPositions[i];
     cloneGuerilla("enemy", GameGlobals.guerilla, GameGlobals.guerillaSkeleton, GameGlobals.deagle, scene,
       new BABYLON.Vector3(pos[0], pos[1], pos[2]), 2, 2);
-  });
+  }
 }
 
 function cloneGuerilla(name, guerilla, guerillaSkeleton, deagle, scene, position, shootingRangeUnits, accuracy) {
