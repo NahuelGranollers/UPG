@@ -1005,6 +1005,58 @@ io.on('connection', socket => {
         }
       }
 
+      // 🤖 BOT LOGIC: Check for mentions (@UPG)
+      if (finalContent.toLowerCase().includes('@upg')) {
+        // Trigger async bot response (don't await to not block ack)
+        (async () => {
+          try {
+            // Simulate typing delay (optional, but feels more natural)
+            // await new Promise(r => setTimeout(r, 1000));
+
+            // Construct prompt
+            // We could add more context here (e.g. previous messages) if needed
+            const prompt = `Eres UPG Bot, un asistente útil y divertido para la comunidad de "Unas Partidillas". 
+            El usuario ${username} te ha dicho: "${finalContent}". 
+            Responde de manera concisa, amigable y con un toque de humor si cabe. 
+            Si te preguntan quién eres, di que eres el alma de la fiesta digital.`;
+
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            const text = response.text();
+
+            if (text) {
+              const botMsg = {
+                id: crypto.randomUUID(),
+                channelId,
+                userId: 'bot',
+                username: 'UPG', // Match BOT_USER.username
+                avatar: BOT_USER.avatar,
+                content: text,
+                timestamp: new Date().toISOString(),
+                isSystem: false
+              };
+              
+              await db.saveMessage(botMsg);
+              io.to(channelId).emit('message:received', botMsg);
+            }
+          } catch (err) {
+            logger.error('Error generating bot response', err);
+            // Fallback message on error
+            const errorMsg = {
+              id: crypto.randomUUID(),
+              channelId,
+              userId: 'bot',
+              username: 'UPG',
+              avatar: BOT_USER.avatar,
+              content: '¡Ups! Mis circuitos se han cruzado. Inténtalo de nuevo más tarde. 🤖💥',
+              timestamp: new Date().toISOString(),
+              isSystem: false
+            };
+            io.to(channelId).emit('message:received', errorMsg);
+          }
+        })();
+      }
+
       return ack && ack({ ok: true, messageId });
     } catch (e) {
       logger.error('Error sending message', e);

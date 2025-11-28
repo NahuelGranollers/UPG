@@ -62,6 +62,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       }
     };
     const handleNewMessage = (msg: Message) => {
+      // Clear bot typing if bot sends a message
+      if (msg.userId === 'bot') {
+        setIsBotTyping(false);
+      }
+
       if (msg.channelId === currentChannel.id && msg.userId === currentUser.id) {
         // Limpiar input cuando llega la confirmación del mensaje del usuario
         setInputText('');
