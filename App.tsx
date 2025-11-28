@@ -179,15 +179,10 @@ function MainApp() {
   const handleVoiceLeave = useCallback(async () => {
     try {
       if ((voice as any).closeAll) (voice as any).closeAll();
-      // Notify server to toggle leave if necessary
-      if (socket) {
-        const myChannel = (voice as any).inChannel as string | null;
-        if (myChannel) socket.emit('voice:join', { channelId: myChannel });
-      }
     } catch (e) {
       console.error('Failed to leave voice channel', e);
     }
-  }, [voice, socket]);
+  }, [voice]);
 
   const handleToggleMute = useCallback(() => {
     try {

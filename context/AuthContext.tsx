@@ -43,12 +43,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const discordUser = await res.json();
             
             // Fix: Check if avatar is already a full URL (from DB) or just a hash
-            let avatarUrl = `https://ui-avatars.com/api/?name=${discordUser.username.charAt(0)}`;
+            let avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(discordUser.username || 'U')}&background=random`;
             if (discordUser.avatar) {
               if (discordUser.avatar.startsWith('http')) {
                 avatarUrl = discordUser.avatar;
-              } else {
-                avatarUrl = `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`;
+              } else if (discordUser.id) {
+                // Handle animated avatars (start with a_)
+                const format = discordUser.avatar.startsWith('a_') ? 'gif' : 'png';
+                avatarUrl = `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.${format}`;
               }
             }
 
@@ -111,10 +113,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       : 'https://api.unaspartidillas.online');
     try {
       await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
-      storage.clearUserData();
-      window.location.reload();
     } catch (e) {
       console.error('Logout failed', e);
+    } finally {
+      storage.clearUserData();
+      window.location.reload();
     }
   }, []);
 

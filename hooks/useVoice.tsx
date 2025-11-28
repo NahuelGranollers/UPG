@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
+import { toast } from 'sonner';
 
 type PeerMap = Record<string, RTCPeerConnection>;
 
@@ -155,6 +156,12 @@ export function useVoice() {
 
   async function ensureLocalStream() {
     if (localStreamRef.current) return localStreamRef.current;
+    
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      toast.error('Tu navegador no soporta llamadas de voz.');
+      throw new Error('Browser does not support getUserMedia');
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
@@ -203,7 +210,14 @@ export function useVoice() {
   }
 
   async function joinChannel(channelId: string) {
-    if (!socket || !currentUser) return;
+    if (!socket) {
+      toast.error('No hay conexión con el servidor.');
+      return;
+    }
+    if (!currentUser) {
+      toast.error('Debes iniciar sesión para unirte al chat de voz.');
+      return;
+    }
 
     try {
       await ensureLocalStream();
@@ -214,8 +228,10 @@ export function useVoice() {
       setInChannel(channelId);
       pendingOfferRef.current = channelId;
       setIsMuted(false);
+      toast.success(`Conectado a ${channelId}`);
     } catch (e) {
       console.error('Failed to join voice channel', e);
+      toast.error('No se pudo acceder al micrófono. Verifica los permisos.');
     }
   }
 
