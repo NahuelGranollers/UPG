@@ -222,11 +222,11 @@ const Sidebar: React.FC<SidebarProps> = memo(
                     className="w-10 h-10"
                     style={{
                       backgroundColor: '#dbdee1',
-                      maskImage: 'url(https://pngimg.com/d/counter_strike_PNG78.png)',
+                      maskImage: 'url(/cs.png)',
                       maskSize: 'contain',
                       maskRepeat: 'no-repeat',
                       maskPosition: 'center',
-                      WebkitMaskImage: 'url(https://pngimg.com/d/counter_strike_PNG78.png)',
+                      WebkitMaskImage: 'url(/cs.png)',
                       WebkitMaskSize: 'contain',
                       WebkitMaskRepeat: 'no-repeat',
                       WebkitMaskPosition: 'center',
