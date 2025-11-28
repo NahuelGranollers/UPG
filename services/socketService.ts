@@ -63,7 +63,7 @@ class SocketService {
       });
 
       // Escuchar mensajes
-      this.socket.on('mensaje', (msg: SocketMessage) => {
+      this.socket.on('message:received', (msg: SocketMessage) => {
         // Convertir timestamp a Date si es string
         const message: SocketMessage = {
           ...msg,
@@ -117,7 +117,7 @@ class SocketService {
       avatar,
     };
 
-    this.socket.emit('mensaje', message);
+    this.socket.emit('message:send', message);
   }
 
   subscribeToMessages(channelId: string, callback: (msg: SocketMessage) => void): () => void {
