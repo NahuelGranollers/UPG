@@ -158,24 +158,12 @@ const ChannelList: React.FC<ChannelListProps> = ({
     <div className="flex-1 md:w-60 md:flex-none bg-discord-sidebar flex flex-col shrink-0 relative min-w-0">
       {/* Server Header */}
       <div className="h-12 px-4 flex items-center justify-between shadow-sm hover:bg-discord-hover transition-colors cursor-pointer border-b border-gray-900/20 shrink-0">
-        <h1 className="font-bold text-discord-text-header text-[15px] truncate">UPG Community</h1>
+        <h1 className="font-bold text-discord-text-header text-[15px] truncate">Unas Partidillas?©</h1>
         <ChevronDown size={16} className="text-discord-text-header" />
       </div>
 
       {/* Scrollable Channels */}
       <div className="flex-1 overflow-y-auto p-3 custom-scrollbar space-y-5 pb-28 md:pb-24">
-        {/* Category: Important */}
-        <div>
-          <div className="flex items-center justify-between px-0.5 mb-1 text-xs font-bold text-discord-text-muted hover:text-discord-text-header uppercase tracking-wide cursor-pointer">
-            <div className="flex items-center">
-              <ChevronDown size={10} className="mr-0.5" />
-              INFORMACIÓN
-            </div>
-          </div>
-
-          {/* Información moved to Sidebar as separate nodes */}
-        </div>
-
         {/* Category: Text Channels */}
         <div>
           <div className="flex items-center justify-between px-0.5 mb-1 text-xs font-bold text-discord-text-muted hover:text-discord-text-header uppercase tracking-wide cursor-pointer">
