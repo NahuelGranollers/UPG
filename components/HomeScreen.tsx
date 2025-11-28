@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import SafeImage from './SafeImage';
 import { ArrowRight, Gamepad2, Users, Lock, Plus } from 'lucide-react';
+import MinecraftServerStatus from './MinecraftServerStatus';
 
 interface HomeScreenProps {
   onGoToChat: () => void;
@@ -92,6 +93,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
           </div>
         </div>
       </div>
+
+      {/* Minecraft Server Status */}
+      <MinecraftServerStatus />
 
       {/* Active Servers Section */}
       <div className="max-w-6xl w-full">
