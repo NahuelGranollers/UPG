@@ -126,6 +126,7 @@ function loadGame() {
 
     playerBeforeRenderFunction = function () {
       GameGlobals.player.runBeforeRender();
+      syncPlayerMovement();
     };
     scene.registerBeforeRender(playerBeforeRenderFunction);
   };
@@ -680,7 +681,7 @@ export function setupMultiplayerEvents() {
           playerMesh.rotation.y = data.rotation.y;
           playerMesh.rotation.z = data.rotation.z;
         }
-      } else {
+      } else if (GameGlobals.guerilla) {
         // Create mesh for new player/bot
         const playerMesh = GameGlobals.guerilla.clone("player_" + data.userId);
         playerMesh.position.x = data.position.x;
@@ -706,7 +707,7 @@ export function setupMultiplayerEvents() {
 
   GameGlobals.socket.on('cs16:player-joined', (data) => {
     // Create mesh for new player
-    if (data.userId !== GameGlobals.userId) {
+    if (data.userId !== GameGlobals.userId && GameGlobals.guerilla) {
       const playerMesh = GameGlobals.guerilla.clone("player_" + data.userId);
       playerMesh.position.x = data.position.x;
       playerMesh.position.y = data.position.y;
@@ -726,6 +727,8 @@ export function setupMultiplayerEvents() {
 
   GameGlobals.socket.on('cs16:room-state', (data) => {
     // Initialize all players and bots in the room
+    if (!GameGlobals.guerilla) return;
+    
     data.players.forEach(player => {
       if (player.id !== GameGlobals.userId) {
         if (!GameGlobals.multiplayerPlayers.has(player.id)) {
@@ -740,6 +743,22 @@ export function setupMultiplayerEvents() {
         }
       }
     });
+    
+    // Also handle bots if present in data
+    if (data.bots) {
+      data.bots.forEach(bot => {
+        if (!GameGlobals.multiplayerPlayers.has(bot.id)) {
+          const botMesh = GameGlobals.guerilla.clone("bot_" + bot.id);
+          botMesh.position.x = bot.position.x;
+          botMesh.position.y = bot.position.y;
+          botMesh.position.z = bot.position.z;
+          botMesh.rotation.x = bot.rotation.x;
+          botMesh.rotation.y = bot.rotation.y;
+          botMesh.rotation.z = bot.rotation.z;
+          GameGlobals.multiplayerPlayers.set(bot.id, botMesh);
+        }
+      });
+    }
   });
 }
 

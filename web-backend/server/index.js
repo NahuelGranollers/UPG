@@ -322,7 +322,13 @@ app.use(
 
 // CORS para rutas Express
 app.use((req, res, next) => {
-  const allowedOrigins = ['https://unaspartidillas.online'];
+  const allowedOrigins = [
+    'https://unaspartidillas.online',
+    'https://www.unaspartidillas.online',
+    'https://api.unaspartidillas.online',
+    'http://localhost:5173',
+    'http://localhost:4173'
+  ];
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
@@ -407,7 +413,13 @@ app.use(
 
 const io = new Server(server, {
   cors: {
-    origin: ['https://unaspartidillas.online'],
+    origin: [
+      'https://unaspartidillas.online',
+      'https://www.unaspartidillas.online',
+      'https://api.unaspartidillas.online',
+      'http://localhost:5173',
+      'http://localhost:4173'
+    ],
     methods: ['GET', 'POST'],
     credentials: true,
   },

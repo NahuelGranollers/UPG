@@ -26,7 +26,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     const SOCKET_URL =
       (import.meta.env.VITE_SOCKET_URL as string) ||
-      (import.meta.env.DEV ? 'http://localhost:3000' : 'https://api.unaspartidillas.online');
+      'https://api.unaspartidillas.online';
 
     const socket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],

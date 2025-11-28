@@ -9,8 +9,10 @@ class Config:
     CORS_ORIGINS = [
         'https://unaspartidillas.online', 
         'https://www.unaspartidillas.online',
+        'https://api.unaspartidillas.online',
         'http://localhost:3000', 
-        'http://localhost:5173'
+        'http://localhost:5173',
+        'http://localhost:4173'
     ]
     SECRET_KEY = os.getenv('SECRET_KEY', 'your-super-secret-key-change-this')
     
