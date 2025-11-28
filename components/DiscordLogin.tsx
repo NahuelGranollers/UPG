@@ -3,9 +3,9 @@
 const DiscordLogin: React.FC = () => {
   const handleLogin = () => {
     // Usar producci├│n por defecto, localhost solo en desarrollo
-    const API_URL = import.meta.env.DEV
+    const API_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV
       ? 'http://localhost:3000'
-      : 'https://mensajeria-ksc7.onrender.com';
+      : 'https://mensajeria-ksc7.onrender.com');
 
     // Redirige al endpoint del backend que inicia el flujo OAuth
     window.location.href = `${API_URL}/auth/discord`;

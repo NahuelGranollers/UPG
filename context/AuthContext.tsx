@@ -35,9 +35,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Fetch user from backend
         try {
-          const API_URL = import.meta.env.DEV
+          const API_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV
             ? 'http://localhost:3000'
-            : 'https://mensajeria-ksc7.onrender.com';
+            : 'https://mensajeria-ksc7.onrender.com');
           const res = await fetch(`${API_URL}/auth/user`, { credentials: 'include' });
           if (res.ok) {
             const discordUser = await res.json();
@@ -90,16 +90,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const loginWithDiscord = useCallback(() => {
-    const API_URL = import.meta.env.DEV
+    const API_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV
       ? 'http://localhost:3000'
-      : 'https://mensajeria-ksc7.onrender.com';
+      : 'https://mensajeria-ksc7.onrender.com');
     window.location.href = `${API_URL}/auth/discord`;
   }, []);
 
   const logout = useCallback(async () => {
-    const API_URL = import.meta.env.DEV
+    const API_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV
       ? 'http://localhost:3000'
-      : 'https://mensajeria-ksc7.onrender.com';
+      : 'https://mensajeria-ksc7.onrender.com');
     try {
       await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
       storage.clearUserData();
