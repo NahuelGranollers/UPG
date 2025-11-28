@@ -46,7 +46,7 @@ try {
   }
 
   // Test 5: Check server integration
-  const serverFile = path.join(__dirname, 'server', 'index.js');
+  const serverFile = path.join(__dirname, 'web-backend', 'server', 'index.js');
   const serverContent = fs.readFileSync(serverFile, 'utf8');
   if (serverContent.includes('cs16:create-room')) {
     console.log('✅ Server includes CS16 socket handlers');
