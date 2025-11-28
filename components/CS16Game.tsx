@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { User } from '../types';
+import { toast } from 'sonner';
 
 // Import CS 1.6 game engine and classes
 import { initCS16Game, startCS16Game, cleanupCS16Game, setupMultiplayerEvents } from '../cs16-game/cs16-engine.js';
@@ -56,8 +57,9 @@ export default function CS16Game({
         }, (res: any) => {
           if (res && res.ok) {
             setJoined(true);
+            toast.success('Te has unido a la sala');
           } else {
-            alert('Failed to join room: ' + (res?.error || 'Unknown error'));
+            toast.error('Error al unirse: ' + (res?.error || 'Error desconocido'));
             // Reset to allow manual joining if auto-join fails
             setRoomId('');
           }
@@ -153,8 +155,9 @@ export default function CS16Game({
     socket.emit('cs16:create-room', { roomId, userId: currentUser?.id, username, botCount }, (res: any) => {
       if (res && res.ok) {
         setJoined(true);
+        toast.success('Sala creada correctamente');
       } else {
-        alert('Failed to create room: ' + (res?.error || 'Unknown error'));
+        toast.error('Error al crear sala: ' + (res?.error || 'Error desconocido'));
       }
     });
   };
@@ -166,8 +169,9 @@ export default function CS16Game({
     socket.emit('cs16:join-room', { roomId, userId: currentUser?.id, username }, (res: any) => {
       if (res && res.ok) {
         setJoined(true);
+        toast.success('Te has unido a la sala');
       } else {
-        alert('Failed to join room: ' + (res?.error || 'Unknown error'));
+        toast.error('Error al unirse: ' + (res?.error || 'Error desconocido'));
       }
     });
   };
@@ -190,8 +194,9 @@ export default function CS16Game({
     socket.emit('cs16:start-game', { roomId, hostId: currentUser?.id }, (res: any) => {
       if (res && res.ok) {
         startCS16Game();
+        toast.success('Partida iniciada');
       } else {
-        alert('Failed to start game: ' + (res?.error || 'Unknown error'));
+        toast.error('Error al iniciar partida: ' + (res?.error || 'Error desconocido'));
       }
     });
   };
@@ -229,8 +234,9 @@ export default function CS16Game({
       if (res && res.ok) {
         setJoined(true);
         fetchPublicServers(); // Refresh the list
+        toast.success('Servidor público creado');
       } else {
-        alert('Failed to create public room: ' + (res?.error || 'Unknown error'));
+        toast.error('Error al crear servidor público: ' + (res?.error || 'Error desconocido'));
       }
     });
   };
@@ -249,8 +255,9 @@ export default function CS16Game({
       if (res && res.ok) {
         setJoined(true);
         fetchPublicServers(); // Refresh the list
+        toast.success('Te has unido al servidor');
       } else {
-        alert('Failed to join public room: ' + (res?.error || 'Unknown error'));
+        toast.error('Error al unirse al servidor: ' + (res?.error || 'Error desconocido'));
       }
     });
   };

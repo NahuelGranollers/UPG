@@ -20,6 +20,8 @@ const UPGNews: React.FC = () => {
   const { currentUser } = useAuth();
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
   
@@ -50,6 +52,8 @@ const UPGNews: React.FC = () => {
 
   const handleCreateNews = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isCreating) return;
+    setIsCreating(true);
     try {
       const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV 
         ? 'http://localhost:3000/api' 
@@ -73,12 +77,16 @@ const UPGNews: React.FC = () => {
       }
     } catch (e) {
       toast.error('Error de conexión');
+    } finally {
+      setIsCreating(false);
     }
   };
 
   const handleDeleteNews = async (newsId: string) => {
+    if (isDeleting) return;
     if (!confirm('¿Estás seguro de que quieres eliminar esta noticia?')) return;
     
+    setIsDeleting(true);
     try {
       const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV 
         ? 'http://localhost:3000/api' 
@@ -97,6 +105,8 @@ const UPGNews: React.FC = () => {
       }
     } catch (e) {
       toast.error('Error de conexión');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -243,9 +253,17 @@ const UPGNews: React.FC = () => {
                 {currentUser && (currentUser.role === 'admin' || currentUser.id === selectedArticle.authorId) && (
                   <button 
                     onClick={() => handleDeleteNews(selectedArticle.id)}
-                    className="discord-button danger text-sm py-1 px-3"
+                    className="discord-button danger text-sm py-1 px-3 flex items-center gap-2"
+                    disabled={isDeleting}
                   >
-                    Eliminar Noticia
+                    {isDeleting ? (
+                      <>
+                        <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Eliminando...
+                      </>
+                    ) : (
+                      'Eliminar Noticia'
+                    )}
                   </button>
                 )}
               </div>
@@ -311,11 +329,27 @@ const UPGNews: React.FC = () => {
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2">
-                  <button type="button" onClick={() => setShowCreateModal(false)} className="discord-button secondary">
+                  <button 
+                    type="button" 
+                    onClick={() => setShowCreateModal(false)} 
+                    className="discord-button secondary"
+                    disabled={isCreating}
+                  >
                     Cancelar
                   </button>
-                  <button type="submit" className="discord-button success">
-                    Publicar
+                  <button 
+                    type="submit" 
+                    className="discord-button success flex items-center gap-2"
+                    disabled={isCreating}
+                  >
+                    {isCreating ? (
+                      <>
+                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Publicando...
+                      </>
+                    ) : (
+                      'Publicar'
+                    )}
                   </button>
                 </div>
               </form>

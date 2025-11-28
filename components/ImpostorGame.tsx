@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
+import { toast } from 'sonner';
 
 interface PlayerInfo {
   id: string;
@@ -373,8 +374,9 @@ export default function ImpostorGame({
       console.log('Start response:', res);
       if (res && res.ok) {
         setStatusMessage('Ronda iniciada — revisa tu carta');
+        toast.success('Ronda iniciada');
       } else {
-        alert('Error al iniciar: ' + (res?.error || 'No se pudo iniciar'));
+        toast.error('Error al iniciar: ' + (res?.error || 'No se pudo iniciar'));
       }
     });
   };
@@ -508,8 +510,9 @@ export default function ImpostorGame({
           setIsHost(true); // Creator is always host
           setHostId(generatedUserId);
           fetchPublicServers(); // Refresh the list
+          toast.success('Sala pública creada');
         } else {
-          alert('Failed to create public room: ' + (res?.error || 'Unknown error'));
+          toast.error('Error al crear sala pública: ' + (res?.error || 'Error desconocido'));
         }
       }
     );
@@ -532,8 +535,9 @@ export default function ImpostorGame({
       if (res && res.ok) {
         setJoined(true);
         fetchPublicServers(); // Refresh the list
+        toast.success('Te has unido a la sala');
       } else {
-        alert('Failed to join public room: ' + (res?.error || 'Unknown error'));
+        toast.error('Error al unirse a sala pública: ' + (res?.error || 'Error desconocido'));
       }
     });
   };

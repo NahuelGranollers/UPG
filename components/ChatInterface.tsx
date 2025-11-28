@@ -195,6 +195,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         content: inputText,
         timestamp: new Date().toISOString(),
         channelId: currentChannel.id,
+        status: 'sending',
       } as any;
       setLocalMessages(prev => [...prev, localMessage]);
       // Clear input immediately for better UX

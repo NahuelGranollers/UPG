@@ -84,8 +84,19 @@ const MessageItem: React.FC<MessageItemProps> = memo(
             <span className="text-[11px] sm:text-xs text-discord-text-muted ml-1 sm:ml-2 font-medium">
               {msgTimestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
+            {msg.status === 'sending' && (
+              <span className="ml-2 text-[10px] text-discord-text-muted italic flex items-center gap-1">
+                <span className="w-2 h-2 border-2 border-discord-text-muted border-t-transparent rounded-full animate-spin" />
+                Enviando...
+              </span>
+            )}
+            {msg.status === 'error' && (
+              <span className="ml-2 text-[10px] text-red-500 italic">
+                Error al enviar
+              </span>
+            )}
           </div>
-          <p className="text-sm sm:text-base text-discord-text-normal whitespace-pre-wrap leading-[1.3rem] sm:leading-[1.375rem]">
+          <p className={`text-sm sm:text-base text-discord-text-normal whitespace-pre-wrap leading-[1.3rem] sm:leading-[1.375rem] ${msg.status === 'sending' ? 'opacity-70' : ''}`}>
             {highlightMentions(msg.content)}
           </p>
         </div>

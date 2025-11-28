@@ -32,6 +32,7 @@ export interface Message {
   timestamp: Date | string;
   channelId: string;
   attachments?: string[];
+  status?: 'sending' | 'sent' | 'error';
 }
 
 export interface Channel {

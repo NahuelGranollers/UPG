@@ -106,6 +106,7 @@ def register_socket_events(socketio):
     def on_message_send(data):
         content = data.get('content', '').strip()
         if not content:
+            logger.warning(f"Empty message attempt from {data.get('userId')}")
             return {'ok': False, 'error': 'empty_message'}
         
         # Sanitize
@@ -258,9 +259,14 @@ def register_socket_events(socketio):
         user_id = data.get('userId')
         room = impostor_rooms.get(room_id)
         
-        if not room: return {'ok': False, 'error': 'not_found'}
-        if room['started']: return {'ok': False, 'error': 'started'}
+        if not room: 
+            logger.warning(f"Impostor join failed: Room {room_id} not found")
+            return {'ok': False, 'error': 'not_found'}
+        if room['started']: 
+            logger.warning(f"Impostor join failed: Room {room_id} already started")
+            return {'ok': False, 'error': 'started'}
         if room['password'] and room['password'] != data.get('password'):
+            logger.warning(f"Impostor join failed: Wrong password for room {room_id}")
             return {'ok': False, 'error': 'wrong_password'}
             
         room['players'][user_id] = {'socketId': request.sid, 'username': data.get('username')}
@@ -602,10 +608,15 @@ def register_socket_events(socketio):
         user_id = data.get('userId')
         room = cs16_rooms.get(room_id)
         
-        if not room: return {'ok': False, 'error': 'not_found'}
+        if not room: 
+            logger.warning(f"CS16 join failed: Room {room_id} not found")
+            return {'ok': False, 'error': 'not_found'}
         if room['password'] and room['password'] != data.get('password'):
+            logger.warning(f"CS16 join failed: Wrong password for room {room_id}")
             return {'ok': False, 'error': 'wrong_password'}
-        if len(room['players']) >= 10: return {'ok': False, 'error': 'full'}
+        if len(room['players']) >= 10: 
+            logger.warning(f"CS16 join failed: Room {room_id} full")
+            return {'ok': False, 'error': 'full'}
             
         room['players'][user_id] = {
             'socketId': request.sid, 

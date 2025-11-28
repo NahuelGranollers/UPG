@@ -1,6 +1,6 @@
 ﻿import React, { memo, useState } from 'react';
 import { useSocket } from '../context/SocketContext';
-import { Home, Shield, Users, Vote, Newspaper, Trophy, Gamepad2 } from 'lucide-react';
+import { Home, Shield, Users, Vote, Newspaper, Trophy, Gamepad2, Wifi, WifiOff } from 'lucide-react';
 import SafeImage from './SafeImage';
 import AdminPanel from './AdminPanel';
 import { UserRole, User } from '../types';
@@ -34,9 +34,9 @@ const Sidebar: React.FC<SidebarProps> = memo(
     const isAdmin = currentUser?.role === UserRole.ADMIN;
 
     // Obtener socket desde el contexto
-    const { socket } = useSocket();
+    const { socket, isConnected } = useSocket();
     return (
-      <div className="w-[84px] bg-discord-dark flex flex-col items-center py-5 space-y-4 overflow-y-auto shrink-0">
+      <div className="w-[84px] bg-discord-dark flex flex-col items-center py-5 space-y-4 overflow-y-auto shrink-0 relative">
         {/* Direct Messages / Home */}
         {(() => {
           const active = activeSection === 'home';
@@ -251,6 +251,15 @@ const Sidebar: React.FC<SidebarProps> = memo(
         )}
 
         {/* Impostor is displayed as a full page in App when selected */}
+        
+        {/* Connection Status Indicator */}
+        <div className="mt-auto pb-2 flex flex-col items-center gap-1" title={isConnected ? "Conectado" : "Desconectado"}>
+          {isConnected ? (
+            <div className="w-3 h-3 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
+          ) : (
+            <WifiOff size={20} className="text-red-500 animate-pulse" />
+          )}
+        </div>
       </div>
     );
   }
