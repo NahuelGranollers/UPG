@@ -38,7 +38,7 @@ export function initCS16Game(canvasElement, socketInstance, room, user, isGameHo
 
   // Initialize Babylon.js
   GameGlobals.engine = new BABYLON.Engine(GameGlobals.canvas, true);
-  const divFps = document.createElement('div');
+  divFps = document.createElement('div');
   divFps.id = 'fps';
   divFps.style.cssText = `
     position: absolute;
