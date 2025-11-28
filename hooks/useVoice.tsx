@@ -259,6 +259,11 @@ export function useVoice() {
   }
 
   function closeAll() {
+    // Notify server we are leaving
+    if (socket && inChannel) {
+      socket.emit('voice:leave', { channelId: inChannel });
+    }
+
     // Close all peer connections
     Object.entries(peersRef.current).forEach(([uid, pc]) => {
       pc.close();

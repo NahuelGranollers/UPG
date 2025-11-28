@@ -10,6 +10,7 @@ interface NewsArticle {
   excerpt: string;
   content: string;
   author_name: string;
+  authorId: string;
   created_at: string;
   image_url?: string;
   category: 'announcement' | 'event' | 'update' | 'tournament';
@@ -20,6 +21,7 @@ const UPGNews: React.FC = () => {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
   
   // Form state
   const [title, setTitle] = useState('');
@@ -68,6 +70,30 @@ const UPGNews: React.FC = () => {
         fetchNews();
       } else {
         toast.error(data.error || 'Error creando noticia');
+      }
+    } catch (e) {
+      toast.error('Error de conexión');
+    }
+  };
+
+  const handleDeleteNews = async (newsId: string) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta noticia?')) return;
+    
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV 
+        ? 'http://localhost:3000/api' 
+        : 'https://api.unaspartidillas.online/api');
+      const res = await fetch(`${API_URL}/news/${newsId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (data.ok) {
+        toast.success('Noticia eliminada');
+        setSelectedArticle(null);
+        fetchNews();
+      } else {
+        toast.error(data.error || 'Error eliminando noticia');
       }
     } catch (e) {
       toast.error('Error de conexión');
@@ -126,6 +152,7 @@ const UPGNews: React.FC = () => {
             {articles.map(article => (
               <article
                 key={article.id}
+                onClick={() => setSelectedArticle(article)}
                 className="discord-card hover:border-discord-blurple/30 transition-colors cursor-pointer group flex flex-col"
               >
                 {/* Category Badge */}
@@ -166,6 +193,63 @@ const UPGNews: React.FC = () => {
                 </div>
               </article>
             ))}
+          </div>
+        )}
+
+        {/* Article Detail Modal */}
+        {selectedArticle && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-discord-surface rounded-lg w-full max-w-2xl border border-discord-border my-8 relative flex flex-col max-h-[90vh]">
+              {/* Modal Header */}
+              <div className="p-6 border-b border-discord-border flex justify-between items-start sticky top-0 bg-discord-surface z-10 rounded-t-lg">
+                <div className="pr-8">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium text-white ${getCategoryColor(selectedArticle.category)}`}>
+                      {getCategoryLabel(selectedArticle.category)}
+                    </span>
+                    <span className="text-xs text-discord-text-muted">
+                      {new Date(selectedArticle.created_at).toLocaleDateString('es-ES', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </span>
+                  </div>
+                  <h2 className="text-2xl font-bold text-discord-text-header">{selectedArticle.title}</h2>
+                </div>
+                <button 
+                  onClick={() => setSelectedArticle(null)}
+                  className="text-discord-text-muted hover:text-white p-1"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6 overflow-y-auto custom-scrollbar">
+                <div className="prose prose-invert max-w-none text-discord-text-normal whitespace-pre-wrap">
+                  {selectedArticle.content}
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-6 border-t border-discord-border bg-discord-surface rounded-b-lg flex justify-between items-center">
+                <div className="flex items-center gap-2 text-sm text-discord-text-muted">
+                  <User size={14} />
+                  <span>Publicado por <span className="font-medium text-discord-text-normal">{selectedArticle.author_name}</span></span>
+                </div>
+                
+                {currentUser && (currentUser.role === 'admin' || currentUser.id === selectedArticle.authorId) && (
+                  <button 
+                    onClick={() => handleDeleteNews(selectedArticle.id)}
+                    className="discord-button danger text-sm py-1 px-3"
+                  >
+                    Eliminar Noticia
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
