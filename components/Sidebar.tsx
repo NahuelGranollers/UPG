@@ -7,6 +7,7 @@ import { UserRole, User } from '../types';
 
 interface SidebarProps {
   currentUser: User | null;
+  users: User[];
   setCurrentUser: (user: User | null) => void;
   onHomeClick?: () => void;
   onUPGClick?: () => void;
@@ -21,6 +22,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = memo(
   ({
     currentUser,
+    users,
     setCurrentUser: _setCurrentUser,
     onHomeClick,
     onUPGClick,
@@ -259,6 +261,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
             isOpen={showAdminPanel}
             onClose={() => setShowAdminPanel(false)}
             currentUser={currentUser}
+            users={users}
             socket={socket}
           />
         )}

@@ -84,6 +84,7 @@ function MainApp() {
 
   // Estado de colores de usuario
   const [userColors, setUserColors] = useState<Record<string, string>>({});
+  const [activeEffect, setActiveEffect] = useState<string | null>(null);
 
   const voice = useVoice();
 
@@ -242,6 +243,30 @@ function MainApp() {
       setVoiceStates(states);
     });
 
+    socket.on('admin:effect-triggered', ({ effect }) => {
+      setActiveEffect(effect);
+      if (effect === 'rotate') {
+        document.body.style.transform = 'rotate(180deg)';
+        document.body.style.transition = 'transform 1s';
+        setTimeout(() => {
+          document.body.style.transform = '';
+          setActiveEffect(null);
+        }, 10000);
+      } else if (effect === 'jumpscare') {
+        const audio = new Audio('https://www.myinstants.com/media/sounds/fnaf-scream.mp3');
+        audio.volume = 0.5;
+        audio.play().catch(e => console.error(e));
+        setTimeout(() => setActiveEffect(null), 3000);
+      } else if (effect === 'fart') {
+         const audio = new Audio('https://www.myinstants.com/media/sounds/fart-with-reverb.mp3');
+         audio.volume = 0.8;
+         audio.play().catch(e => console.error(e));
+         setTimeout(() => setActiveEffect(null), 3000);
+      } else if (effect === 'confetti') {
+         setTimeout(() => setActiveEffect(null), 5000);
+      }
+    });
+
     // Escuchar cambios de color de usuario (legacy/admin and user updates)
     socket.on('admin:user-color-changed', ({ userId, color }) => {
       setUserColors(prev => ({ ...prev, [userId]: color }));
@@ -286,6 +311,7 @@ function MainApp() {
         {/* Sidebar (single instance, fixed left) */}
         <Sidebar
           currentUser={currentUser}
+          users={users}
           setCurrentUser={() => {}}
           activeSection={activeSection}
           onNavigate={navigateToSection}
@@ -497,6 +523,35 @@ function MainApp() {
           </>
         )}
       </div>
+
+      {/* Effects Overlay */}
+      {activeEffect === 'jumpscare' && (
+        <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center animate-pulse">
+          <img 
+            src="https://media.tenor.com/images/1c9332979d92076f647196d1c2082075/tenor.gif" 
+            alt="scare" 
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+      {activeEffect === 'confetti' && (
+        <div className="fixed inset-0 z-[9999] pointer-events-none overflow-hidden">
+          {Array.from({ length: 50 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute text-4xl animate-bounce"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDuration: `${Math.random() * 2 + 1}s`,
+                animationDelay: `${Math.random()}s`
+              }}
+            >
+              🎉
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

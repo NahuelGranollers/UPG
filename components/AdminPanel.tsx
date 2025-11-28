@@ -1,6 +1,6 @@
-import React, { useState, memo } from 'react';
+import React, { useState, memo, useMemo } from 'react';
 import { toast } from 'sonner';
-import { X, Trash2, MessageSquare, Shield, AlertTriangle } from 'lucide-react';
+import { X, Trash2, MessageSquare, Shield, AlertTriangle, Zap, Palette, VolumeX } from 'lucide-react';
 import { Socket } from 'socket.io-client';
 import { User } from '../types';
 
@@ -8,21 +8,26 @@ interface AdminPanelProps {
   isOpen: boolean;
   onClose: () => void;
   currentUser: User | null;
+  users: User[];
   socket: Socket | null;
 }
 
-const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUser, socket }) => {
+const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUser, users, socket }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState<string | null>(null);
   const [activeForm, setActiveForm] = useState<null | {
-    action: 'silence-user' | 'change-color' | 'global-message' | 'troll-mode';
+    action: 'silence-user' | 'change-color' | 'global-message' | 'troll-mode' | 'trigger-effect';
     values: Record<string, string>;
   }>(null);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
 
+  // Filter out bots and current user from selectable users
+  const selectableUsers = useMemo(() => {
+    return users.filter(u => !u.isBot && u.id !== currentUser?.id);
+  }, [users, currentUser]);
+
   if (!isOpen) return null;
 
-  // Mostrar advertencia si el socket no está disponible
   if (!socket) {
     return (
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
@@ -31,8 +36,6 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
           <h2 className="text-xl font-bold text-red-600 mb-2">Error de conexión</h2>
           <p className="text-base text-discord-text-normal mb-4 text-center">
             No se ha detectado conexión con el servidor.
-            <br />
-            Verifica tu conexión y recarga la página.
           </p>
           <button onClick={onClose} className="discord-button danger">
             Cerrar
@@ -45,7 +48,7 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
   const handleAction = async (action: string, requiresConfirm = true) => {
     if (requiresConfirm && confirmAction !== action) {
       setConfirmAction(action);
-      setTimeout(() => setConfirmAction(null), 5000); // Reset after 5 seconds
+      setTimeout(() => setConfirmAction(null), 5000);
       return;
     }
 
@@ -57,7 +60,6 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
         new Promise<any>(resolve => {
           try {
             socket?.emit(event, payload, (res: any) => resolve(res));
-            // If server doesn't call the ack, resolve after 2s
             setTimeout(() => resolve(null), 2000);
           } catch (e) {
             resolve({ ok: false, error: 'emit_error' });
@@ -67,11 +69,6 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
       let res: any = null;
 
       switch (action) {
-        case 'clear-users': {
-          if (currentUser)
-            res = await emitWithAck('admin:clear-users', { adminId: currentUser.id });
-          break;
-        }
         case 'clear-messages': {
           if (currentUser)
             res = await emitWithAck('admin:clear-all-messages', { adminId: currentUser.id });
@@ -123,9 +120,21 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
           setActiveForm(null);
           break;
         }
+        case 'trigger-effect': {
+          const uid = formValues.userId || '';
+          const effect = formValues.effect || '';
+          if (uid && effect && currentUser) {
+            res = await emitWithAck('admin:trigger-effect', {
+              userId: uid,
+              effect,
+              adminId: currentUser.id,
+            });
+          }
+          setActiveForm(null);
+          break;
+        }
       }
 
-      // Show feedback according to ack or default
       if (res && res.ok === false) {
         toast.error(res.error || 'Error ejecutando la acción');
       } else {
@@ -138,140 +147,162 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
     }
   };
 
-  const openForm = (action: 'silence-user' | 'change-color' | 'global-message' | 'troll-mode') => {
+  const openForm = (action: 'silence-user' | 'change-color' | 'global-message' | 'troll-mode' | 'trigger-effect') => {
     setFormValues({});
     setActiveForm({ action, values: {} });
   };
+
+  const UserSelect = ({ value, onChange }: { value: string, onChange: (val: string) => void }) => (
+    <select
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      className="w-full discord-input"
+    >
+      <option value="">-- Seleccionar Usuario --</option>
+      {selectableUsers.map(u => (
+        <option key={u.id} value={u.id}>
+          {u.username} {u.status === 'offline' ? '(Offline)' : ''}
+        </option>
+      ))}
+    </select>
+  );
 
   const renderForm = () => {
     if (!activeForm) return null;
     const { action } = activeForm;
     return (
-      <div className="discord-panel">
-        <h3 className="text-lg font-semibold mb-2 text-discord-text-header">
-          {action === 'change-color'
-            ? 'Cambiar color'
-            : action === 'global-message'
-              ? 'Enviar mensaje global'
-              : action === 'silence-user'
-                ? 'Silenciar usuario'
-                : 'Modo troll'}
+      <div className="discord-panel animate-fadeIn">
+        <h3 className="text-lg font-semibold mb-4 text-discord-text-header flex items-center gap-2">
+          {action === 'change-color' && <Palette size={20} />}
+          {action === 'global-message' && <MessageSquare size={20} />}
+          {action === 'silence-user' && <VolumeX size={20} />}
+          {action === 'troll-mode' && <Zap size={20} />}
+          {action === 'trigger-effect' && <Zap size={20} />}
+          
+          {action === 'change-color' ? 'Cambiar Color' :
+           action === 'global-message' ? 'Mensaje Global' :
+           action === 'silence-user' ? 'Silenciar Usuario' :
+           action === 'troll-mode' ? 'Modo Troll' :
+           'Efecto Gracioso'}
         </h3>
-        <div className="space-y-2">
-          {(action === 'silence-user' || action === 'change-color' || action === 'troll-mode') && (
+        
+        <div className="space-y-4">
+          {(action === 'silence-user' || action === 'change-color' || action === 'troll-mode' || action === 'trigger-effect') && (
             <div>
-              <label htmlFor="admin-userid" className="text-sm text-discord-text-muted">
-                ID del usuario
-              </label>
-              <input
-                id="admin-userid"
-                value={formValues.userId || ''}
-                onChange={e => setFormValues(v => ({ ...v, userId: e.target.value }))}
-                className="w-full discord-input"
-                placeholder="user-1234"
+              <label className="text-sm text-discord-text-muted mb-1 block">Usuario Objetivo</label>
+              <UserSelect 
+                value={formValues.userId || ''} 
+                onChange={val => setFormValues(v => ({ ...v, userId: val }))} 
               />
             </div>
           )}
+
           {action === 'change-color' && (
             <div>
-              <label htmlFor="admin-color" className="text-sm text-discord-text-muted">
-                Color HEX
-              </label>
-              <input
-                id="admin-color"
-                value={formValues.color || '#' + Math.floor(Math.random() * 16777215).toString(16)}
-                onChange={e => setFormValues(v => ({ ...v, color: e.target.value }))}
-                className="w-32 discord-input"
-              />
+              <label className="text-sm text-discord-text-muted mb-1 block">Color HEX</label>
+              <div className="flex gap-2">
+                <input
+                  type="color"
+                  value={formValues.color || '#ffffff'}
+                  onChange={e => setFormValues(v => ({ ...v, color: e.target.value }))}
+                  className="h-10 w-14 bg-transparent cursor-pointer"
+                />
+                <input
+                  value={formValues.color || ''}
+                  onChange={e => setFormValues(v => ({ ...v, color: e.target.value }))}
+                  className="flex-1 discord-input"
+                  placeholder="#RRGGBB"
+                />
+              </div>
             </div>
           )}
+
           {action === 'global-message' && (
             <div>
-              <label className="text-sm text-discord-text-muted">Mensaje</label>
+              <label className="text-sm text-discord-text-muted mb-1 block">Mensaje</label>
               <textarea
                 value={formValues.message || ''}
                 onChange={e => setFormValues(v => ({ ...v, message: e.target.value }))}
                 className="w-full discord-input"
                 rows={3}
+                placeholder="Escribe tu mensaje aquí..."
               />
-              <div className="flex items-center gap-3 mt-2">
-                <label htmlFor="admin-sendasbot" className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-3 mt-3">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <input
-                    id="admin-sendasbot"
                     type="checkbox"
-                    checked={formValues.sendAsBot === 'true' || formValues.sendAsBot === true}
-                    onChange={e =>
-                      setFormValues(v => ({ ...v, sendAsBot: e.target.checked ? 'true' : 'false' }))
-                    }
+                    checked={formValues.sendAsBot === 'true'}
+                    onChange={e => setFormValues(v => ({ ...v, sendAsBot: e.target.checked ? 'true' : 'false' }))}
+                    className="rounded bg-discord-dark border-gray-600"
                   />
-                  <span className="text-sm text-discord-text-normal">Enviar como bot</span>
+                  <span className="text-discord-text-normal">Enviar como Bot</span>
                 </label>
-                <input
-                  id="admin-channel"
-                  placeholder="Canal (opcional)"
-                  value={formValues.channelId || ''}
-                  onChange={e => setFormValues(v => ({ ...v, channelId: e.target.value }))}
-                  className="discord-input"
-                />
               </div>
             </div>
           )}
 
           {action === 'troll-mode' && (
             <div>
-              <label className="text-sm text-discord-text-muted">Modo Troll</label>
-              <div className="flex gap-2 items-center mt-2">
-                <select
-                  value={formValues.mode || ''}
-                  onChange={e => setFormValues(v => ({ ...v, mode: e.target.value }))}
-                  className="discord-input"
-                >
-                  <option value="">-- Seleccionar modo --</option>
-                  <option value="uwu">UwU (suavizar)</option>
-                  <option value="meow">Meow (gato)</option>
-                  <option value="kawaii">Kawaii (bonito)</option>
-                  <option value="clear">Desactivar modo</option>
-                </select>
-                <div className="flex gap-1">
+              <label className="text-sm text-discord-text-muted mb-1 block">Tipo de Troll</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: 'uwu', label: 'UwUify', desc: 'Convierte todo a UwU' },
+                  { id: 'meow', label: 'Meowify', desc: 'Agrega maullidos' },
+                  { id: 'kawaii', label: 'Kawaii', desc: 'Exceso de ternura' },
+                  { id: '', label: 'Desactivar', desc: 'Volver a la normalidad', danger: true }
+                ].map(opt => (
                   <button
-                    onClick={() => setFormValues(v => ({ ...v, mode: 'uwu' }))}
-                    className="discord-button secondary"
+                    key={opt.id}
+                    onClick={() => setFormValues(v => ({ ...v, mode: opt.id }))}
+                    className={`p-2 rounded border text-left transition-all ${
+                      formValues.mode === opt.id 
+                        ? 'bg-discord-blurple border-discord-blurple text-white' 
+                        : opt.danger 
+                          ? 'border-red-500/50 hover:bg-red-500/10 text-red-400'
+                          : 'border-discord-hover hover:bg-discord-hover text-discord-text-normal'
+                    }`}
                   >
-                    UwU
+                    <div className="font-bold text-sm">{opt.label}</div>
+                    <div className="text-xs opacity-70">{opt.desc}</div>
                   </button>
-                  <button
-                    onClick={() => setFormValues(v => ({ ...v, mode: 'meow' }))}
-                    className="discord-button secondary"
-                  >
-                    Meow
-                  </button>
-                  <button
-                    onClick={() => setFormValues(v => ({ ...v, mode: 'kawaii' }))}
-                    className="discord-button secondary"
-                  >
-                    Kawaii
-                  </button>
-                  <button
-                    onClick={() => setFormValues(v => ({ ...v, mode: '' }))}
-                    className="discord-button danger"
-                  >
-                    Off
-                  </button>
-                </div>
+                ))}
               </div>
-              <p className="text-xs text-discord-text-muted mt-2">
-                Selecciona un modo para transformar los mensajes del usuario objetivo. "Desactivar"
-                elimina el efecto.
-              </p>
             </div>
           )}
 
-          <div className="flex gap-2 justify-end pt-2">
+          {action === 'trigger-effect' && (
+            <div>
+              <label className="text-sm text-discord-text-muted mb-1 block">Efecto</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: 'rotate', label: 'Rotar Pantalla', desc: 'Gira la pantalla 180°' },
+                  { id: 'confetti', label: 'Confeti', desc: 'Explosión de alegría' },
+                  { id: 'jumpscare', label: 'Susto (Suave)', desc: 'Imagen rápida' },
+                  { id: 'fart', label: 'Sonido Gracioso', desc: 'Sonido de pedo' }
+                ].map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => setFormValues(v => ({ ...v, effect: opt.id }))}
+                    className={`p-2 rounded border text-left transition-all ${
+                      formValues.effect === opt.id 
+                        ? 'bg-discord-blurple border-discord-blurple text-white' 
+                        : 'border-discord-hover hover:bg-discord-hover text-discord-text-normal'
+                    }`}
+                  >
+                    <div className="font-bold text-sm">{opt.label}</div>
+                    <div className="text-xs opacity-70">{opt.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-2 justify-end pt-4 border-t border-discord-border mt-2">
             <button onClick={() => setActiveForm(null)} className="discord-button secondary">
               Cancelar
             </button>
             <button onClick={() => handleAction(action, false)} className="discord-button">
-              Enviar
+              Aplicar
             </button>
           </div>
         </div>
@@ -281,9 +312,9 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
-      <div className="discord-card max-w-2xl w-full max-h-[90vh] overflow-hidden animate-scaleIn">
+      <div className="discord-card max-w-2xl w-full max-h-[90vh] overflow-hidden animate-scaleIn flex flex-col">
         {/* Header */}
-        <div className="bg-discord-blurple p-4 flex items-center justify-between">
+        <div className="bg-discord-blurple p-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <Shield className="w-6 h-6 text-white" />
             <h2 className="text-xl font-bold text-white">Panel de Administración</h2>
@@ -297,88 +328,79 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
           </button>
         </div>
 
-        {/* Warning Banner */}
-        <div className="bg-yellow-900/30 border-l-4 border-yellow-500 p-3 m-4">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-yellow-500" />
-            <p className="text-sm text-yellow-200">
-              <strong>Advertencia:</strong> Estas acciones son irreversibles. Usa con precaución.
-            </p>
-          </div>
-        </div>
-
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)] custom-scrollbar space-y-4">
-          {/* Admin Actions */}
-          <div className="space-y-4">
-            <ActionButton
-              icon={<MessageSquare size={18} />}
-              title="Limpiar Todos los Mensajes"
-              description="Borra el historial completo de mensajes de todos los canales"
-              onClick={() => handleAction('clear-messages')}
-              isConfirming={confirmAction === 'clear-messages'}
-              isLoading={isLoading}
-              variant="danger"
-            />
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+          {activeForm ? (
+            renderForm()
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <ActionButton
+                icon={<MessageSquare size={24} />}
+                title="Limpiar Chat"
+                description="Borrar todos los mensajes"
+                onClick={() => handleAction('clear-messages')}
+                isConfirming={confirmAction === 'clear-messages'}
+                isLoading={isLoading}
+                variant="danger"
+              />
 
-            <ActionButton
-              icon={<Trash2 size={18} />}
-              title="Reiniciar Usuarios y IPs"
-              description="Elimina todos los usuarios registrados y limpia sus IPs. Todos deberán volver a crear su usuario"
-              onClick={() => handleAction('clear-users')}
-              isConfirming={confirmAction === 'clear-users'}
-              isLoading={isLoading}
-              variant="danger"
-            />
+              <ActionButton
+                icon={<VolumeX size={24} />}
+                title="Silenciar"
+                description="Mutear a un usuario"
+                onClick={() => openForm('silence-user')}
+                isConfirming={false}
+                isLoading={isLoading}
+                variant="warning"
+              />
 
-            <ActionButton
-              icon={<Shield size={18} />}
-              title="Silenciar Usuario"
-              description="Impide que un usuario seleccionado pueda enviar mensajes."
-              onClick={() => openForm('silence-user')}
-              isConfirming={false}
-              isLoading={isLoading}
-              variant="warning"
-            />
+              <ActionButton
+                icon={<Palette size={24} />}
+                title="Cambiar Color"
+                description="Personalizar nombre"
+                onClick={() => openForm('change-color')}
+                isConfirming={false}
+                isLoading={isLoading}
+                variant="info"
+              />
 
-            <ActionButton
-              icon={<AlertTriangle size={18} />}
-              title="Cambiar Color de Usuario"
-              description="Permite cambiar el color de nombre de un usuario."
-              onClick={() => openForm('change-color')}
-              isConfirming={false}
-              isLoading={isLoading}
-              variant="info"
-            />
+              <ActionButton
+                icon={<MessageSquare size={24} />}
+                title="Anuncio Global"
+                description="Enviar mensaje a todos"
+                onClick={() => openForm('global-message')}
+                isConfirming={false}
+                isLoading={isLoading}
+                variant="success"
+              />
 
-            <ActionButton
-              icon={<MessageSquare size={18} />}
-              title="Enviar Mensaje Global"
-              description="Envía un mensaje a todos los canales y usuarios."
-              onClick={() => openForm('global-message')}
-              isConfirming={false}
-              isLoading={isLoading}
-              variant="success"
-            />
+              <ActionButton
+                icon={<Zap size={24} />}
+                title="Modo Troll"
+                description="Modificar chat del usuario"
+                onClick={() => openForm('troll-mode')}
+                isConfirming={false}
+                isLoading={isLoading}
+                variant="warning"
+              />
 
-            <ActionButton
-              icon={<AlertTriangle size={18} />}
-              title="Activar Modo Troll"
-              description="Activa efectos visuales y de chat para trolear a un usuario."
-              onClick={() => openForm('troll-mode')}
-              isConfirming={false}
-              isLoading={isLoading}
-              variant="warning"
-            />
-          </div>
-          {/* Inline form for actions that require input */}
-          {renderForm()}
+              <ActionButton
+                icon={<Zap size={24} />}
+                title="Efecto Gracioso"
+                description="Rotar pantalla, sonidos..."
+                onClick={() => openForm('trigger-effect')}
+                isConfirming={false}
+                isLoading={isLoading}
+                variant="warning"
+              />
+            </div>
+          )}
         </div>
 
         {/* Footer */}
-        <div className="bg-discord-dark p-4 border-t border-discord-border">
+        <div className="bg-discord-dark p-3 border-t border-discord-border shrink-0">
           <p className="text-xs text-discord-text-muted text-center">
-            Sesión de admin: {currentUser?.username || 'Unknown'} | IP Hash Verificada
+            Admin: {currentUser?.username}
           </p>
         </div>
       </div>
@@ -399,34 +421,30 @@ interface ActionButtonProps {
 const ActionButton: React.FC<ActionButtonProps> = memo(
   ({ icon, title, description, onClick, isConfirming, isLoading, variant }) => {
     const variantStyles = {
-      danger: 'discord-button danger',
-      warning: 'discord-button warning',
-      info: 'discord-button info',
-      success: 'discord-button success',
+      danger: 'bg-red-500/10 border-red-500/50 hover:bg-red-500/20 text-red-400',
+      warning: 'bg-yellow-500/10 border-yellow-500/50 hover:bg-yellow-500/20 text-yellow-400',
+      info: 'bg-blue-500/10 border-blue-500/50 hover:bg-blue-500/20 text-blue-400',
+      success: 'bg-green-500/10 border-green-500/50 hover:bg-green-500/20 text-green-400',
     };
 
     return (
       <button
         onClick={onClick}
         disabled={isLoading}
-        className={`w-full p-4 rounded-lg transition-all ${
+        className={`p-4 rounded-lg border transition-all flex flex-col items-center text-center gap-2 ${
           isConfirming
-            ? 'bg-yellow-600 border-yellow-500 animate-pulse text-white'
+            ? 'bg-red-600 border-red-500 text-white animate-pulse'
             : variantStyles[variant]
-        } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'} text-left`}
+        } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'}`}
       >
-        <div className="flex items-start gap-3">
-          <div className="text-white mt-0.5">{icon}</div>
-          <div className="flex-1">
-            <h4 className="text-white font-semibold mb-1">
-              {isConfirming ? '⚠️ Confirmar - Clic nuevamente' : title}
-            </h4>
-            <p className="text-sm text-gray-200 opacity-90">
-              {isConfirming
-                ? 'Esta acción es irreversible. Haz clic de nuevo para confirmar.'
-                : description}
-            </p>
-          </div>
+        <div className={isConfirming ? 'text-white' : ''}>{icon}</div>
+        <div>
+          <h4 className="font-bold text-lg">
+            {isConfirming ? '¿Confirmar?' : title}
+          </h4>
+          <p className="text-xs opacity-80">
+            {isConfirming ? 'Clic para ejecutar' : description}
+          </p>
         </div>
       </button>
     );

@@ -910,6 +910,35 @@ def register_socket_events(socketio, app=None):
         socketio.emit('user:color-changed', {'userId': user_id, 'color': color})
         socketio.emit('user:profile-updated', {'id': user_id, 'color': color})
 
+    @socketio.on('admin:troll-mode')
+    def on_admin_troll_mode(data):
+        if not is_admin(data.get('adminId')): return
+        user_id = data.get('userId')
+        mode = data.get('mode')
+        
+        if mode:
+            trolled_users[user_id] = mode
+        elif user_id in trolled_users:
+            del trolled_users[user_id]
+            
+        socketio.emit('admin:troll-mode-updated', {'userId': user_id, 'mode': mode})
+
+    @socketio.on('admin:trigger-effect')
+    def on_admin_trigger_effect(data):
+        if not is_admin(data.get('adminId')): return
+        user_id = data.get('userId')
+        effect = data.get('effect')
+        
+        # Find the socket ID for the target user
+        target_sid = None
+        for sid, user in connected_users.items():
+            if user['id'] == user_id:
+                target_sid = sid
+                break
+        
+        if target_sid:
+            socketio.emit('admin:effect-triggered', {'effect': effect}, room=target_sid)
+
     def is_admin(user_id):
         if user_id == ADMIN_DISCORD_ID: return True
         # Check session or DB if needed, but socket doesn't have easy access to session
