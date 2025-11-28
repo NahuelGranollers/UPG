@@ -108,9 +108,18 @@ export default function ImpostorGame({
 
     const onRoomState = (data: any) => {
       setPlayers(data.players || []);
-      setHostId(data.hostId || '');
+      const hostIdFromData = data.hostId || '';
+      setHostId(hostIdFromData);
+      // Check if current user is host
+      const currentUserId = userId || currentUser?.id;
+      setIsHost(hostIdFromData === currentUserId);
       setJoined(true);
+      setGameStarted(data.started || false);
       setCustomWords(data.customWords || []);
+      // Update roomId if provided
+      if (data.roomId && data.roomId !== roomId) {
+        setRoomId(data.roomId);
+      }
     };
 
     const onAssign = (data: any) => {
@@ -354,16 +363,18 @@ export default function ImpostorGame({
 
   const handleStart = () => {
     if (!socket) return;
+    console.log('Starting game with:', { roomId, userId, selectedCategory, selectedTime });
     socket.emit('impostor:start', { 
       roomId, 
       hostId: userId,
       category: selectedCategory,
       timerDuration: selectedTime
     }, (res: any) => {
+      console.log('Start response:', res);
       if (res && res.ok) {
         setStatusMessage('Ronda iniciada — revisa tu carta');
       } else {
-        setStatusMessage(res?.error || 'No se pudo iniciar');
+        alert('Error al iniciar: ' + (res?.error || 'No se pudo iniciar'));
       }
     });
   };
@@ -436,7 +447,10 @@ export default function ImpostorGame({
   // Fetch public servers
   const fetchPublicServers = async () => {
     try {
-      const response = await fetch('/api/servers');
+      const API_URL = import.meta.env.DEV 
+        ? 'http://localhost:3000' 
+        : 'https://mensajeria-ksc7.onrender.com';
+      const response = await fetch(`${API_URL}/api/servers`);
       const data = await response.json();
       setPublicServers(data.servers?.impostor || []);
     } catch (error) {
@@ -462,16 +476,23 @@ export default function ImpostorGame({
   }, [socket]);
 
   // Create public server
-  const handleCreatePublicServer = () => {
+  const handleCreatePublicServer = (explicitRoomId?: string) => {
     if (!socket) return;
-    if (!roomId || !username) return setStatusMessage('Room y nombre requeridos');
+    const finalRoomId = explicitRoomId || roomId || `room_${Date.now()}`;
+    if (!username) return;
+
+    if (finalRoomId !== roomId) setRoomId(finalRoomId);
+
     const generatedUserId =
       userId || currentUser?.id || `guest-${Math.random().toString(36).slice(2, 8)}`;
+    
+    // Set userId BEFORE emitting so it's available when room-state arrives
     setUserId(generatedUserId);
+
     socket.emit(
       'impostor:create-room',
       {
-        roomId,
+        roomId: finalRoomId,
         userId: generatedUserId,
         username,
         name: serverName || `Sala de ${username}`,
@@ -479,11 +500,16 @@ export default function ImpostorGame({
       },
       (res: any) => {
         if (res && res.ok) {
+          // Ensure roomId is set from server response
+          if (res.roomId && res.roomId !== roomId) {
+            setRoomId(res.roomId);
+          }
           setJoined(true);
-          setStatusMessage('Sala pública creada. Esperando jugadores...');
+          setIsHost(true); // Creator is always host
+          setHostId(generatedUserId);
           fetchPublicServers(); // Refresh the list
         } else {
-          setStatusMessage(res?.error || 'Error creando sala pública');
+          alert('Failed to create public room: ' + (res?.error || 'Unknown error'));
         }
       }
     );
@@ -492,7 +518,7 @@ export default function ImpostorGame({
   // Join public server
   const handleJoinPublicServer = (serverRoomId: string, password?: string) => {
     if (!socket) return;
-    if (!username) return setStatusMessage('Nombre requerido');
+    if (!username) return;
     const generatedUserId =
       userId || currentUser?.id || `guest-${Math.random().toString(36).slice(2, 8)}`;
     setUserId(generatedUserId);
@@ -505,10 +531,9 @@ export default function ImpostorGame({
     }, (res: any) => {
       if (res && res.ok) {
         setJoined(true);
-        setStatusMessage('Te has unido a la sala pública');
         fetchPublicServers(); // Refresh the list
       } else {
-        setStatusMessage(res?.error || 'Error al unirse a la sala pública');
+        alert('Failed to join public room: ' + (res?.error || 'Unknown error'));
       }
     });
   };
@@ -520,179 +545,211 @@ export default function ImpostorGame({
   const alivePlayersCount = players.filter(p => !p.revealedInnocent).length;
   const allAliveVoted = totalVotes >= alivePlayersCount;
 
-  // Layout: align to top, not center vertically
   return (
-    <div className="flex-1 bg-discord-chat custom-scrollbar p-4 sm:p-6 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="impostor-header">
-          <div className="impostor-header-top">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-discord-text-header mb-3 sm:mb-4">
-              Impostor — Sala
-            </h1>
+    <div className="flex flex-col min-h-screen w-full bg-discord-chat">
+      <div className="w-full py-4 px-2 sm:py-6 sm:px-4 lg:py-8 lg:px-6">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-discord-text-header">
+            🎭 Impostor
+          </h1>
+          <div className="flex gap-2">
+            {!joined && (
+              <button
+                onClick={() => setShowCreateForm(true)}
+                className="discord-button success"
+              >
+                Crear Servidor
+              </button>
+            )}
+            <button
+              onClick={() => {
+                if (joined) handleLeave();
+                if (onClose) onClose();
+              }}
+              className="discord-button secondary"
+            >
+              Cerrar
+            </button>
           </div>
         </div>
 
-        <div className="impostor-grid">
-          {/* Notifications */}
-          {notifications.length > 0 && (
-            <div className="impostor-notifications">
-              {notifications.map(notif => (
-                <div
-                  key={notif.id}
-                  className={`impostor-notification p-3 rounded shadow-lg ${
-                    notif.type === 'success' ? 'bg-green-600' :
-                    notif.type === 'error' ? 'bg-red-600' :
-                    notif.type === 'warning' ? 'bg-yellow-600' : 'bg-blue-600'
-                  } text-white`}
+        {showCreateForm && !joined && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div className="bg-discord-surface p-6 rounded-lg max-w-md w-full space-y-4">
+              <h3 className="text-xl font-bold text-white">Crear Servidor Impostor</h3>
+              
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-discord-text-muted uppercase">Nombre del Servidor</label>
+                <input
+                  type="text"
+                  value={serverName}
+                  onChange={(e) => setServerName(e.target.value)}
+                  placeholder={`Sala de ${username}`}
+                  className="w-full bg-discord-input p-2 rounded text-white"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-discord-text-muted uppercase">Contraseña (Opcional)</label>
+                <input
+                  type="password"
+                  value={serverPassword}
+                  onChange={(e) => setServerPassword(e.target.value)}
+                  placeholder="Dejar vacío para público"
+                  className="w-full bg-discord-input p-2 rounded text-white"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <button
+                  onClick={() => setShowCreateForm(false)}
+                  className="flex-1 discord-button secondary"
                 >
-                  {notif.message}
-                </div>
-              ))}
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    const newId = `room_${Date.now()}`;
+                    handleCreatePublicServer(newId);
+                    setShowCreateForm(false);
+                  }}
+                  className="flex-1 discord-button success"
+                >
+                  Crear
+                </button>
+              </div>
             </div>
-          )}
+          </div>
+        )}
 
-          <div className="panel-glass lg liquid-glass bg-[#071017]">
-            {!joined && (
-              <div className="space-y-4 sm:space-y-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg text-discord-text-header font-semibold">Servidores Públicos</h3>
-                  <div className="max-h-96 overflow-y-auto space-y-2">
-                    {publicServers.length === 0 ? (
-                      <div className="text-center text-discord-text-muted py-8">No hay servidores públicos disponibles</div>
-                    ) : (
-                      publicServers.map((server) => (
-                        <div key={server.roomId} className="discord-panel p-4">
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <h4 className="text-discord-text-header font-semibold">{server.name}</h4>
-                              <p className="text-sm text-discord-text-muted">
-                                Host: {server.hostName} • {server.playerCount}/{server.maxPlayers} jugadores
-                              </p>
-                              {server.hasPassword && (
-                                <span className="text-xs text-yellow-400">🔒 Protegido por contraseña</span>
-                              )}
-                            </div>
-                            <button
-                              onClick={() => {
-                                if (server.hasPassword) {
-                                  const password = prompt('Ingresa la contraseña del servidor:');
-                                  if (password !== null) {
-                                    handleJoinPublicServer(server.roomId, password);
-                                  }
-                                } else {
-                                  handleJoinPublicServer(server.roomId);
-                                }
-                              }}
-                              className="discord-button success"
-                              disabled={server.playerCount >= server.maxPlayers}
-                            >
-                              {server.playerCount >= server.maxPlayers ? 'Lleno' : 'Unirse'}
-                            </button>
+        {!joined ? (
+          autoJoinRoomId ? (
+            <div className="panel-glass lg liquid-glass bg-[#071017] p-6 rounded-lg max-w-md mx-auto">
+              <div className="text-center space-y-4">
+                <div className="w-12 h-12 mx-auto border-4 border-t-transparent border-discord-blurple animate-spin rounded-full"></div>
+                <p className="text-discord-text-normal">Uniéndose a la sala {autoJoinRoomId}...</p>
+              </div>
+            </div>
+          ) : (
+            <div className="panel-glass lg liquid-glass bg-[#071017] p-6 rounded-lg max-w-2xl mx-auto">
+              <div className="space-y-4">
+                <h3 className="text-lg text-discord-text-header font-semibold">Servidores Públicos Impostor</h3>
+                <div className="max-h-96 overflow-y-auto space-y-2">
+                  {publicServers.length === 0 ? (
+                    <div className="text-center text-discord-text-muted py-8">No hay servidores públicos disponibles</div>
+                  ) : (
+                    publicServers.map((server) => (
+                      <div key={server.roomId} className="discord-panel p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className="text-discord-text-header font-semibold">{server.name}</h4>
+                            <p className="text-sm text-discord-text-muted">
+                              Host: {server.hostName} • {server.playerCount}/10 jugadores
+                            </p>
+                            {server.hasPassword && (
+                              <span className="text-xs text-yellow-400">🔒 Protegido por contraseña</span>
+                            )}
                           </div>
+                          <button
+                            onClick={() => {
+                              if (server.hasPassword) {
+                                const password = prompt('Ingresa la contraseña del servidor:');
+                                if (password !== null) {
+                                  handleJoinPublicServer(server.roomId, password);
+                                }
+                              } else {
+                                handleJoinPublicServer(server.roomId);
+                              }
+                            }}
+                            className="discord-button success"
+                            disabled={server.playerCount >= 10}
+                          >
+                            {server.playerCount >= 10 ? 'Lleno' : 'Unirse'}
+                          </button>
                         </div>
-                      ))
-                    )}
-                  </div>
-                  <div className="mt-3">
-                    <button
-                      onClick={() => setShowCreateForm(s => !s)}
-                      className="discord-button w-full"
-                    >
-                      {showCreateForm ? 'Cerrar formulario' : 'Crear servidor'}
-                    </button>
-                  </div>
-
-                  {showCreateForm && (
-                    <div className="border-t border-discord-hover pt-4 mt-4">
-                      <h4 className="text-lg text-discord-text-header font-semibold mb-3">Crear Servidor Público</h4>
-                      <div className="space-y-3">
-                        <input
-                          className="w-full discord-input"
-                          placeholder="Nombre del servidor (opcional)"
-                          value={serverName}
-                          onChange={e => setServerName(e.target.value)}
-                        />
-                        <input
-                          className="w-full discord-input"
-                          placeholder="Contraseña (opcional)"
-                          type="password"
-                          value={serverPassword}
-                          onChange={e => setServerPassword(e.target.value)}
-                        />
-                        <input
-                          id="impostor-roomid-public"
-                          className="w-full discord-input"
-                          placeholder="ID de sala"
-                          value={roomId}
-                          onChange={e => setRoomId(e.target.value)}
-                        />
-                        <input
-                          id="impostor-username-public"
-                          className="w-full discord-input"
-                          placeholder="Tu nombre"
-                          value={username}
-                          onChange={e => setUsername(e.target.value)}
-                        />
-                        <button
-                          onClick={handleCreatePublicServer}
-                          className="w-full discord-button success"
-                        >
-                          Crear Servidor Público
-                        </button>
                       </div>
-                    </div>
+                    ))
                   )}
                 </div>
               </div>
-            )}
-
-            {joined && (
-              <div className="space-y-6">
+            </div>
+          )
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-7xl mx-auto">
+            {/* Main Game Area */}
+            <div className="md:col-span-3 space-y-4">
+              {/* Game Header */}
+              <div className="bg-discord-sidebar p-4 rounded-lg border border-discord-hover">
                 <div className="flex justify-between items-center">
                   <div>
-                    <div className="text-lg text-discord-text-normal">
-                      Sala: <strong className="text-discord-text-header">{roomId}</strong>
-                    </div>
-                    <div className="text-lg text-discord-text-normal">
-                      Host: <span className="text-discord-text-header">{isHost ? 'Tú' : 'Otro'}</span>
-                    </div>
+                    <div className="text-sm text-discord-text-muted">Sala</div>
+                    <div className="text-xl font-bold text-discord-text-header">{roomId}</div>
                   </div>
-                  <div className="flex flex-col items-end">
+                  <div className="text-right">
                     <div className="text-sm text-discord-text-muted">
                       {players.length} jugador{players.length !== 1 ? 'es' : ''}
                     </div>
                     {timeLeft !== null && timeLeft > 0 && (
-                      <div className="text-xl font-mono font-bold text-yellow-400 mt-1">
+                      <div className="text-2xl font-mono font-bold text-yellow-400">
                         {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
                       </div>
                     )}
+                    {!gameStarted && (
+                      <div className="text-sm text-yellow-400">Esperando...</div>
+                    )}
                   </div>
                 </div>
+              </div>
 
-                <div className="discord-panel max-h-[400px] overflow-auto">
-                  <div className="text-lg text-discord-text-normal mb-3 font-semibold">
-                    Jugadores:
+              {/* Player Cards Area */}
+              <div className="bg-discord-sidebar p-6 rounded-lg border border-discord-hover min-h-[500px]">
+                {!gameStarted ? (
+                  <div className="flex flex-col items-center justify-center h-full space-y-6">
+                    <div className="text-center">
+                      <h3 className="text-xl font-bold text-discord-text-header mb-4">
+                        {isHost ? 'Configura y comienza la partida' : 'Esperando al host...'}
+                      </h3>
+                      <div className="text-discord-text-muted">
+                        {players.length} jugador{players.length !== 1 ? 'es' : ''} en la sala
+                      </div>
+                    </div>
+
+                    {/* Botones de inicio para el host */}
+                    {isHost && (
+                      <div className="w-full max-w-md space-y-3">
+                        <div className="flex gap-2">
+                          <select 
+                            className="discord-input flex-1 cursor-pointer"
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                          >
+                            <option className="bg-discord-sidebar text-discord-text-normal" value="General">General</option>
+                            <option className="bg-discord-sidebar text-discord-text-normal" value="Fantasía">Fantasía</option>
+                            <option className="bg-discord-sidebar text-discord-text-normal" value="Transporte">Transporte</option>
+                            <option className="bg-discord-sidebar text-discord-text-normal" value="Objetos">Objetos</option>
+                            <option className="bg-discord-sidebar text-discord-text-normal" value="Lugares">Lugares</option>
+                          </select>
+                          <select 
+                            className="discord-input flex-1 cursor-pointer"
+                            value={selectedTime}
+                            onChange={(e) => setSelectedTime(Number(e.target.value))}
+                          >
+                            <option className="bg-discord-sidebar text-discord-text-normal" value={0}>Sin tiempo</option>
+                            <option className="bg-discord-sidebar text-discord-text-normal" value={180}>3 Minutos</option>
+                            <option className="bg-discord-sidebar text-discord-text-normal" value={300}>5 Minutos</option>
+                            <option className="bg-discord-sidebar text-discord-text-normal" value={600}>10 Minutos</option>
+                          </select>
+                        </div>
+                        <button onClick={handleStart} className="discord-button success w-full">
+                          🎮 Iniciar Partida
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <ul className="impostor-player-list text-base space-y-3">
-                    {players.map(p => (
-                      <li key={p.id} className="flex items-center justify-between py-2">
-                        <span
-                          className="text-discord-text-normal break-all font-semibold text-lg"
-                          style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }}
-                          title={p.username}
-                        >
-                          {p.username}
-                        </span>
-                        <span className="text-sm text-discord-text-muted">
-                          {p.id === userId ? 'Tú' : ''}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Palabras personalizadas ocultas - funcionalidad sigue activa */}
-                {/* {customWords.length > 0 && (
+                ) : (
+                  <>
+                    {/* Palabras personalizadas ocultas - funcionalidad sigue activa */}
+                    {/* {customWords.length > 0 && (
                   <div className="mt-4">
                     <div className="text-sm text-gray-400 mb-2">Palabras personalizadas ({customWords.length}):</div>
                     <div className="text-xs text-gray-300 break-words">{customWords.join(', ')}</div>
@@ -793,25 +850,23 @@ export default function ImpostorGame({
                   </div>
                 )}
 
-                <div>
-                  {spinning && (
-                    <div className="flex items-center justify-center p-8">
-                      <div className="flex flex-col items-center">
-                        <div className="w-24 h-24 rounded-full border-4 border-t-transparent border-discord-blurple animate-spin mb-4" />
-                        <div className="text-lg text-discord-text-normal font-semibold">
-                          Asignando carta...
+                  {/* Game Content */}
+                  <div className="space-y-4">
+                    {spinning && (
+                      <div className="flex items-center justify-center py-12">
+                        <div className="flex flex-col items-center">
+                          <div className="w-24 h-24 rounded-full border-4 border-t-transparent border-discord-blurple animate-spin mb-4" />
+                          <div className="text-lg text-discord-text-normal font-semibold">
+                            Asignando carta...
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {!spinning && (
-                    <>
-                      {/* Assignment card with flip animation */}
-                      <div
-                        className={`impostor-card mb-6 ${cardRevealed ? 'flipped' : ''}`}
-                        style={{ maxWidth: 600 }}
-                      >
+                    {!spinning && (
+                      <>
+                        {/* Assignment card with flip animation */}
+                        <div className={`impostor-card mb-6 ${cardRevealed ? 'flipped' : ''}`}>
                         <div
                           role="button"
                           tabIndex={0}
@@ -940,36 +995,6 @@ export default function ImpostorGame({
                       </div>
 
                       <div className="impostor-button-grid mt-6">
-                        {isHost && !assigned && (
-                          <div className="flex flex-col gap-3 mb-4 w-full">
-                            <div className="flex gap-2">
-                              <select 
-                                className="discord-input flex-1 cursor-pointer"
-                                value={selectedCategory}
-                                onChange={(e) => setSelectedCategory(e.target.value)}
-                              >
-                                <option className="bg-discord-sidebar text-discord-text-normal" value="General">General</option>
-                                <option className="bg-discord-sidebar text-discord-text-normal" value="Fantasía">Fantasía</option>
-                                <option className="bg-discord-sidebar text-discord-text-normal" value="Transporte">Transporte</option>
-                                <option className="bg-discord-sidebar text-discord-text-normal" value="Objetos">Objetos</option>
-                                <option className="bg-discord-sidebar text-discord-text-normal" value="Lugares">Lugares</option>
-                              </select>
-                              <select 
-                                className="discord-input flex-1 cursor-pointer"
-                                value={selectedTime}
-                                onChange={(e) => setSelectedTime(Number(e.target.value))}
-                              >
-                                <option className="bg-discord-sidebar text-discord-text-normal" value={0}>Sin tiempo</option>
-                                <option className="bg-discord-sidebar text-discord-text-normal" value={180}>3 Minutos</option>
-                                <option className="bg-discord-sidebar text-discord-text-normal" value={300}>5 Minutos</option>
-                                <option className="bg-discord-sidebar text-discord-text-normal" value={600}>10 Minutos</option>
-                              </select>
-                            </div>
-                            <button onClick={handleStart} className="discord-button success w-full">
-                              Iniciar ronda
-                            </button>
-                          </div>
-                        )}
                         {assigned && assigned.role === 'impostor' && (
                           <div className="w-full">
                             {!showGuessInput ? (
@@ -1059,123 +1084,123 @@ export default function ImpostorGame({
                       </div>
                     </>
                   )}
-                </div>
+                  </div>
+                  </>
+                )}
               </div>
-            )}
-
-            {statusMessage && (
-              <div className="mt-4 text-lg text-discord-text-normal font-semibold">
-                {statusMessage}
-              </div>
-            )}
-          </div>
-
-          {gameStarted && (
-            <aside className="bg-discord-sidebar p-6 rounded-lg border border-discord-hover overflow-hidden">
-            <div className="text-lg text-discord-text-normal mb-4 font-semibold">
-              Orden de turnos
             </div>
-            {turnOrder.length === 0 ? (
-              <div className="text-lg text-discord-text-muted font-semibold">
-                Aún no hay orden de turnos
-              </div>
-            ) : (
-              <ol className="list-decimal list-inside text-base space-y-3">
-                {turnOrder.map((id, idx) => {
-                  const p = players.find(x => x.id === id);
-                  const name = p ? p.username : id;
-                  const active = id === currentTurn;
-                  const revealed = revealInfo && revealInfo.impostorId === id;
-                  const innocentRevealed = p && (p as any).revealedInnocent;
-                  return (
-                    <li
-                      key={id}
-                      className={`turn-item flex items-center justify-between px-3 py-2 rounded overflow-hidden ${active ? 'bg-blue-600 text-white border border-blue-400' : innocentRevealed ? 'bg-green-900 text-white border border-green-500' : 'bg-discord-surface text-discord-text-normal border border-discord-hover'}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${active ? 'bg-yellow-400 text-black font-bold ring-2 ring-yellow-300' : revealed ? 'bg-red-600 text-white ring-2 ring-red-400' : innocentRevealed ? 'bg-green-600 text-white ring-2 ring-green-400' : 'bg-discord-chat text-discord-text-normal'}`}
-                        >
-                          {name.charAt(0).toUpperCase()}
-                        </div>
-                        <div
-                          className="text-discord-text-normal break-all font-semibold text-lg"
-                          style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }}
-                          title={name}
-                        >
-                          {name}
-                        </div>
-                      </div>
-                      <div className="text-base text-discord-text-muted font-semibold">
-                        {idx + 1}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-            )}
 
-            {revealedRoles && (
-              <div className="mt-6">
-                <div className="text-lg text-discord-text-normal mb-3 font-semibold">
-                  Cartas reveladas
+            {/* Sidebar */}
+            <div className="bg-discord-sidebar p-4 rounded-lg border border-discord-hover h-fit sticky top-6">
+              {/* Game Status */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-discord-text-header mb-3">Estado</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-discord-text-muted">Host:</span>
+                    <span className={`px-2 py-1 rounded text-xs ${isHost ? 'bg-blue-600' : 'bg-gray-600'}`}>
+                      {isHost ? 'Tú' : 'Otro'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-discord-text-muted">Estado:</span>
+                    <span className={`px-2 py-1 rounded text-xs ${gameStarted ? 'bg-green-600' : 'bg-yellow-600'}`}>
+                      {gameStarted ? 'En juego' : 'En espera'}
+                    </span>
+                  </div>
                 </div>
-                <ul className="text-base space-y-3">
-                  {revealedRoles.map((player: any, index: number) => (
-                    <li
-                      key={index}
-                      className="flex items-center justify-between px-3 py-2 rounded bg-discord-surface border border-discord-hover overflow-hidden"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${!player.wasInnocent ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'}`}
-                        >
-                          {player.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div
-                          className="text-discord-text-normal break-all font-semibold text-lg"
-                          style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }}
-                          title={player.name}
-                        >
-                          {player.name}
-                        </div>
-                      </div>
-                      <div
-                        className={`text-base font-semibold ${!player.wasInnocent ? 'text-red-400' : 'text-blue-400'}`}
-                      >
-                        {player.wasInnocent ? 'INOCENTE' : 'IMPOSTOR'}
-                      </div>
-                    </li>
+              </div>
+
+              {/* Players List */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-discord-text-header mb-3">
+                  Jugadores ({players.length})
+                </h3>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {players.map(p => (
+                    <div key={p.id} className="flex items-center justify-between p-2 rounded bg-discord-surface">
+                      <span className="text-discord-text-normal truncate">{p.username}</span>
+                      {p.id === userId && (
+                        <span className="text-xs px-2 py-1 bg-discord-blurple rounded">Tú</span>
+                      )}
+                    </div>
                   ))}
-                </ul>
-              </div>
-            )}
-
-            {joined && (
-              <div className="mt-6">
-                <div className="text-sm sm:text-lg text-discord-text-normal mb-2 sm:mb-3 font-semibold">
-                  Agregar palabra
                 </div>
+              </div>
+
+              {/* Turn Order */}
+              {gameStarted && turnOrder.length > 0 && (
+                <div className="mb-6 border-t border-discord-hover pt-4">
+                  <h3 className="text-lg font-semibold text-discord-text-header mb-3">
+                    Orden de Turnos
+                  </h3>
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {turnOrder.map((id, idx) => {
+                      const p = players.find(x => x.id === id);
+                      const name = p ? p.username : id;
+                      const active = id === currentTurn;
+                      const revealed = revealInfo && revealInfo.impostorId === id;
+                      const innocentRevealed = p && (p as any).revealedInnocent;
+                      return (
+                        <div
+                          key={id}
+                          className={`flex items-center justify-between p-2 rounded ${
+                            active
+                              ? 'bg-blue-600 text-white'
+                              : innocentRevealed
+                              ? 'bg-green-900'
+                              : 'bg-discord-surface'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                                active
+                                  ? 'bg-yellow-400 text-black'
+                                  : revealed
+                                  ? 'bg-red-600'
+                                  : 'bg-discord-chat'
+                              }`}
+                            >
+                              {name.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="text-sm truncate">{name}</span>
+                          </div>
+                          <span className="text-xs text-discord-text-muted">#{idx + 1}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Add Word Input - Deshabilitado */}
+              {/* <div className="border-t border-discord-hover pt-4">
+                <h3 className="text-sm font-semibold text-discord-text-header mb-2">
+                  Agregar Palabra
+                </h3>
                 <input
                   type="text"
-                  placeholder="Nueva palabra"
-                  className="w-full discord-input text-sm sm:text-lg"
-                  autoComplete="off"
-                  spellCheck="false"
-                  data-form-type="other"
-                  aria-autocomplete="none"
+                  placeholder="Nueva palabra..."
+                  className="w-full discord-input text-sm"
                   onKeyDown={e => {
-                    if (e.key === 'Enter') {
+                    if (e.key === 'Enter' && e.currentTarget.value.trim()) {
                       handleAddWord(e.currentTarget.value);
                       e.currentTarget.value = '';
                     }
                   }}
                 />
-              </div>
-            )}
-          </aside>
-          )}
-        </div>
+              </div> */}
+
+              {/* Status Message */}
+              {statusMessage && (
+                <div className="mt-4 p-3 bg-discord-surface rounded text-sm text-discord-text-normal border-l-4 border-discord-blurple">
+                  {statusMessage}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

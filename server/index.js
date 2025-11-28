@@ -1084,6 +1084,20 @@ io.on('connection', socket => {
       // Track user room for optimization
       userRoomMap.set(userId, { type: 'impostor', roomId });
 
+      // Join socket room
+      socket.join(`impostor:${roomId}`);
+
+      // Send room state to creator
+      socket.emit('impostor:room-state', {
+        roomId,
+        hostId: userId,
+        players: [{ id: userId, username }],
+        started: false,
+        customWords: [],
+        name: safeName,
+        hasPassword
+      });
+
       // Broadcast updated server list so all clients see the new room
       broadcastPublicServers();
       return ack && ack({ ok: true, roomId });
@@ -1106,7 +1120,18 @@ io.on('connection', socket => {
         return ack && ack({ ok: false, error: 'wrong_password' });
       }
 
-      // Update public server info
+      // Add player to room if not already there
+      if (!room.players.has(userId)) {
+        room.players.set(userId, { socketId: socket.id, username });
+      } else {
+        // Update socket ID if player reconnects
+        room.players.get(userId).socketId = socket.id;
+      }
+
+      // Join socket room
+      socket.join(`impostor:${roomId}`);
+
+      // Update public server info with correct player count
       const publicServer = publicServers.get('impostor').get(roomId);
       if (publicServer) {
         publicServer.playerCount = room.players.size;
@@ -1280,8 +1305,12 @@ io.on('connection', socket => {
   // Host starts a round: pick word and assign one impostor
   socket.on('impostor:start', ({ roomId, hostId, category, timerDuration }, ack) => {
     try {
+      logger.info(`impostor:start - roomId: ${roomId}, hostId: ${hostId}, rooms exist: ${impostorRooms.size}`);
       const room = impostorRooms.get(roomId);
-      if (!room) return ack && ack({ ok: false, error: 'not_found' });
+      if (!room) {
+        logger.warn(`Room ${roomId} not found. Available rooms: ${Array.from(impostorRooms.keys()).join(', ')}`);
+        return ack && ack({ ok: false, error: 'not_found' });
+      }
       if (room.hostId !== hostId) return ack && ack({ ok: false, error: 'not_host' });
       if (room.started) return ack && ack({ ok: false, error: 'already_started' });
 

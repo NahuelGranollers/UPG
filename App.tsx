@@ -329,9 +329,25 @@ function MainApp() {
             ) : activeView === AppView.CHAT ? (
               <div className="flex w-full h-full">
                 <ChannelList
-                  currentChannel={currentChannel}
-                  onChannelSelect={setCurrentChannel}
-                  onMenuToggle={() => {}}
+                  activeView={activeView}
+                  currentChannelId={currentChannel.id}
+                  onChannelSelect={(view, channel) => {
+                    if (view && channel) {
+                      setActiveView(view);
+                      setCurrentChannel(channel);
+                    } else if (channel) {
+                      setCurrentChannel(channel);
+                    }
+                  }}
+                  currentUser={currentUser}
+                  activeVoiceChannel={activeVoiceChannel}
+                  onVoiceJoin={handleVoiceJoin}
+                  voiceStates={voiceStates}
+                  users={users}
+                  onLoginWithDiscord={loginWithDiscord}
+                  onLogoutDiscord={logout}
+                  onToggleMic={handleToggleMute}
+                  onVoiceLeave={handleVoiceLeave}
                 />
                 <ChatInterface
                   currentUser={currentUser}
@@ -397,12 +413,26 @@ function MainApp() {
           <>
             {mobileActiveTab === 'channels' && activeView === AppView.CHAT && (
               <ChannelList
-                currentChannel={currentChannel}
-                onChannelSelect={c => {
-                  setCurrentChannel(c);
+                activeView={activeView}
+                currentChannelId={currentChannel.id}
+                onChannelSelect={(view, channel) => {
+                  if (channel) {
+                    setCurrentChannel(channel);
+                  }
+                  if (view) {
+                    setActiveView(view);
+                  }
                   setMobileActiveTab('chat');
                 }}
-                onMenuToggle={() => setMobileSidebarOpen(true)}
+                currentUser={currentUser}
+                activeVoiceChannel={activeVoiceChannel}
+                onVoiceJoin={handleVoiceJoin}
+                voiceStates={voiceStates}
+                users={users}
+                onLoginWithDiscord={loginWithDiscord}
+                onLogoutDiscord={logout}
+                onToggleMic={handleToggleMute}
+                onVoiceLeave={handleVoiceLeave}
               />
             )}
 
