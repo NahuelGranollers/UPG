@@ -425,6 +425,91 @@ const io = new Server(server, {
   },
 });
 
+// Helper function to end voting logic (shared between manual end and auto-majority end)
+function endVoting(roomId) {
+  const room = impostorRooms.get(roomId);
+  if (!room || !room.voting) return { ok: false, error: 'not_voting' };
+
+  // tally
+  const counts = {};
+  for (const [voter, target] of room.votes.entries()) {
+    if (!target) continue;
+    counts[target] = (counts[target] || 0) + 1;
+  }
+  // find winner (highest votes)
+  let max = 0;
+  let top = null;
+  for (const id in counts) {
+    if (counts[id] > max) {
+      max = counts[id];
+      top = id;
+    } else if (counts[id] === max) {
+      // tie -> no elimination
+      top = null;
+    }
+  }
+
+  room.voting = false;
+
+  // If unique top, that player was nominated. Do NOT remove them from the room immediately.
+  // Instead, reveal whether they were the impostor. If they WERE the impostor, end the round.
+  let eliminated = null;
+  let eliminatedName = null;
+  let wasImpostor = false;
+  if (top) {
+    eliminated = top;
+    eliminatedName = room.players.get(top)?.username || top;
+    wasImpostor = room.impostorId && top === room.impostorId;
+
+    if (wasImpostor) {
+      // End the round without revealing impostor publicly
+      // reset round state
+      if (room.timerInterval) clearInterval(room.timerInterval);
+      room.started = false;
+
+      io.to(`impostor:${roomId}`).emit('impostor:game-over', { 
+        winner: 'crewmates', 
+        reason: 'voted_out',
+        impostorName: eliminatedName,
+        word: room.word
+      });
+
+      room.word = null;
+      room.impostorId = null;
+      room.turnOrder = [];
+      room.currentTurn = null;
+    } else {
+      // Mark the player as 'revealed innocent' so clients can show that state
+      if (!room.revealedInnocents) room.revealedInnocents = new Set();
+      room.revealedInnocents.add(top);
+    }
+  }
+
+  // send voting results including whether the eliminated was impostor
+  io.to(`impostor:${roomId}`).emit('impostor:voting-result', {
+    roomId,
+    counts,
+    eliminated: eliminatedName,
+    wasImpostor,
+  });
+
+  // broadcast updated room state (include revealed flags)
+  const playersList = Array.from(room.players.entries()).map(([id, p]) => ({
+    id,
+    username: p.username,
+    revealedInnocent: room.revealedInnocents ? room.revealedInnocents.has(id) : false,
+  }));
+  io.to(`impostor:${roomId}`).emit('impostor:room-state', {
+    roomId,
+    hostId: room.hostId,
+    players: playersList,
+    started: room.started,
+    customWords: room.customWords,
+  });
+
+  return { ok: true, eliminated: eliminatedName, wasImpostor };
+}
+
 // ✅ Map de usuarios conectados (socketId -> userData)
 // const connectedUsers = new Map(); // YA DEFINIDO ARRIBA
 
@@ -1429,6 +1514,7 @@ io.on('connection', socket => {
       room.voting = false;
       room.turnOrder = shuffled;
       room.currentTurn = shuffled[0] || null;
+      room.revealedInnocents = new Set(); // Ensure everyone is alive on new game start
 
       // Timer logic
       if (room.timerInterval) clearInterval(room.timerInterval);
@@ -1522,6 +1608,24 @@ io.on('connection', socket => {
         counts,
         totalVotes: room.votes.size,
       });
+
+      // Check for majority win or if everyone has voted
+      const alivePlayersCount = Array.from(room.players.keys()).filter(id => !room.revealedInnocents || !room.revealedInnocents.has(id)).length;
+      const votesNeeded = Math.floor(alivePlayersCount / 2) + 1;
+      
+      let hasMajority = false;
+      for (const targetId in counts) {
+        if (counts[targetId] >= votesNeeded) {
+          hasMajority = true;
+          break;
+        }
+      }
+
+      // End if majority reached OR everyone has voted
+      if (hasMajority || room.votes.size >= alivePlayersCount) {
+         endVoting(roomId);
+      }
+
       return ack && ack({ ok: true });
     } catch (e) {
       logger.error('Error casting vote', e);
@@ -1536,84 +1640,10 @@ io.on('connection', socket => {
       if (!room || !room.voting) return ack && ack({ ok: false, error: 'not_voting' });
       if (room.hostId !== hostId) return ack && ack({ ok: false, error: 'not_host' });
 
-      // tally
-      const counts = {};
-      for (const [voter, target] of room.votes.entries()) {
-        if (!target) continue;
-        counts[target] = (counts[target] || 0) + 1;
-      }
-      // find winner (highest votes)
-      let max = 0;
-      let top = null;
-      for (const id in counts) {
-        if (counts[id] > max) {
-          max = counts[id];
-          top = id;
-        } else if (counts[id] === max) {
-          // tie -> no elimination
-          top = null;
-        }
-      }
+      const result = endVoting(roomId);
+      if (!result.ok) return ack && ack(result);
 
-      room.voting = false;
-
-      // If unique top, that player was nominated. Do NOT remove them from the room immediately.
-      // Instead, reveal whether they were the impostor. If they WERE the impostor, end the round.
-      let eliminated = null;
-      let eliminatedName = null;
-      let wasImpostor = false;
-      if (top) {
-        eliminated = top;
-        eliminatedName = room.players.get(top)?.username || top;
-        wasImpostor = room.impostorId && top === room.impostorId;
-
-        if (wasImpostor) {
-          // End the round without revealing impostor publicly
-          // reset round state
-          if (room.timerInterval) clearInterval(room.timerInterval);
-          room.started = false;
-
-          io.to(`impostor:${roomId}`).emit('impostor:game-over', { 
-            winner: 'crewmates', 
-            reason: 'voted_out',
-            impostorName: eliminatedName,
-            word: room.word
-          });
-
-          room.word = null;
-          room.impostorId = null;
-          room.turnOrder = [];
-          room.currentTurn = null;
-        } else {
-          // Mark the player as 'revealed innocent' so clients can show that state
-          if (!room.revealedInnocents) room.revealedInnocents = new Set();
-          room.revealedInnocents.add(top);
-        }
-      }
-
-      // send voting results including whether the eliminated was impostor
-      io.to(`impostor:${roomId}`).emit('impostor:voting-result', {
-        roomId,
-        counts,
-        eliminated: eliminatedName,
-        wasImpostor,
-      });
-
-      // broadcast updated room state (include revealed flags)
-      const playersList = Array.from(room.players.entries()).map(([id, p]) => ({
-        id,
-        username: p.username,
-        revealedInnocent: room.revealedInnocents ? room.revealedInnocents.has(id) : false,
-      }));
-      io.to(`impostor:${roomId}`).emit('impostor:room-state', {
-        roomId,
-        hostId: room.hostId,
-        players: playersList,
-        started: room.started,
-        customWords: room.customWords,
-      });
-
-      return ack && ack({ ok: true, eliminated: eliminatedName, wasImpostor });
+      return ack && ack({ ok: true, eliminated: result.eliminated, wasImpostor: result.wasImpostor });
     } catch (e) {
       logger.error('Error ending voting', e);
       return ack && ack({ ok: false, error: 'internal' });

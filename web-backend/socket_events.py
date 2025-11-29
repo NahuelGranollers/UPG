@@ -546,9 +546,19 @@ def register_socket_events(socketio, app=None):
             'totalVotes': len(room['votes'])
         }, room=f"impostor:{room_id}")
 
-        # Auto-end voting if everyone alive has voted
+        # Auto-end voting if everyone alive has voted OR majority reached
         alive_players = [pid for pid in room['players'] if pid not in room.get('revealedInnocents', set())]
-        if len(room['votes']) >= len(alive_players):
+        alive_count = len(alive_players)
+        
+        # Check for majority
+        votes_needed = (alive_count // 2) + 1
+        has_majority = False
+        for count in counts.values():
+            if count >= votes_needed:
+                has_majority = True
+                break
+
+        if len(room['votes']) >= alive_count or has_majority:
             process_voting_result(room_id)
 
         return {'ok': True}
