@@ -6,7 +6,7 @@ from game_state import (
     public_servers, user_room_map, trolled_users, ADMIN_DISCORD_ID, BOT_USER,
     IMPOSTOR_WORDS, IMPOSTOR_CATEGORIES
 )
-from routes.bot import generate_demonio_response
+from routes.bot import generate_demonio_response, generate_impostor_word
 import logging
 import uuid
 from datetime import datetime
@@ -340,7 +340,9 @@ def register_socket_events(socketio, app=None):
             'started': room['started'],
             'customWords': room['customWords'],
             'name': room['name'],
-            'hasPassword': bool(room['password'])
+            'hasPassword': bool(room['password']),
+            'turnOrder': room.get('turnOrder', []),
+            'currentTurnIndex': room.get('currentTurnIndex', 0)
         }, room=f"impostor:{room_id}")
         
         return {'ok': True, 'roomId': room_id}
@@ -352,8 +354,12 @@ def register_socket_events(socketio, app=None):
         if not room or room['hostId'] != data.get('hostId'): return {'ok': False}
         
         category = data.get('category', 'General')
-        words = IMPOSTOR_CATEGORIES.get(category, IMPOSTOR_WORDS) + room['customWords']
-        word = random.choice(words)
+        
+        if category == 'IA (Generado)':
+            word = generate_impostor_word()
+        else:
+            words = IMPOSTOR_CATEGORIES.get(category, IMPOSTOR_WORDS) + room['customWords']
+            word = random.choice(words)
         
         player_ids = list(room['players'].keys())
         if len(player_ids) < 2: return {'ok': False, 'error': 'not_enough_players'}
@@ -366,6 +372,12 @@ def register_socket_events(socketio, app=None):
         room['votes'] = {}
         room['revealedInnocents'] = set()
         
+        # Turn System
+        turn_order = list(player_ids)
+        random.shuffle(turn_order)
+        room['turnOrder'] = turn_order
+        room['currentTurnIndex'] = 0
+        
         for pid, p in room['players'].items():
             role = 'impostor' if pid == impostor_id else 'crewmate'
             assigned_word = None if pid == impostor_id else word
@@ -374,7 +386,40 @@ def register_socket_events(socketio, app=None):
         socketio.emit('impostor:started', {
             'roomId': room_id, 
             'started': True,
-            'category': category
+            'category': category,
+            'turnOrder': turn_order,
+            'currentTurnIndex': 0
+        }, room=f"impostor:{room_id}")
+        
+        return {'ok': True}
+
+    @socketio.on('impostor:next-turn')
+    def on_impostor_next_turn(data):
+        room_id = data.get('roomId')
+        room = impostor_rooms.get(room_id)
+        if not room or not room['started']: return {'ok': False}
+        
+        # Verify it's the current player's turn requesting the next turn
+        # Optional: strict check
+        # current_player_id = room['turnOrder'][room['currentTurnIndex']]
+        # if data.get('userId') != current_player_id:
+        #    return {'ok': False, 'error': 'not_your_turn'}
+
+        # Advance turn
+        next_index = (room['currentTurnIndex'] + 1) % len(room['turnOrder'])
+        
+        # Skip eliminated players
+        attempts = 0
+        while room['turnOrder'][next_index] in room.get('revealedInnocents', set()) and attempts < len(room['turnOrder']):
+            next_index = (next_index + 1) % len(room['turnOrder'])
+            attempts += 1
+            
+        room['currentTurnIndex'] = next_index
+        
+        socketio.emit('impostor:turn-update', {
+            'roomId': room_id,
+            'currentTurnIndex': next_index,
+            'turnOrder': room['turnOrder']
         }, room=f"impostor:{room_id}")
         
         return {'ok': True}
@@ -445,9 +490,20 @@ def register_socket_events(socketio, app=None):
             was_impostor = (top_candidate == room['impostorId'])
             
             if was_impostor:
+                target_word = room['word']
+                impostor_name = room['players'][room['impostorId']]['username']
+                
                 room['started'] = False
                 room['word'] = None
                 room['impostorId'] = None
+                
+                socketio.emit('impostor:game-over', {
+                    'roomId': room_id,
+                    'winner': 'crewmates',
+                    'word': target_word,
+                    'impostorName': impostor_name,
+                    'reason': 'voted_out'
+                }, room=f"impostor:{room_id}")
             else:
                 if 'revealedInnocents' not in room: room['revealedInnocents'] = set()
                 room['revealedInnocents'].add(top_candidate)
@@ -474,7 +530,9 @@ def register_socket_events(socketio, app=None):
             'started': room['started'],
             'customWords': room['customWords'],
             'name': room['name'],
-            'hasPassword': bool(room['password'])
+            'hasPassword': bool(room['password']),
+            'turnOrder': room.get('turnOrder', []),
+            'currentTurnIndex': room.get('currentTurnIndex', 0)
         }, room=f"impostor:{room_id}")
         
         return {'ok': True, 'eliminated': eliminated_name, 'wasImpostor': was_impostor}
@@ -502,7 +560,9 @@ def register_socket_events(socketio, app=None):
             'started': room['started'],
             'customWords': room['customWords'],
             'name': room['name'],
-            'hasPassword': bool(room['password'])
+            'hasPassword': bool(room['password']),
+            'turnOrder': room.get('turnOrder', []),
+            'currentTurnIndex': room.get('currentTurnIndex', 0)
         }, room=f"impostor:{room_id}")
         return {'ok': True}
 
@@ -522,7 +582,9 @@ def register_socket_events(socketio, app=None):
                 'started': room['started'],
                 'customWords': room['customWords'],
                 'name': room['name'],
-                'hasPassword': bool(room['password'])
+                'hasPassword': bool(room['password']),
+                'turnOrder': room.get('turnOrder', []),
+                'currentTurnIndex': room.get('currentTurnIndex', 0)
             }, room=f"impostor:{room_id}")
         return {'ok': True}
 
@@ -979,7 +1041,9 @@ def register_socket_events(socketio, app=None):
                         'hostId': room['hostId'],
                         'players': players_list,
                         'started': room['started'],
-                        'customWords': room['customWords']
+                        'customWords': room['customWords'],
+                        'turnOrder': room.get('turnOrder', []),
+                        'currentTurnIndex': room.get('currentTurnIndex', 0)
                     }, room=f"impostor:{room_id}")
                 
                 broadcast_servers(socketio)

@@ -1354,6 +1354,41 @@ io.on('connection', socket => {
     }
   });
 
+  // Advance turn
+  socket.on('impostor:next-turn', ({ roomId, userId }, ack) => {
+    try {
+      const room = impostorRooms.get(roomId);
+      if (!room || !room.started) return ack && ack({ ok: false, error: 'not_started' });
+      
+      // Allow current player OR host to advance turn
+      if (room.currentTurn !== userId && room.hostId !== userId) {
+         return ack && ack({ ok: false, error: 'not_your_turn' });
+      }
+
+      const currentIndex = room.turnOrder.indexOf(room.currentTurn);
+      let nextIndex = (currentIndex + 1) % room.turnOrder.length;
+      
+      // Skip dead players
+      let attempts = 0;
+      while (attempts < room.turnOrder.length) {
+         const nextId = room.turnOrder[nextIndex];
+         const isDead = room.revealedInnocents && room.revealedInnocents.has(nextId);
+         if (!isDead) {
+            room.currentTurn = nextId;
+            break;
+         }
+         nextIndex = (nextIndex + 1) % room.turnOrder.length;
+         attempts++;
+      }
+
+      io.to(`impostor:${roomId}`).emit('impostor:turn', { currentTurn: room.currentTurn });
+      return ack && ack({ ok: true });
+    } catch (e) {
+      logger.error('Error advancing turn', e);
+      return ack && ack({ ok: false, error: 'internal' });
+    }
+  });
+
   // Host starts a round: pick word and assign one impostor
   socket.on('impostor:start', ({ roomId, hostId, category, timerDuration }, ack) => {
     try {
@@ -1537,6 +1572,14 @@ io.on('connection', socket => {
           // reset round state
           if (room.timerInterval) clearInterval(room.timerInterval);
           room.started = false;
+
+          io.to(`impostor:${roomId}`).emit('impostor:game-over', { 
+            winner: 'crewmates', 
+            reason: 'voted_out',
+            impostorName: eliminatedName,
+            word: room.word
+          });
+
           room.word = null;
           room.impostorId = null;
           room.turnOrder = [];

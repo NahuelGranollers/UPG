@@ -74,6 +74,12 @@ export default function ImpostorGame({
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [guessInput, setGuessInput] = useState('');
   const [showGuessInput, setShowGuessInput] = useState(false);
+  const [gameOverInfo, setGameOverInfo] = useState<{
+    winner: 'impostor' | 'crewmates';
+    word: string;
+    impostorName: string;
+    reason?: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!socket || !currentUser) return;
@@ -262,6 +268,13 @@ export default function ImpostorGame({
       setAssigned(null);
       setCardRevealed(false);
       
+      setGameOverInfo({
+        winner: data.winner,
+        word: data.word,
+        impostorName: data.impostorName,
+        reason: data.reason
+      });
+
       let msg = '';
       let type = 'info';
       
@@ -269,7 +282,11 @@ export default function ImpostorGame({
         msg = `¡El Impostor (${data.impostorName}) gana! Adivinó la palabra: ${data.word}`;
         type = 'error'; // Bad for crewmates
       } else {
-        msg = `¡Los Tripulantes ganan! El Impostor (${data.impostorName}) falló al adivinar: ${data.guess} (Era: ${data.word})`;
+        if (data.reason === 'voted_out') {
+           msg = `¡Los Tripulantes ganan! El Impostor (${data.impostorName}) fue expulsado.`;
+        } else {
+           msg = `¡Los Tripulantes ganan! El Impostor (${data.impostorName}) falló al adivinar: ${data.guess} (Era: ${data.word})`;
+        }
         type = 'success';
       }
       
@@ -291,6 +308,7 @@ export default function ImpostorGame({
       setCardRevealed(false);
       setRevealedRoles(null);
       setGameStarted(false);
+      setGameOverInfo(null);
     });
 
     return () => {
@@ -432,6 +450,15 @@ export default function ImpostorGame({
         setStatusMessage('Ronda reiniciada');
       } else {
         setStatusMessage(res?.error || 'Error reiniciando ronda');
+      }
+    });
+  };
+
+  const handleNextTurn = () => {
+    if (!socket) return;
+    socket.emit('impostor:next-turn', { roomId, userId }, (res: any) => {
+      if (!res || !res.ok) {
+        setStatusMessage(res?.error || 'Error cambiando turno');
       }
     });
   };
@@ -746,6 +773,7 @@ export default function ImpostorGame({
                             <option className="bg-discord-sidebar text-discord-text-normal" value="Transporte">Transporte</option>
                             <option className="bg-discord-sidebar text-discord-text-normal" value="Objetos">Objetos</option>
                             <option className="bg-discord-sidebar text-discord-text-normal" value="Lugares">Lugares</option>
+                            <option className="bg-discord-sidebar text-discord-text-normal" value="IA (Generado)">✨ IA (Generado)</option>
                           </select>
                           <select 
                             className="discord-input flex-1 cursor-pointer"
@@ -865,6 +893,66 @@ export default function ImpostorGame({
                         })}
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* Game Over Overlay */}
+                {gameOverInfo && (
+                  <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-discord-surface border border-discord-hover p-8 rounded-xl max-w-lg w-full mx-4 text-center shadow-2xl transform scale-100 animate-scale-in">
+                      <div className="mb-6">
+                        {gameOverInfo.winner === 'crewmates' ? (
+                          <div className="text-5xl mb-2">🎉</div>
+                        ) : (
+                          <div className="text-5xl mb-2">😈</div>
+                        )}
+                        <h2 className={`text-3xl font-black uppercase ${gameOverInfo.winner === 'crewmates' ? 'text-green-400' : 'text-red-500'}`}>
+                          {gameOverInfo.winner === 'crewmates' ? '¡Tripulantes Ganan!' : '¡Impostor Gana!'}
+                        </h2>
+                      </div>
+                      
+                      <div className="space-y-4 mb-8">
+                        <div className="bg-discord-chat p-4 rounded-lg">
+                          <div className="text-sm text-discord-text-muted uppercase font-bold mb-1">El Impostor era</div>
+                          <div className="text-2xl font-bold text-white">{gameOverInfo.impostorName}</div>
+                        </div>
+                        
+                        <div className="bg-discord-chat p-4 rounded-lg">
+                          <div className="text-sm text-discord-text-muted uppercase font-bold mb-1">La Palabra era</div>
+                          <div className="text-2xl font-bold text-yellow-400">{gameOverInfo.word}</div>
+                        </div>
+
+                        {gameOverInfo.reason && (
+                          <div className="text-discord-text-normal italic">
+                            {gameOverInfo.reason === 'voted_out' 
+                              ? 'El impostor fue descubierto y expulsado.' 
+                              : 'El impostor adivinó la palabra correctamente.'}
+                          </div>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={() => setGameOverInfo(null)}
+                        className="discord-button w-full py-3 text-lg"
+                      >
+                        Cerrar
+                      </button>
+                    </div>
+                    {gameOverInfo.winner === 'crewmates' && (
+                      <div className="confetti fixed inset-0 pointer-events-none">
+                        {Array.from({ length: 50 }).map((_, i) => (
+                          <span
+                            key={i}
+                            style={{
+                              left: `${Math.random() * 100}%`,
+                              top: `${-10 - Math.random() * 20}%`,
+                              background: ['#FF6B6B', '#4ECDC4', '#FFE66D'][i % 3],
+                              animationDelay: `${Math.random() * 2}s`
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1064,6 +1152,16 @@ export default function ImpostorGame({
                               </div>
                             )}
                           </div>
+                        )}
+                        {/* Next Turn Button */}
+                        {gameStarted && currentTurn === userId && !voting && (
+                          <button
+                            onClick={handleNextTurn}
+                            className="discord-button w-full animate-pulse"
+                            style={{ background: '#2ecc71', color: 'white' }}
+                          >
+                            Terminar Turno
+                          </button>
                         )}
                         {isHost && assigned && (
                           <button

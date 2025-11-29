@@ -13,6 +13,8 @@ import Sidebar from './components/Sidebar';
 import ChannelList from './components/ChannelList';
 import ChatInterface from './components/ChatInterface';
 import UserList from './components/UserList';
+import UsernamePrompt from './components/UsernamePrompt';
+
 const HomeScreen = React.lazy(() => import('./components/HomeScreen'));
 const ImpostorGame = React.lazy(() => import('./components/ImpostorGame'));
 const WhoWeAre = React.lazy(() => import('./components/WhoWeAre'));
@@ -22,7 +24,7 @@ const HallOfFame = React.lazy(() => import('./components/HallOfFame'));
 const CS16Game = React.lazy(() => import('./components/CS16Game'));
 
 function MainApp() {
-  const { currentUser, isLoading, loginWithDiscord, logout } = useAuth();
+  const { currentUser, isLoading, loginWithDiscord, loginAsGuest, logout } = useAuth();
   const { isConnected, socket } = useSocket();
 
   const [activeView, setActiveView] = useState<AppView>(AppView.IMPOSTOR);
@@ -294,9 +296,10 @@ function MainApp() {
   // Si no hay usuario (caso raro tras isLoading), mostrar loading o error
   if (!currentUser)
     return (
-      <div className="flex h-screen items-center justify-center bg-[#313338] text-white">
-        Error de autenticación
-      </div>
+      <UsernamePrompt 
+        onSubmit={loginAsGuest} 
+        onLoginWithDiscord={loginWithDiscord} 
+      />
     );
 
   return (

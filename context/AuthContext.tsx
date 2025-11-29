@@ -7,6 +7,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   loginWithDiscord: () => void;
+  loginAsGuest: (username: string) => void;
   logout: () => Promise<void>;
   updateUser: (user: User) => void;
 }
@@ -78,22 +79,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const saved = storage.loadUserData();
       if (saved) {
         setCurrentUser({ ...saved, online: true, status: 'online' });
-      } else {
-        // Create Guest
-        const randomId = Math.floor(Math.random() * 10000).toString();
-        const guest: User = {
-          id: `guest-${randomId}`,
-          username: `Invitado${randomId}`,
-          avatar: `https://ui-avatars.com/api/?name=I${randomId}`,
-          status: 'online',
-          online: true,
-          color: '#808080',
-          isGuest: true,
-          role: UserRole.USER,
-        };
-        setCurrentUser(guest);
-        storage.saveUserData(guest);
       }
+      // No auto-guest creation anymore
       setIsLoading(false);
     };
 
@@ -105,6 +92,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ? 'http://localhost:3000'
       : 'https://api.unaspartidillas.online');
     window.location.href = `${API_URL}/auth/discord`;
+  }, []);
+
+  const loginAsGuest = useCallback((username: string) => {
+    const randomId = Math.floor(Math.random() * 10000).toString();
+    const guest: User = {
+      id: `guest-${randomId}`,
+      username: username,
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random`,
+      status: 'online',
+      online: true,
+      color: '#808080',
+      isGuest: true,
+      role: UserRole.USER,
+    };
+    setCurrentUser(guest);
+    storage.saveUserData(guest);
   }, []);
 
   const logout = useCallback(async () => {
@@ -133,6 +136,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!currentUser,
         isLoading,
         loginWithDiscord,
+        loginAsGuest,
         logout,
         updateUser,
       }}

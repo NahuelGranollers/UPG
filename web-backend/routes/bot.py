@@ -131,6 +131,36 @@ def generate_demonio_response(message, username='Usuario', session_id='default')
         error_msg = f"¡SERVIDOR EXPLOTÓ COMO TNT EN EL CULO DE TU MADRE, TRONCOMÁN! 💣💀 {str(e)}"
         return error_msg, selected_model
 
+def generate_impostor_word(category="General"):
+    """
+    Generates a random word for the Impostor game using AI.
+    """
+    try:
+        prompt = f"""Genera UNA SOLA palabra (sustantivo) en español para un juego tipo 'Impostor' o 'Pictionary'.
+Categoría deseada: {category}.
+La palabra debe ser algo que todos conozcan pero no demasiado obvia.
+SOLO responde con la palabra, sin puntos ni explicaciones.
+Ejemplo: 'Manzana' o 'Astronauta'."""
+
+        selected_model = random.choice(FREE_MODELS_REAL)
+        
+        response = CLIENT.chat.completions.create(
+            model=selected_model,
+            messages=[
+                {"role": "system", "content": "Eres un generador de palabras para juegos. Responde SOLO con la palabra."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.9,
+            max_tokens=20
+        )
+        
+        word = response.choices[0].message.content.strip().replace('.', '').replace('"', '').replace("'", "")
+        return word if word else "ErrorIA"
+        
+    except Exception as e:
+        print(f"Error generating word: {e}")
+        return "ErrorIA"
+
 @bot_bp.route('/chat', methods=['POST'])
 def chat_demonio():
     try:
