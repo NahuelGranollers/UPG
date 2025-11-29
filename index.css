@@ -1435,6 +1435,11 @@ button[aria-disabled='true'] {
 }
 
 
+/* Safe area for iPhone X+ */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 /* Global custom scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;

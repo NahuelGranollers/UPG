@@ -3,7 +3,7 @@ import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { getBackendUrl } from '../utils/config';
 import { toast } from 'sonner';
-import { Menu } from 'lucide-react';
+import { Menu, Gamepad2, Users } from 'lucide-react';
 
 interface PlayerInfo {
   id: string;
@@ -75,6 +75,7 @@ export default function ImpostorGame({
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [guessInput, setGuessInput] = useState('');
   const [showGuessInput, setShowGuessInput] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'game' | 'info'>('game');
   const [gameOverInfo, setGameOverInfo] = useState<{
     winner: 'impostor' | 'crewmates';
     word: string;
@@ -750,9 +751,9 @@ export default function ImpostorGame({
           )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-4 xl:grid-cols-5 gap-4 w-full max-w-[95%] 2xl:max-w-[1600px] mx-auto h-full">
+          <div className="grid grid-cols-1 md:grid-cols-4 xl:grid-cols-5 gap-4 w-full max-w-[95%] 2xl:max-w-[1600px] mx-auto h-full pb-16 md:pb-0">
             {/* Main Game Area */}
-            <div className="md:col-span-3 xl:col-span-4 flex flex-col h-full overflow-hidden gap-4">
+            <div className={`md:col-span-3 xl:col-span-4 flex-col h-full overflow-hidden gap-4 ${mobileTab === 'info' ? 'hidden md:flex' : 'flex'}`}>
               {/* Game Header */}
               <div className="bg-discord-sidebar p-3 rounded-lg border border-discord-hover flex-shrink-0">
                 <div className="flex justify-between items-center">
@@ -1257,7 +1258,7 @@ export default function ImpostorGame({
             </div>
 
             {/* Sidebar - Scrollable */}
-            <div className="bg-discord-sidebar p-4 rounded-lg border border-discord-hover h-full overflow-y-auto custom-scrollbar">
+            <div className={`bg-discord-sidebar p-4 rounded-lg border border-discord-hover h-full overflow-y-auto custom-scrollbar ${mobileTab === 'game' ? 'hidden md:block' : 'block'}`}>
               {/* Game Status */}
               <div className="mb-4">
                 <h3 className="text-base font-semibold text-discord-text-header mb-2">Estado</h3>
@@ -1350,6 +1351,31 @@ export default function ImpostorGame({
           </div>
         )}
       </div>
+
+      {/* Mobile Tab Bar */}
+      {joined && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-discord-sidebar border-t border-discord-hover p-2 flex justify-around shrink-0 z-50 safe-area-bottom">
+          <button 
+            onClick={() => setMobileTab('game')} 
+            className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${mobileTab === 'game' ? 'text-white bg-discord-blurple/20' : 'text-discord-text-muted'}`}
+          >
+            <Gamepad2 size={24} />
+            <span className="text-xs font-bold">Juego</span>
+          </button>
+          <button 
+            onClick={() => setMobileTab('info')} 
+            className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${mobileTab === 'info' ? 'text-white bg-discord-blurple/20' : 'text-discord-text-muted'}`}
+          >
+            <div className="relative">
+              <Users size={24} />
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1 rounded-full min-w-[16px] text-center">
+                {players.length}
+              </span>
+            </div>
+            <span className="text-xs font-bold">Info</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
