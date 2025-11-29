@@ -72,40 +72,56 @@ export default function CS16Game({
       quit: (status: number, toThrow: any) => {
          console.log('[Xash3D] Quit:', status);
          setGameRunning(false);
-         // Suppress the "Uncaught Infinity" error by not re-throwing.
-         // The engine has already stopped.
          if (status !== 0) {
              console.warn('Xash3D exited with status:', status);
          }
       },
       canvas: canvasRef.current,
-      // Let the engine/browser decide the best attributes
-      // webglContextAttributes: {}, 
-      // Use default arguments but hint the renderer
       arguments: ['-windowed', '-width', '1024', '-height', '768', '-ref', 'webgl2'],
       setStatus: (text: string) => setStatus(text),
       totalDependencies: 0,
       monitorRunDependencies: (left: number) => {
         // console.log('Dependencies left:', left);
       },
-      // Predeclare dynamic side modules without prefix; engine uses scriptDirectory (/xash/)
       dynamicLibraries: [
         'filesystem_stdio.wasm',
         'libref_webgl2.wasm',
-        'client_emscripten_wasm32.wasm',
-        'cs_emscripten_wasm32.wasm',
-        'menu_emscripten_wasm32.wasm'
+        // 'client_emscripten_wasm32.wasm', // Let the engine load these via dlopen from FS
+        // 'cs_emscripten_wasm32.wasm',
+        // 'menu_emscripten_wasm32.wasm'
       ],
-      // Map library paths to the correct location in the virtual filesystem
       locateFile: (path: string, prefix: string) => {
         if (path.endsWith('.wasm') || path.endsWith('.data') || path.endsWith('.mem')) {
-          // If the engine asks for a DLL in a subdirectory (e.g. cl_dlls/), flatten it to /xash/
           const fileName = path.split('/').pop();
           return '/xash/' + fileName;
         }
         return prefix + path;
       },
     };
+
+    // Fetch Xash3D WASM binaries to write them to Virtual FS
+    // This fixes the "file not found" error during dlopen
+    const xashBinaries = [
+      { name: 'client_emscripten_wasm32.wasm', paths: ['cl_dlls/client_emscripten_wasm32.wasm', 'cstrike/cl_dlls/client_emscripten_wasm32.wasm'] },
+      { name: 'cs_emscripten_wasm32.wasm', paths: ['dlls/cs_emscripten_wasm32.wasm', 'cstrike/dlls/cs_emscripten_wasm32.wasm'] },
+      { name: 'menu_emscripten_wasm32.wasm', paths: ['cl_dlls/menu_emscripten_wasm32.wasm', 'cstrike/cl_dlls/menu_emscripten_wasm32.wasm'] }
+    ];
+
+    const binaryData: { paths: string[], data: ArrayBuffer }[] = [];
+    
+    try {
+      for (const bin of xashBinaries) {
+        const resp = await fetch(`/xash/${bin.name}`);
+        if (resp.ok) {
+          const buf = await resp.arrayBuffer();
+          binaryData.push({ paths: bin.paths, data: buf });
+        } else {
+          console.warn(`Failed to fetch ${bin.name} for preloading`);
+        }
+      }
+    } catch (e) {
+      console.error('Error preloading Xash binaries', e);
+    }
 
     const fileData: { path: string, data: ArrayBuffer }[] = [];
     
@@ -137,11 +153,22 @@ export default function CS16Game({
         try {
             FS.mkdir('cl_dlls');
             FS.mkdir('dlls');
-            
-            // We can't easily symlink external URLs, so we rely on locateFile for the fetch.
-            // BUT if locateFile fails for dlopen, we might need to pre-load.
-            // For now, let's trust the locateFile fix but ensure the DIRS exist.
+            FS.mkdir('cstrike');
+            FS.mkdir('cstrike/cl_dlls');
+            FS.mkdir('cstrike/dlls');
         } catch(e) { /* ignore EEXIST */ }
+
+        // Write preloaded Xash binaries to FS
+        for (const bin of binaryData) {
+          for (const p of bin.paths) {
+            try {
+              FS.writeFile(p, new Uint8Array(bin.data));
+              console.log(`[Xash3D] Wrote preloaded binary to ${p}`);
+            } catch (e) {
+              console.warn(`[Xash3D] Failed to write ${p}`, e);
+            }
+          }
+        }
 
         for (const item of fileData) {
             const parts = item.path.split('/');
