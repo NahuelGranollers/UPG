@@ -47,27 +47,26 @@ export default function CS16Game({
     let loadedCount = 0;
     const totalFiles = files.length;
 
-    // Initialize Module if not already
-    if (!window.Module) {
-      window.Module = {
-        preRun: [],
-        postRun: [],
-        print: (text: string) => console.log('[Xash3D]', text),
-        printErr: (text: string) => console.error('[Xash3D Error]', text),
-        canvas: canvasRef.current,
-        setStatus: (text: string) => setStatus(text),
-        totalDependencies: 0,
-        monitorRunDependencies: (left: number) => {
-          // console.log('Dependencies left:', left);
-        },
-        locateFile: (path: string, prefix: string) => {
-          if (path.endsWith('.wasm') || path.endsWith('.data')) {
-            return '/xash/' + path;
-          }
-          return prefix + path;
+    // Initialize Module (Always fresh to avoid stale state)
+    window.Module = {
+      preRun: [],
+      postRun: [],
+      print: (text: string) => console.log('[Xash3D]', text),
+      printErr: (text: string) => console.error('[Xash3D Error]', text),
+      canvas: canvasRef.current,
+      setStatus: (text: string) => setStatus(text),
+      totalDependencies: 0,
+      monitorRunDependencies: (left: number) => {
+        // console.log('Dependencies left:', left);
+      },
+      locateFile: (path: string, prefix: string) => {
+        console.log('[Xash3D] locateFile:', path, prefix);
+        if (path.endsWith('.wasm') || path.endsWith('.data')) {
+          return '/xash/' + path;
         }
-      };
-    }
+        return prefix + path;
+      }
+    };
 
     const fileData: { path: string, data: ArrayBuffer }[] = [];
     
@@ -92,7 +91,7 @@ export default function CS16Game({
     // Setup the preRun to write these files
     window.Module.preRun = []; // Reset
     window.Module.preRun.push(() => {
-        const FS = window.FS;
+        const FS = window.Module.FS;
         for (const item of fileData) {
             const parts = item.path.split('/');
             let startIndex = -1;
