@@ -105,7 +105,16 @@ export default function CS16Game({
          }
       },
       canvas: canvasRef.current,
-      arguments: ['-windowed', '-width', '1024', '-height', '768', '-ref', 'webgl2'],
+      // Start with CS 1.6 game logic and load a map to create a server
+      arguments: [
+        '-windowed', 
+        '-width', '1024', 
+        '-height', '768', 
+        '-ref', 'webgl2', 
+        '-game', 'cstrike',   // Force CS 1.6 game mode
+        '+maxplayers', '32',  // Set max players for the server
+        '+map', 'de_dust2'    // Start server immediately on de_dust2
+      ],
       setStatus: (text: string) => setStatus(text),
       totalDependencies: 0,
       monitorRunDependencies: (left: number) => {
