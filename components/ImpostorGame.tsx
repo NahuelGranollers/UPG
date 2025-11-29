@@ -724,9 +724,9 @@ export default function ImpostorGame({
             </div>
           )
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 xl:grid-cols-5 gap-6 w-full max-w-[95%] 2xl:max-w-[1800px] mx-auto">
             {/* Main Game Area */}
-            <div className="md:col-span-3 space-y-4">
+            <div className="md:col-span-3 xl:col-span-4 space-y-4">
               {/* Game Header */}
               <div className="bg-discord-sidebar p-4 rounded-lg border border-discord-hover">
                 <div className="flex justify-between items-center">
@@ -751,7 +751,7 @@ export default function ImpostorGame({
               </div>
 
               {/* Player Cards Area */}
-              <div className="bg-discord-sidebar p-6 rounded-lg border border-discord-hover min-h-[500px]">
+              <div className="bg-discord-sidebar p-6 rounded-lg border border-discord-hover min-h-[500px] lg:min-h-[650px] xl:min-h-[750px] flex flex-col justify-center">
                 {!gameStarted ? (
                   <div className="flex flex-col items-center justify-center h-full space-y-6">
                     <div className="text-center">
@@ -1046,7 +1046,7 @@ export default function ImpostorGame({
                                 <div className="text-lg text-discord-text-normal mb-3 font-semibold">
                                   Tu carta
                                 </div>
-                                <div className="text-3xl font-bold text-yellow-400">
+                                <div className="text-3xl lg:text-5xl font-bold text-yellow-400 mb-4">
                                   {assigned.role === 'impostor' ? 'IMPOSTOR' : assigned.word}
                                 </div>
                                 <div className="text-base text-discord-text-muted mt-3">
@@ -1093,12 +1093,12 @@ export default function ImpostorGame({
                                 >
                                   <div className="impostor-voting-info flex items-center gap-3 flex-1 min-w-0">
                                     <div
-                                      className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm sm:text-lg font-semibold flex-shrink-0 ${isDead ? 'bg-gray-500' : 'bg-discord-sidebar'} text-discord-text-normal`}
+                                      className={`w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center text-sm sm:text-lg lg:text-xl font-semibold flex-shrink-0 ${isDead ? 'bg-gray-500' : 'bg-discord-sidebar'} text-discord-text-normal`}
                                     >
                                       {p.username.charAt(0).toUpperCase()}
                                     </div>
                                     <div
-                                      className={`text-discord-text-normal break-all font-semibold text-sm sm:text-lg flex-1 min-w-0 ${isDead ? 'text-discord-text-muted line-through' : ''}`}
+                                      className={`text-discord-text-normal break-all font-semibold text-sm sm:text-lg lg:text-xl flex-1 min-w-0 ${isDead ? 'text-discord-text-muted line-through' : ''}`}
                                       style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }}
                                       title={p.username}
                                     >

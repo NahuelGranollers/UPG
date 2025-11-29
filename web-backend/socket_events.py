@@ -426,48 +426,9 @@ def register_socket_events(socketio, app=None):
         
         return {'ok': True}
 
-    @socketio.on('impostor:start-voting')
-    def on_impostor_start_voting(data):
-        room_id = data.get('roomId')
+    def process_voting_result(room_id):
         room = impostor_rooms.get(room_id)
-        if not room or room['hostId'] != data.get('hostId'): return {'ok': False}
-        if not room['started']: return {'ok': False, 'error': 'not_started'}
-        
-        room['voting'] = True
-        room['votes'] = {}
-        socketio.emit('impostor:voting-start', {'roomId': room_id}, room=f"impostor:{room_id}")
-        return {'ok': True}
-
-    @socketio.on('impostor:cast-vote')
-    def on_impostor_cast_vote(data):
-        room_id = data.get('roomId')
-        voter_id = data.get('voterId')
-        voted_id = data.get('votedId')
-        
-        room = impostor_rooms.get(room_id)
-        if not room or not room['voting']: return {'ok': False, 'error': 'not_voting'}
-        if voter_id in room.get('revealedInnocents', set()): return {'ok': False, 'error': 'dead_cannot_vote'}
-        
-        room['votes'][voter_id] = voted_id
-        
-        counts = {}
-        for target in room['votes'].values():
-            if target:
-                counts[target] = counts.get(target, 0) + 1
-                
-        socketio.emit('impostor:voting-update', {
-            'roomId': room_id,
-            'counts': counts,
-            'totalVotes': len(room['votes'])
-        }, room=f"impostor:{room_id}")
-        return {'ok': True}
-
-    @socketio.on('impostor:end-voting')
-    def on_impostor_end_voting(data):
-        room_id = data.get('roomId')
-        room = impostor_rooms.get(room_id)
-        if not room or room['hostId'] != data.get('hostId'): return {'ok': False}
-        if not room['voting']: return {'ok': False, 'error': 'not_voting'}
+        if not room: return None
         
         counts = {}
         for target in room['votes'].values():
@@ -538,6 +499,57 @@ def register_socket_events(socketio, app=None):
         }, room=f"impostor:{room_id}")
         
         return {'ok': True, 'eliminated': eliminated_name, 'wasImpostor': was_impostor}
+
+    @socketio.on('impostor:start-voting')
+    def on_impostor_start_voting(data):
+        room_id = data.get('roomId')
+        room = impostor_rooms.get(room_id)
+        if not room or room['hostId'] != data.get('hostId'): return {'ok': False}
+        if not room['started']: return {'ok': False, 'error': 'not_started'}
+        
+        room['voting'] = True
+        room['votes'] = {}
+        socketio.emit('impostor:voting-start', {'roomId': room_id}, room=f"impostor:{room_id}")
+        return {'ok': True}
+
+    @socketio.on('impostor:cast-vote')
+    def on_impostor_cast_vote(data):
+        room_id = data.get('roomId')
+        voter_id = data.get('voterId')
+        voted_id = data.get('votedId')
+        
+        room = impostor_rooms.get(room_id)
+        if not room or not room['voting']: return {'ok': False, 'error': 'not_voting'}
+        if voter_id in room.get('revealedInnocents', set()): return {'ok': False, 'error': 'dead_cannot_vote'}
+        
+        room['votes'][voter_id] = voted_id
+        
+        counts = {}
+        for target in room['votes'].values():
+            if target:
+                counts[target] = counts.get(target, 0) + 1
+                
+        socketio.emit('impostor:voting-update', {
+            'roomId': room_id,
+            'counts': counts,
+            'totalVotes': len(room['votes'])
+        }, room=f"impostor:{room_id}")
+
+        # Auto-end voting if everyone alive has voted
+        alive_players = [pid for pid in room['players'] if pid not in room.get('revealedInnocents', set())]
+        if len(room['votes']) >= len(alive_players):
+            process_voting_result(room_id)
+
+        return {'ok': True}
+
+    @socketio.on('impostor:end-voting')
+    def on_impostor_end_voting(data):
+        room_id = data.get('roomId')
+        room = impostor_rooms.get(room_id)
+        if not room or room['hostId'] != data.get('hostId'): return {'ok': False}
+        if not room['voting']: return {'ok': False, 'error': 'not_voting'}
+        
+        return process_voting_result(room_id)
 
     @socketio.on('impostor:restart')
     def on_impostor_restart(data):
