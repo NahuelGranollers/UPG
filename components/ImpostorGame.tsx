@@ -178,6 +178,17 @@ export default function ImpostorGame({
       setVoting(false);
       setVotingResult(d);
       if (d.eliminated) {
+        // Show result overlay
+        const p = players.find(player => player.username === d.eliminated);
+        if (p) {
+          setRevealedPlayer({
+            id: p.id,
+            wasImpostor: d.wasImpostor
+          });
+          // Auto hide after 4 seconds
+          setTimeout(() => setRevealedPlayer(null), 4000);
+        }
+
         // Show different behaviour depending if eliminated was the impostor
         if (d.wasImpostor) {
           setStatusMessage(`El jugador ${d.eliminated} era el impostor — ronda terminada`);
@@ -724,7 +735,7 @@ export default function ImpostorGame({
             </div>
           )
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-4 xl:grid-cols-5 gap-6 w-full max-w-[95%] 2xl:max-w-[1800px] mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 xl:grid-cols-5 gap-6 w-full max-w-[95%] 2xl:max-w-[1600px] mx-auto">
             {/* Main Game Area */}
             <div className="md:col-span-3 xl:col-span-4 space-y-4">
               {/* Game Header */}
@@ -751,7 +762,7 @@ export default function ImpostorGame({
               </div>
 
               {/* Player Cards Area */}
-              <div className="bg-discord-sidebar p-6 rounded-lg border border-discord-hover min-h-[500px] lg:min-h-[60vh] flex flex-col justify-center">
+              <div className="bg-discord-sidebar p-6 rounded-lg border border-discord-hover min-h-[500px] lg:min-h-[55vh] flex flex-col justify-center">
                 {!gameStarted ? (
                   <div className="flex flex-col items-center justify-center h-full space-y-6">
                     <div className="text-center">
@@ -808,20 +819,27 @@ export default function ImpostorGame({
 
                 {/* Turn order moved to right column on wide screens */}
                 {/* (right column will show the turn order) */}
-                {/* Innocent reveal overlay (temporary) */}
-                {revealedPlayer && !revealedPlayer.wasImpostor && (
-                  <div className={`fixed bottom-8 right-8 z-50`}>
-                    <div className="bg-gray-800/90 border border-green-600 text-white p-4 rounded-lg shadow-lg backdrop-blur">
-                      <div className="text-sm uppercase text-green-300 font-semibold">
-                        Revelación
+                {/* Ejection Result Overlay */}
+                {revealedPlayer && (
+                  <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in">
+                    <div className={`p-8 rounded-xl max-w-md w-full mx-4 text-center shadow-2xl transform scale-100 animate-scale-in border ${revealedPlayer.wasImpostor ? 'bg-red-900/90 border-red-500' : 'bg-discord-surface border-discord-blurple'}`}>
+                      <div className="mb-4">
+                        <div className={`w-24 h-24 mx-auto rounded-full flex items-center justify-center text-4xl font-bold mb-4 ${revealedPlayer.wasImpostor ? 'bg-red-600' : 'bg-discord-sidebar'}`}>
+                           {(players.find(p => p.id === revealedPlayer.id)?.username || revealedPlayer.id).charAt(0).toUpperCase()}
+                        </div>
+                        <h2 className="text-2xl font-bold text-white mb-1">
+                          {players.find(p => p.id === revealedPlayer.id)?.username || revealedPlayer.id}
+                        </h2>
+                        <div className={`text-xl font-black uppercase ${revealedPlayer.wasImpostor ? 'text-red-300' : 'text-green-400'}`}>
+                          {revealedPlayer.wasImpostor ? 'Era el Impostor' : 'Era Inocente'}
+                        </div>
                       </div>
-                      <div className="text-lg font-bold mt-1">
-                        {players.find(p => p.id === revealedPlayer.id)?.username ||
-                          revealedPlayer.id}
-                      </div>
-                      <div className="text-sm text-gray-300 mt-1">
-                        Era inocente — la ronda continúa
-                      </div>
+                      
+                      {!revealedPlayer.wasImpostor && (
+                        <div className="text-discord-text-muted">
+                          La ronda continúa...
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -1046,7 +1064,7 @@ export default function ImpostorGame({
                                 <div className="text-lg text-discord-text-normal mb-3 font-semibold">
                                   Tu carta
                                 </div>
-                                <div className="text-3xl lg:text-5xl font-bold text-yellow-400 mb-4">
+                                <div className="text-3xl lg:text-4xl font-bold text-yellow-400 mb-4">
                                   {assigned.role === 'impostor' ? 'IMPOSTOR' : assigned.word}
                                 </div>
                                 <div className="text-base text-discord-text-muted mt-3">
@@ -1094,12 +1112,12 @@ export default function ImpostorGame({
                                 >
                                   <div className="impostor-voting-info flex items-center gap-3 flex-1 min-w-0">
                                     <div
-                                      className={`w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center text-sm sm:text-lg lg:text-xl font-semibold flex-shrink-0 ${isDead ? 'bg-gray-500' : 'bg-discord-sidebar'} text-discord-text-normal`}
+                                      className={`w-8 h-8 sm:w-10 sm:h-10 lg:w-10 lg:h-10 rounded-full flex items-center justify-center text-sm sm:text-lg lg:text-lg font-semibold flex-shrink-0 ${isDead ? 'bg-gray-500' : 'bg-discord-sidebar'} text-discord-text-normal`}
                                     >
                                       {p.username.charAt(0).toUpperCase()}
                                     </div>
                                     <div
-                                      className={`text-discord-text-normal break-all font-semibold text-sm sm:text-lg lg:text-xl flex-1 min-w-0 ${isDead ? 'text-discord-text-muted line-through' : ''}`}
+                                      className={`text-discord-text-normal break-all font-semibold text-sm sm:text-lg lg:text-lg flex-1 min-w-0 ${isDead ? 'text-discord-text-muted line-through' : ''}`}
                                       style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }}
                                       title={p.username}
                                     >
