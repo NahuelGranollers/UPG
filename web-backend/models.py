@@ -55,8 +55,8 @@ class News(db.Model):
 class Message(db.Model):
     __tablename__ = 'messages'
     id = db.Column(db.String(100), primary_key=True)
-    channel_id = db.Column(db.String(100), nullable=False)
-    user_id = db.Column(db.String(100), nullable=False)
+    channel_id = db.Column(db.String(100), nullable=False, index=True)
+    user_id = db.Column(db.String(100), nullable=False, index=True)
     username = db.Column(db.String(100), nullable=False)
     avatar = db.Column(db.String(255))
     content = db.Column(db.Text, nullable=False)

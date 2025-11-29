@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { readableTextColor } from '../utils/colorUtils';
 import { Message, User, UserRole } from '../types';
 import { Trash2, Shield, Ban, UserX, VolumeX, Palette, Zap } from 'lucide-react';
@@ -9,7 +9,7 @@ interface MessageItemProps {
   msgUser: User | undefined;
   currentUser: User;
   isAdmin: boolean;
-  userColors: Record<string, string>;
+  senderColor: string;
   hoveredMessageId: string | null;
   setHoveredMessageId: (id: string | null) => void;
   handleDeleteMessage: (id: string) => void;
@@ -18,7 +18,6 @@ interface MessageItemProps {
   handleSilenceUser: (userId: string, username: string) => void;
   handleChangeColor: (userId: string, username: string) => void;
   handleTrollMode: (userId: string, username: string) => void;
-  highlightMentions: (text: string) => React.ReactNode;
 }
 
 const MessageItem: React.FC<MessageItemProps> = memo(
@@ -27,7 +26,7 @@ const MessageItem: React.FC<MessageItemProps> = memo(
     msgUser,
     currentUser,
     isAdmin,
-    userColors,
+    senderColor,
     hoveredMessageId,
     setHoveredMessageId,
     handleDeleteMessage,
@@ -36,12 +35,32 @@ const MessageItem: React.FC<MessageItemProps> = memo(
     handleSilenceUser,
     handleChangeColor,
     handleTrollMode,
-    highlightMentions,
   }) => {
     const msgTimestamp =
       typeof msg.timestamp === 'string' ? new Date(msg.timestamp) : msg.timestamp;
     const mentioned =
       msg.content && currentUser && msg.content.includes(`@${currentUser.username}`);
+
+    const highlightedContent = useMemo(() => {
+      if (!msg.content) return null;
+      const mentionRegex = /@([\w]+)/g;
+      const parts = msg.content.split(mentionRegex);
+      return parts.map((part, index) => {
+        if (index % 2 === 1) {
+          const isMentioningCurrentUser =
+            currentUser && part.toLowerCase() === currentUser.username.toLowerCase();
+          return (
+            <span
+              key={index}
+              className={`font-semibold ${isMentioningCurrentUser ? 'text-blue-400 bg-blue-500/20 px-1 rounded' : 'text-blue-300 hover:underline cursor-pointer'}`}
+            >
+              @{part}
+            </span>
+          );
+        }
+        return part;
+      });
+    }, [msg.content, currentUser]);
 
     return (
       <div
@@ -66,7 +85,7 @@ const MessageItem: React.FC<MessageItemProps> = memo(
                 color:
                   msg.userId === 'bot'
                     ? '#5865F2'
-                    : readableTextColor(userColors[msg.userId] || msgUser?.color || '#ffffff'),
+                    : readableTextColor(senderColor || '#ffffff'),
               }}
             >
               {msg.username || msgUser?.username}
@@ -97,7 +116,7 @@ const MessageItem: React.FC<MessageItemProps> = memo(
             )}
           </div>
           <p className={`text-sm sm:text-base text-discord-text-normal whitespace-pre-wrap leading-[1.3rem] sm:leading-[1.375rem] ${msg.status === 'sending' ? 'opacity-70' : ''}`}>
-            {highlightMentions(msg.content)}
+            {highlightedContent}
           </p>
         </div>
         {/* Admin Actions */}
@@ -168,7 +187,6 @@ interface MessageListProps {
   handleSilenceUser: (userId: string, username: string) => void;
   handleChangeColor: (userId: string, username: string) => void;
   handleTrollMode: (userId: string, username: string) => void;
-  highlightMentions: (text: string) => React.ReactNode;
   isBotTyping: boolean;
   messagesEndRef: React.RefObject<HTMLDivElement>;
 }
@@ -188,7 +206,6 @@ const MessageList: React.FC<MessageListProps> = memo(
     handleSilenceUser,
     handleChangeColor,
     handleTrollMode,
-    highlightMentions,
     isBotTyping,
     messagesEndRef,
   }) => {
@@ -208,6 +225,7 @@ const MessageList: React.FC<MessageListProps> = memo(
           <div className="h-[1px] bg-discord-text-muted/20 w-full my-4" />
           {orderedMessages.map(msg => {
             const msgUser = users.find(u => u.id === msg.userId);
+            const senderColor = userColors[msg.userId] || msgUser?.color || '#ffffff';
             return (
               <MessageItem
                 key={msg.id}
@@ -215,7 +233,7 @@ const MessageList: React.FC<MessageListProps> = memo(
                 msgUser={msgUser}
                 currentUser={currentUser}
                 isAdmin={isAdmin}
-                userColors={userColors}
+                senderColor={senderColor}
                 hoveredMessageId={hoveredMessageId}
                 setHoveredMessageId={setHoveredMessageId}
                 handleDeleteMessage={handleDeleteMessage}
@@ -224,7 +242,6 @@ const MessageList: React.FC<MessageListProps> = memo(
                 handleSilenceUser={handleSilenceUser}
                 handleChangeColor={handleChangeColor}
                 handleTrollMode={handleTrollMode}
-                highlightMentions={highlightMentions}
               />
             );
           })}

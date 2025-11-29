@@ -278,30 +278,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     [mentionableUsers]
   );
 
-  // Función para resaltar menciones en el texto del mensaje
-  const highlightMentions = useCallback(
-    (text: string) => {
-      if (!text) return text;
-      const mentionRegex = /@([\w]+)/g;
-      const parts = text.split(mentionRegex);
-      return parts.map((part, index) => {
-        if (index % 2 === 1) {
-          const isMentioningCurrentUser =
-            currentUser && part.toLowerCase() === currentUser.username.toLowerCase();
-          return (
-            <span
-              key={index}
-              className={`font-semibold ${isMentioningCurrentUser ? 'text-blue-400 bg-blue-500/20 px-1 rounded' : 'text-blue-300 hover:underline cursor-pointer'}`}
-            >
-              @{part}
-            </span>
-          );
-        }
-        return part;
-      });
-    },
-    [currentUser]
-  );
+
 
   // Funciones de administrador
   const handleDeleteMessage = useCallback(
@@ -452,7 +429,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         handleSilenceUser={handleSilenceUser}
         handleChangeColor={handleChangeColor}
         handleTrollMode={handleTrollMode}
-        highlightMentions={highlightMentions}
         isBotTyping={shouldShowBotTyping}
         messagesEndRef={messagesEndRef}
       />

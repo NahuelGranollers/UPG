@@ -60,9 +60,6 @@ def get_servers():
     snapshot = {
         'impostor': [
             {'roomId': rid, **info} for rid, info in public_servers['impostor'].items()
-        ],
-        'cs16': [
-            {'roomId': rid, **info} for rid, info in public_servers['cs16'].items()
         ]
     }
     return jsonify({'servers': snapshot})
