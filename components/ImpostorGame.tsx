@@ -971,6 +971,42 @@ export default function ImpostorGame({
 
                     {!spinning && (
                       <>
+                        {/* Turn Info Banner */}
+                        {gameStarted && currentTurn && (
+                          <div className="mb-6 bg-discord-surface p-4 rounded-lg border border-discord-blurple flex items-center justify-between animate-fade-in">
+                            <div>
+                              <div className="text-sm text-discord-text-muted uppercase font-bold">Turno Actual</div>
+                              <div className="text-2xl font-bold text-white flex items-center gap-2">
+                                {players.find(p => p.id === currentTurn)?.username || 'Desconocido'}
+                                {currentTurn === userId && <span className="text-xs bg-green-500 text-white px-2 py-1 rounded-full">Tú</span>}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                               <div className="text-sm text-discord-text-muted uppercase font-bold">Siguiente</div>
+                               <div className="text-lg text-discord-text-normal">
+                                 {(() => {
+                                   const idx = turnOrder.indexOf(currentTurn);
+                                   if (idx === -1) return '-';
+                                   // Find next alive player
+                                   let nextIdx = (idx + 1) % turnOrder.length;
+                                   let attempts = 0;
+                                   while (attempts < turnOrder.length) {
+                                      const nextId = turnOrder[nextIdx];
+                                      const nextPlayer = players.find(p => p.id === nextId);
+                                      // If player exists and is not revealed innocent (dead), they are next
+                                      if (nextPlayer && !nextPlayer.revealedInnocent) {
+                                          return nextPlayer.username;
+                                      }
+                                      nextIdx = (nextIdx + 1) % turnOrder.length;
+                                      attempts++;
+                                   }
+                                   return '-';
+                                 })()}
+                               </div>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Assignment card with flip animation */}
                         <div className={`impostor-card mb-6 ${cardRevealed ? 'flipped' : ''}`}>
                         <div

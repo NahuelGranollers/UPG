@@ -388,7 +388,8 @@ def register_socket_events(socketio, app=None):
             'started': True,
             'category': category,
             'turnOrder': turn_order,
-            'currentTurnIndex': 0
+            'currentTurnIndex': 0,
+            'currentTurn': turn_order[0]
         }, room=f"impostor:{room_id}")
         
         return {'ok': True}
@@ -419,7 +420,8 @@ def register_socket_events(socketio, app=None):
         socketio.emit('impostor:turn-update', {
             'roomId': room_id,
             'currentTurnIndex': next_index,
-            'turnOrder': room['turnOrder']
+            'turnOrder': room['turnOrder'],
+            'currentTurn': room['turnOrder'][next_index]
         }, room=f"impostor:{room_id}")
         
         return {'ok': True}
@@ -1036,17 +1038,27 @@ def register_socket_events(socketio, app=None):
                     socketio.emit('impostor:player-left', {'roomId': room_id, 'username': username}, room=f"impostor:{room_id}")
                     
                     players_list = [{'id': pid, 'username': p['username']} for pid, p in room['players'].items()]
+                    
+                    current_turn_id = None
+                    if room.get('turnOrder') and 'currentTurnIndex' in room:
+                        idx = room.get('currentTurnIndex', 0)
+                        if idx < len(room['turnOrder']):
+                            current_turn_id = room['turnOrder'][idx]
+
                     socketio.emit('impostor:room-state', {
                         'roomId': room_id,
                         'hostId': room['hostId'],
                         'players': players_list,
                         'started': room['started'],
                         'customWords': room['customWords'],
+                        'name': room['name'],
+                        'hasPassword': bool(room['password']),
                         'turnOrder': room.get('turnOrder', []),
-                        'currentTurnIndex': room.get('currentTurnIndex', 0)
+                        'currentTurnIndex': room.get('currentTurnIndex', 0),
+                        'currentTurn': current_turn_id
                     }, room=f"impostor:{room_id}")
-                
-                broadcast_servers(socketio)
+                    
+                    broadcast_servers(socketio)
 
     def cleanup_cs16_player(user_id):
         for room_id, room in list(cs16_rooms.items()):
