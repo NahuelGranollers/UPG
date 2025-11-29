@@ -68,7 +68,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center p-4 md:p-8 lg:p-12 bg-discord-chat overflow-y-auto custom-scrollbar relative">
+    <div className="flex flex-col h-full w-full bg-discord-chat overflow-hidden relative">
       {/* Mobile Menu Button */}
       {onOpenSidebar && (
         <button
@@ -79,8 +79,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
         </button>
       )}
 
-      {/* Hero Section */}
-      <div className="max-w-4xl w-full bg-discord-surface backdrop-blur-sm rounded-discord shadow-discord border border-discord-hover overflow-hidden mb-12 mt-8 md:mt-0">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 lg:p-12 flex flex-col items-center">
+        {/* Hero Section */}
+        <div className="max-w-4xl w-full bg-discord-surface backdrop-blur-sm rounded-discord shadow-discord border border-discord-hover overflow-hidden mb-12 mt-8 md:mt-0">
         <div className="p-10 md:p-14 lg:p-16 flex flex-col justify-center items-center text-center gap-8">
           <SafeImage
             src="/upg.png"
@@ -184,6 +185,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
             ))}
           </div>
         )}
+      </div>
       </div>
     </div>
   );

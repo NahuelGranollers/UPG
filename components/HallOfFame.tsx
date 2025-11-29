@@ -155,7 +155,7 @@ const HallOfFame: React.FC<HallOfFameProps> = ({ onOpenSidebar }) => {
   const handleMouseLeave = () => setReflect({ x: 0, y: 0, opacity: 0 });
 
   return (
-    <div className="flex-1 bg-discord-chat custom-scrollbar p-4 sm:p-6 md:p-8 relative">
+    <div className="flex flex-col h-full w-full bg-discord-chat overflow-hidden relative">
       {onOpenSidebar && (
         <button
           onClick={onOpenSidebar}
@@ -164,8 +164,9 @@ const HallOfFame: React.FC<HallOfFameProps> = ({ onOpenSidebar }) => {
           <Menu size={24} />
         </button>
       )}
-      <div className="max-w-4xl mx-auto">
-        <header className="discord-header discord-glass-card p-4 mb-6 flex items-center justify-between">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-8">
+        <div className="max-w-4xl mx-auto">
+          <header className="discord-header discord-glass-card p-4 mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-discord-text-header mb-2">Salón de la Fama — UPG</h1>
             <p className="text-sm sm:text-base text-discord-text-muted">
@@ -280,6 +281,7 @@ const HallOfFame: React.FC<HallOfFameProps> = ({ onOpenSidebar }) => {
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

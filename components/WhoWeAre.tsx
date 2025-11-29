@@ -7,7 +7,7 @@ interface WhoWeAreProps {
 
 const WhoWeAre: React.FC<WhoWeAreProps> = ({ onMenuToggle }) => {
   return (
-    <div className="flex-1 bg-discord-chat custom-scrollbar p-4 sm:p-6 md:p-8 relative">
+    <div className="flex flex-col h-full w-full bg-discord-chat overflow-hidden relative">
       {onMenuToggle && (
         <button
           onClick={onMenuToggle}
@@ -16,8 +16,9 @@ const WhoWeAre: React.FC<WhoWeAreProps> = ({ onMenuToggle }) => {
           <Menu size={24} />
         </button>
       )}
-      <div className="max-w-4xl mx-auto pt-8 md:pt-0">
-        <div className="text-center mb-8 sm:mb-10 md:mb-12">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-8">
+        <div className="max-w-4xl mx-auto pt-8 md:pt-0">
+          <div className="text-center mb-8 sm:mb-10 md:mb-12">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-discord-text-header mb-3 sm:mb-4">
             Unas Partidillas Gang (UPG)
           </h1>
@@ -103,6 +104,7 @@ const WhoWeAre: React.FC<WhoWeAreProps> = ({ onMenuToggle }) => {
             </div>
           ))}
         </div>
+      </div>
       </div>
     </div>
   );

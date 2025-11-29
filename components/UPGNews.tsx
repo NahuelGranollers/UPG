@@ -137,7 +137,7 @@ const UPGNews: React.FC<UPGNewsProps> = ({ onOpenSidebar }) => {
   };
 
   return (
-    <div className="flex-1 bg-discord-chat custom-scrollbar overflow-y-auto relative">
+    <div className="flex flex-col h-full w-full bg-discord-chat overflow-hidden relative">
       {onOpenSidebar && (
         <button
           onClick={onOpenSidebar}
@@ -146,9 +146,10 @@ const UPGNews: React.FC<UPGNewsProps> = ({ onOpenSidebar }) => {
           <Menu size={24} />
         </button>
       )}
-      <div className="max-w-4xl mx-auto p-4 sm:p-6 md:p-8">
-        {/* Header */}
-        <div className="text-center mb-8 relative">
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="max-w-4xl mx-auto p-4 sm:p-6 md:p-8">
+          {/* Header */}
+          <div className="text-center mb-8 relative">
           <h1 className="text-3xl sm:text-4xl font-black text-discord-text-header mb-4">
             📰 UPG News
           </h1>
@@ -368,6 +369,7 @@ const UPGNews: React.FC<UPGNewsProps> = ({ onOpenSidebar }) => {
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

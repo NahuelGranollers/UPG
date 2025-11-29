@@ -275,8 +275,8 @@ export default function CS16Game({
   };
 
   return (
-    <div className="flex flex-col min-h-screen w-full bg-discord-chat">
-      <div className="w-full py-4 px-2 sm:py-6 sm:px-4 lg:py-8 lg:px-6">
+    <div className="flex flex-col h-full w-full bg-discord-chat overflow-hidden">
+      <div className="flex-1 overflow-y-auto custom-scrollbar w-full py-4 px-2 sm:py-6 sm:px-4 lg:py-8 lg:px-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             {onOpenSidebar && (
@@ -521,6 +521,7 @@ export default function CS16Game({
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   );
