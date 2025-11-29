@@ -251,6 +251,9 @@ function MainApp() {
                     }
                   }}
                   currentUser={currentUser}
+                  activeVoiceChannel={voice.inChannel}
+                  micActive={!voice.isMuted}
+                  voiceLevel={voice.voiceLevel}
                   onVoiceJoin={handleVoiceJoin}
                   onLoginWithDiscord={loginWithDiscord}
                   onLogoutDiscord={logout}
@@ -320,6 +323,9 @@ function MainApp() {
                   setMobileActiveTab('chat');
                 }}
                 currentUser={currentUser}
+                activeVoiceChannel={voice.inChannel}
+                micActive={!voice.isMuted}
+                voiceLevel={voice.voiceLevel}
                 onVoiceJoin={handleVoiceJoin}
                 onLoginWithDiscord={loginWithDiscord}
                 onLogoutDiscord={logout}
