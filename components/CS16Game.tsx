@@ -86,8 +86,8 @@ export default function CS16Game({
         stencil: false,
         preserveDrawingBuffer: false
       },
-      // Force windowed mode and standard resolution to avoid fullscreen issues
-      arguments: ['-windowed', '-width', '1024', '-height', '768'],
+      // Force windowed mode, standard resolution, and software renderer fallback
+      arguments: ['-windowed', '-width', '1024', '-height', '768', '-ref', 'soft'],
       setStatus: (text: string) => setStatus(text),
       totalDependencies: 0,
       monitorRunDependencies: (left: number) => {
@@ -176,6 +176,16 @@ export default function CS16Game({
   const launchEngine = () => {
     if (!engineReady) return;
     setGameRunning(true);
+
+    // Suppress "Uncaught Infinity" errors from Emscripten's quit()
+    const originalOnError = window.onerror;
+    window.onerror = (msg, url, line, col, error) => {
+        if (msg.toString().includes('Infinity') || (error && error.message === 'Infinity')) {
+            return true; // Suppress
+        }
+        if (originalOnError) return originalOnError(msg, url, line, col, error);
+        return false;
+    };
     
     // Load the script
     const script = document.createElement('script');
