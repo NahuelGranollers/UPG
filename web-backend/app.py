@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_cors import CORS
 from flask_compress import Compress
 from flask_socketio import SocketIO
@@ -25,6 +25,19 @@ app.register_blueprint(api)
 app.register_blueprint(auth)
 app.register_blueprint(bot_bp)
 register_socket_events(socketio, app)
+
+# Serve Xash3D assets
+@app.route('/xash/<path:filename>')
+def serve_xash(filename):
+    # Adjust path relative to web-backend/ directory
+    return send_from_directory('../public/xash', filename)
+
+# Add COOP/COEP headers for WASM threading
+@app.after_request
+def add_security_headers(response):
+    response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
+    response.headers['Cross-Origin-Embedder-Policy'] = 'require-corp'
+    return response
 
 with app.app_context():
     db.create_all()
