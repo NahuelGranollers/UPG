@@ -95,7 +95,13 @@ export default function CS16Game({
         return prefix + path;
       },
       // Predeclare dynamic side modules without prefix; engine uses scriptDirectory (/xash/)
-      dynamicLibraries: ['filesystem_stdio.wasm']
+      dynamicLibraries: [
+        'filesystem_stdio.wasm',
+        'libref_webgl2.wasm',
+        'client_emscripten_wasm32.wasm',
+        'cs_emscripten_wasm32.wasm',
+        'menu_emscripten_wasm32.wasm'
+      ]
     };
 
     const fileData: { path: string, data: ArrayBuffer }[] = [];
