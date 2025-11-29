@@ -4,10 +4,8 @@ import time
 connected_users = {} # socket_id -> user_data
 voice_states = {} # socket_id -> channel_id
 impostor_rooms = {} # room_id -> room_data
-cs16_rooms = {} # room_id -> room_data
 public_servers = {
-    'impostor': {},
-    'cs16': {}
+    'impostor': {}
 }
 user_room_map = {} # user_id -> {type, roomId}
 trolled_users = {} # user_id -> mode ('uwu', 'meow', 'kawaii')
