@@ -1,6 +1,8 @@
 ﻿import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { toast } from 'sonner';
 import { useSocket } from '../context/SocketContext';
+import { useUsers } from '../context/UserContext';
+import { useChat } from '../hooks/useChat';
 import { Message, User, UserRole } from '../types';
 import { Hash, Menu } from 'lucide-react';
 import MessageInput from './MessageInput';
@@ -8,25 +10,18 @@ import { MessageList } from './MessageList';
 
 interface ChatInterfaceProps {
   currentUser: User;
-  users: User[];
   currentChannel: { id: string; name: string };
-  onSendMessage: (content: string, localId?: string) => Promise<any>;
-  messages: Message[];
-  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   onMenuToggle: () => void;
-  userColors?: Record<string, string>;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
   currentUser,
-  users = [],
   currentChannel,
-  onSendMessage,
-  messages,
-  setMessages,
   onMenuToggle,
-  userColors = {},
 }) => {
+  const { users, userColors } = useUsers();
+  const { messages, sendMessage } = useChat(currentChannel.id);
+
   // State
   const [inputText, setInputText] = useState('');
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
@@ -215,7 +210,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       if (mentionsBot) setIsBotTyping(true);
 
       try {
-        const res = await onSendMessage(inputText, localId);
+        const res = await sendMessage(inputText, localId);
         if (res && res.ok === false) {
           // Remove optimistic local message on failure
           setLocalMessages(prev =>
@@ -230,7 +225,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         toast.error('Error enviando mensaje');
       }
     },
-    [inputText, onSendMessage, currentUser, currentChannel.id]
+    [inputText, sendMessage, currentUser, currentChannel.id]
   );
 
   // Auto-enfocar el input cuando se entra al chat o cambia de canal
