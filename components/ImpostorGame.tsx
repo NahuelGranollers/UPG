@@ -256,27 +256,20 @@ export default function ImpostorGame({
       setTimeout(() => setNotifications(prev => prev.slice(1)), 5000); // Auto remove after 5s
     };
 
-    socket.on('impostor:room-state', onRoomState);
-    socket.on('impostor:assign', onAssign);
-    socket.on('impostor:started', onStarted);
-    socket.on('impostor:reveal-all', onRevealAll);
-    socket.on('impostor:player-left', onPlayerLeft);
-    socket.on('impostor:turn-update', onTurnUpdate);
-    socket.on('impostor:voting-start', onVotingStart);
-    socket.on('impostor:voting-update', onVotingUpdate);
-    socket.on('impostor:voting-result', onVotingResult);
-    socket.on('impostor:timer-update', (data: any) => {
+    const onTimerUpdate = (data: any) => {
       setTimeLeft(data.timeLeft);
-    });
-    socket.on('impostor:timer-end', () => {
+    };
+
+    const onTimerEnd = () => {
       setTimeLeft(0);
       setStatusMessage('¡Tiempo agotado!');
       setNotifications(prev => [
         ...prev,
         { id: Date.now(), type: 'warning', message: '¡Tiempo agotado!', timestamp: new Date() },
       ]);
-    });
-    socket.on('impostor:game-over', (data: any) => {
+    };
+
+    const onGameOver = (data: any) => {
       setGameStarted(false);
       setVoting(false);
       setAssigned(null);
@@ -309,8 +302,9 @@ export default function ImpostorGame({
         ...prev,
         { id: Date.now(), type: type, message: msg, timestamp: new Date() },
       ]);
-    });
-    socket.on('impostor:restarted', () => {
+    };
+
+    const onRestarted = () => {
       setAssigned(null);
       setPendingAssigned(null);
       setVoting(false);
@@ -325,7 +319,21 @@ export default function ImpostorGame({
       setGameOverInfo(null);
       setTurnOrder([]);
       setCurrentTurn(null);
-    });
+    };
+
+    socket.on('impostor:room-state', onRoomState);
+    socket.on('impostor:assign', onAssign);
+    socket.on('impostor:started', onStarted);
+    socket.on('impostor:reveal-all', onRevealAll);
+    socket.on('impostor:player-left', onPlayerLeft);
+    socket.on('impostor:turn-update', onTurnUpdate);
+    socket.on('impostor:voting-start', onVotingStart);
+    socket.on('impostor:voting-update', onVotingUpdate);
+    socket.on('impostor:voting-result', onVotingResult);
+    socket.on('impostor:timer-update', onTimerUpdate);
+    socket.on('impostor:timer-end', onTimerEnd);
+    socket.on('impostor:game-over', onGameOver);
+    socket.on('impostor:restarted', onRestarted);
 
     return () => {
       socket.off('impostor:room-state', onRoomState);
@@ -335,9 +343,12 @@ export default function ImpostorGame({
       socket.off('impostor:voting-start', onVotingStart);
       socket.off('impostor:voting-update', onVotingUpdate);
       socket.off('impostor:voting-result', onVotingResult);
-      socket.off('impostor:reveal-all');
-      socket.off('impostor:player-left');
-      socket.off('impostor:restarted');
+      socket.off('impostor:reveal-all', onRevealAll);
+      socket.off('impostor:player-left', onPlayerLeft);
+      socket.off('impostor:timer-update', onTimerUpdate);
+      socket.off('impostor:timer-end', onTimerEnd);
+      socket.off('impostor:game-over', onGameOver);
+      socket.off('impostor:restarted', onRestarted);
     };
   }, [socket, currentUser]);
 

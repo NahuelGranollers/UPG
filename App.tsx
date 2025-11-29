@@ -347,6 +347,8 @@ function MainApp() {
                   setShowHome(true);
                   setActiveView(AppView.CHAT);
                   setActiveSection('home');
+                  setAutoJoinRoomId(undefined);
+                  setAutoJoinPassword(undefined);
                 }}
                 autoJoinRoomId={autoJoinRoomId}
                 autoJoinPassword={autoJoinPassword}
@@ -405,6 +407,8 @@ function MainApp() {
                   setShowHome(true);
                   setActiveView(AppView.CHAT);
                   setActiveSection('home');
+                  setAutoJoinRoomId(undefined);
+                  setAutoJoinPassword(undefined);
                 }}
                 autoJoinRoomId={autoJoinRoomId}
                 autoJoinPassword={autoJoinPassword}
