@@ -88,13 +88,6 @@ export default function CS16Game({
       monitorRunDependencies: (left: number) => {
         // console.log('Dependencies left:', left);
       },
-      // Ensure all engine assets (wasm, data, side modules) are served from /xash/
-      locateFile: (path: string, prefix: string) => {
-        if (path.endsWith('.wasm') || path.endsWith('.data') || path.endsWith('.mem')) {
-          return '/xash/' + path;
-        }
-        return prefix + path;
-      },
       // Predeclare dynamic side modules without prefix; engine uses scriptDirectory (/xash/)
       dynamicLibraries: [
         'filesystem_stdio.wasm',
@@ -102,7 +95,16 @@ export default function CS16Game({
         'client_emscripten_wasm32.wasm',
         'cs_emscripten_wasm32.wasm',
         'menu_emscripten_wasm32.wasm'
-      ]
+      ],
+      // Map library paths to the correct location in the virtual filesystem
+      locateFile: (path: string, prefix: string) => {
+        if (path.endsWith('.wasm') || path.endsWith('.data') || path.endsWith('.mem')) {
+          // If the engine asks for a DLL in a subdirectory (e.g. cl_dlls/), flatten it to /xash/
+          const fileName = path.split('/').pop();
+          return '/xash/' + fileName;
+        }
+        return prefix + path;
+      },
     };
 
     const fileData: { path: string, data: ArrayBuffer }[] = [];
