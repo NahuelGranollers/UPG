@@ -57,6 +57,15 @@ export default function CS16Game({
       print: (text: string) => console.log('[Xash3D]', text),
       printErr: (text: string) => console.error('[Xash3D Error]', text),
       canvas: canvasRef.current,
+      // Prefer high-performance GPU if available
+      webglContextAttributes: {
+        alpha: false,
+        antialias: true,
+        depth: true,
+        stencil: false,
+        preserveDrawingBuffer: false,
+        powerPreference: 'high-performance'
+      },
       setStatus: (text: string) => setStatus(text),
       totalDependencies: 0,
       monitorRunDependencies: (left: number) => {
@@ -146,6 +155,17 @@ export default function CS16Game({
         // @ts-ignore
         window.Xash3D(window.Module).then((instance: any) => {
           console.log('Xash3D Engine Initialized');
+          // Attempt to get a WebGL2 context and report if unavailable
+          try {
+            const canvas = canvasRef.current!;
+            const gl = (canvas.getContext('webgl2', { powerPreference: 'high-performance' })
+              || canvas.getContext('webgl', { powerPreference: 'high-performance' })) as WebGLRenderingContext | null;
+            if (!gl) {
+              toast.warning('WebGL acelerado no disponible. Usando renderizado por software.');
+            }
+          } catch (e) {
+            console.warn('WebGL context check failed:', e);
+          }
         }).catch((err: any) => {
           console.error('Failed to initialize Xash3D:', err);
           toast.error('Error al iniciar el motor del juego');
