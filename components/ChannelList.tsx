@@ -52,6 +52,7 @@ import {
 import ServerSettings from './ServerSettings';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
+import { useUsers } from '../context/UserContext';
 import { AppView, User } from '../types';
 import { ChannelData } from '../types';
 import SafeImage from './SafeImage';
@@ -63,8 +64,6 @@ interface ChannelListProps {
   currentUser: User;
   activeVoiceChannel: string | null;
   onVoiceJoin: (channelName: string) => void;
-  voiceStates: Record<string, string>;
-  users: User[];
   onLoginWithDiscord?: () => void;
   onLogoutDiscord?: () => void;
   onToggleMic?: () => void;
@@ -126,17 +125,14 @@ const VoiceChannelItem = React.memo(({
   name, 
   activeVoiceChannel, 
   onVoiceJoin, 
-  voiceStates, 
-  users, 
   currentUser 
 }: { 
   name: string;
   activeVoiceChannel: string | null;
   onVoiceJoin: (channelName: string) => void;
-  voiceStates: Record<string, string>;
-  users: User[];
   currentUser: User;
 }) => {
+  const { users, voiceStates } = useUsers();
   const isConnected = activeVoiceChannel === name;
   // Filter users who are in this specific channel (memoizado)
   const usersInChannel = useMemo(
@@ -201,8 +197,6 @@ const ChannelList: React.FC<ChannelListProps> = ({
   currentUser,
   activeVoiceChannel,
   onVoiceJoin,
-  voiceStates,
-  users,
   onLoginWithDiscord,
   onLogoutDiscord,
   onToggleMic,
@@ -274,8 +268,6 @@ const ChannelList: React.FC<ChannelListProps> = ({
             name="Plaza UPG" 
             activeVoiceChannel={activeVoiceChannel}
             onVoiceJoin={onVoiceJoin}
-            voiceStates={voiceStates}
-            users={users}
             currentUser={currentUser}
           />
         </div>
