@@ -54,8 +54,26 @@ export default function CS16Game({
     window.Module = {
       preRun: [],
       postRun: [],
-      print: (text: string) => console.log('[Xash3D]', text),
+      print: (text: string) => {
+        console.log('[Xash3D]', text);
+        if (text.includes("Can't initialize any renderer")) {
+          toast.error("Error gráfico: No se pudo iniciar WebGL. Verifica tus drivers o activa la aceleración de hardware.");
+          setStatus("Error: Fallo de inicialización de video.");
+          setGameRunning(false);
+        }
+      },
       printErr: (text: string) => console.error('[Xash3D Error]', text),
+      onAbort: (what: any) => {
+         console.warn('[Xash3D] Aborted:', what);
+         setStatus("El motor se detuvo inesperadamente.");
+         setGameRunning(false);
+      },
+      quit: (status: number, toThrow: any) => {
+         console.log('[Xash3D] Quit:', status);
+         setGameRunning(false);
+         // Throw a manageable error to unwind execution without "Uncaught Infinity"
+         throw new Error('Xash3D Exit: ' + status);
+      },
       canvas: canvasRef.current,
       // Prefer high-performance GPU if available
       webglContextAttributes: {
