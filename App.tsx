@@ -490,8 +490,8 @@ function MainApp() {
                 {activeView === AppView.VOTING && (
                   <Voting onMenuToggle={() => setMobileSidebarOpen(true)} />
                 )}
-                {activeView === AppView.NEWS && <UPGNews />}
-                {activeView === AppView.HALL_OF_FAME && <HallOfFame />}
+                {activeView === AppView.NEWS && <UPGNews onOpenSidebar={() => setMobileSidebarOpen(true)} />}
+                {activeView === AppView.HALL_OF_FAME && <HallOfFame onOpenSidebar={() => setMobileSidebarOpen(true)} />}
                 {activeView === AppView.CS16 && (
                   <CS16Game
                     onClose={() => {

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Trophy, Star, Medal, Crown, Award } from 'lucide-react';
+import { Trophy, Star, Medal, Crown, Award, Menu } from 'lucide-react';
 
 interface Achievement {
   id: string;
@@ -8,6 +8,10 @@ interface Achievement {
   winner: string;
   icon: React.ComponentType<{ className?: string }>;
   color: string;
+}
+
+interface HallOfFameProps {
+  onOpenSidebar?: () => void;
 }
 
 const achievements: Achievement[] = [
@@ -61,7 +65,7 @@ const achievements: Achievement[] = [
   },
 ];
 
-const HallOfFame: React.FC = () => {
+const HallOfFame: React.FC<HallOfFameProps> = ({ onOpenSidebar }) => {
   const [selected, setSelected] = useState<Achievement | null>(null);
 
   const shelfRef = useRef<HTMLDivElement | null>(null);
@@ -87,7 +91,15 @@ const HallOfFame: React.FC = () => {
   const handleMouseLeave = () => setReflect({ x: 0, y: 0, opacity: 0 });
 
   return (
-    <div className="flex-1 bg-discord-chat custom-scrollbar p-4 sm:p-6 md:p-8">
+    <div className="flex-1 bg-discord-chat custom-scrollbar p-4 sm:p-6 md:p-8 relative">
+      {onOpenSidebar && (
+        <button
+          onClick={onOpenSidebar}
+          className="md:hidden absolute top-4 left-4 p-2 bg-discord-surface rounded-full shadow-lg z-10 text-discord-text-normal hover:text-white"
+        >
+          <Menu size={24} />
+        </button>
+      )}
       <div className="max-w-4xl mx-auto">
         <header className="discord-header discord-glass-card p-4 mb-6 flex items-center justify-between">
           <div>

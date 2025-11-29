@@ -1,5 +1,5 @@
 import React, { memo, useEffect, useState } from 'react';
-import { Newspaper, Calendar, User, ExternalLink, Plus, X } from 'lucide-react';
+import { Newspaper, Calendar, User, ExternalLink, Plus, X, Menu } from 'lucide-react';
 import SafeImage from './SafeImage';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
@@ -16,7 +16,11 @@ interface NewsArticle {
   category: 'announcement' | 'event' | 'update' | 'tournament';
 }
 
-const UPGNews: React.FC = () => {
+interface UPGNewsProps {
+  onOpenSidebar?: () => void;
+}
+
+const UPGNews: React.FC<UPGNewsProps> = ({ onOpenSidebar }) => {
   const { currentUser } = useAuth();
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -133,7 +137,15 @@ const UPGNews: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 bg-discord-chat custom-scrollbar overflow-y-auto">
+    <div className="flex-1 bg-discord-chat custom-scrollbar overflow-y-auto relative">
+      {onOpenSidebar && (
+        <button
+          onClick={onOpenSidebar}
+          className="md:hidden absolute top-4 left-4 p-2 bg-discord-surface rounded-full shadow-lg z-10 text-discord-text-normal hover:text-white"
+        >
+          <Menu size={24} />
+        </button>
+      )}
       <div className="max-w-4xl mx-auto p-4 sm:p-6 md:p-8">
         {/* Header */}
         <div className="text-center mb-8 relative">
