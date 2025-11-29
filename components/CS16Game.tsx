@@ -71,8 +71,11 @@ export default function CS16Game({
       quit: (status: number, toThrow: any) => {
          console.log('[Xash3D] Quit:', status);
          setGameRunning(false);
-         // Throw a manageable error to unwind execution without "Uncaught Infinity"
-         throw new Error('Xash3D Exit: ' + status);
+         // If status is non-zero, it's an error exit.
+         // We throw a custom error to stop execution but catch it in the promise chain.
+         if (status !== 0) {
+             throw new Error('Xash3D Exit with status: ' + status);
+         }
       },
       canvas: canvasRef.current,
       // Prefer high-performance GPU if available
