@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
+import { getSocketUrl } from '../utils/config';
 
 interface SocketContextType {
   socket: Socket | null;
@@ -24,9 +25,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     if (!currentUser) return;
 
-    const SOCKET_URL =
-      (import.meta.env.VITE_SOCKET_URL as string) ||
-      'https://api.unaspartidillas.online';
+    const SOCKET_URL = getSocketUrl();
 
     const socket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
