@@ -69,8 +69,8 @@ export default function CS16Game({
         }
         return prefix + path;
       },
-      // Predeclare dynamic side modules so the runtime fetches them asynchronously
-      dynamicLibraries: ['/xash/filesystem_stdio.wasm']
+      // Predeclare dynamic side modules without prefix; engine uses scriptDirectory (/xash/)
+      dynamicLibraries: ['filesystem_stdio.wasm']
     };
 
     const fileData: { path: string, data: ArrayBuffer }[] = [];
