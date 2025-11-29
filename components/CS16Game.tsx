@@ -1,528 +1,257 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
-import { User } from '../types';
 import { toast } from 'sonner';
-import { Menu } from 'lucide-react';
+import { Menu, Upload, Play, AlertTriangle, Info } from 'lucide-react';
 
-// Import CS 1.6 game engine and classes
-import { initCS16Game, startCS16Game, cleanupCS16Game, setupMultiplayerEvents } from '../cs16-game/cs16-engine.js';
+declare global {
+  interface Window {
+    Module: any;
+    FS: any;
+  }
+}
 
 export default function CS16Game({ 
   onClose,
-  autoJoinRoomId,
-  autoJoinPassword,
-  autoJoinBotCount,
   onOpenSidebar
 }: { 
   onClose?: () => void;
-  autoJoinRoomId?: string;
-  autoJoinPassword?: string;
-  autoJoinBotCount?: number;
   onOpenSidebar?: () => void;
 }) {
-  const { socket } = useSocket();
-  const { currentUser } = useAuth();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const gameInitializedRef = useRef(false);
+  const [status, setStatus] = useState<string>('Esperando archivos del juego...');
+  const [progress, setProgress] = useState<number>(0);
+  const [engineReady, setEngineReady] = useState(false);
+  const [gameRunning, setGameRunning] = useState(false);
+  const [missingEngine, setMissingEngine] = useState(false);
 
-  const [roomId, setRoomId] = useState('');
-  const [username, setUsername] = useState(currentUser?.username || '');
-  const [joined, setJoined] = useState(false);
-  const [isHost, setIsHost] = useState(false);
-  const [botCount, setBotCount] = useState(0);
-  const [gameStarted, setGameStarted] = useState(false);
-  const [publicServers, setPublicServers] = useState<any[]>([]);
-  // Only show public server listing by default
-  const [showPublicServers, setShowPublicServers] = useState(true);
-  const [showCreateServer, setShowCreateServer] = useState(false);
-  const [serverName, setServerName] = useState('');
-  const [serverPassword, setServerPassword] = useState('');
-  
+  // Check if engine files exist (simple check by fetching head)
   useEffect(() => {
-    if (!socket || !currentUser) return;
+    fetch('/xash/xash3d.js', { method: 'HEAD' })
+      .then(res => {
+        if (!res.ok) setMissingEngine(true);
+      })
+      .catch(() => setMissingEngine(true));
+  }, []);
 
-    // Auto-join logic when props are provided
-    if (autoJoinRoomId && !joined) {
-      setRoomId(autoJoinRoomId);
-      setUsername(currentUser.username || '');
-      if (autoJoinBotCount !== undefined) {
-        setBotCount(autoJoinBotCount);
-      }
+  const handleDirectorySelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
 
-      // Attempt to join the room
-      setTimeout(() => {
-        socket.emit('cs16:join-room', { 
-          roomId: autoJoinRoomId, 
-          userId: currentUser.id, 
-          username: currentUser.username || '',
-          password: autoJoinPassword
-        }, (res: any) => {
-          if (res && res.ok) {
-            setJoined(true);
-            toast.success('Te has unido a la sala');
-          } else {
-            toast.error('Error al unirse: ' + (res?.error || 'Error desconocido'));
-            // Reset to allow manual joining if auto-join fails
-            setRoomId('');
-          }
-        });
-      }, 100); // Small delay to ensure socket is ready
-    }
-  }, [socket, currentUser, autoJoinRoomId, autoJoinPassword, autoJoinBotCount, joined]);
+    setStatus('Cargando archivos al sistema de archivos virtual...');
+    setEngineReady(false);
+    
+    const files = Array.from(e.target.files);
+    let loadedCount = 0;
+    const totalFiles = files.length;
 
-  useEffect(() => {
-    if (!socket) return;
-
-    // Socket event handlers for multiplayer
-    socket.on('cs16:room-state', (data) => {
-      // console.log('Room state:', data);
-      setJoined(true);
-      setIsHost(data.hostId === currentUser?.id);
-    });
-
-    socket.on('cs16:game-update', (data) => {
-      // console.log('Game update:', data);
-      const started = data.gameState?.gameStarted || false;
-      setGameStarted(started);
-      if (started) {
-        startCS16Game();
-      }
-    });
-
-    socket.on('cs16:player-joined', (data) => {
-      // console.log('Player joined:', data);
-    });
-
-    socket.on('cs16:player-left', (data) => {
-      // console.log('Player left:', data);
-    });
-
-    socket.on('cs16:player-hit', (data) => {
-      // console.log('Player hit:', data);
-    });
-
-    socket.on('cs16:bomb-planted', (data) => {
-      // console.log('Bomb planted:', data);
-    });
-
-    socket.on('cs16:bomb-defused', (data) => {
-      // console.log('Bomb defused:', data);
-    });
-
-    return () => {
-      socket.off('cs16:room-state');
-      socket.off('cs16:game-update');
-      socket.off('cs16:player-joined');
-      socket.off('cs16:player-left');
-      socket.off('cs16:player-hit');
-      socket.off('cs16:bomb-planted');
-      socket.off('cs16:bomb-defused');
-    };
-  }, [socket, currentUser]);
-
-  // Auto-refresh public servers when viewing them
-  useEffect(() => {
-    if (!showPublicServers) return;
-    const interval = setInterval(fetchPublicServers, 10000); // Refresh every 10 seconds
-    return () => clearInterval(interval);
-  }, [showPublicServers]);
-
-  // Initialize CS 1.6 game when component mounts and room is joined
-  useEffect(() => {
-    if (!canvasRef.current || !joined || gameInitializedRef.current) return;
-
-    try {
-      // Initialize the CS 1.6 game engine
-      initCS16Game(
-        canvasRef.current, 
-        socket, 
-        roomId, 
-        currentUser, 
-        isHost,
-        botCount,
-        (errorMessage: string) => {
-          toast.error(errorMessage);
-          console.error(errorMessage);
+    // Initialize Module if not already
+    if (!window.Module) {
+      window.Module = {
+        preRun: [],
+        postRun: [],
+        print: (text: string) => console.log('[Xash3D]', text),
+        printErr: (text: string) => console.error('[Xash3D Error]', text),
+        canvas: canvasRef.current,
+        setStatus: (text: string) => setStatus(text),
+        totalDependencies: 0,
+        monitorRunDependencies: (left: number) => {
+          // console.log('Dependencies left:', left);
         }
-      );
-      setupMultiplayerEvents();
-      gameInitializedRef.current = true;
-
-      console.log('CS 1.6 game initialized successfully');
-    } catch (error) {
-      console.error('Failed to initialize CS 1.6 game:', error);
+      };
     }
 
-    return () => {
-      if (gameInitializedRef.current) {
-        cleanupCS16Game();
-        gameInitializedRef.current = false;
-      }
-    };
-  }, [joined, socket, roomId, currentUser, isHost]);
-
-  const handleCreate = () => {
-    if (!socket) return;
-    if (!roomId || !username) return;
-
-    socket.emit('cs16:create-room', { roomId, userId: currentUser?.id, username, botCount }, (res: any) => {
-      if (res && res.ok) {
-        setJoined(true);
-        toast.success('Sala creada correctamente');
-      } else {
-        toast.error('Error al crear sala: ' + (res?.error || 'Error desconocido'));
-      }
-    });
-  };
-
-  const handleJoin = () => {
-    if (!socket) return;
-    if (!roomId || !username) return;
-
-    socket.emit('cs16:join-room', { roomId, userId: currentUser?.id, username }, (res: any) => {
-      if (res && res.ok) {
-        setJoined(true);
-        toast.success('Te has unido a la sala');
-      } else {
-        toast.error('Error al unirse: ' + (res?.error || 'Error desconocido'));
-      }
-    });
-  };
-
-  const handleLeave = () => {
-    if (!socket) return;
-    socket.emit('cs16:leave-room', { roomId, userId: currentUser?.id }, () => {
-      setJoined(false);
-      setGameStarted(false);
-      setIsHost(false);
-      if (gameInitializedRef.current) {
-        cleanupCS16Game();
-        gameInitializedRef.current = false;
-      }
-    });
-  };
-
-  const handleStartGame = () => {
-    if (!socket || !isHost) return;
-    socket.emit('cs16:start-game', { roomId, hostId: currentUser?.id }, (res: any) => {
-      if (res && res.ok) {
-        startCS16Game();
-        toast.success('Partida iniciada');
-      } else {
-        toast.error('Error al iniciar partida: ' + (res?.error || 'Error desconocido'));
-      }
-    });
-  };
-
-  // Fetch public servers
-  const fetchPublicServers = async () => {
-    try {
-      const API_URL = import.meta.env.VITE_API_URL || 'https://api.unaspartidillas.online/api';
-      const response = await fetch(`${API_URL}/servers`);
-      const data = await response.json();
-      setPublicServers(data.servers?.cs16 || []);
-    } catch (error) {
-      console.error('Error fetching public servers:', error);
+    const fileData: { path: string, data: ArrayBuffer }[] = [];
+    
+    for (const file of files) {
+        const path = file.webkitRelativePath;
+        // Check if relevant
+        if (!path.includes('valve') && !path.includes('cstrike')) continue;
+        
+        try {
+            const buffer = await file.arrayBuffer();
+            fileData.push({ path, data: buffer });
+            loadedCount++;
+            setProgress(Math.round((loadedCount / totalFiles) * 100));
+        } catch (e) {
+            console.error('Error reading file', file.name);
+        }
     }
-  };
 
-  // Create public server
-  const handleCreatePublicServer = (explicitRoomId?: string) => {
-    if (!socket) return;
-    const finalRoomId = explicitRoomId || roomId || `room_${Date.now()}`;
-    if (!username) return;
+    setStatus(`Archivos cargados (${fileData.length}). Listo para iniciar.`);
+    setEngineReady(true);
 
-    if (finalRoomId !== roomId) setRoomId(finalRoomId);
+    // Setup the preRun to write these files
+    window.Module.preRun = []; // Reset
+    window.Module.preRun.push(() => {
+        const FS = window.FS;
+        for (const item of fileData) {
+            const parts = item.path.split('/');
+            let startIndex = -1;
+            if (parts.includes('valve')) startIndex = parts.indexOf('valve');
+            else if (parts.includes('cstrike')) startIndex = parts.indexOf('cstrike');
+            
+            if (startIndex === -1) continue;
 
-    socket.emit('cs16:create-room', {
-      roomId: finalRoomId,
-      userId: currentUser?.id,
-      username,
-      botCount,
-      name: serverName || `Sala CS16 de ${username}`,
-      password: serverPassword || null
-    }, (res: any) => {
-      if (res && res.ok) {
-        setJoined(true);
-        fetchPublicServers(); // Refresh the list
-        toast.success('Servidor público creado');
-      } else {
-        toast.error('Error al crear servidor público: ' + (res?.error || 'Error desconocido'));
-      }
+            const relativePath = parts.slice(startIndex).join('/');
+            const dirPath = parts.slice(startIndex, -1).join('/');
+            const fileName = parts[parts.length - 1];
+
+            // Create dirs
+            const dirs = dirPath.split('/');
+            let currentDir = '';
+            for (const dir of dirs) {
+                currentDir += (currentDir ? '/' : '') + dir;
+                try {
+                    FS.mkdir(currentDir);
+                } catch (e: any) {
+                    if (e.code !== 'EEXIST' && e.code !== 17) console.warn('mkdir error', e);
+                }
+            }
+
+            // Write file
+            try {
+                FS.writeFile(relativePath, new Uint8Array(item.data));
+            } catch (e) {
+                console.error('Error writing file', relativePath, e);
+            }
+        }
     });
   };
 
-  // Join public server
-  const handleJoinPublicServer = (serverRoomId: string, password?: string) => {
-    if (!socket) return;
-    if (!username) return;
-    setRoomId(serverRoomId);
-    socket.emit('cs16:join-room', {
-      roomId: serverRoomId,
-      userId: currentUser?.id,
-      username,
-      password
-    }, (res: any) => {
-      if (res && res.ok) {
-        setJoined(true);
-        fetchPublicServers(); // Refresh the list
-        toast.success('Te has unido al servidor');
-      } else {
-        toast.error('Error al unirse al servidor: ' + (res?.error || 'Error desconocido'));
-      }
-    });
+  const launchEngine = () => {
+    if (!engineReady) return;
+    setGameRunning(true);
+    
+    // Load the script
+    const script = document.createElement('script');
+    script.src = '/xash/xash3d.js';
+    script.async = true;
+    document.body.appendChild(script);
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-discord-chat overflow-hidden">
-      <div className="flex-1 overflow-y-auto custom-scrollbar w-full py-4 px-2 sm:py-6 sm:px-4 lg:py-8 lg:px-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            {onOpenSidebar && (
-              <button
-                onClick={onOpenSidebar}
-                className="md:hidden text-discord-text-muted hover:text-white"
-                aria-label="Abrir menú"
-              >
+    <div className="flex flex-col h-full w-full bg-black overflow-hidden relative">
+      {/* Header / Overlay */}
+      {!gameRunning && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-discord-chat/90 backdrop-blur-sm p-4">
+          <div className="bg-discord-surface p-6 rounded-lg max-w-2xl w-full border border-discord-hover shadow-2xl">
+            <div className="flex justify-between items-start mb-6">
+              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+                <Play className="text-green-500" />
+                CS 1.6 Web Engine (Xash3D)
+              </h1>
+              <button onClick={onClose} className="text-discord-text-muted hover:text-white">
                 <Menu size={24} />
               </button>
-            )}
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-discord-text-header">
-              CS 1.6 Multiplayer
-            </h1>
-          </div>
-          <div className="flex gap-2">
-            {!joined && (
-              <button
-                onClick={() => setShowCreateServer(true)}
-                className="discord-button success"
-              >
-                Crear Servidor
-              </button>
-            )}
-            <button
-              onClick={() => {
-                if (joined) handleLeave();
-                if (onClose) onClose();
-              }}
-              className="discord-button secondary"
-            >
-              Cerrar
-            </button>
-          </div>
-        </div>
-
-        {showCreateServer && !joined && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-            <div className="bg-discord-surface p-6 rounded-lg max-w-md w-full space-y-4">
-              <h3 className="text-xl font-bold text-white">Crear Servidor CS 1.6</h3>
-              
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-discord-text-muted uppercase">Nombre del Servidor</label>
-                <input
-                  type="text"
-                  value={serverName}
-                  onChange={(e) => setServerName(e.target.value)}
-                  placeholder={`Sala de ${username}`}
-                  className="w-full bg-discord-input p-2 rounded text-white"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-discord-text-muted uppercase">Contraseña (Opcional)</label>
-                <input
-                  type="password"
-                  value={serverPassword}
-                  onChange={(e) => setServerPassword(e.target.value)}
-                  placeholder="Dejar vacío para público"
-                  className="w-full bg-discord-input p-2 rounded text-white"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-discord-text-muted uppercase">Bots ({botCount})</label>
-                <input
-                  type="range"
-                  min="0"
-                  max="9"
-                  value={botCount}
-                  onChange={(e) => setBotCount(parseInt(e.target.value))}
-                  className="w-full"
-                />
-              </div>
-
-              <div className="flex gap-2 pt-4">
-                <button
-                  onClick={() => setShowCreateServer(false)}
-                  className="flex-1 discord-button secondary"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={() => {
-                    const newId = `room_${Date.now()}`;
-                    handleCreatePublicServer(newId);
-                    setShowCreateServer(false);
-                  }}
-                  className="flex-1 discord-button success"
-                >
-                  Crear
-                </button>
-              </div>
             </div>
-          </div>
-        )}
 
-        {!joined ? (
-          autoJoinRoomId ? (
-            <div className="panel-glass lg liquid-glass bg-[#071017] p-6 rounded-lg max-w-md mx-auto">
-              <div className="text-center space-y-4">
-                <div className="w-12 h-12 mx-auto border-4 border-t-transparent border-discord-blurple animate-spin rounded-full"></div>
-                <p className="text-discord-text-normal">Uniéndose a la sala {autoJoinRoomId}...</p>
+            {missingEngine ? (
+              <div className="bg-red-500/10 border border-red-500/50 p-4 rounded-lg mb-6">
+                <h3 className="text-red-400 font-bold flex items-center gap-2 mb-2">
+                  <AlertTriangle size={20} />
+                  Motor no encontrado
+                </h3>
+                <p className="text-sm text-discord-text-normal mb-2">
+                  No se encontraron los archivos del motor Xash3D en <code>/public/xash/</code>.
+                </p>
+                <p className="text-sm text-discord-text-muted">
+                  Por favor, descarga los binarios de Xash3D FWGS (WebAssembly) y colócalos en la carpeta <code>public/xash</code> de tu proyecto.
+                  Necesitas: <code>xash3d.js</code>, <code>xash3d.wasm</code>, etc.
+                </p>
               </div>
-            </div>
-          ) : (
-            <div className="panel-glass lg liquid-glass bg-[#071017] p-6 rounded-lg max-w-2xl mx-auto">
-              <div className="space-y-4">
-                <h3 className="text-lg text-discord-text-header font-semibold">Servidores Públicos CS 1.6</h3>
-                <div className="max-h-96 overflow-y-auto space-y-2">
-                  {publicServers.length === 0 ? (
-                    <div className="text-center text-discord-text-muted py-8">No hay servidores públicos disponibles</div>
+            ) : (
+              <div className="space-y-6">
+                <div className="bg-discord-chat p-4 rounded-lg border border-discord-blurple/30">
+                  <h3 className="text-white font-semibold mb-2 flex items-center gap-2">
+                    <Info size={18} className="text-blue-400" />
+                    Instrucciones
+                  </h3>
+                  <ol className="list-decimal list-inside text-sm text-discord-text-normal space-y-2">
+                    <li>Necesitas una copia legal de Counter-Strike 1.6.</li>
+                    <li>Localiza la carpeta donde está instalado (ej: Steam/steamapps/common/Half-Life).</li>
+                    <li>Haz clic en el botón de abajo y selecciona esa carpeta completa.</li>
+                    <li>El navegador cargará los archivos necesarios (valve y cstrike) en la memoria.</li>
+                    <li>¡Juega!</li>
+                  </ol>
+                </div>
+
+                <div className="flex flex-col gap-4">
+                  {!engineReady ? (
+                    <div className="relative">
+                      <input
+                        type="file"
+                        // @ts-ignore
+                        webkitdirectory=""
+                        directory=""
+                        onChange={handleDirectorySelect}
+                        className="hidden"
+                        id="folder-upload"
+                      />
+                      <label
+                        htmlFor="folder-upload"
+                        className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-discord-text-muted rounded-lg cursor-pointer hover:border-discord-blurple hover:bg-discord-blurple/10 transition-all"
+                      >
+                        <Upload size={32} className="text-discord-text-muted mb-2" />
+                        <span className="text-discord-text-normal font-semibold">
+                          Seleccionar carpeta del juego (Half-Life)
+                        </span>
+                        <span className="text-xs text-discord-text-muted mt-1">
+                          Debe contener las carpetas 'valve' y 'cstrike'
+                        </span>
+                      </label>
+                    </div>
                   ) : (
-                    publicServers.map((server) => (
-                      <div key={server.roomId} className="discord-panel p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h4 className="text-discord-text-header font-semibold">{server.name}</h4>
-                            <p className="text-sm text-discord-text-muted">
-                              Host: {server.hostName} • {server.playerCount}/10 jugadores
-                              {server.botCount > 0 && ` • ${server.botCount} bots`}
-                            </p>
-                            {server.hasPassword && (
-                              <span className="text-xs text-yellow-400">🔒 Protegido por contraseña</span>
-                            )}
-                          </div>
-                          <button
-                            onClick={() => {
-                              if (server.hasPassword) {
-                                const password = prompt('Ingresa la contraseña del servidor:');
-                                if (password !== null) {
-                                  handleJoinPublicServer(server.roomId, password);
-                                }
-                              } else {
-                                handleJoinPublicServer(server.roomId);
-                              }
-                            }}
-                            className="discord-button success"
-                            disabled={server.playerCount >= 10}
-                          >
-                            {server.playerCount >= 10 ? 'Lleno' : 'Unirse'}
-                          </button>
-                        </div>
+                    <div className="text-center space-y-4">
+                      <div className="text-green-400 font-semibold text-lg">
+                        ✅ Archivos listos para iniciar
                       </div>
-                    ))
+                      <button
+                        onClick={launchEngine}
+                        className="discord-button success w-full py-4 text-xl font-bold shadow-lg hover:scale-[1.02] transition-transform"
+                      >
+                        INICIAR JUEGO
+                      </button>
+                    </div>
+                  )}
+
+                  {status && (
+                    <div className="text-center">
+                      <div className="text-xs text-discord-text-muted mb-1">{status}</div>
+                      {progress > 0 && progress < 100 && (
+                        <div className="w-full bg-discord-dark h-2 rounded-full overflow-hidden">
+                          <div 
+                            className="bg-discord-blurple h-full transition-all duration-300"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
-            </div>
-          )
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Game Canvas */}
-            <div className="lg:col-span-3">
-              <div className="relative bg-black rounded-lg overflow-hidden" style={{ height: '600px' }}>
-                <canvas
-                  ref={canvasRef}
-                  className="w-full h-full"
-                  style={{ display: joined ? 'block' : 'none' }}
-                />
-                {!gameStarted && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/80">
-                    <div className="text-center text-white">
-                      <h2 className="text-2xl font-bold mb-4">
-                        {isHost ? 'Esperando inicio de partida' : 'Esperando al host...'}
-                      </h2>
-                      {isHost && (
-                        <button onClick={handleStartGame} className="discord-button success">
-                          Iniciar Partida
-                        </button>
-                      )}
-                      <div className="mt-4 text-sm text-gray-300">
-                        <p>Controles:</p>
-                        <p>WASD - Moverse</p>
-                        <p>Mouse - Apuntar</p>
-                        <p>Clic izquierdo - Disparar</p>
-                        <p>Shift - Saltar</p>
-                        <p>Ctrl - Agacharse</p>
-                        <p>R - Recargar</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Game Info Sidebar */}
-            <div className="bg-discord-sidebar p-4 rounded-lg border border-discord-hover">
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold text-discord-text-header mb-2">Estado del Juego</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Sala:</span>
-                    <span className="text-discord-text-normal">{roomId}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Estado:</span>
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      gameStarted ? 'bg-green-600' : 'bg-yellow-600'
-                    }`}>
-                      {gameStarted ? 'En juego' : 'Esperando'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Rol:</span>
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      isHost ? 'bg-blue-600' : 'bg-gray-600'
-                    }`}>
-                      {isHost ? 'Host' : 'Jugador'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold text-discord-text-header mb-2">Controles</h3>
-                <div className="space-y-1 text-xs text-discord-text-normal">
-                  <div>WASD - Moverse</div>
-                  <div>Mouse - Apuntar</div>
-                  <div>Clic - Disparar</div>
-                  <div>Shift - Saltar</div>
-                  <div>Ctrl - Agacharse</div>
-                  <div>R - Recargar</div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                {isHost && !gameStarted && (
-                  <button onClick={handleStartGame} className="w-full discord-button success">
-                    Iniciar Partida
-                  </button>
-                )}
-                <button onClick={handleLeave} className="w-full discord-button secondary">
-                  Abandonar
-                </button>
-              </div>
-
-              <div className="mt-4 p-3 bg-discord-surface rounded text-xs text-discord-text-muted">
-                <p className="font-semibold mb-1">Sobre CS 1.6:</p>
-                <p>Juego FPS completo con IA, pathfinding A*, físicas y multiplayer en tiempo real.</p>
-              </div>
-            </div>
+            )}
           </div>
-        )}
-      </div>
-      </div>
+        </div>
+      )}
+
+      {/* Game Canvas */}
+      <canvas
+        ref={canvasRef}
+        className="w-full h-full block outline-none cursor-none"
+        id="canvas"
+        onContextMenu={(e) => e.preventDefault()}
+        tabIndex={-1}
+      />
+      
+      {/* Mobile Menu Toggle (Always visible if needed) */}
+      {onOpenSidebar && (
+        <button
+          onClick={onOpenSidebar}
+          className="md:hidden absolute top-4 left-4 p-2 bg-discord-surface/50 rounded-full text-white z-20 hover:bg-discord-surface"
+        >
+          <Menu size={24} />
+        </button>
+      )}
     </div>
   );
 }
