@@ -1,53 +1,13 @@
-import React, { memo, useState } from 'react';
-import {
-  Hash,
-  Volume2,
-  ChevronDown,
-  Vote,
-  Users,
-  Mic,
-  Settings,
-  LogIn,
-  LogOut,
-  Menu,
-} from 'lucide-react';
-import ServerSettings from './ServerSettings';
-import { useSocket } from '../context/SocketContext';
-import { useAuth } from '../context/AuthContext';
-import { AppView, User } from '../types';
-import { ChannelData } from '../types';
-import SafeImage from './SafeImage';
-
-interface ChannelListProps {
-  activeView: AppView;
-  currentChannelId: string;
-  onChannelSelect: (view: AppView, channel?: ChannelData) => void;
-  currentUser: User;
-  activeVoiceChannel: string | null;
-  onVoiceJoin: (channelName: string) => void;
-  voiceStates: Record<string, string>;
-  users: User[];
-  onLoginWithDiscord?: () => void;
-  onLogoutDiscord?: () => void;
-  onToggleMic?: () => void;
-  micActive?: boolean;
-  voiceLevel?: number;
-  onVoiceLeave?: () => void;
-  onOpenSidebar?: () => void;
-}
-
 import React, { memo, useState, useMemo } from 'react';
 import {
   Hash,
   Volume2,
   ChevronDown,
-  Vote,
-  Users,
+  Menu,
   Mic,
   Settings,
   LogIn,
   LogOut,
-  Menu,
 } from 'lucide-react';
 import ServerSettings from './ServerSettings';
 import { useSocket } from '../context/SocketContext';
