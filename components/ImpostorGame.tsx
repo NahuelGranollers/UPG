@@ -751,7 +751,7 @@ export default function ImpostorGame({
               </div>
 
               {/* Player Cards Area */}
-              <div className="bg-discord-sidebar p-6 rounded-lg border border-discord-hover min-h-[500px] lg:min-h-[650px] xl:min-h-[750px] flex flex-col justify-center">
+              <div className="bg-discord-sidebar p-6 rounded-lg border border-discord-hover min-h-[500px] lg:min-h-[60vh] flex flex-col justify-center">
                 {!gameStarted ? (
                   <div className="flex flex-col items-center justify-center h-full space-y-6">
                     <div className="text-center">
@@ -1070,8 +1070,8 @@ export default function ImpostorGame({
                       </div>
 
                       {/* Voting area */}
-                      <div className="discord-panel mt-6">
-                        <div className="flex items-center justify-between mb-4">
+                      <div className="discord-panel mt-6 flex flex-col max-h-[35vh]">
+                        <div className="flex items-center justify-between mb-4 flex-shrink-0">
                           <div className="text-lg text-discord-text-normal font-semibold">
                             Votación
                           </div>
@@ -1080,6 +1080,7 @@ export default function ImpostorGame({
                           </div>
                         </div>
 
+                        <div className="overflow-y-auto custom-scrollbar pr-2">
                         {voting ? (
                           <div className="space-y-3">
                             {players.map(p => {
@@ -1138,6 +1139,7 @@ export default function ImpostorGame({
                               : 'Empate'}
                           </div>
                         )}
+                        </div>
                       </div>
 
                       <div className="impostor-button-grid mt-6">
