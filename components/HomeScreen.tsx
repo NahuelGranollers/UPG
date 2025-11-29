@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import SafeImage from './SafeImage';
-import { ArrowRight, Gamepad2, Users, Lock, Plus } from 'lucide-react';
+import { ArrowRight, Gamepad2, Users, Lock, Plus, Menu } from 'lucide-react';
 import MinecraftServerStatus from './MinecraftServerStatus';
 
 interface HomeScreenProps {
@@ -8,6 +8,7 @@ interface HomeScreenProps {
   onGoToWhoWeAre: () => void;
   onJoinServer: (gameType: string, roomId: string, password?: string) => void;
   onCreateServer: (gameType: string) => void;
+  onOpenSidebar?: () => void;
 }
 
 interface GameServer {
@@ -20,7 +21,7 @@ interface GameServer {
   gameType: 'cs16' | 'impostor';
 }
 
-const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJoinServer, onCreateServer }) => {
+const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJoinServer, onCreateServer, onOpenSidebar }) => {
   const [servers, setServers] = useState<GameServer[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -67,9 +68,19 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center p-4 md:p-8 lg:p-12 bg-discord-chat overflow-y-auto custom-scrollbar">
+    <div className="flex-1 flex flex-col items-center p-4 md:p-8 lg:p-12 bg-discord-chat overflow-y-auto custom-scrollbar relative">
+      {/* Mobile Menu Button */}
+      {onOpenSidebar && (
+        <button
+          onClick={onOpenSidebar}
+          className="md:hidden absolute top-4 left-4 p-2 bg-discord-surface rounded-full shadow-lg z-10 text-discord-text-normal hover:text-white"
+        >
+          <Menu size={24} />
+        </button>
+      )}
+
       {/* Hero Section */}
-      <div className="max-w-4xl w-full bg-discord-surface backdrop-blur-sm rounded-discord shadow-discord border border-discord-hover overflow-hidden mb-12">
+      <div className="max-w-4xl w-full bg-discord-surface backdrop-blur-sm rounded-discord shadow-discord border border-discord-hover overflow-hidden mb-12 mt-8 md:mt-0">
         <div className="p-10 md:p-14 lg:p-16 flex flex-col justify-center items-center text-center gap-8">
           <SafeImage
             src="/upg.png"

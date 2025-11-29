@@ -58,7 +58,7 @@ function MainApp() {
     const dx = t.clientX - touchState.current.startX;
     const dy = Math.abs(t.clientY - touchState.current.startY);
     if (dy > 75) return; // ignore vertical drags
-    if (touchState.current.startX < 30 && dx > 60) {
+    if (touchState.current.startX < 50 && dx > 60) {
       setMobileSidebarOpen(true);
       touchState.current.started = false;
     }
@@ -336,6 +336,7 @@ function MainApp() {
                 }}
                 onJoinServer={handleJoinServer}
                 onCreateServer={handleCreateServer}
+                onOpenSidebar={() => setMobileSidebarOpen(true)}
               />
             ) : activeView === AppView.IMPOSTOR ? (
               <ImpostorGame
@@ -454,6 +455,7 @@ function MainApp() {
                 onLogoutDiscord={logout}
                 onToggleMic={handleToggleMute}
                 onVoiceLeave={handleVoiceLeave}
+                onOpenSidebar={() => setMobileSidebarOpen(true)}
               />
             )}
 
@@ -483,10 +485,10 @@ function MainApp() {
                   />
                 )}
                 {activeView === AppView.WHO_WE_ARE && (
-                  <WhoWeAre onMenuToggle={() => setMobileActiveTab('channels')} />
+                  <WhoWeAre onMenuToggle={() => setMobileSidebarOpen(true)} />
                 )}
                 {activeView === AppView.VOTING && (
-                  <Voting onMenuToggle={() => setMobileActiveTab('channels')} />
+                  <Voting onMenuToggle={() => setMobileSidebarOpen(true)} />
                 )}
                 {activeView === AppView.NEWS && <UPGNews />}
                 {activeView === AppView.HALL_OF_FAME && <HallOfFame />}
