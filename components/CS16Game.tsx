@@ -161,12 +161,17 @@ export default function CS16Game({
     }
 
     const fileData: { path: string, data: ArrayBuffer }[] = [];
+    let hasLiblist = false;
+    let hasValve = false;
     
     for (const file of files) {
         const path = file.webkitRelativePath;
         // Check if relevant
         if (!path.includes('valve') && !path.includes('cstrike')) continue;
         
+        if (path.includes('cstrike/liblist.gam')) hasLiblist = true;
+        if (path.includes('valve/config.cfg') || path.includes('valve/liblist.gam')) hasValve = true;
+
         try {
             const buffer = await file.arrayBuffer();
             fileData.push({ path, data: buffer });
@@ -175,6 +180,13 @@ export default function CS16Game({
         } catch (e) {
             console.error('Error reading file', file.name);
         }
+    }
+
+    if (!hasLiblist) {
+      toast.error("Error: No se encontró 'cstrike/liblist.gam'. Asegúrate de seleccionar la carpeta raíz de Counter-Strike.");
+      setStatus("Error: Falta cstrike/liblist.gam");
+      setEngineReady(false);
+      return;
     }
 
     setStatus(`Archivos cargados (${fileData.length}). Listo para iniciar.`);
@@ -353,11 +365,11 @@ export default function CS16Game({
                     Instrucciones
                   </h3>
                   <ol className="list-decimal list-inside text-sm text-discord-text-normal space-y-2">
-                    <li>Necesitas una copia legal de Counter-Strike 1.6.</li>
-                    <li>Localiza la carpeta donde está instalado (ej: Steam/steamapps/common/Half-Life).</li>
-                    <li>Haz clic en el botón de abajo y selecciona esa carpeta completa.</li>
-                    <li>El navegador cargará los archivos necesarios (valve y cstrike) en la memoria.</li>
-                    <li>¡Juega!</li>
+                    <li>Necesitas una copia de <b>Counter-Strike 1.6</b> (carpeta 'Half-Life' o 'Counter-Strike').</li>
+                    <li>Debe contener las subcarpetas <code>cstrike</code> y <code>valve</code>.</li>
+                    <li>Haz clic abajo y selecciona la <b>carpeta raíz</b> del juego.</li>
+                    <li>El navegador cargará los archivos en memoria (puede tardar unos segundos).</li>
+                    <li>El juego iniciará automáticamente en <code>de_dust2</code> como servidor.</li>
                   </ol>
                 </div>
 
