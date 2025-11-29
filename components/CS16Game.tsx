@@ -133,7 +133,7 @@ export default function CS16Game({
     
     // Load the script
     const script = document.createElement('script');
-    script.src = '/xash/xash3d.js';
+    script.src = '/xash/xash3d.js?v=' + Date.now();
     script.async = true;
     script.onload = () => {
       // Initialize the engine using the factory function
