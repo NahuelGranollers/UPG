@@ -17,51 +17,115 @@ interface HallOfFameProps {
 const achievements: Achievement[] = [
   {
     id: '1',
-    title: 'Campeón Torneo Verano 2024',
-    description: 'Primer puesto en el torneo de la comunidad',
-    winner: 'NahuelGranollers',
-    icon: Crown,
+    title: 'Premio al más correas',
+    description: 'UPG Awards 2024',
+    winner: 'Martí',
+    icon: Trophy,
     color: '#FFD700',
   },
   {
     id: '2',
-    title: 'Mejor Estratega',
-    description: 'Premio a la mejor estrategia en votaciones',
-    winner: 'PlayerMaster',
+    title: 'Premio al más inter',
+    description: 'UPG Awards 2024',
+    winner: 'Gerytuber',
     icon: Star,
     color: '#FF6B6B',
   },
   {
     id: '3',
-    title: 'Jugador Más Activo',
-    description: 'Mayor tiempo de juego en el mes',
-    winner: 'GameAddict',
-    icon: Trophy,
+    title: 'Premio al más tocapelotas',
+    description: 'UPG Awards 2024',
+    winner: 'Gerytuber',
+    icon: Crown,
     color: '#4ECDC4',
   },
   {
     id: '4',
-    title: 'Artista Comunidad',
-    description: 'Mejor diseño y avatar',
-    winner: 'PixelArtist',
+    title: 'Premio a las excusas del año',
+    description: 'UPG Awards 2024',
+    winner: 'Dufac',
     icon: Medal,
     color: '#45B7D1',
   },
   {
     id: '5',
-    title: 'Líder de Equipo',
-    description: 'Coordinación y liderazgo en partidas',
-    winner: 'TeamLeader',
+    title: 'Premio al mejor informante',
+    description: 'UPG Awards 2024',
+    winner: 'Fishker',
     icon: Award,
     color: '#96CEB4',
   },
   {
     id: '6',
-    title: 'Leyenda Viva',
-    description: 'Miembro fundador con más contribuciones',
-    winner: 'LegendPlayer',
+    title: 'Premio al anfitrión del año',
+    description: 'UPG Awards 2024',
+    winner: 'Mate',
     icon: Crown,
     color: '#FFEAA7',
+  },
+  {
+    id: '7',
+    title: 'Premio al más farmer (voicechat)',
+    description: 'UPG Awards 2024',
+    winner: 'Glowik',
+    icon: Trophy,
+    color: '#FF9F43',
+  },
+  {
+    id: '8',
+    title: 'Premio al más farmer (textchat)',
+    description: 'UPG Awards 2024',
+    winner: 'Dufac',
+    icon: Star,
+    color: '#54A0FF',
+  },
+  {
+    id: '9',
+    title: 'Bromista del año',
+    description: 'UPG Awards 2024',
+    winner: 'Nahuel',
+    icon: Medal,
+    color: '#5F27CD',
+  },
+  {
+    id: '10',
+    title: 'Virgen del año',
+    description: 'UPG Awards 2024',
+    winner: 'Dufac',
+    icon: Award,
+    color: '#FF6B6B',
+  },
+  {
+    id: '11',
+    title: 'Premio al más retrasado (impuntual)',
+    description: 'UPG Awards 2024',
+    winner: 'Dufac',
+    icon: Crown,
+    color: '#C8D6E5',
+  },
+  {
+    id: '12',
+    title: 'Pareja del año',
+    description: 'UPG Awards 2024',
+    winner: 'Berni & Marta',
+    icon: Trophy,
+    color: '#FF9FF3',
+  },
+  {
+    id: '13',
+    title: 'Sub-grupo del año',
+    description: 'UPG Awards 2024',
+    winner: 'Padel & Ping Pong',
+    icon: Star,
+    color: '#1DD1A1',
+  },
+  {
+    id: '14',
+    title: 'Amigo del año',
+    description: 'UPG Awards 2024',
+    winner: 'Fishker',
+    icon: Medal,
+    color: '#FECA57',
   },
 ];
 
@@ -127,16 +191,16 @@ const HallOfFame: React.FC<HallOfFameProps> = ({ onOpenSidebar }) => {
           >
             <div className="absolute inset-0 bg-[rgba(255,255,255,0.02)] backdrop-blur-sm pointer-events-none" />
 
-            {/* Three shelves */}
+            {/* Shelves */}
             <div className="grid grid-cols-1 gap-6">
-              {[0, 1, 2].map(row => (
+              {Array.from({ length: Math.ceil(achievements.length / 3) }).map((_, row) => (
                 <div
                   key={row}
                   className="flex items-center justify-between py-6"
                   style={{ boxShadow: 'inset 0 -6px 10px rgba(0,0,0,0.35)' }}
                 >
                   <div className="grid grid-cols-3 gap-6 w-full">
-                    {achievements.slice(row * 2, row * 2 + 3).map((ach, i) => (
+                    {achievements.slice(row * 3, row * 3 + 3).map((ach, i) => (
                       <div key={ach?.id ?? i} className="relative flex items-center justify-center">
                         {ach ? (
                           <div
