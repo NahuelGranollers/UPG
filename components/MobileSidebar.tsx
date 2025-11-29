@@ -5,10 +5,10 @@ import { User } from '../types';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onNavigate: (section: any) => void;
+  onNavigate: (section: 'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor' | 'news' | 'hall_of_fame' | 'cs16') => void;
   currentUser: User | null;
   users: User[];
-  activeSection: any;
+  activeSection: 'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor' | 'news' | 'hall_of_fame' | 'cs16';
 }
 
 const MobileSidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate, currentUser, users, activeSection }) => {

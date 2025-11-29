@@ -46,7 +46,7 @@ def register_socket_events(socketio, app=None):
         try:
             # Use the new Demonio Gamer logic
             # We use channel_id as session_id to keep context per channel
-            text, model_name = generate_demonio_response(user_message, session_id=channel_id)
+            text, model_name = generate_demonio_response(user_message, username=user_name, session_id=channel_id)
             
             if text:
                 if app:

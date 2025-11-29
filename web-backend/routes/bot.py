@@ -15,7 +15,10 @@ CLIENT = openai.Client(
     api_key=OPENROUTER_API_KEY
 )
 
-DEMONIO_SYSTEM_PROMPT = """Eres un DEMONIO GAMER con HUMOR NEGRO EXTREMO. 
+DEMONIO_SYSTEM_PROMPT = """Eres un DEMONIO GAMER con HUMOR NEGRO EXTREMO.
+Tu objetivo es responder a lo que el usuario te dice, pero insultándole y siendo tóxico.
+NO ignores lo que te dicen. Si te hacen una pregunta, respóndela (aunque sea mal o insultando).
+Si te piden algo, hazlo (o niégate insultando), pero demuestra que has entendido el mensaje.
 
 🚨 **REGLAS OBLIGATORIAS (NUNCA ROMPER):**
 
@@ -36,6 +39,10 @@ DEMONIO_SYSTEM_PROMPT = """Eres un DEMONIO GAMER con HUMOR NEGRO EXTREMO.
 - "Te voy a meter un creeper por el culo"
 - "Tu pinga mide menos que mi tasa de FPS"
 
+**5. RAZONAMIENTO:**
+- Si te preguntan algo lógico (matemáticas, historia, código), responde la verdad pero insultando.
+- Ejemplo: "¿Cuánto es 2+2?" -> "4, pedazo de aborto fallido. ¿No fuiste al colegio?"
+
 **6. ESTILO:**
 - Risas malvadas: 💀
 - Nunca amable, siempre sádico
@@ -43,7 +50,7 @@ DEMONIO_SYSTEM_PROMPT = """Eres un DEMONIO GAMER con HUMOR NEGRO EXTREMO.
 - castellano de españa
 
 
-**RESPUESTA SIEMPRE: Insulto inventado + Humor negro**"""
+**RESPUESTA SIEMPRE: Respuesta coherente + Insulto inventado + Humor negro**"""
 
 
 # MODELOS GRATIS 100% FUNCIONALES OpenRouter
@@ -61,7 +68,7 @@ INSULTOS_INVENTADOS = [
 # In-memory storage for bot conversations (reset on restart)
 bot_conversations = {}
 
-def generate_demonio_response(message, session_id='default'):
+def generate_demonio_response(message, username='Usuario', session_id='default'):
     """
     Generates a response using the Demonio Gamer persona.
     Returns a tuple (insult_string, model_name).
@@ -72,13 +79,17 @@ def generate_demonio_response(message, session_id='default'):
     if session_id not in bot_conversations:
         bot_conversations[session_id] = []
     
+    # Memory Optimization: Limit history to last 20 messages
+    if len(bot_conversations[session_id]) > 20:
+        bot_conversations[session_id] = bot_conversations[session_id][-20:]
+
     bot_conversations[session_id].append({
-        "role": "user", "content": message, "timestamp": datetime.now().isoformat()
+        "role": "user", "content": f"{username}: {message}", "timestamp": datetime.now().isoformat()
     })
     
     # Añadir insulto inventado random al prompt
     insulto_random = random.choice(INSULTOS_INVENTADOS)
-    enhanced_prompt = f"{DEMONIO_SYSTEM_PROMPT}\n\nINSULTO INVENTADO OBLIGATORIO: {insulto_random.upper()}"
+    enhanced_prompt = f"{DEMONIO_SYSTEM_PROMPT}\n\nEl usuario es: {username}\nINSULTO INVENTADO OBLIGATORIO: {insulto_random.upper()}\n\nINSTRUCCIÓN: Responde a lo que dice el usuario de forma coherente pero manteniendo tu personalidad tóxica."
     
     # Select a random model
     selected_model = random.choice(FREE_MODELS_REAL)
