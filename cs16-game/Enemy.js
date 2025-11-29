@@ -204,6 +204,11 @@ export class Enemy {
     if (GameGlobals.killsCount) {
       GameGlobals.killsCount.text = "Kills " + (++GameGlobals.kills);
     }
+    
+    // Add to kill feed
+    if (window.addToKillFeed) {
+      window.addToKillFeed(GameGlobals.currentUser?.username || "Player", "Bot " + this.id, "deagle", false);
+    }
 
     if (this.currentX != -10000 && this.currentY != -10000) {
       this.populateCellValueChange(1, this.currentX, this.currentY);
@@ -256,7 +261,7 @@ export class Enemy {
     if (checkIfAllEnmiesAreDead && GameGlobals.enemies.length < 1) {
       GameGlobals.gameStarted = false;
       if (GameGlobals.killsCount) {
-        GameGlobals.killsCount.text = "What a round, well done!";
+        GameGlobals.killsCount.text = "Round Won!";
       }
       GameGlobals.newEnemiesRound = true;
       // Camera and pointer lock handling would go here
@@ -265,7 +270,7 @@ export class Enemy {
 
   gotHit(shotImpact) {
     this.health -= shotImpact;
-    const distance = Math.floor(BABYLON.Vector3.Distance(this.mesh.position, window.player.position));
+    const distance = Math.floor(BABYLON.Vector3.Distance(this.mesh.position, GameGlobals.player.position));
 
     if (distance <= this.reactToShotDistance) {
       this.isShot = true;
@@ -336,7 +341,7 @@ export class Enemy {
   }
 
   lookAtPlayer() {
-    const deltaDegrees = this.getDeltaDegressToTarget(this.mesh, window.player.position);
+    const deltaDegrees = this.getDeltaDegressToTarget(this.mesh, GameGlobals.player.position);
     const mat = this.skeleton.bones[2].getLocalMatrix().copyFrom(this.initMat);
     this.spineRotationAngle = deltaDegrees * Math.PI / 180;
     this.dummBox.rotation.y = this.spineRotationAngle;
@@ -346,16 +351,16 @@ export class Enemy {
   }
 
   populateCellValueChange(value, x, y) {
-    for (let i = 0; i < window.enemies.length; i++) {
-      window.enemies[i].cells[x][y] = value;
+    for (let i = 0; i < GameGlobals.enemies.length; i++) {
+      GameGlobals.enemies[i].cells[x][y] = value;
     }
-    window.cells[x][y] = value;
+    GameGlobals.cells[x][y] = value;
   }
 
   pointDummyBoxToPlayer() {
-    const deltaDegrees = this.getDeltaDegressToTarget(this.dummBox, window.player.position);
+    const deltaDegrees = this.getDeltaDegressToTarget(this.dummBox, GameGlobals.player.position);
     if (Math.abs(deltaDegrees) > 1) {
-      this.facePoint(this.dummBox, window.player.position, deltaDegrees, 1);
+      this.facePoint(this.dummBox, GameGlobals.player.position, deltaDegrees, 1);
     }
     const hitMesh = this.castRay(this.dray);
     if (hitMesh != null) {
@@ -491,14 +496,14 @@ export class Enemy {
 
   playerMoved() {
     if (this.lastPlayerPosition == null) {
-      this.lastPlayerPosition = window.player.position.clone();
+      this.lastPlayerPosition = GameGlobals.player.position.clone();
       this.findPlayer = false;
       return true;
     }
 
-    const playerMovement = Math.floor(BABYLON.Vector3.Distance(this.lastPlayerPosition, window.player.position));
-    if (playerMovement / window.unit > 1) {
-      this.lastPlayerPosition = window.player.position.clone();
+    const playerMovement = Math.floor(BABYLON.Vector3.Distance(this.lastPlayerPosition, GameGlobals.player.position));
+    if (playerMovement / GameGlobals.unit > 1) {
+      this.lastPlayerPosition = GameGlobals.player.position.clone();
       this.findPlayer = false;
       return true;
     }

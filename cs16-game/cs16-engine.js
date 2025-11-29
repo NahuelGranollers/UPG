@@ -136,6 +136,136 @@ function loadGame() {
   assetsManager.load();
 }
 
+// --- UI SYSTEMS ---
+
+function createMainMenu() {
+  // Create a simple HUD for the game
+  const advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+  // Health & Armor Panel (Bottom Left)
+  const healthPanel = new BABYLON.GUI.StackPanel();
+  healthPanel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+  healthPanel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
+  healthPanel.left = "20px";
+  healthPanel.bottom = "20px";
+  healthPanel.width = "200px";
+  advancedTexture.addControl(healthPanel);
+
+  const healthText = new BABYLON.GUI.TextBlock();
+  healthText.text = "+ 100";
+  healthText.color = "#ff4444";
+  healthText.fontSize = 48;
+  healthText.fontFamily = "Impact, sans-serif";
+  healthText.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+  healthText.height = "60px";
+  healthPanel.addControl(healthText);
+
+  // Ammo Panel (Bottom Right)
+  const ammoPanel = new BABYLON.GUI.StackPanel();
+  ammoPanel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+  ammoPanel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
+  ammoPanel.right = "20px";
+  ammoPanel.bottom = "20px";
+  ammoPanel.width = "150px";
+  advancedTexture.addControl(ammoPanel);
+
+  const ammoText = new BABYLON.GUI.TextBlock();
+  ammoText.text = "30 / 90";
+  ammoText.color = "#ffff00";
+  ammoText.fontSize = 48;
+  ammoText.fontFamily = "Impact, sans-serif";
+  ammoText.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+  ammoText.height = "60px";
+  ammoPanel.addControl(ammoText);
+
+  // Kill Feed (Top Right)
+  const killFeedPanel = new BABYLON.GUI.StackPanel();
+  killFeedPanel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+  killFeedPanel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+  killFeedPanel.top = "20px";
+  killFeedPanel.right = "20px";
+  killFeedPanel.width = "400px";
+  killFeedPanel.isVertical = true;
+  advancedTexture.addControl(killFeedPanel);
+
+  // Hitmarker (Center)
+  const hitmarker = new BABYLON.GUI.Image("hitmarker", "/cs16-assets/images/hitmarker.png"); // You'd need this asset, or draw lines
+  hitmarker.width = "32px";
+  hitmarker.height = "32px";
+  hitmarker.isVisible = false;
+  advancedTexture.addControl(hitmarker);
+
+  // Store references for updates
+  GameGlobals.healthText = healthText;
+  GameGlobals.ammoText = ammoText; // Add this to GameGlobals if not present
+  GameGlobals.killFeedPanel = killFeedPanel;
+  GameGlobals.hitmarker = hitmarker;
+
+  // Expose UI functions
+  window.showHitmarkerUI = (isHeadshot) => {
+    // Draw simple lines if image missing
+    if (!hitmarker.source) {
+       // Fallback to drawing lines? For now assume image or just flash
+    }
+    
+    hitmarker.color = isHeadshot ? "red" : "white";
+    hitmarker.isVisible = true;
+    hitmarker.alpha = 1;
+    
+    // Animate fade out
+    let alpha = 1;
+    const fade = () => {
+      alpha -= 0.1;
+      if (alpha <= 0) {
+        hitmarker.isVisible = false;
+      } else {
+        hitmarker.alpha = alpha;
+        requestAnimationFrame(fade);
+      }
+    };
+    requestAnimationFrame(fade);
+  };
+
+  window.addToKillFeed = (killer, victim, weapon, isHeadshot) => {
+    const entry = new BABYLON.GUI.StackPanel();
+    entry.isVertical = false;
+    entry.height = "30px";
+    entry.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+    
+    const killerText = new BABYLON.GUI.TextBlock();
+    killerText.text = killer;
+    killerText.color = "#ffcc00";
+    killerText.width = "100px";
+    killerText.fontSize = 18;
+    killerText.fontFamily = "Arial";
+    killerText.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+    
+    const weaponText = new BABYLON.GUI.TextBlock();
+    weaponText.text = isHeadshot ? `🔫 💀` : `🔫`;
+    weaponText.color = "white";
+    weaponText.width = "60px";
+    weaponText.fontSize = 18;
+    
+    const victimText = new BABYLON.GUI.TextBlock();
+    victimText.text = victim;
+    victimText.color = "#ffcc00";
+    victimText.width = "100px";
+    victimText.fontSize = 18;
+    victimText.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+
+    entry.addControl(killerText);
+    entry.addControl(weaponText);
+    entry.addControl(victimText);
+    
+    killFeedPanel.addControl(entry);
+
+    // Remove after 5 seconds
+    setTimeout(() => {
+      killFeedPanel.removeControl(entry);
+    }, 5000);
+  };
+}
+
 function loadEnvironmentAssets(assetsManager, scene) {
   // Load cars
   const carTask = assetsManager.addMeshTask("car task", "", "/cs16-assets/obj/car/", "untitled.babylon");
@@ -581,30 +711,7 @@ function registerEvents(scene, camera, canvas) {
   });
 }
 
-function createMainMenu() {
-  // Create a simple HUD for the game
-  const advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
 
-  const killsCount = new BABYLON.GUI.TextBlock();
-  killsCount.text = "Kills: " + GameGlobals.kills;
-  killsCount.color = "orange";
-  killsCount.fontSize = 24;
-  killsCount.top = "-40%";
-  killsCount.left = "40%";
-  advancedTexture.addControl(killsCount);
-
-  const healthText = new BABYLON.GUI.TextBlock();
-  healthText.text = "Health: 100";
-  healthText.color = "green";
-  healthText.fontSize = 24;
-  healthText.top = "-40%";
-  healthText.left = "-40%";
-  advancedTexture.addControl(healthText);
-
-  // Store references for updates
-  GameGlobals.killsCount = killsCount;
-  GameGlobals.healthText = healthText;
-}
 
 function createAnimation(skeleton) {
   const bones = skeleton.bones;

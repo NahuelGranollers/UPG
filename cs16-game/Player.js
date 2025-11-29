@@ -149,6 +149,19 @@ export class Player {
     this.jumpping = false;
     this.shouldJump = false;
     this.shouldDuck = false;
+
+    // --- CS 1.6 MECHANICS ---
+    this.recoil = { x: 0, y: 0 };
+    this.recoilRecovery = 0.1;
+    this.currentSpread = 0;
+    this.baseSpread = 0.02;
+    this.maxSpread = 0.15;
+    this.walkSpread = 0.05;
+    this.runSpread = 0.1;
+    
+    // Dynamic Crosshair State
+    this.crosshairGap = 0;
+    this.baseCrosshairGap = 0;
   }
 
   jump() {
@@ -199,7 +212,7 @@ export class Player {
   }
 
   startShootAnimation() {
-    const shootAnim = this.scene.beginAnimation(this.skeleton, 170, 186, false, 1, () => {}, false);
+    const shootAnim = this.scene.beginAnimation(this.skeleton, 170, 186, false, 2, () => {}, false); // Faster animation
     return shootAnim;
   }
 
@@ -230,7 +243,7 @@ export class Player {
 
   startReloadAnimation() {
     const player = this;
-    const reloadAnim = this.scene.beginAnimation(this.skeleton, 70, 170, false, 1, function () {
+    const reloadAnim = this.scene.beginAnimation(this.skeleton, 70, 170, false, 1.5, function () { // Faster reload
       player.isReloading = false;
     });
     return reloadAnim;
@@ -248,27 +261,62 @@ export class Player {
     this.animate('shoot');
     this.muzzleFlash.size = 20;
 
-    // Ray casting for hit detection
+    // --- RECOIL & SPREAD ---
+    // Add recoil
+    this.recoil.x += (Math.random() - 0.5) * 0.02; // Horizontal shake
+    this.recoil.y += 0.02; // Vertical kick
+    
+    // Cap recoil
+    if (this.recoil.y > 0.1) this.recoil.y = 0.1;
+    if (Math.abs(this.recoil.x) > 0.05) this.recoil.x = (this.recoil.x > 0 ? 0.05 : -0.05);
+
+    // Calculate spread based on movement and recoil
+    const isMoving = this.camera.speed > 0 && (this.camera.keysUp.some(k => this.scene.actionManager?.hasSpecificTrigger(k)) || /* check movement keys */ false); // Simplified check
+    let currentSpread = this.baseSpread + (this.recoil.y * 2);
+    if (this.shouldJump) currentSpread += 0.1; // Jumping accuracy penalty
+    
+    // Ray casting with spread
     const width = this.scene.getEngine().getRenderWidth();
     const height = this.scene.getEngine().getRenderHeight();
+    
+    // Apply spread to ray direction
+    const origin = this.camera.position;
+    const forward = this.camera.getForwardRay().direction;
+    
+    // Random spread vector
+    const spreadX = (Math.random() - 0.5) * currentSpread;
+    const spreadY = (Math.random() - 0.5) * currentSpread;
+    
+    const direction = new BABYLON.Vector3(
+      forward.x + spreadX,
+      forward.y + spreadY,
+      forward.z
+    ).normalize();
+
+    const ray = new BABYLON.Ray(origin, direction, 10000);
 
     const predicate = function (mesh) {
       if (mesh.name === 'player box') return false;
       return true;
     };
 
-    const pickInfo = this.scene.pick(width / 2, height / 2, predicate, false, this.camera);
+    const pickInfo = this.scene.pickWithRay(ray, predicate);
 
     if (pickInfo.pickedMesh) {
+      // Create bullet hole/impact effect
+      this.createBulletHole(pickInfo);
+
       if (pickInfo.pickedMesh.name === 'head') {
         const enemy = pickInfo.pickedMesh.enemy;
         if (enemy) {
           enemy.gotHit(101); // Headshot damage
+          this.showHitmarker(true); // Headshot hitmarker
         }
       } else if (pickInfo.pickedMesh.name.startsWith('enemy')) {
         const enemy = pickInfo.pickedMesh.enemy;
         if (enemy) {
           enemy.gotHit(30); // Body shot damage
+          this.showHitmarker(false); // Normal hitmarker
         }
       }
     }
@@ -280,8 +328,44 @@ export class Player {
     }
   }
 
+  createBulletHole(pickInfo) {
+    // Simple visual feedback for bullet impact
+    const impact = BABYLON.MeshBuilder.CreatePlane("impact", { size: 2 }, this.scene);
+    impact.position = pickInfo.pickedPoint;
+    impact.lookAt(pickInfo.pickedPoint.add(pickInfo.getNormal(true)));
+    impact.position.addInPlace(pickInfo.getNormal(true).scale(0.1)); // Offset slightly
+    
+    const material = new BABYLON.StandardMaterial("impactMat", this.scene);
+    material.diffuseColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+    material.emissiveColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+    impact.material = material;
+    
+    // Fade out and dispose
+    let alpha = 1;
+    const fadeOut = () => {
+      alpha -= 0.05;
+      if (alpha <= 0) {
+        impact.dispose();
+      } else {
+        material.alpha = alpha;
+        requestAnimationFrame(fadeOut);
+      }
+    };
+    setTimeout(fadeOut, 5000);
+  }
+
+  showHitmarker(isHeadshot) {
+    // This should be handled by the UI layer, but we can trigger it here
+    if (window.showHitmarkerUI) {
+      window.showHitmarkerUI(isHeadshot);
+    }
+  }
+
   hit(shotImpact) {
     this.health -= shotImpact;
+    // Screen shake on hit
+    this.camera.rotation.z += (Math.random() - 0.5) * 0.1;
+    
     if (this.health <= 1) {
       this.health = 0;
       this.die();
@@ -327,6 +411,32 @@ export class Player {
       this.jump();
     }
 
+    // --- RECOIL RECOVERY ---
+    if (this.recoil.y > 0) {
+      this.camera.rotation.x -= this.recoil.y * 0.1; // Apply recoil to camera
+      this.recoil.y -= this.recoilRecovery * 0.1; // Recover
+      if (this.recoil.y < 0) this.recoil.y = 0;
+    }
+    if (Math.abs(this.recoil.x) > 0) {
+      this.camera.rotation.y += this.recoil.x * 0.1;
+      this.recoil.x *= 0.9; // Decay horizontal recoil
+    }
+
+    // --- DYNAMIC CROSSHAIR ---
+    // Expand crosshair based on movement and shooting
+    let targetGap = this.baseCrosshairGap;
+    if (this.recoil.y > 0) targetGap += this.recoil.y * 200; // Expand on shoot
+    
+    // Lerp crosshair gap
+    this.crosshairGap = this.crosshairGap + (targetGap - this.crosshairGap) * 0.2;
+    
+    // Apply to crosshair meshes
+    this.crosshairTop.position.y = 10.3 + (this.crosshairGap * 0.01);
+    this.crosshairBottom.position.y = 9.7 - (this.crosshairGap * 0.01);
+    this.crosshairRight.position.x = 0.3 + (this.crosshairGap * 0.01);
+    this.crosshairLeft.position.x = -0.3 - (this.crosshairGap * 0.01);
+
+
     this.dummyBox.position = this.camera.position.clone();
     this.dummyBox.position.y -= 10;
 
@@ -335,7 +445,7 @@ export class Player {
     this.position = this.camera.position;
 
     if (this.fireButtonOn) {
-      if (this.shotCount < 12) {
+      if (this.shotCount < 8) { // Increased fire rate slightly (was 12)
         this.shotCount++;
       } else {
         this.shoot();
