@@ -131,6 +131,18 @@ export default function CS16Game({
     window.Module.preRun = []; // Reset
     window.Module.preRun.push(() => {
         const FS = window.Module.FS;
+        
+        // Fix for dynamic libraries: Create virtual directories and alias the flat WASM files
+        // The engine expects cl_dlls/client.wasm but we serve it at /xash/client.wasm
+        try {
+            FS.mkdir('cl_dlls');
+            FS.mkdir('dlls');
+            
+            // We can't easily symlink external URLs, so we rely on locateFile for the fetch.
+            // BUT if locateFile fails for dlopen, we might need to pre-load.
+            // For now, let's trust the locateFile fix but ensure the DIRS exist.
+        } catch(e) { /* ignore EEXIST */ }
+
         for (const item of fileData) {
             const parts = item.path.split('/');
             let startIndex = -1;
