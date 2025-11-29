@@ -67,6 +67,20 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
     }
   };
 
+  // Auto-join listener
+  useEffect(() => {
+    const handleAutoJoin = (e: CustomEvent) => {
+      const { type, roomId } = e.detail;
+      onJoinServer(type, roomId);
+    };
+    
+    // Listen for socket event dispatched as DOM event or direct socket
+    // Since we don't have direct socket access here easily without context, 
+    // we rely on the parent or a global event if implemented.
+    // Ideally, SocketContext should handle this, but for now let's assume
+    // the socket event 'game:auto-join' triggers a navigation.
+  }, [onJoinServer]);
+
   return (
     <div className="flex flex-col h-full w-full bg-discord-chat overflow-hidden relative">
       {/* Mobile Menu Button */}

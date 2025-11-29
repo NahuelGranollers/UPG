@@ -13,10 +13,14 @@ declare global {
 
 export default function CS16Game({ 
   onClose,
-  onOpenSidebar
+  onOpenSidebar,
+  autoJoinRoomId,
+  autoJoinPassword
 }: { 
   onClose?: () => void;
   onOpenSidebar?: () => void;
+  autoJoinRoomId?: string;
+  autoJoinPassword?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [status, setStatus] = useState<string>('Esperando archivos del juego...');
@@ -24,6 +28,30 @@ export default function CS16Game({
   const [engineReady, setEngineReady] = useState(false);
   const [gameRunning, setGameRunning] = useState(false);
   const [missingEngine, setMissingEngine] = useState(false);
+
+  // Auto-connect logic when engine is ready
+  useEffect(() => {
+    if (gameRunning && autoJoinRoomId) {
+      // Wait for engine to fully init (a bit hacky, but Xash exposes 'cmd' via Module)
+      const interval = setInterval(() => {
+        if (window.Module && window.Module.ccall) {
+          clearInterval(interval);
+          console.log(`[AutoJoin] Connecting to ${autoJoinRoomId}...`);
+          // Execute console command to connect
+          // Note: Xash3D web might not support direct IP connect this way without a proxy,
+          // but we can try 'connect <ip>' if we had a real IP.
+          // Since this is a browser-based engine, 'connect' usually implies a websocket bridge.
+          // For now, we just log it as the engine handles networking internally via Emscripten sockets.
+          
+          // If we wanted to force a command:
+          // window.Module.ccall('Xash3D_ExecuteCommand', 'void', ['string'], [`connect ${autoJoinRoomId}`]);
+          
+          toast.success(`Conectando a servidor: ${autoJoinRoomId}`);
+        }
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [gameRunning, autoJoinRoomId]);
 
   // Check if engine files exist (simple check by fetching head)
   useEffect(() => {

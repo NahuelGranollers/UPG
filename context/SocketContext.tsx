@@ -50,6 +50,13 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       });
     });
 
+    // Listen for auto-join requests from server
+    socket.on('game:auto-join', (data: { type: string, roomId: string }) => {
+      console.log('Auto-joining game:', data);
+      // Dispatch a custom event that App.tsx or HomeScreen can listen to
+      window.dispatchEvent(new CustomEvent('game:auto-join', { detail: data }));
+    });
+
     socket.on('disconnect', () => {
       setIsConnected(false);
     });

@@ -286,6 +286,20 @@ function MainApp() {
     };
   }, [socket]);
 
+  // Auto-join listener
+  React.useEffect(() => {
+    const handleAutoJoin = (e: CustomEvent) => {
+      const { type, roomId } = e.detail;
+      console.log('App received auto-join:', type, roomId);
+      handleJoinServer(type, roomId);
+    };
+
+    window.addEventListener('game:auto-join', handleAutoJoin as EventListener);
+    return () => {
+      window.removeEventListener('game:auto-join', handleAutoJoin as EventListener);
+    };
+  }, [handleJoinServer]);
+
   if (isLoading)
     return (
       <div className="flex h-screen items-center justify-center bg-[#313338] text-white">

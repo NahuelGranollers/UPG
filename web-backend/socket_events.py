@@ -84,6 +84,50 @@ def register_socket_events(socketio, app=None):
     @socketio.on('connect')
     def on_connect():
         logger.info(f"Client connected: {request.sid}")
+        
+        # Auto-create default CS 1.6 server if it doesn't exist
+        default_room_id = "default-cs16"
+        if default_room_id not in cs16_rooms:
+            cs16_rooms[default_room_id] = {
+                'hostId': 'server',
+                'players': {},
+                'bots': {},
+                'gameState': {
+                    'gameStarted': True,
+                    'bombPlanted': False,
+                    'bombDefused': False,
+                    'winner': None
+                },
+                'name': "Servidor Público #1",
+                'password': None,
+                'createdAt': datetime.utcnow().isoformat()
+            }
+            
+            # Add some bots
+            for i in range(4):
+                bot_id = f"bot_{i}_{int(time.time())}"
+                cs16_rooms[default_room_id]['bots'][bot_id] = {
+                    'id': bot_id,
+                    'username': f"Bot {i+1}",
+                    'isBot': True,
+                    'position': {'x': 0, 'y': 0, 'z': 0},
+                    'rotation': {'x': 0, 'y': 0, 'z': 0},
+                    'health': 100,
+                    'team': 'terrorist',
+                    'isAlive': True
+                }
+
+            public_servers['cs16'][default_room_id] = {
+                'name': cs16_rooms[default_room_id]['name'],
+                'hostId': 'server',
+                'hostName': 'System',
+                'playerCount': 0,
+                'maxPlayers': 32,
+                'hasPassword': False,
+                'gameState': {'started': True},
+                'botCount': 4
+            }
+            broadcast_servers(socketio)
 
     @socketio.on('disconnect')
     def on_disconnect():
@@ -142,6 +186,19 @@ def register_socket_events(socketio, app=None):
         emit('user:registered', final_user)
         socketio.emit('user:online', final_user)
         emit('users:list', list(connected_users.values()))
+
+        # Auto-join default CS 1.6 server
+        default_room_id = "default-cs16"
+        if default_room_id in cs16_rooms:
+            # Simulate join request
+            on_cs16_join({
+                'roomId': default_room_id,
+                'userId': final_user['id'],
+                'username': final_user['username'],
+                'password': None
+            })
+            # Notify client to switch view
+            emit('game:auto-join', {'type': 'cs16', 'roomId': default_room_id})
 
     @socketio.on('message:send')
     def on_message_send(data):
