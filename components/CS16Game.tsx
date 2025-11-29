@@ -122,12 +122,23 @@ export default function CS16Game({
             const dirs = dirPath.split('/');
             let currentDir = '';
             for (const dir of dirs) {
-                currentDir += (currentDir ? '/' : '') + dir;
-                try {
-                    FS.mkdir(currentDir);
-                } catch (e: any) {
-                    if (e.code !== 'EEXIST' && e.code !== 17) console.warn('mkdir error', e);
+              currentDir += (currentDir ? '/' : '') + dir;
+              try {
+                const analyzed = (FS as any).analyzePath ? (FS as any).analyzePath(currentDir) : null;
+                const exists = analyzed ? analyzed.exists : false;
+                if (!exists) {
+                  FS.mkdir(currentDir);
                 }
+              } catch (e: any) {
+                // Suppress benign EEXIST variations across runtimes
+                const code = e?.code ?? e?.errno;
+                const msg = String(e?.message || e);
+                if (code === 'EEXIST' || code === 17 || msg.includes('File exists')) {
+                  // ignore
+                } else {
+                  console.warn('mkdir error', currentDir, e);
+                }
+              }
             }
 
             // Write file
