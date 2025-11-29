@@ -524,6 +524,9 @@ function MainApp() {
           isOpen={mobileSidebarOpen}
           onClose={() => setMobileSidebarOpen(false)}
           onNavigate={navigateToSection}
+          currentUser={currentUser}
+          users={users}
+          activeSection={activeSection}
         />
       </div>
 
