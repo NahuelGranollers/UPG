@@ -29,7 +29,10 @@ export default function CS16Game({
   useEffect(() => {
     Promise.all([
       fetch('/xash/xash3d.js', { method: 'HEAD' }),
-      fetch('/xash/xash.wasm', { method: 'HEAD' })
+      // Correct engine WASM filename
+      fetch('/xash/xash3d.wasm', { method: 'HEAD' }),
+      // Check dynamic library required by Xash
+      fetch('/xash/filesystem_stdio.wasm', { method: 'HEAD' })
     ])
       .then(responses => {
         if (responses.some(res => !res.ok)) setMissingEngine(true);
@@ -59,13 +62,15 @@ export default function CS16Game({
       monitorRunDependencies: (left: number) => {
         // console.log('Dependencies left:', left);
       },
+      // Ensure all engine assets (wasm, data, side modules) are served from /xash/
       locateFile: (path: string, prefix: string) => {
-        console.log('[Xash3D] locateFile:', path, prefix);
-        if (path.endsWith('.wasm') || path.endsWith('.data')) {
+        if (path.endsWith('.wasm') || path.endsWith('.data') || path.endsWith('.mem')) {
           return '/xash/' + path;
         }
         return prefix + path;
-      }
+      },
+      // Predeclare dynamic side modules so the runtime fetches them asynchronously
+      dynamicLibraries: ['/xash/filesystem_stdio.wasm']
     };
 
     const fileData: { path: string, data: ArrayBuffer }[] = [];
