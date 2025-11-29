@@ -1,11 +1,10 @@
 ﻿import React from 'react';
+import { getBackendUrl } from '../utils/config';
 
 const DiscordLogin: React.FC = () => {
   const handleLogin = () => {
     // Usar producci├│n por defecto, localhost solo en desarrollo
-    const API_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV
-      ? 'http://localhost:5000'
-      : 'https://api.unaspartidillas.online');
+    const API_URL = getBackendUrl();
 
     // Redirige al endpoint del backend que inicia el flujo OAuth
     window.location.href = `${API_URL}/auth/discord`;

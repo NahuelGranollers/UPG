@@ -2,6 +2,7 @@ import React, { memo, useEffect, useState } from 'react';
 import { Newspaper, Calendar, User, ExternalLink, Plus, X, Menu } from 'lucide-react';
 import SafeImage from './SafeImage';
 import { useAuth } from '../context/AuthContext';
+import { getBackendUrl } from '../utils/config';
 import { toast } from 'sonner';
 
 interface NewsArticle {
@@ -37,10 +38,8 @@ const UPGNews: React.FC<UPGNewsProps> = ({ onOpenSidebar }) => {
 
   const fetchNews = async () => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV 
-        ? 'http://localhost:5000/api' 
-        : 'https://api.unaspartidillas.online/api');
-      const res = await fetch(`${API_URL}/news`);
+      const API_URL = getBackendUrl();
+      const res = await fetch(`${API_URL}/api/news`);
       const data = await res.json();
       setArticles(data);
     } catch (e) {
@@ -59,10 +58,8 @@ const UPGNews: React.FC<UPGNewsProps> = ({ onOpenSidebar }) => {
     if (isCreating) return;
     setIsCreating(true);
     try {
-      const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV 
-        ? 'http://localhost:5000/api' 
-        : 'https://api.unaspartidillas.online/api');
-      const res = await fetch(`${API_URL}/news`, {
+      const API_URL = getBackendUrl();
+      const res = await fetch(`${API_URL}/api/news`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -92,10 +89,8 @@ const UPGNews: React.FC<UPGNewsProps> = ({ onOpenSidebar }) => {
     
     setIsDeleting(true);
     try {
-      const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV 
-        ? 'http://localhost:5000/api' 
-        : 'https://api.unaspartidillas.online/api');
-      const res = await fetch(`${API_URL}/news/${newsId}`, {
+      const API_URL = getBackendUrl();
+      const res = await fetch(`${API_URL}/api/news/${newsId}`, {
         method: 'DELETE',
         credentials: 'include'
       });

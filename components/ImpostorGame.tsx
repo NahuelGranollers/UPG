@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
+import { getBackendUrl } from '../utils/config';
 import { toast } from 'sonner';
 import { Menu } from 'lucide-react';
 
@@ -504,10 +505,8 @@ export default function ImpostorGame({
   // Fetch public servers
   const fetchPublicServers = async () => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV 
-        ? 'http://localhost:5000/api' 
-        : 'https://api.unaspartidillas.online/api');
-      const response = await fetch(`${API_URL}/servers`);
+      const API_URL = getBackendUrl();
+      const response = await fetch(`${API_URL}/api/servers`);
       const data = await response.json();
       setPublicServers(data.servers?.impostor || []);
     } catch (error) {

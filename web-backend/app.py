@@ -17,9 +17,14 @@ app = Flask(__name__)
 app.config.from_object(Config)
 
 db.init_app(app)
-CORS(app, resources={r"/*": {"origins": Config.CORS_ORIGINS}}, supports_credentials=True)
+
+# Allow all origins with credentials support
+def allow_all_origins(origin):
+    return True
+
+CORS(app, resources={r"/*": {"origins": r"https?://.*"}}, supports_credentials=True)
 Compress(app)
-socketio = SocketIO(app, cors_allowed_origins=Config.CORS_ORIGINS, async_mode='eventlet')
+socketio = SocketIO(app, cors_allowed_origins=allow_all_origins, async_mode='eventlet')
 
 app.register_blueprint(api)
 app.register_blueprint(auth)

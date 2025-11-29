@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import SafeImage from './SafeImage';
 import { ArrowRight, Gamepad2, Users, Lock, Plus, Menu } from 'lucide-react';
 import MinecraftServerStatus from './MinecraftServerStatus';
+import { getBackendUrl } from '../utils/config';
 
 interface HomeScreenProps {
   onGoToChat: () => void;
@@ -28,11 +29,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
   useEffect(() => {
     const fetchServers = async () => {
       try {
-        const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV 
-          ? 'http://localhost:5000/api' 
-          : 'https://api.unaspartidillas.online/api');
+        const API_URL = getBackendUrl();
           
-        const res = await fetch(`${API_URL}/servers`);
+        const res = await fetch(`${API_URL}/api/servers`);
         const data = await res.json();
         const allServers: GameServer[] = [];
         

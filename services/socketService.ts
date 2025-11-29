@@ -1,3 +1,5 @@
+import { getSocketUrl } from '../utils/config';
+
 // Servicio para manejar Socket.IO
 // Declarar tipos para Socket.IO desde el CDN
 declare const io: any;
@@ -20,7 +22,7 @@ class SocketService {
   private connectionCallbacks: Set<(connected: boolean) => void> = new Set();
 
   constructor(serverUrl?: string) {
-    this.serverUrl = serverUrl || (import.meta.env.VITE_SOCKET_URL as string) || 'https://api.unaspartidillas.online';
+    this.serverUrl = serverUrl || getSocketUrl();
   }
 
   connect(): void {

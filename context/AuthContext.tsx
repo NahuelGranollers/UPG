@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import * as storage from '../utils/storageService';
+import { getBackendUrl } from '../utils/config';
 import { User, UserRole } from '../types';
 
 interface AuthContextType {
@@ -36,9 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Fetch user from backend
         try {
-          const API_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV
-            ? 'http://localhost:5000'
-            : 'https://api.unaspartidillas.online');
+          const API_URL = getBackendUrl();
           const res = await fetch(`${API_URL}/auth/user`, { credentials: 'include' });
           if (res.ok) {
             const discordUser = await res.json();
@@ -88,9 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const loginWithDiscord = useCallback(() => {
-    const API_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV
-      ? 'http://localhost:5000'
-      : 'https://api.unaspartidillas.online');
+    const API_URL = getBackendUrl();
     window.location.href = `${API_URL}/auth/discord`;
   }, []);
 
@@ -111,9 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const logout = useCallback(async () => {
-    const API_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV
-      ? 'http://localhost:5000'
-      : 'https://api.unaspartidillas.online');
+    const API_URL = getBackendUrl();
     try {
       await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
     } catch (e) {

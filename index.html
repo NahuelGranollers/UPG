@@ -80,8 +80,11 @@
       // API base
       if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         window.API_BASE = 'http://localhost:5000';
-      } else {
+      } else if (window.location.hostname.includes('unaspartidillas.online')) {
         window.API_BASE = 'https://api.unaspartidillas.online';
+      } else {
+        // LAN / Network access
+        window.API_BASE = window.location.protocol + '//' + window.location.hostname + ':5000';
       }
       // Set window.ADMIN_TOKEN = 'your_token_here' in console for production
     </script>
