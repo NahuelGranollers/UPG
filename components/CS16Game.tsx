@@ -180,9 +180,7 @@ export default function CS16Game({
                     <div className="relative">
                       <input
                         type="file"
-                        // @ts-ignore
-                        webkitdirectory=""
-                        directory=""
+                        {...({ webkitdirectory: "", directory: "" } as any)}
                         onChange={handleDirectorySelect}
                         className="hidden"
                         id="folder-upload"
