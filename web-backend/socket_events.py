@@ -415,6 +415,17 @@ def register_socket_events(socketio, app=None):
             next_index = (next_index + 1) % len(room['turnOrder'])
             attempts += 1
             
+        # Check if we wrapped around (completed a full round of turns)
+        # If next_index is smaller than or equal to current (and we didn't just start), it means we looped
+        if next_index <= room['currentTurnIndex']:
+             # Trigger voting automatically
+             room['voting'] = True
+             room['votes'] = {}
+             socketio.emit('impostor:voting-start', {'roomId': room_id}, room=f"impostor:{room_id}")
+             # We still update the turn index so when voting ends, it starts with the next player
+             room['currentTurnIndex'] = next_index
+             return {'ok': True}
+
         room['currentTurnIndex'] = next_index
         
         socketio.emit('impostor:turn-update', {

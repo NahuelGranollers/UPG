@@ -595,9 +595,10 @@ export default function ImpostorGame({
   const allAliveVoted = totalVotes >= alivePlayersCount;
 
   return (
-    <div className="flex flex-col min-h-screen w-full bg-discord-chat">
-      <div className="w-full py-4 px-2 sm:py-6 sm:px-4 lg:py-8 lg:px-6">
-        <div className="flex items-center justify-between mb-6">
+    <div className="flex flex-col h-screen w-full bg-discord-chat overflow-hidden">
+      {/* Header - Fixed */}
+      <div className="w-full py-4 px-2 sm:py-4 sm:px-4 lg:py-4 lg:px-6 flex-shrink-0 z-10 bg-discord-chat">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {onOpenSidebar && (
               <button
@@ -632,7 +633,10 @@ export default function ImpostorGame({
             </button>
           </div>
         </div>
+      </div>
 
+      {/* Main Content - Flex/Scrollable */}
+      <div className="flex-1 w-full px-2 sm:px-4 lg:px-6 pb-4 overflow-hidden relative">
         {showCreateForm && !joined && (
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
             <div className="bg-discord-surface p-6 rounded-lg max-w-md w-full space-y-4">
@@ -683,18 +687,19 @@ export default function ImpostorGame({
         )}
 
         {!joined ? (
-          autoJoinRoomId ? (
-            <div className="panel-glass lg liquid-glass bg-[#071017] p-6 rounded-lg max-w-md mx-auto">
+          <div className="h-full overflow-y-auto">
+          {autoJoinRoomId ? (
+            <div className="panel-glass lg liquid-glass bg-[#071017] p-6 rounded-lg max-w-md mx-auto mt-10">
               <div className="text-center space-y-4">
                 <div className="w-12 h-12 mx-auto border-4 border-t-transparent border-discord-blurple animate-spin rounded-full"></div>
                 <p className="text-discord-text-normal">Uniéndose a la sala {autoJoinRoomId}...</p>
               </div>
             </div>
           ) : (
-            <div className="panel-glass lg liquid-glass bg-[#071017] p-6 rounded-lg max-w-2xl mx-auto">
+            <div className="panel-glass lg liquid-glass bg-[#071017] p-6 rounded-lg max-w-2xl mx-auto mt-4">
               <div className="space-y-4">
                 <h3 className="text-lg text-discord-text-header font-semibold">Servidores Públicos Impostor</h3>
-                <div className="max-h-96 overflow-y-auto space-y-2">
+                <div className="max-h-[60vh] overflow-y-auto space-y-2 custom-scrollbar">
                   {publicServers.length === 0 ? (
                     <div className="text-center text-discord-text-muted py-8">No hay servidores públicos disponibles</div>
                   ) : (
@@ -733,36 +738,37 @@ export default function ImpostorGame({
                 </div>
               </div>
             </div>
-          )
+          )}
+          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-4 xl:grid-cols-5 gap-6 w-full max-w-[95%] 2xl:max-w-[1600px] mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 xl:grid-cols-5 gap-4 w-full max-w-[95%] 2xl:max-w-[1600px] mx-auto h-full">
             {/* Main Game Area */}
-            <div className="md:col-span-3 xl:col-span-4 space-y-4">
+            <div className="md:col-span-3 xl:col-span-4 flex flex-col h-full overflow-hidden gap-4">
               {/* Game Header */}
-              <div className="bg-discord-sidebar p-4 rounded-lg border border-discord-hover">
+              <div className="bg-discord-sidebar p-3 rounded-lg border border-discord-hover flex-shrink-0">
                 <div className="flex justify-between items-center">
                   <div>
-                    <div className="text-sm text-discord-text-muted">Sala</div>
-                    <div className="text-xl font-bold text-discord-text-header">{roomId}</div>
+                    <div className="text-xs text-discord-text-muted">Sala</div>
+                    <div className="text-lg font-bold text-discord-text-header">{roomId}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm text-discord-text-muted">
+                    <div className="text-xs text-discord-text-muted">
                       {players.length} jugador{players.length !== 1 ? 'es' : ''}
                     </div>
                     {timeLeft !== null && timeLeft > 0 && (
-                      <div className="text-2xl font-mono font-bold text-yellow-400">
+                      <div className="text-xl font-mono font-bold text-yellow-400">
                         {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
                       </div>
                     )}
                     {!gameStarted && (
-                      <div className="text-sm text-yellow-400">Esperando...</div>
+                      <div className="text-xs text-yellow-400">Esperando...</div>
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* Player Cards Area */}
-              <div className="bg-discord-sidebar p-6 rounded-lg border border-discord-hover min-h-[500px] lg:min-h-[55vh] flex flex-col justify-center">
+              {/* Player Cards Area - Scrollable */}
+              <div className="bg-discord-sidebar p-4 rounded-lg border border-discord-hover flex-1 overflow-y-auto custom-scrollbar flex flex-col relative">
                 {!gameStarted ? (
                   <div className="flex flex-col items-center justify-center h-full space-y-6">
                     <div className="text-center">
@@ -809,16 +815,6 @@ export default function ImpostorGame({
                   </div>
                 ) : (
                   <>
-                    {/* Palabras personalizadas ocultas - funcionalidad sigue activa */}
-                    {/* {customWords.length > 0 && (
-                  <div className="mt-4">
-                    <div className="text-sm text-gray-400 mb-2">Palabras personalizadas ({customWords.length}):</div>
-                    <div className="text-xs text-gray-300 break-words">{customWords.join(', ')}</div>
-                  </div>
-                )} */}
-
-                {/* Turn order moved to right column on wide screens */}
-                {/* (right column will show the turn order) */}
                 {/* Ejection Result Overlay */}
                 {revealedPlayer && (
                   <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in">
@@ -979,7 +975,7 @@ export default function ImpostorGame({
                 )}
 
                   {/* Game Content */}
-                  <div className="space-y-4">
+                  <div className="space-y-4 pb-4">
                     {spinning && (
                       <div className="flex items-center justify-center py-12">
                         <div className="flex flex-col items-center">
@@ -995,17 +991,17 @@ export default function ImpostorGame({
                       <>
                         {/* Turn Info Banner */}
                         {gameStarted && currentTurn && (
-                          <div className="mb-6 bg-discord-surface p-4 rounded-lg border border-discord-blurple flex items-center justify-between animate-fade-in">
+                          <div className="mb-4 bg-discord-surface p-3 rounded-lg border border-discord-blurple flex items-center justify-between animate-fade-in">
                             <div>
-                              <div className="text-sm text-discord-text-muted uppercase font-bold">Turno Actual</div>
-                              <div className="text-2xl font-bold text-white flex items-center gap-2">
+                              <div className="text-xs text-discord-text-muted uppercase font-bold">Turno Actual</div>
+                              <div className="text-xl font-bold text-white flex items-center gap-2">
                                 {players.find(p => p.id === currentTurn)?.username || 'Desconocido'}
                                 {currentTurn === userId && <span className="text-xs bg-green-500 text-white px-2 py-1 rounded-full">Tú</span>}
                               </div>
                             </div>
                             <div className="text-right">
-                               <div className="text-sm text-discord-text-muted uppercase font-bold">Siguiente</div>
-                               <div className="text-lg text-discord-text-normal">
+                               <div className="text-xs text-discord-text-muted uppercase font-bold">Siguiente</div>
+                               <div className="text-base text-discord-text-normal">
                                  {(() => {
                                    const idx = turnOrder.indexOf(currentTurn);
                                    if (idx === -1) return '-';
@@ -1030,7 +1026,7 @@ export default function ImpostorGame({
                         )}
 
                         {/* Assignment card with flip animation */}
-                        <div className={`impostor-card mb-6 ${cardRevealed ? 'flipped' : ''}`}>
+                        <div className={`impostor-card mb-4 ${cardRevealed ? 'flipped' : ''}`}>
                         <div
                           role="button"
                           tabIndex={0}
@@ -1045,38 +1041,38 @@ export default function ImpostorGame({
                           aria-pressed={cardRevealed}
                         >
                           <div
-                            className="impostor-card-face impostor-card-front discord-glass p-6 rounded-lg"
+                            className="impostor-card-face impostor-card-front discord-glass p-4 rounded-lg"
                             style={{ position: 'relative', cursor: 'pointer' }}
                           >
-                            <div className="text-lg text-discord-text-normal mb-3 font-semibold">
+                            <div className="text-base text-discord-text-normal mb-2 font-semibold">
                               Tu carta
                             </div>
-                            <div className="text-xl font-semibold text-discord-text-normal">
+                            <div className="text-lg font-semibold text-discord-text-normal">
                               Haz click o presiona Enter para voltear
                             </div>
                           </div>
                           <div
-                            className="impostor-card-face impostor-card-back discord-glass p-6 rounded-lg"
+                            className="impostor-card-face impostor-card-back discord-glass p-4 rounded-lg"
                             style={{ position: 'relative', cursor: 'pointer' }}
                           >
                             {assigned ? (
                               <div className="text-center w-full">
-                                <div className="text-lg text-discord-text-normal mb-3 font-semibold">
+                                <div className="text-base text-discord-text-normal mb-2 font-semibold">
                                   Tu carta
                                 </div>
-                                <div className="text-3xl lg:text-4xl font-bold text-yellow-400 mb-4">
+                                <div className="text-2xl lg:text-3xl font-bold text-yellow-400 mb-2">
                                   {assigned.role === 'impostor' ? 'IMPOSTOR' : assigned.word}
                                 </div>
-                                <div className="text-base text-discord-text-muted mt-3">
+                                <div className="text-sm text-discord-text-muted mt-1">
                                   {statusMessage}
                                 </div>
                               </div>
                             ) : (
                               <div className="text-center w-full">
-                                <div className="text-lg text-discord-text-normal font-semibold mb-3">
+                                <div className="text-base text-discord-text-normal font-semibold mb-2">
                                   Aún no hay ronda
                                 </div>
-                                <div className="text-base text-discord-text-muted">
+                                <div className="text-sm text-discord-text-muted">
                                   {isHost
                                     ? 'Haz click en "Iniciar ronda" para comenzar'
                                     : 'Espera al host para iniciar'}
@@ -1088,19 +1084,19 @@ export default function ImpostorGame({
                       </div>
 
                       {/* Voting area */}
-                      <div className="discord-panel mt-6 flex flex-col max-h-[35vh]">
-                        <div className="flex items-center justify-between mb-4 flex-shrink-0">
-                          <div className="text-lg text-discord-text-normal font-semibold">
+                      <div className="discord-panel mt-4 flex flex-col flex-1 min-h-0">
+                        <div className="flex items-center justify-between mb-2 flex-shrink-0">
+                          <div className="text-base text-discord-text-normal font-semibold">
                             Votación
                           </div>
-                          <div className="text-base text-discord-text-muted">
+                          <div className="text-sm text-discord-text-muted">
                             {voting ? `Votos: ${totalVotes}/${alivePlayersCount}` : 'Inactiva'}
                           </div>
                         </div>
 
-                        <div className="overflow-y-auto custom-scrollbar pr-2">
+                        <div className="overflow-y-auto custom-scrollbar pr-2 flex-1">
                         {voting ? (
-                          <div className="space-y-3">
+                          <div className="space-y-2">
                             {players.map(p => {
                               const isDead = p.revealedInnocent;
                               const isCurrentUser = p.id === userId;
@@ -1108,32 +1104,31 @@ export default function ImpostorGame({
                               return (
                                 <div
                                   key={p.id}
-                                  className={`impostor-voting-item ${isDead ? 'opacity-50' : ''}`}
+                                  className={`impostor-voting-item p-2 ${isDead ? 'opacity-50' : ''}`}
                                 >
-                                  <div className="impostor-voting-info flex items-center gap-3 flex-1 min-w-0">
+                                  <div className="impostor-voting-info flex items-center gap-2 flex-1 min-w-0">
                                     <div
-                                      className={`w-8 h-8 sm:w-10 sm:h-10 lg:w-10 lg:h-10 rounded-full flex items-center justify-center text-sm sm:text-lg lg:text-lg font-semibold flex-shrink-0 ${isDead ? 'bg-gray-500' : 'bg-discord-sidebar'} text-discord-text-normal`}
+                                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0 ${isDead ? 'bg-gray-500' : 'bg-discord-sidebar'} text-discord-text-normal`}
                                     >
                                       {p.username.charAt(0).toUpperCase()}
                                     </div>
                                     <div
-                                      className={`text-discord-text-normal break-all font-semibold text-sm sm:text-lg lg:text-lg flex-1 min-w-0 ${isDead ? 'text-discord-text-muted line-through' : ''}`}
-                                      style={{ textShadow: '0 0 3px rgba(0,0,0,0.8)' }}
+                                      className={`text-discord-text-normal break-all font-semibold text-sm flex-1 min-w-0 ${isDead ? 'text-discord-text-muted line-through' : ''}`}
                                       title={p.username}
                                     >
                                       {p.username}
                                       {isDead ? ' (Muerto)' : ''}
                                     </div>
                                   </div>
-                                  <div className="impostor-voting-actions flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                                    <div className="text-sm sm:text-lg text-discord-text-muted font-semibold">
+                                  <div className="impostor-voting-actions flex items-center gap-2 flex-shrink-0">
+                                    <div className="text-sm text-discord-text-muted font-semibold">
                                       {voteCounts[p.id] || 0}
                                     </div>
                                     {!isDead && (
                                       <button
                                         disabled={!canVote}
                                         onClick={() => handleCastVote(p.id)}
-                                        className={`discord-button ${canVote ? '' : 'opacity-50 cursor-not-allowed'}`}
+                                        className={`discord-button text-xs py-1 px-2 ${canVote ? '' : 'opacity-50 cursor-not-allowed'}`}
                                       >
                                         {myVote === p.id ? 'Votado' : 'Votar'}
                                       </button>
@@ -1144,13 +1139,13 @@ export default function ImpostorGame({
                             })}
                           </div>
                         ) : (
-                          <div className="text-lg text-discord-text-muted font-semibold">
+                          <div className="text-base text-discord-text-muted font-semibold">
                             No hay votación en curso.
                           </div>
                         )}
 
                         {votingResult && (
-                          <div className="mt-4 text-lg text-discord-text-normal font-semibold">
+                          <div className="mt-2 text-base text-discord-text-normal font-semibold">
                             Resultado:{' '}
                             {votingResult.eliminated
                               ? `Eliminado ${votingResult.eliminated}`
@@ -1160,7 +1155,7 @@ export default function ImpostorGame({
                         </div>
                       </div>
 
-                      <div className="impostor-button-grid mt-6">
+                      <div className="impostor-button-grid mt-4 flex-shrink-0">
                         {assigned && assigned.role === 'impostor' && (
                           <div className="w-full">
                             {!showGuessInput ? (
@@ -1232,7 +1227,7 @@ export default function ImpostorGame({
                               color: 'white',
                             }}
                           >
-                            Revelar todas las cartas
+                            Revelar todas
                           </button>
                         )}
                         {isHost && (
@@ -1251,7 +1246,7 @@ export default function ImpostorGame({
                         )}
                         {isHost && (
                           <button onClick={handleRestart} className="discord-button secondary">
-                            Reiniciar ronda
+                            Reiniciar
                           </button>
                         )}
                         <button onClick={handleLeave} className="discord-button secondary">
@@ -1266,21 +1261,21 @@ export default function ImpostorGame({
               </div>
             </div>
 
-            {/* Sidebar */}
-            <div className="bg-discord-sidebar p-4 rounded-lg border border-discord-hover h-fit sticky top-6">
+            {/* Sidebar - Scrollable */}
+            <div className="bg-discord-sidebar p-4 rounded-lg border border-discord-hover h-full overflow-y-auto custom-scrollbar">
               {/* Game Status */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-discord-text-header mb-3">Estado</h3>
-                <div className="space-y-2 text-sm">
+              <div className="mb-4">
+                <h3 className="text-base font-semibold text-discord-text-header mb-2">Estado</h3>
+                <div className="space-y-1 text-xs">
                   <div className="flex justify-between">
                     <span className="text-discord-text-muted">Host:</span>
-                    <span className={`px-2 py-1 rounded text-xs ${isHost ? 'bg-blue-600' : 'bg-gray-600'}`}>
+                    <span className={`px-2 py-1 rounded ${isHost ? 'bg-blue-600' : 'bg-gray-600'}`}>
                       {isHost ? 'Tú' : 'Otro'}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-discord-text-muted">Estado:</span>
-                    <span className={`px-2 py-1 rounded text-xs ${gameStarted ? 'bg-green-600' : 'bg-yellow-600'}`}>
+                    <span className={`px-2 py-1 rounded ${gameStarted ? 'bg-green-600' : 'bg-yellow-600'}`}>
                       {gameStarted ? 'En juego' : 'En espera'}
                     </span>
                   </div>
@@ -1288,16 +1283,16 @@ export default function ImpostorGame({
               </div>
 
               {/* Players List */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-discord-text-header mb-3">
+              <div className="mb-4">
+                <h3 className="text-base font-semibold text-discord-text-header mb-2">
                   Jugadores ({players.length})
                 </h3>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
+                <div className="space-y-1">
                   {players.map(p => (
                     <div key={p.id} className="flex items-center justify-between p-2 rounded bg-discord-surface">
-                      <span className="text-discord-text-normal truncate">{p.username}</span>
+                      <span className="text-discord-text-normal truncate text-sm">{p.username}</span>
                       {p.id === userId && (
-                        <span className="text-xs px-2 py-1 bg-discord-blurple rounded">Tú</span>
+                        <span className="text-xs px-2 py-0.5 bg-discord-blurple rounded">Tú</span>
                       )}
                     </div>
                   ))}
@@ -1306,11 +1301,11 @@ export default function ImpostorGame({
 
               {/* Turn Order */}
               {gameStarted && turnOrder.length > 0 && (
-                <div className="mb-6 border-t border-discord-hover pt-4">
-                  <h3 className="text-lg font-semibold text-discord-text-header mb-3">
+                <div className="mb-4 border-t border-discord-hover pt-4">
+                  <h3 className="text-base font-semibold text-discord-text-header mb-2">
                     Orden de Turnos
                   </h3>
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                  <div className="space-y-1">
                     {turnOrder.map((id, idx) => {
                       const p = players.find(x => x.id === id);
                       const name = p ? p.username : id;
@@ -1330,7 +1325,7 @@ export default function ImpostorGame({
                         >
                           <div className="flex items-center gap-2">
                             <div
-                              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                              className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${
                                 active
                                   ? 'bg-yellow-400 text-black'
                                   : revealed
@@ -1340,7 +1335,7 @@ export default function ImpostorGame({
                             >
                               {name.charAt(0).toUpperCase()}
                             </div>
-                            <span className="text-sm truncate">{name}</span>
+                            <span className="text-xs truncate">{name}</span>
                           </div>
                           <span className="text-xs text-discord-text-muted">#{idx + 1}</span>
                         </div>
@@ -1350,27 +1345,9 @@ export default function ImpostorGame({
                 </div>
               )}
 
-              {/* Add Word Input - Deshabilitado */}
-              {/* <div className="border-t border-discord-hover pt-4">
-                <h3 className="text-sm font-semibold text-discord-text-header mb-2">
-                  Agregar Palabra
-                </h3>
-                <input
-                  type="text"
-                  placeholder="Nueva palabra..."
-                  className="w-full discord-input text-sm"
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                      handleAddWord(e.currentTarget.value);
-                      e.currentTarget.value = '';
-                    }
-                  }}
-                />
-              </div> */}
-
               {/* Status Message */}
               {statusMessage && (
-                <div className="mt-4 p-3 bg-discord-surface rounded text-sm text-discord-text-normal border-l-4 border-discord-blurple">
+                <div className="mt-4 p-2 bg-discord-surface rounded text-xs text-discord-text-normal border-l-4 border-discord-blurple">
                   {statusMessage}
                 </div>
               )}
