@@ -27,9 +27,12 @@ export default function CS16Game({
 
   // Check if engine files exist (simple check by fetching head)
   useEffect(() => {
-    fetch('/xash/xash3d.js', { method: 'HEAD' })
-      .then(res => {
-        if (!res.ok) setMissingEngine(true);
+    Promise.all([
+      fetch('/xash/xash3d.js', { method: 'HEAD' }),
+      fetch('/xash/xash.wasm', { method: 'HEAD' })
+    ])
+      .then(responses => {
+        if (responses.some(res => !res.ok)) setMissingEngine(true);
       })
       .catch(() => setMissingEngine(true));
   }, []);
@@ -56,6 +59,12 @@ export default function CS16Game({
         totalDependencies: 0,
         monitorRunDependencies: (left: number) => {
           // console.log('Dependencies left:', left);
+        },
+        locateFile: (path: string, prefix: string) => {
+          if (path.endsWith('.wasm') || path.endsWith('.data')) {
+            return '/xash/' + path;
+          }
+          return prefix + path;
         }
       };
     }
