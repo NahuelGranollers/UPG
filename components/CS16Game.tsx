@@ -32,7 +32,8 @@ export default function CS16Game({
       // Correct engine WASM filename
       fetch('/xash/xash3d.wasm', { method: 'HEAD' }),
       // Check dynamic library required by Xash
-      fetch('/xash/filesystem_stdio.wasm', { method: 'HEAD' })
+      fetch('/xash/filesystem_stdio.wasm', { method: 'HEAD' }),
+      fetch('/xash/libref_webgl2.wasm', { method: 'HEAD' })
     ])
       .then(responses => {
         if (responses.some(res => !res.ok)) setMissingEngine(true);
@@ -80,8 +81,8 @@ export default function CS16Game({
       canvas: canvasRef.current,
       // Let the engine/browser decide the best attributes
       // webglContextAttributes: {}, 
-      // Use default arguments (auto-detect renderer)
-      arguments: ['-windowed', '-width', '1024', '-height', '768'],
+      // Use default arguments but hint the renderer
+      arguments: ['-windowed', '-width', '1024', '-height', '768', '-ref', 'webgl2'],
       setStatus: (text: string) => setStatus(text),
       totalDependencies: 0,
       monitorRunDependencies: (left: number) => {
@@ -176,13 +177,14 @@ export default function CS16Game({
   const launchEngine = () => {
     if (!engineReady) return;
 
-    // Pre-flight check: Does the browser support WebGL?
+    // Pre-flight check: Does the browser support WebGL 2?
+    // The available renderer is libref_webgl2.wasm, so we strictly need WebGL 2.
     const canvas = canvasRef.current;
     if (canvas) {
-        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-        if (!gl) {
-            toast.error('FATAL: Tu navegador no soporta WebGL. El juego no funcionará.');
-            setStatus('Error: WebGL no soportado.');
+        const gl2 = canvas.getContext('webgl2');
+        if (!gl2) {
+            toast.error('FATAL: Tu navegador no soporta WebGL 2. Este motor requiere WebGL 2.');
+            setStatus('Error: WebGL 2 no soportado.');
             return;
         }
     }
