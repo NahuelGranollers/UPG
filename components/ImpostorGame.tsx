@@ -69,7 +69,7 @@ export default function ImpostorGame({
   const [gameStarted, setGameStarted] = useState(false);
   const [joined, setJoined] = useState(false);
   const [userId, setUserId] = useState<string>('');
-  const [selectedCategory, setSelectedCategory] = useState('General');
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedTime, setSelectedTime] = useState(0);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [guessInput, setGuessInput] = useState('');
@@ -400,12 +400,11 @@ export default function ImpostorGame({
 
   const handleStart = () => {
     if (!socket) return;
-    console.log('Starting game with:', { roomId, userId, selectedCategory, selectedTime });
+    console.log('Starting game with:', { roomId, userId, selectedCategory });
     socket.emit('impostor:start', { 
       roomId, 
       hostId: userId,
-      category: selectedCategory,
-      timerDuration: selectedTime
+      category: selectedCategory
     }, (res: any) => {
       console.log('Start response:', res);
       if (res && res.ok) {
@@ -943,29 +942,17 @@ export default function ImpostorGame({
                     {/* Botones de inicio para el host */}
                     {isHost && (
                       <div className="w-full max-w-md space-y-3">
-                        <div className="flex gap-2">
-                          <select 
-                            className="discord-input flex-1 cursor-pointer"
-                            value={selectedCategory}
-                            onChange={(e) => setSelectedCategory(e.target.value)}
-                          >
-                            <option className="bg-discord-sidebar text-discord-text-normal" value="General">General</option>
-                            <option className="bg-discord-sidebar text-discord-text-normal" value="Fantasía">Fantasía</option>
-                            <option className="bg-discord-sidebar text-discord-text-normal" value="Transporte">Transporte</option>
-                            <option className="bg-discord-sidebar text-discord-text-normal" value="Objetos">Objetos</option>
-                            <option className="bg-discord-sidebar text-discord-text-normal" value="Lugares">Lugares</option>
-                            <option className="bg-discord-sidebar text-discord-text-normal" value="IA (Generado)">✨ IA (Generado)</option>
-                          </select>
-                          <select 
-                            className="discord-input flex-1 cursor-pointer"
-                            value={selectedTime}
-                            onChange={(e) => setSelectedTime(Number(e.target.value))}
-                          >
-                            <option className="bg-discord-sidebar text-discord-text-normal" value={0}>Sin tiempo</option>
-                            <option className="bg-discord-sidebar text-discord-text-normal" value={180}>3 Minutos</option>
-                            <option className="bg-discord-sidebar text-discord-text-normal" value={300}>5 Minutos</option>
-                            <option className="bg-discord-sidebar text-discord-text-normal" value={600}>10 Minutos</option>
-                          </select>
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-discord-text-muted uppercase">
+                                Categoría de palabras (IA)
+                            </label>
+                            <input 
+                                type="text"
+                                className="discord-input w-full"
+                                placeholder="Ej: Animales, Comida, Objetos de casa... (Vacío = General)"
+                                value={selectedCategory}
+                                onChange={(e) => setSelectedCategory(e.target.value)}
+                            />
                         </div>
                         <button onClick={handleStart} className="discord-button success w-full">
                           🎮 Iniciar Partida

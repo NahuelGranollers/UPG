@@ -341,13 +341,17 @@ def register_socket_events(socketio, app=None):
         room = impostor_rooms.get(room_id)
         if not room or room['hostId'] != data.get('hostId'): return {'ok': False}
         
-        category = data.get('category', 'General')
+        category_input = data.get('category', '').strip()
+        category = category_input if category_input else 'General'
         
-        if category == 'IA (Generado)':
-            word = generate_impostor_word()
+        # Always use AI generation
+        word = "ErrorIA"
+        if app:
+            with app.app_context():
+                word = generate_impostor_word(category)
         else:
-            words = IMPOSTOR_CATEGORIES.get(category, IMPOSTOR_WORDS) + room['customWords']
-            word = random.choice(words)
+             logger.error("App context missing in on_impostor_start")
+             word = "ErrorContexto"
         
         player_ids = list(room['players'].keys())
         if len(player_ids) < 2: return {'ok': False, 'error': 'not_enough_players'}
