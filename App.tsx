@@ -58,7 +58,7 @@ function MainApp() {
     const dx = t.clientX - touchState.current.startX;
     const dy = Math.abs(t.clientY - touchState.current.startY);
     if (dy > 75) return; // ignore vertical drags
-    if (touchState.current.startX < 50 && dx > 60) {
+    if (touchState.current.startX < 80 && dx > 60) {
       setMobileSidebarOpen(true);
       touchState.current.started = false;
     }
@@ -429,6 +429,7 @@ function MainApp() {
               }}
               onJoinServer={handleJoinServer}
               onCreateServer={handleCreateServer}
+              onOpenSidebar={() => setMobileSidebarOpen(true)}
             />
           </div>
         ) : (
@@ -515,15 +516,15 @@ function MainApp() {
                 isMobileView
               />
             )}
-
-            {/* Mobile bottom bar removed per request. Use swipe from left edge to open navigation. */}
-            <MobileSidebar
-              isOpen={mobileSidebarOpen}
-              onClose={() => setMobileSidebarOpen(false)}
-              onNavigate={navigateToSection}
-            />
           </>
         )}
+
+        {/* Mobile Sidebar available in all views */}
+        <MobileSidebar
+          isOpen={mobileSidebarOpen}
+          onClose={() => setMobileSidebarOpen(false)}
+          onNavigate={navigateToSection}
+        />
       </div>
 
       {/* Effects Overlay */}

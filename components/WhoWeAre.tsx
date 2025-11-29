@@ -1,10 +1,22 @@
 import React, { memo } from 'react';
-import { Users, Shield, Trophy, Globe } from 'lucide-react';
+import { Users, Shield, Trophy, Globe, Menu } from 'lucide-react';
 
-const WhoWeAre: React.FC = () => {
+interface WhoWeAreProps {
+  onMenuToggle?: () => void;
+}
+
+const WhoWeAre: React.FC<WhoWeAreProps> = ({ onMenuToggle }) => {
   return (
-    <div className="flex-1 bg-discord-chat custom-scrollbar p-4 sm:p-6 md:p-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="flex-1 bg-discord-chat custom-scrollbar p-4 sm:p-6 md:p-8 relative">
+      {onMenuToggle && (
+        <button
+          onClick={onMenuToggle}
+          className="md:hidden absolute top-4 left-4 p-2 bg-discord-surface rounded-full shadow-lg z-10 text-discord-text-normal hover:text-white"
+        >
+          <Menu size={24} />
+        </button>
+      )}
+      <div className="max-w-4xl mx-auto pt-8 md:pt-0">
         <div className="text-center mb-8 sm:mb-10 md:mb-12">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-discord-text-header mb-3 sm:mb-4">
             Unas Partidillas Gang (UPG)

@@ -73,7 +73,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
   return (
     <div
-      className="px-3 sm:px-4 lg:px-6 pt-0 shrink-0 relative"
+      className="px-0 sm:px-4 lg:px-6 pt-0 shrink-0 relative"
       style={{ paddingBottom: 'max(0.25rem, env(safe-area-inset-bottom))' }}
     >
       {/* Sugerencias de menciones */}
@@ -135,41 +135,52 @@ const MessageInput: React.FC<MessageInputProps> = ({
         </div>
       )}
 
-      <div
-        className={`bg-[var(--chat-bg)] rounded-md px-3 sm:px-4 lg:px-6 py-1 flex items-center gap-2 transition-all duration-150 relative z-base ${showMentionSuggestions ? 'ring-1 ring-[var(--blurple)]' : ''}`}
-      >
-        <form onSubmit={handleSendMessage} className="flex-1 flex items-center relative">
-          {/* Preview layer */}
-          <div
-            className="absolute left-3 right-10 inset-y-0 flex items-center pointer-events-none overflow-hidden whitespace-pre text-sm text-discord-text-normal"
-            aria-hidden="true"
-          >
-            {renderInputPreview(inputText)}
-          </div>
-          {/* Input real */}
-          <label htmlFor="message-input" className="sr-only">Escribir mensaje</label>
-          <input
-            ref={inputRef}
-            type="text"
-            id="message-input"
-            value={inputText}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            placeholder={`Enviar mensaje a #${currentChannel.name}`}
-            className={`relative z-10 bg-[var(--chat-bg)] w-full text-base md:text-sm outline-none min-h-[28px] pl-1 pr-8 transition-all text-[var(--text)] placeholder-[var(--muted)] rounded-md`}
-            aria-label="Escribir mensaje"
-            maxLength={2000}
-            autoComplete="off"
-          />
-          {/* Botón de envío a la derecha */}
-          <button
-            type="submit"
-            aria-label="Enviar mensaje"
-            className="absolute right-1 top-1/2 -translate-y-1/2 bg-transparent p-0.5 rounded hover:bg-[rgba(255,255,255,0.03)]"
-          >
-            <Send size={14} className="text-[var(--blurple)]" />
-          </button>
-        </form>
+      <div className="flex items-end gap-2">
+        <div
+          className={`flex-1 bg-[var(--chat-bg)] rounded-md px-3 sm:px-4 lg:px-6 py-1 flex items-center gap-2 transition-all duration-150 relative z-base ${showMentionSuggestions ? 'ring-1 ring-[var(--blurple)]' : ''}`}
+        >
+          <form onSubmit={handleSendMessage} className="flex-1 flex items-center relative">
+            {/* Preview layer */}
+            <div
+              className="absolute left-3 right-10 inset-y-0 flex items-center pointer-events-none overflow-hidden whitespace-pre text-sm text-discord-text-normal"
+              aria-hidden="true"
+            >
+              {renderInputPreview(inputText)}
+            </div>
+            {/* Input real */}
+            <label htmlFor="message-input" className="sr-only">Escribir mensaje</label>
+            <input
+              ref={inputRef}
+              type="text"
+              id="message-input"
+              value={inputText}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder={`Enviar mensaje a #${currentChannel.name}`}
+              className={`relative z-10 bg-[var(--chat-bg)] w-full text-base md:text-sm outline-none min-h-[28px] pl-1 pr-8 transition-all text-[var(--text)] placeholder-[var(--muted)] rounded-md`}
+              aria-label="Escribir mensaje"
+              maxLength={2000}
+              autoComplete="off"
+            />
+            {/* Botón de envío a la derecha (Desktop) */}
+            <button
+              type="submit"
+              aria-label="Enviar mensaje"
+              className="hidden md:block absolute right-1 top-1/2 -translate-y-1/2 bg-transparent p-0.5 rounded hover:bg-[rgba(255,255,255,0.03)]"
+            >
+              <Send size={14} className="text-[var(--blurple)]" />
+            </button>
+          </form>
+        </div>
+
+        {/* Botón de envío móvil */}
+        <button
+          onClick={(e) => handleSendMessage(e)}
+          className="md:hidden p-3 bg-[#5865F2] rounded-full text-white shadow-lg active:scale-95 transition-transform flex items-center justify-center shrink-0 mb-[1px]"
+          aria-label="Enviar mensaje"
+        >
+          <Send size={20} />
+        </button>
       </div>
     </div>
   );

@@ -457,7 +457,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         messagesEndRef={messagesEndRef}
       />
       {/* Input: separado y con z-index para evitar solapamientos */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 pb-4 sm:pb-6 lg:pb-8 z-base bg-transparent">
+      <div className="w-full px-2 sm:px-6 lg:px-8 pb-2 sm:pb-6 lg:pb-8 z-base bg-transparent">
         <MessageInput
           inputText={inputText}
           setInputText={setInputText}

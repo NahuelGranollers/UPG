@@ -1,6 +1,11 @@
 import React, { useEffect, useRef, memo } from 'react';
+import { Menu } from 'lucide-react';
 
-const Voting: React.FC = () => {
+interface VotingProps {
+  onMenuToggle?: () => void;
+}
+
+const Voting: React.FC<VotingProps> = ({ onMenuToggle }) => {
   const logoRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
@@ -30,7 +35,15 @@ const Voting: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center overflow-hidden w-full h-full px-4 bg-discord-chat">
+    <div className="flex-1 flex flex-col items-center justify-center overflow-hidden w-full h-full px-4 bg-discord-chat relative">
+      {onMenuToggle && (
+        <button
+          onClick={onMenuToggle}
+          className="md:hidden absolute top-4 left-4 p-2 bg-discord-surface rounded-full shadow-lg z-10 text-discord-text-normal hover:text-white"
+        >
+          <Menu size={24} />
+        </button>
+      )}
       <img
         ref={logoRef}
         src="/upg.png"
