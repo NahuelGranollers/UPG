@@ -769,52 +769,7 @@ export default function ImpostorGame({
 
               {/* Player Cards Area - Scrollable */}
               <div className="bg-discord-sidebar p-4 rounded-lg border border-discord-hover flex-1 overflow-y-auto custom-scrollbar flex flex-col relative">
-                {!gameStarted ? (
-                  <div className="flex flex-col items-center justify-center h-full space-y-6">
-                    <div className="text-center">
-                      <h3 className="text-xl font-bold text-discord-text-header mb-4">
-                        {isHost ? 'Configura y comienza la partida' : 'Esperando al host...'}
-                      </h3>
-                      <div className="text-discord-text-muted">
-                        {players.length} jugador{players.length !== 1 ? 'es' : ''} en la sala
-                      </div>
-                    </div>
-
-                    {/* Botones de inicio para el host */}
-                    {isHost && (
-                      <div className="w-full max-w-md space-y-3">
-                        <div className="flex gap-2">
-                          <select 
-                            className="discord-input flex-1 cursor-pointer"
-                            value={selectedCategory}
-                            onChange={(e) => setSelectedCategory(e.target.value)}
-                          >
-                            <option className="bg-discord-sidebar text-discord-text-normal" value="General">General</option>
-                            <option className="bg-discord-sidebar text-discord-text-normal" value="Fantasía">Fantasía</option>
-                            <option className="bg-discord-sidebar text-discord-text-normal" value="Transporte">Transporte</option>
-                            <option className="bg-discord-sidebar text-discord-text-normal" value="Objetos">Objetos</option>
-                            <option className="bg-discord-sidebar text-discord-text-normal" value="Lugares">Lugares</option>
-                            <option className="bg-discord-sidebar text-discord-text-normal" value="IA (Generado)">✨ IA (Generado)</option>
-                          </select>
-                          <select 
-                            className="discord-input flex-1 cursor-pointer"
-                            value={selectedTime}
-                            onChange={(e) => setSelectedTime(Number(e.target.value))}
-                          >
-                            <option className="bg-discord-sidebar text-discord-text-normal" value={0}>Sin tiempo</option>
-                            <option className="bg-discord-sidebar text-discord-text-normal" value={180}>3 Minutos</option>
-                            <option className="bg-discord-sidebar text-discord-text-normal" value={300}>5 Minutos</option>
-                            <option className="bg-discord-sidebar text-discord-text-normal" value={600}>10 Minutos</option>
-                          </select>
-                        </div>
-                        <button onClick={handleStart} className="discord-button success w-full">
-                          🎮 Iniciar Partida
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <>
+                
                 {/* Ejection Result Overlay */}
                 {revealedPlayer && (
                   <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in">
@@ -974,7 +929,7 @@ export default function ImpostorGame({
                   </div>
                 )}
 
-                  {/* Game Content */}
+                {!gameStarted ? (
                   <div className="space-y-4 pb-4">
                     {spinning && (
                       <div className="flex items-center justify-center py-12">
