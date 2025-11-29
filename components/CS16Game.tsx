@@ -135,6 +135,24 @@ export default function CS16Game({
     const script = document.createElement('script');
     script.src = '/xash/xash3d.js';
     script.async = true;
+    script.onload = () => {
+      // Initialize the engine using the factory function
+      // @ts-ignore
+      if (typeof window.Xash3D === 'function') {
+        // @ts-ignore
+        window.Xash3D(window.Module).then((instance: any) => {
+          console.log('Xash3D Engine Initialized');
+        }).catch((err: any) => {
+          console.error('Failed to initialize Xash3D:', err);
+          toast.error('Error al iniciar el motor del juego');
+          setGameRunning(false);
+        });
+      } else {
+        console.error('Xash3D global not found');
+        toast.error('Error: No se pudo cargar el script del motor');
+        setGameRunning(false);
+      }
+    };
     document.body.appendChild(script);
   };
 
