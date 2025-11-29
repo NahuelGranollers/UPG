@@ -209,6 +209,13 @@ const MessageList: React.FC<MessageListProps> = memo(
     isBotTyping,
     messagesEndRef,
   }) => {
+    // Optimización: Crear mapa de usuarios para búsqueda O(1)
+    const userMap = useMemo(() => {
+      const map = new Map<string, User>();
+      users.forEach(u => map.set(u.id, u));
+      return map;
+    }, [users]);
+
     return (
       <div
         className="flex-1 overflow-y-auto px-3 sm:px-4 pt-3 sm:pt-4 flex flex-col"
@@ -224,7 +231,7 @@ const MessageList: React.FC<MessageListProps> = memo(
           </div>
           <div className="h-[1px] bg-discord-text-muted/20 w-full my-4" />
           {orderedMessages.map(msg => {
-            const msgUser = users.find(u => u.id === msg.userId);
+            const msgUser = userMap.get(msg.userId);
             const senderColor = userColors[msg.userId] || msgUser?.color || '#ffffff';
             return (
               <MessageItem

@@ -36,6 +36,164 @@ interface ChannelListProps {
   onOpenSidebar?: () => void;
 }
 
+import React, { memo, useState, useMemo } from 'react';
+import {
+  Hash,
+  Volume2,
+  ChevronDown,
+  Vote,
+  Users,
+  Mic,
+  Settings,
+  LogIn,
+  LogOut,
+  Menu,
+} from 'lucide-react';
+import ServerSettings from './ServerSettings';
+import { useSocket } from '../context/SocketContext';
+import { useAuth } from '../context/AuthContext';
+import { AppView, User } from '../types';
+import { ChannelData } from '../types';
+import SafeImage from './SafeImage';
+
+interface ChannelListProps {
+  activeView: AppView;
+  currentChannelId: string;
+  onChannelSelect: (view: AppView, channel?: ChannelData) => void;
+  currentUser: User;
+  activeVoiceChannel: string | null;
+  onVoiceJoin: (channelName: string) => void;
+  voiceStates: Record<string, string>;
+  users: User[];
+  onLoginWithDiscord?: () => void;
+  onLogoutDiscord?: () => void;
+  onToggleMic?: () => void;
+  micActive?: boolean;
+  voiceLevel?: number;
+  onVoiceLeave?: () => void;
+  onOpenSidebar?: () => void;
+}
+
+// Extracted TextChannelItem to prevent re-creation on every render
+const TextChannelItem = React.memo(
+  ({
+    id,
+    name,
+    description,
+    icon: Icon = Hash,
+    view = AppView.CHAT,
+    activeView,
+    currentChannelId,
+    onChannelSelect,
+  }: {
+    id: string;
+    name: string;
+    description: string;
+    icon?: React.ComponentType<{ size?: number; className?: string }>;
+    view?: AppView;
+    activeView: AppView;
+    currentChannelId: string;
+    onChannelSelect: (view: AppView, channel?: ChannelData) => void;
+  }) => {
+    const isActive = activeView === view && (view !== AppView.CHAT || currentChannelId === id);
+
+    return (
+      <button
+        onClick={() =>
+          onChannelSelect(view, view === AppView.CHAT ? { id, name, description } : undefined)
+        }
+        className={`w-full flex items-center px-2 py-2 sm:py-[6px] rounded-md mb-[2px] group transition-colors min-h-[44px] sm:min-h-0 ${
+          isActive
+            ? 'bg-discord-hover text-discord-text-header'
+            : 'text-discord-text-muted hover:bg-discord-hover hover:text-discord-text-normal'
+        }`}
+      >
+        <Icon size={20} className="mr-2 sm:mr-1.5 text-gray-400 shrink-0" />
+        <span
+          className={`font-medium text-sm sm:text-[15px] truncate ${isActive ? 'text-white' : ''}`}
+        >
+          {name}
+        </span>
+      </button>
+    );
+  }
+);
+
+TextChannelItem.displayName = 'TextChannelItem';
+
+// Extracted VoiceChannelItem to prevent re-creation on every render
+const VoiceChannelItem = React.memo(({ 
+  name, 
+  activeVoiceChannel, 
+  onVoiceJoin, 
+  voiceStates, 
+  users, 
+  currentUser 
+}: { 
+  name: string;
+  activeVoiceChannel: string | null;
+  onVoiceJoin: (channelName: string) => void;
+  voiceStates: Record<string, string>;
+  users: User[];
+  currentUser: User;
+}) => {
+  const isConnected = activeVoiceChannel === name;
+  // Filter users who are in this specific channel (memoizado)
+  const usersInChannel = useMemo(
+    () => users.filter(u => voiceStates[u.id] === name),
+    [users, voiceStates, name]
+  );
+
+  return (
+    <div className="mb-1">
+      <div
+        onClick={() => onVoiceJoin(name)}
+        className={`w-full flex items-center px-2 py-2 sm:py-[6px] rounded-md group transition-colors cursor-pointer min-h-[44px] sm:min-h-0 ${
+          isConnected
+            ? 'bg-discord-hover text-white'
+            : 'text-discord-text-muted hover:bg-discord-hover hover:text-discord-text-normal'
+        }`}
+      >
+        <Volume2
+          size={20}
+          className={`mr-2 sm:mr-1.5 shrink-0 ${isConnected ? 'text-green-500' : 'text-gray-400'}`}
+        />
+        <span className="font-medium text-sm sm:text-[15px] truncate flex-1">{name}</span>
+      </div>
+      {/* Render Users Inside Channel */}
+      {usersInChannel.length > 0 && (
+        <div className="pl-8 sm:pl-7 pr-2 space-y-1 pb-1">
+          {usersInChannel.map(u => (
+            <div
+              key={u.id}
+              className="flex items-center group/user cursor-pointer py-1 sm:py-0.5 rounded hover:bg-white/5 min-h-[36px] sm:min-h-0"
+            >
+              <SafeImage
+                src={u.avatar}
+                alt={u.username}
+                className={`w-6 h-6 sm:w-5 sm:h-5 rounded-full mr-2 border border-[#2b2d31] ${u.status === 'online' ? 'ring-1 ring-green-500' : ''}`}
+                fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(u.username)}&background=5865F2&color=fff&size=128`}
+              />
+              <span
+                className={`text-sm sm:text-[13px] truncate ${u.id === currentUser?.id ? 'font-bold text-white' : 'text-discord-text-muted group-hover/user:text-discord-text-normal'}`}
+              >
+                {u.username}
+              </span>
+              {u.isBot && (
+                <span className="ml-1 text-[9px] sm:text-[8px] bg-discord-blurple text-white px-1 rounded">
+                  BOT
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});
+
+VoiceChannelItem.displayName = 'VoiceChannelItem';
+
 const ChannelList: React.FC<ChannelListProps> = ({
   activeView,
   currentChannelId,
@@ -59,103 +217,6 @@ const ChannelList: React.FC<ChannelListProps> = ({
   const { updateUser } = useAuth();
   const { socket } = useSocket();
   // We will use sonner directly when needed via import in ServerSettings and here call window.toaster via toast import is unnecessary
-  const TextChannelItem = React.memo(
-    ({
-      id,
-      name,
-      description,
-      icon: Icon = Hash,
-      view = AppView.CHAT,
-    }: {
-      id: string;
-      name: string;
-      description: string;
-      icon?: React.ComponentType<{ size?: number; className?: string }>;
-      view?: AppView;
-    }) => {
-      const isActive = activeView === view && (view !== AppView.CHAT || currentChannelId === id);
-
-      return (
-        <button
-          onClick={() =>
-            onChannelSelect(view, view === AppView.CHAT ? { id, name, description } : undefined)
-          }
-          className={`w-full flex items-center px-2 py-2 sm:py-[6px] rounded-md mb-[2px] group transition-colors min-h-[44px] sm:min-h-0 ${
-            isActive
-              ? 'bg-discord-hover text-discord-text-header'
-              : 'text-discord-text-muted hover:bg-discord-hover hover:text-discord-text-normal'
-          }`}
-        >
-          <Icon size={20} className="mr-2 sm:mr-1.5 text-gray-400 shrink-0" />
-          <span
-            className={`font-medium text-sm sm:text-[15px] truncate ${isActive ? 'text-white' : ''}`}
-          >
-            {name}
-          </span>
-        </button>
-      );
-    }
-  );
-
-  TextChannelItem.displayName = 'TextChannelItem';
-
-  const VoiceChannelItem = React.memo(({ name }: { name: string }) => {
-    const isConnected = activeVoiceChannel === name;
-    // Filter users who are in this specific channel (memoizado)
-    const usersInChannel = React.useMemo(
-      () => users.filter(u => voiceStates[u.id] === name),
-      [name]
-    );
-
-    return (
-      <div className="mb-1">
-        <div
-          onClick={() => onVoiceJoin(name)}
-          className={`w-full flex items-center px-2 py-2 sm:py-[6px] rounded-md group transition-colors cursor-pointer min-h-[44px] sm:min-h-0 ${
-            isConnected
-              ? 'bg-discord-hover text-white'
-              : 'text-discord-text-muted hover:bg-discord-hover hover:text-discord-text-normal'
-          }`}
-        >
-          <Volume2
-            size={20}
-            className={`mr-2 sm:mr-1.5 shrink-0 ${isConnected ? 'text-green-500' : 'text-gray-400'}`}
-          />
-          <span className="font-medium text-sm sm:text-[15px] truncate flex-1">{name}</span>
-        </div>
-        {/* Render Users Inside Channel */}
-        {usersInChannel.length > 0 && (
-          <div className="pl-8 sm:pl-7 pr-2 space-y-1 pb-1">
-            {usersInChannel.map(u => (
-              <div
-                key={u.id}
-                className="flex items-center group/user cursor-pointer py-1 sm:py-0.5 rounded hover:bg-white/5 min-h-[36px] sm:min-h-0"
-              >
-                <SafeImage
-                  src={u.avatar}
-                  alt={u.username}
-                  className={`w-6 h-6 sm:w-5 sm:h-5 rounded-full mr-2 border border-[#2b2d31] ${u.status === 'online' ? 'ring-1 ring-green-500' : ''}`}
-                  fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(u.username)}&background=5865F2&color=fff&size=128`}
-                />
-                <span
-                  className={`text-sm sm:text-[13px] truncate ${u.id === currentUser?.id ? 'font-bold text-white' : 'text-discord-text-muted group-hover/user:text-discord-text-normal'}`}
-                >
-                  {u.username}
-                </span>
-                {u.isBot && (
-                  <span className="ml-1 text-[9px] sm:text-[8px] bg-discord-blurple text-white px-1 rounded">
-                    BOT
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  });
-
-  VoiceChannelItem.displayName = 'VoiceChannelItem';
 
   return (
     <div className="flex-1 md:w-60 md:flex-none bg-discord-sidebar flex flex-col shrink-0 relative min-w-0">
@@ -190,7 +251,14 @@ const ChannelList: React.FC<ChannelListProps> = ({
             <span className="text-xl leading-none relative top-[1px]">+</span>
           </div>
 
-          <TextChannelItem id="general" name="general" description="Chat general de UPG" />
+          <TextChannelItem 
+            id="general" 
+            name="general" 
+            description="Chat general de UPG" 
+            activeView={activeView}
+            currentChannelId={currentChannelId}
+            onChannelSelect={onChannelSelect}
+          />
         </div>
 
         {/* Category: Voice Channels */}
@@ -202,7 +270,14 @@ const ChannelList: React.FC<ChannelListProps> = ({
             </div>
           </div>
 
-          <VoiceChannelItem name="Plaza UPG" />
+          <VoiceChannelItem 
+            name="Plaza UPG" 
+            activeVoiceChannel={activeVoiceChannel}
+            onVoiceJoin={onVoiceJoin}
+            voiceStates={voiceStates}
+            users={users}
+            currentUser={currentUser}
+          />
         </div>
       </div>
 
