@@ -51,6 +51,13 @@ FREE_MODELS_REAL = [
     "mistralai/mistral-7b-instruct:free",      # ⚡ RÁPIDO + SIN CENSURA
 ]
 
+# Insultos inventados para el prompt
+INSULTOS_INVENTADOS = [
+    "TRONCOMÁN", "ABORTOCREEPER", "CARALADRILLO", "SOPLAPOLLAS_3000", 
+    "HIJO_DE_UN_ALDEANO", "COMETIERRA", "LAMECABLES", "CABEZA_DE_BEDROCK",
+    "MASTICAPILAS", "CHUPACABLES", "ABRAZAFAROLAS", "PEINABOMBILLAS"
+]
+
 # In-memory storage for bot conversations (reset on restart)
 bot_conversations = {}
 
