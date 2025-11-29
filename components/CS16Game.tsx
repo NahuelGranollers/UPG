@@ -71,22 +71,23 @@ export default function CS16Game({
       quit: (status: number, toThrow: any) => {
          console.log('[Xash3D] Quit:', status);
          setGameRunning(false);
-         // If status is non-zero, it's an error exit.
-         // We throw a custom error to stop execution but catch it in the promise chain.
+         // Suppress the "Uncaught Infinity" error by not re-throwing.
+         // The engine has already stopped.
          if (status !== 0) {
-             throw new Error('Xash3D Exit with status: ' + status);
+             console.warn('Xash3D exited with status:', status);
          }
       },
       canvas: canvasRef.current,
-      // Prefer high-performance GPU if available
+      // Prefer default attributes to maximize compatibility
       webglContextAttributes: {
         alpha: false,
-        antialias: true,
+        antialias: false,
         depth: true,
         stencil: false,
-        preserveDrawingBuffer: false,
-        powerPreference: 'high-performance'
+        preserveDrawingBuffer: false
       },
+      // Force windowed mode and standard resolution to avoid fullscreen issues
+      arguments: ['-windowed', '-width', '1024', '-height', '768'],
       setStatus: (text: string) => setStatus(text),
       totalDependencies: 0,
       monitorRunDependencies: (left: number) => {
