@@ -29,7 +29,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
     const fetchServers = async () => {
       try {
         const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV 
-          ? 'http://localhost:3000/api' 
+          ? 'http://localhost:5000/api' 
           : 'https://api.unaspartidillas.online/api');
           
         const res = await fetch(`${API_URL}/servers`);

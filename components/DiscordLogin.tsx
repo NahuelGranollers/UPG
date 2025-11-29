@@ -4,7 +4,7 @@ const DiscordLogin: React.FC = () => {
   const handleLogin = () => {
     // Usar producci├│n por defecto, localhost solo en desarrollo
     const API_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV
-      ? 'http://localhost:3000'
+      ? 'http://localhost:5000'
       : 'https://api.unaspartidillas.online');
 
     // Redirige al endpoint del backend que inicia el flujo OAuth

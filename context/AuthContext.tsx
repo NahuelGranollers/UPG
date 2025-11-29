@@ -37,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Fetch user from backend
         try {
           const API_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV
-            ? 'http://localhost:3000'
+            ? 'http://localhost:5000'
             : 'https://api.unaspartidillas.online');
           const res = await fetch(`${API_URL}/auth/user`, { credentials: 'include' });
           if (res.ok) {
@@ -89,7 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginWithDiscord = useCallback(() => {
     const API_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV
-      ? 'http://localhost:3000'
+      ? 'http://localhost:5000'
       : 'https://api.unaspartidillas.online');
     window.location.href = `${API_URL}/auth/discord`;
   }, []);
@@ -112,7 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = useCallback(async () => {
     const API_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV
-      ? 'http://localhost:3000'
+      ? 'http://localhost:5000'
       : 'https://api.unaspartidillas.online');
     try {
       await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });

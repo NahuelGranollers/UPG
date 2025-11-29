@@ -38,7 +38,7 @@ const UPGNews: React.FC<UPGNewsProps> = ({ onOpenSidebar }) => {
   const fetchNews = async () => {
     try {
       const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV 
-        ? 'http://localhost:3000/api' 
+        ? 'http://localhost:5000/api' 
         : 'https://api.unaspartidillas.online/api');
       const res = await fetch(`${API_URL}/news`);
       const data = await res.json();
@@ -60,7 +60,7 @@ const UPGNews: React.FC<UPGNewsProps> = ({ onOpenSidebar }) => {
     setIsCreating(true);
     try {
       const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV 
-        ? 'http://localhost:3000/api' 
+        ? 'http://localhost:5000/api' 
         : 'https://api.unaspartidillas.online/api');
       const res = await fetch(`${API_URL}/news`, {
         method: 'POST',
@@ -93,7 +93,7 @@ const UPGNews: React.FC<UPGNewsProps> = ({ onOpenSidebar }) => {
     setIsDeleting(true);
     try {
       const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV 
-        ? 'http://localhost:3000/api' 
+        ? 'http://localhost:5000/api' 
         : 'https://api.unaspartidillas.online/api');
       const res = await fetch(`${API_URL}/news/${newsId}`, {
         method: 'DELETE',
