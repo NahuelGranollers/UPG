@@ -483,6 +483,7 @@ function MainApp() {
                     }}
                     autoJoinRoomId={autoJoinRoomId}
                     autoJoinPassword={autoJoinPassword}
+                    onOpenSidebar={() => setMobileSidebarOpen(true)}
                   />
                 )}
                 {activeView === AppView.WHO_WE_ARE && (
@@ -502,6 +503,7 @@ function MainApp() {
                     }}
                     autoJoinRoomId={autoJoinRoomId}
                     autoJoinPassword={autoJoinPassword}
+                    onOpenSidebar={() => setMobileSidebarOpen(true)}
                   />
                 )}
               </>

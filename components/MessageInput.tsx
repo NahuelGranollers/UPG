@@ -157,26 +157,18 @@ const MessageInput: React.FC<MessageInputProps> = ({
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               placeholder={`Enviar mensaje a #${currentChannel.name}`}
-              className={`relative z-10 bg-[var(--chat-bg)] w-full text-base md:text-sm outline-none min-h-[28px] pl-1 pr-8 transition-all text-[var(--text)] placeholder-[var(--muted)] rounded-md`}
+              className={`relative z-10 bg-[var(--chat-bg)] w-full text-base md:text-sm outline-none min-h-[28px] pl-1 pr-2 transition-all text-[var(--text)] placeholder-[var(--muted)] rounded-md`}
               aria-label="Escribir mensaje"
               maxLength={2000}
               autoComplete="off"
             />
-            {/* Botón de envío a la derecha (Desktop) */}
-            <button
-              type="submit"
-              aria-label="Enviar mensaje"
-              className="hidden md:block absolute right-1 top-1/2 -translate-y-1/2 bg-transparent p-0.5 rounded hover:bg-[rgba(255,255,255,0.03)]"
-            >
-              <Send size={14} className="text-[var(--blurple)]" />
-            </button>
           </form>
         </div>
 
-        {/* Botón de envío móvil */}
+        {/* Botón de envío */}
         <button
           onClick={(e) => handleSendMessage(e)}
-          className="md:hidden p-3 bg-[#5865F2] rounded-full text-white shadow-lg active:scale-95 transition-transform flex items-center justify-center shrink-0 mb-[1px]"
+          className="p-3 bg-[#5865F2] rounded-full text-white shadow-lg active:scale-95 transition-transform flex items-center justify-center shrink-0 mb-[1px] hover:bg-[#4752c4]"
           aria-label="Enviar mensaje"
         >
           <Send size={20} />

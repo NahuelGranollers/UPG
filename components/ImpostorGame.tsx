@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
+import { Menu } from 'lucide-react';
 
 interface PlayerInfo {
   id: string;
@@ -12,11 +13,13 @@ interface PlayerInfo {
 export default function ImpostorGame({ 
   onClose,
   autoJoinRoomId,
-  autoJoinPassword
+  autoJoinPassword,
+  onOpenSidebar
 }: { 
   onClose?: () => void;
   autoJoinRoomId?: string;
   autoJoinPassword?: string;
+  onOpenSidebar?: () => void;
 }) {
   const { socket } = useSocket();
   const { currentUser } = useAuth();
@@ -553,9 +556,20 @@ export default function ImpostorGame({
     <div className="flex flex-col min-h-screen w-full bg-discord-chat">
       <div className="w-full py-4 px-2 sm:py-6 sm:px-4 lg:py-8 lg:px-6">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-discord-text-header">
-            🎭 Impostor
-          </h1>
+          <div className="flex items-center gap-3">
+            {onOpenSidebar && (
+              <button
+                onClick={onOpenSidebar}
+                className="md:hidden text-discord-text-muted hover:text-white"
+                aria-label="Abrir menú"
+              >
+                <Menu size={24} />
+              </button>
+            )}
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-discord-text-header">
+              🎭 Impostor
+            </h1>
+          </div>
           <div className="flex gap-2">
             {!joined && (
               <button
