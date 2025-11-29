@@ -76,5 +76,4 @@ export enum AppView {
   IMPOSTOR = 'IMPOSTOR',
   NEWS = 'NEWS',
   HALL_OF_FAME = 'HALL_OF_FAME',
-  CS16 = 'CS16',
 }

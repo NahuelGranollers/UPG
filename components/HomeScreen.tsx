@@ -36,9 +36,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
         const data = await res.json();
         const allServers: GameServer[] = [];
         
-        if (data.servers?.cs16) {
-          data.servers.cs16.forEach((s: any) => allServers.push({ ...s, gameType: 'cs16' }));
-        }
         if (data.servers?.impostor) {
           data.servers.impostor.forEach((s: any) => allServers.push({ ...s, gameType: 'impostor' }));
         }
@@ -132,12 +129,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
           </h2>
           <div className="flex gap-2">
             <button 
-              onClick={() => onCreateServer('cs16')}
-              className="discord-button small success flex items-center gap-1"
-            >
-              <Plus size={16} /> Crear CS 1.6
-            </button>
-            <button 
               onClick={() => onCreateServer('impostor')}
               className="discord-button small secondary flex items-center gap-1"
             >
@@ -166,7 +157,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
                       {server.name}
                     </h3>
                     <p className="text-xs text-discord-text-muted uppercase tracking-wider font-semibold mt-1">
-                      {server.gameType === 'cs16' ? 'Counter-Strike 1.6' : 'Impostor'}
+                      Impostor
                     </p>
                   </div>
                   {server.hasPassword && <Lock size={16} className="text-yellow-500" />}

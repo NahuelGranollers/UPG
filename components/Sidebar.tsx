@@ -12,10 +12,10 @@ interface SidebarProps {
   onHomeClick?: () => void;
   onUPGClick?: () => void;
   // activeSection allows parent to indicate which sidebar node is active
-  activeSection?: 'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor' | 'news' | 'hall_of_fame' | 'cs16';
+  activeSection?: 'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor' | 'news' | 'hall_of_fame';
   // navigation callback when clicking a sidebar node
   onNavigate?: (
-    section: 'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor' | 'news' | 'hall_of_fame' | 'cs16'
+    section: 'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor' | 'news' | 'hall_of_fame'
   ) => void;
 }
 
@@ -30,8 +30,6 @@ const Sidebar: React.FC<SidebarProps> = memo(
     onNavigate,
   }) => {
     const [showAdminPanel, setShowAdminPanel] = useState(false);
-    // Temporarily hide the CS 1.6 sidebar entry without deleting code
-    const showCS = true;
     // Impostor is now a full page route/view
     const isAdmin = currentUser?.role === UserRole.ADMIN;
 
@@ -199,41 +197,6 @@ const Sidebar: React.FC<SidebarProps> = memo(
                   aria-pressed={active}
                 >
                   <Trophy size={24} />
-                </button>
-              </div>
-            );
-          })()}
-
-          {(() => {
-            if (!showCS) return null;
-            const active = activeSection === 'cs16';
-            return (
-              <div className="relative">
-                {active && (
-                  <div className="absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1" />
-                )}
-                <button
-                  onClick={() => {
-                    if (onNavigate) onNavigate('cs16');
-                  }}
-                  className={`w-14 h-14 ${active ? 'bg-discord-blurple text-white' : 'bg-discord-chat text-discord-text-normal hover:bg-discord-hover hover:text-discord-text-normal'} rounded-[28px] hover:rounded-[18px] transition-all duration-200 flex items-center justify-center overflow-hidden`}
-                  title="CS 1.6"
-                  aria-pressed={active}
-                >
-                  <div
-                    className="w-10 h-10"
-                    style={{
-                      backgroundColor: '#dbdee1',
-                      maskImage: 'url(/cs.png)',
-                      maskSize: 'contain',
-                      maskRepeat: 'no-repeat',
-                      maskPosition: 'center',
-                      WebkitMaskImage: 'url(/cs.png)',
-                      WebkitMaskSize: 'contain',
-                      WebkitMaskRepeat: 'no-repeat',
-                      WebkitMaskPosition: 'center',
-                    }}
-                  />
                 </button>
               </div>
             );

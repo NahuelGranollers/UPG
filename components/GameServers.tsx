@@ -3,10 +3,9 @@ import { useSocket } from '../context/SocketContext';
 import ServerBrowser from './ServerBrowser';
 import CreateServerModal from './CreateServerModal';
 import ImpostorGame from './ImpostorGame';
-import CS16Game from './CS16Game';
 
 interface GameServersProps {
-  gameType: 'impostor' | 'cs16';
+  gameType: 'impostor';
   currentUser: any;
   onJoinServer: (roomId: string, password?: string) => void;
 }
@@ -42,10 +41,6 @@ const GameServers: React.FC<GameServersProps> = ({ gameType, currentUser, onJoin
         createData.password = serverData.password;
       }
 
-      if (gameType === 'cs16' && serverData.botCount !== undefined) {
-        createData.botCount = serverData.botCount;
-      }
-
       socket.emit(`${gameType}:create-room`, createData, (response: any) => {
         if (response && response.ok) {
           setShowCreateModal(false);
@@ -71,20 +66,11 @@ const GameServers: React.FC<GameServersProps> = ({ gameType, currentUser, onJoin
   return (
     <div className="min-h-screen bg-gray-900">
       {joiningServer ? (
-        gameType === 'impostor' ? (
-          <ImpostorGame
-            autoJoinRoomId={joiningServer.roomId}
-            autoJoinPassword={joiningServer.password}
-            onClose={handleBackToBrowser}
-          />
-        ) : (
-          <CS16Game
-            autoJoinRoomId={joiningServer.roomId}
-            autoJoinPassword={joiningServer.password}
-            autoJoinBotCount={joiningServer.botCount}
-            onClose={handleBackToBrowser}
-          />
-        )
+        <ImpostorGame
+          autoJoinRoomId={joiningServer.roomId}
+          autoJoinPassword={joiningServer.password}
+          onClose={handleBackToBrowser}
+        />
       ) : (
         <div className="p-4">
           <div className="max-w-6xl mx-auto">

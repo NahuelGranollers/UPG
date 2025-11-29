@@ -15,7 +15,7 @@ interface ServerInfo {
 }
 
 interface ServerBrowserProps {
-  gameType: 'impostor' | 'cs16';
+  gameType: 'impostor';
   onJoinServer: (roomId: string, password?: string) => void;
   onCreateServer: () => void;
 }
@@ -85,14 +85,7 @@ const ServerBrowser: React.FC<ServerBrowserProps> = ({ gameType, onJoinServer, o
   };
 
   const formatGameState = (gameState: any) => {
-    if (gameType === 'impostor') {
-      return gameState.started ? 'En juego' : 'Esperando';
-    } else {
-      if (gameState.gameStarted) {
-        return `En ronda (${gameState.roundTime}s)`;
-      }
-      return 'Esperando';
-    }
+    return gameState.started ? 'En juego' : 'Esperando';
   };
 
   const formatCreatedAt = (createdAt: string) => {
@@ -121,7 +114,7 @@ const ServerBrowser: React.FC<ServerBrowserProps> = ({ gameType, onJoinServer, o
     <div className="bg-gray-800 rounded-lg p-6 max-w-4xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-white">
-          Servidores {gameType === 'impostor' ? 'Impostor' : 'CS 1.6'}
+          Servidores Impostor
         </h2>
         <button
           onClick={onCreateServer}
@@ -156,9 +149,6 @@ const ServerBrowser: React.FC<ServerBrowserProps> = ({ gameType, onJoinServer, o
                   <div className="flex items-center gap-4 text-sm text-gray-300">
                     <span>Host: {server.hostName}</span>
                     <span>Jugadores: {server.playerCount}/{server.maxPlayers}</span>
-                    {server.botCount && server.botCount > 0 && (
-                      <span>Bots: {server.botCount}</span>
-                    )}
                     <span>Estado: {formatGameState(server.gameState)}</span>
                     <span className="text-gray-500">Hace {formatCreatedAt(server.createdAt)}</span>
                   </div>

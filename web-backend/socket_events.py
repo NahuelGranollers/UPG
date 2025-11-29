@@ -2,7 +2,7 @@ from flask import request
 from flask_socketio import emit, join_room, leave_room, disconnect
 from models import db, User, Message
 from game_state import (
-    connected_users, voice_states, impostor_rooms, cs16_rooms, 
+    connected_users, voice_states, impostor_rooms, 
     public_servers, user_room_map, trolled_users, ADMIN_DISCORD_ID, BOT_USER,
     IMPOSTOR_WORDS, IMPOSTOR_CATEGORIES
 )
@@ -84,50 +84,6 @@ def register_socket_events(socketio, app=None):
     @socketio.on('connect')
     def on_connect():
         logger.info(f"Client connected: {request.sid}")
-        
-        # Auto-create default CS 1.6 server if it doesn't exist
-        default_room_id = "default-cs16"
-        if default_room_id not in cs16_rooms:
-            cs16_rooms[default_room_id] = {
-                'hostId': 'server',
-                'players': {},
-                'bots': {},
-                'gameState': {
-                    'gameStarted': True,
-                    'bombPlanted': False,
-                    'bombDefused': False,
-                    'winner': None
-                },
-                'name': "Servidor Público #1",
-                'password': None,
-                'createdAt': datetime.utcnow().isoformat()
-            }
-            
-            # Add some bots
-            for i in range(4):
-                bot_id = f"bot_{i}_{int(time.time())}"
-                cs16_rooms[default_room_id]['bots'][bot_id] = {
-                    'id': bot_id,
-                    'username': f"Bot {i+1}",
-                    'isBot': True,
-                    'position': {'x': 0, 'y': 0, 'z': 0},
-                    'rotation': {'x': 0, 'y': 0, 'z': 0},
-                    'health': 100,
-                    'team': 'terrorist',
-                    'isAlive': True
-                }
-
-            public_servers['cs16'][default_room_id] = {
-                'name': cs16_rooms[default_room_id]['name'],
-                'hostId': 'server',
-                'hostName': 'System',
-                'playerCount': 0,
-                'maxPlayers': 32,
-                'hasPassword': False,
-                'gameState': {'started': True},
-                'botCount': 4
-            }
-            broadcast_servers(socketio)
 
     @socketio.on('disconnect')
     def on_disconnect():
@@ -143,9 +99,6 @@ def register_socket_events(socketio, app=None):
 
             # Impostor cleanup
             cleanup_impostor_player(user['id'], user['username'])
-            
-            # CS16 cleanup
-            cleanup_cs16_player(user['id'])
 
             socketio.emit('user:offline', {'userId': user['id']})
             socketio.emit('users:list', list(connected_users.values()))
@@ -186,19 +139,6 @@ def register_socket_events(socketio, app=None):
         emit('user:registered', final_user)
         socketio.emit('user:online', final_user)
         emit('users:list', list(connected_users.values()))
-
-        # Auto-join default CS 1.6 server
-        default_room_id = "default-cs16"
-        if default_room_id in cs16_rooms:
-            # Simulate join request
-            on_cs16_join({
-                'roomId': default_room_id,
-                'userId': final_user['id'],
-                'username': final_user['username'],
-                'password': None
-            })
-            # Notify client to switch view
-            emit('game:auto-join', {'type': 'cs16', 'roomId': default_room_id})
 
     @socketio.on('message:send')
     def on_message_send(data):
@@ -742,240 +682,6 @@ def register_socket_events(socketio, app=None):
         }, room=f"impostor:{room_id}")
         return {'ok': True}
 
-    # --- CS 1.6 Game ---
-    @socketio.on('cs16:create-room')
-    def on_cs16_create(data):
-        room_id = data.get('roomId')
-        user_id = data.get('userId')
-        if not room_id or not user_id: return {'ok': False}
-        if room_id in cs16_rooms: return {'ok': False, 'error': 'exists'}
-        
-        cs16_rooms[room_id] = {
-            'hostId': user_id,
-            'players': {
-                user_id: {
-                    'socketId': request.sid, 
-                    'username': data.get('username'),
-                    'position': {'x': 0, 'y': 0, 'z': 0},
-                    'rotation': {'x': 0, 'y': 0, 'z': 0},
-                    'health': 100,
-                    'team': 'counter-terrorist',
-                    'isAlive': True
-                }
-            },
-            'bots': {},
-            'gameState': {
-                'gameStarted': False,
-                'bombPlanted': False,
-                'bombDefused': False,
-                'winner': None
-            },
-            'name': data.get('name', f"Sala CS16 de {data.get('username')}"),
-            'password': data.get('password'),
-            'createdAt': datetime.utcnow().isoformat()
-        }
-        
-        # Initialize bots
-        bot_count = data.get('botCount', 0)
-        for i in range(bot_count):
-            bot_id = f"bot_{i}_{int(time.time())}"
-            cs16_rooms[room_id]['bots'][bot_id] = {
-                'id': bot_id,
-                'username': f"Bot {i+1}",
-                'isBot': True,
-                'position': {'x': 0, 'y': 0, 'z': 0},
-                'rotation': {'x': 0, 'y': 0, 'z': 0},
-                'health': 100,
-                'team': 'terrorist',
-                'isAlive': True
-            }
-
-        public_servers['cs16'][room_id] = {
-            'name': cs16_rooms[room_id]['name'],
-            'hostId': user_id,
-            'hostName': data.get('username'),
-            'playerCount': 1,
-            'maxPlayers': 10,
-            'hasPassword': bool(data.get('password')),
-            'gameState': {'started': False},
-            'botCount': bot_count
-        }
-        
-        join_room(f"cs16:{room_id}")
-        broadcast_servers(socketio)
-        
-        socketio.emit('cs16:room-state', {
-            'roomId': room_id,
-            'hostId': user_id,
-            'players': [{'id': pid, **p} for pid, p in cs16_rooms[room_id]['players'].items()],
-            'bots': [{'id': bid, **b} for bid, b in cs16_rooms[room_id]['bots'].items()],
-            'gameState': cs16_rooms[room_id]['gameState']
-        }, room=f"cs16:{room_id}")
-        
-        return {'ok': True, 'roomId': room_id}
-
-    @socketio.on('cs16:join-room')
-    def on_cs16_join(data):
-        room_id = data.get('roomId')
-        user_id = data.get('userId')
-        room = cs16_rooms.get(room_id)
-        
-        if not room: 
-            logger.warning(f"CS16 join failed: Room {room_id} not found")
-            return {'ok': False, 'error': 'not_found'}
-        if room['password'] and room['password'] != data.get('password'):
-            logger.warning(f"CS16 join failed: Wrong password for room {room_id}")
-            return {'ok': False, 'error': 'wrong_password'}
-        if len(room['players']) >= 10: 
-            logger.warning(f"CS16 join failed: Room {room_id} full")
-            return {'ok': False, 'error': 'full'}
-            
-        room['players'][user_id] = {
-            'socketId': request.sid, 
-            'username': data.get('username'),
-            'position': {'x': 0, 'y': 0, 'z': 0},
-            'rotation': {'x': 0, 'y': 0, 'z': 0},
-            'health': 100,
-            'team': 'counter-terrorist',
-            'isAlive': True
-        }
-        
-        public_servers['cs16'][room_id]['playerCount'] = len(room['players'])
-        
-        join_room(f"cs16:{room_id}")
-        broadcast_servers(socketio)
-        
-        socketio.emit('cs16:player-joined', {
-            'userId': user_id,
-            'username': data.get('username'),
-            'position': {'x': 0, 'y': 0, 'z': 0}
-        }, room=f"cs16:{room_id}")
-        
-        socketio.emit('cs16:room-state', {
-            'roomId': room_id,
-            'hostId': room['hostId'],
-            'players': [{'id': pid, **p} for pid, p in room['players'].items()],
-            'bots': [{'id': bid, **b} for bid, b in room['bots'].items()],
-            'gameState': room['gameState']
-        }, room=request.sid)
-        
-        return {'ok': True, 'roomId': room_id}
-
-    @socketio.on('cs16:leave-room')
-    def on_cs16_leave(data):
-        room_id = data.get('roomId')
-        user_id = data.get('userId')
-        room = cs16_rooms.get(room_id)
-        if not room: return {'ok': False}
-        
-        if user_id in room['players']:
-            del room['players'][user_id]
-            leave_room(f"cs16:{room_id}")
-            
-            if not room['players']:
-                del cs16_rooms[room_id]
-                if room_id in public_servers['cs16']:
-                    del public_servers['cs16'][room_id]
-            else:
-                if room['hostId'] == user_id:
-                    room['hostId'] = next(iter(room['players']))
-                    public_servers['cs16'][room_id]['hostName'] = room['players'][room['hostId']]['username']
-                
-                public_servers['cs16'][room_id]['playerCount'] = len(room['players'])
-                socketio.emit('cs16:player-left', {'userId': user_id}, room=f"cs16:{room_id}")
-            
-            broadcast_servers(socketio)
-        return {'ok': True}
-
-    @socketio.on('cs16:start-game')
-    def on_cs16_start(data):
-        room_id = data.get('roomId')
-        room = cs16_rooms.get(room_id)
-        if not room or room['hostId'] != data.get('hostId'): return {'ok': False}
-        
-        room['gameState']['gameStarted'] = True
-        room['gameState']['bombPlanted'] = False
-        room['gameState']['winner'] = None
-        
-        # Reset players
-        for p in room['players'].values():
-            p['health'] = 100
-            p['isAlive'] = True
-            p['position'] = {'x': 0, 'y': 0, 'z': 0}
-            
-        # Reset bots
-        for b in room['bots'].values():
-            b['health'] = 100
-            b['isAlive'] = True
-            b['position'] = {'x': 0, 'y': 0, 'z': 0}
-            
-        public_servers['cs16'][room_id]['gameState']['started'] = True
-        broadcast_servers(socketio)
-        
-        socketio.emit('cs16:game-update', {'gameState': room['gameState']}, room=f"cs16:{room_id}")
-        return {'ok': True}
-
-    @socketio.on('cs16:player-move')
-    def on_cs16_move(data):
-        room_id = data.get('roomId')
-        user_id = data.get('userId')
-        room = cs16_rooms.get(room_id)
-        if room and user_id in room['players']:
-            player = room['players'][user_id]
-            player['position'] = data.get('position')
-            player['rotation'] = data.get('rotation')
-            socketio.emit('cs16:player-update', {
-                'userId': user_id,
-                'position': player['position'],
-                'rotation': player['rotation']
-            }, room=f"cs16:{room_id}", include_self=False)
-
-    @socketio.on('cs16:player-action')
-    def on_cs16_action(data):
-        room_id = data.get('roomId')
-        action = data.get('action')
-        if action == 'shoot':
-            socketio.emit('cs16:player-shoot', {'userId': data.get('userId')}, room=f"cs16:{room_id}", include_self=False)
-
-    @socketio.on('cs16:player-hit')
-    def on_cs16_hit(data):
-        room_id = data.get('roomId')
-        target_id = data.get('targetId')
-        damage = data.get('damage')
-        
-        room = cs16_rooms.get(room_id)
-        if room:
-            # Update health if it's a player
-            if target_id in room['players']:
-                room['players'][target_id]['health'] -= damage
-                if room['players'][target_id]['health'] <= 0:
-                    room['players'][target_id]['isAlive'] = False
-                    
-            # Update health if it's a bot
-            elif target_id in room['bots']:
-                room['bots'][target_id]['health'] -= damage
-                if room['bots'][target_id]['health'] <= 0:
-                    room['bots'][target_id]['isAlive'] = False
-            
-            socketio.emit('cs16:player-hit', data, room=f"cs16:{room_id}")
-
-    @socketio.on('cs16:bomb-planted')
-    def on_cs16_bomb_planted(data):
-        room_id = data.get('roomId')
-        room = cs16_rooms.get(room_id)
-        if room:
-            room['gameState']['bombPlanted'] = True
-            socketio.emit('cs16:bomb-planted', data, room=f"cs16:{room_id}")
-
-    @socketio.on('cs16:bomb-defused')
-    def on_cs16_bomb_defused(data):
-        room_id = data.get('roomId')
-        room = cs16_rooms.get(room_id)
-        if room:
-            room['gameState']['bombDefused'] = True
-            room['gameState']['winner'] = 'counter-terrorist'
-            socketio.emit('cs16:bomb-defused', data, room=f"cs16:{room_id}")
-
     # --- Admin Events ---
     @socketio.on('admin:clear-channel')
     def on_admin_clear_channel(data):
@@ -1104,9 +810,6 @@ def register_socket_events(socketio, app=None):
         snapshot = {
             'impostor': [
                 {'roomId': rid, **info} for rid, info in public_servers['impostor'].items()
-            ],
-            'cs16': [
-                {'roomId': rid, **info} for rid, info in public_servers['cs16'].items()
             ]
         }
         sio.emit('servers:updated', {'servers': snapshot})
@@ -1151,22 +854,4 @@ def register_socket_events(socketio, app=None):
                     
                     broadcast_servers(socketio)
 
-    def cleanup_cs16_player(user_id):
-        for room_id, room in list(cs16_rooms.items()):
-            if user_id in room['players']:
-                del room['players'][user_id]
-                leave_room(f"cs16:{room_id}")
-                
-                if not room['players']:
-                    del cs16_rooms[room_id]
-                    if room_id in public_servers['cs16']:
-                        del public_servers['cs16'][room_id]
-                else:
-                    if room['hostId'] == user_id:
-                        room['hostId'] = next(iter(room['players']))
-                        public_servers['cs16'][room_id]['hostName'] = room['players'][room['hostId']]['username']
-                    
-                    public_servers['cs16'][room_id]['playerCount'] = len(room['players'])
-                    socketio.emit('cs16:player-left', {'userId': user_id}, room=f"cs16:{room_id}")
-                
-                broadcast_servers(socketio)
+

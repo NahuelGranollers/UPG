@@ -21,7 +21,6 @@ const WhoWeAre = React.lazy(() => import('./components/WhoWeAre'));
 const Voting = React.lazy(() => import('./components/Voting'));
 const UPGNews = React.lazy(() => import('./components/UPGNews'));
 const HallOfFame = React.lazy(() => import('./components/HallOfFame'));
-const CS16Game = React.lazy(() => import('./components/CS16Game'));
 
 function MainApp() {
   const { currentUser, isLoading, loginWithDiscord, loginAsGuest, logout } = useAuth();
@@ -35,7 +34,7 @@ function MainApp() {
     description: 'Chat general',
   });
   const [activeSection, setActiveSection] = useState<
-    'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor' | 'news' | 'hall_of_fame' | 'cs16'
+    'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor' | 'news' | 'hall_of_fame'
   >('home');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileActiveTab, setMobileActiveTab] = useState<'channels' | 'chat' | 'users' | 'news'>(
@@ -122,10 +121,6 @@ function MainApp() {
           setActiveView(AppView.HALL_OF_FAME);
           setActiveSection('hall_of_fame');
           break;
-        case 'cs16':
-          setActiveView(AppView.CS16);
-          setActiveSection('cs16');
-          break;
       }
       if (setMobileTab) setMobileActiveTab('chat');
     }
@@ -146,26 +141,16 @@ function MainApp() {
     setAutoJoinRoomId(roomId);
     setAutoJoinPassword(password);
     setShowHome(false);
-    if (gameType === 'cs16') {
-      setActiveView(AppView.CS16);
-      setActiveSection('cs16');
-    } else {
-      setActiveView(AppView.IMPOSTOR);
-      setActiveSection('impostor');
-    }
+    setActiveView(AppView.IMPOSTOR);
+    setActiveSection('impostor');
   }, []);
 
   const handleCreateServer = useCallback((gameType: string) => {
     setAutoJoinRoomId(undefined);
     setAutoJoinPassword(undefined);
     setShowHome(false);
-    if (gameType === 'cs16') {
-      setActiveView(AppView.CS16);
-      setActiveSection('cs16');
-    } else {
-      setActiveView(AppView.IMPOSTOR);
-      setActiveSection('impostor');
-    }
+    setActiveView(AppView.IMPOSTOR);
+    setActiveSection('impostor');
   }, []);
 
   const handleVoiceJoin = useCallback(
@@ -286,20 +271,6 @@ function MainApp() {
     };
   }, [socket]);
 
-  // Auto-join listener
-  React.useEffect(() => {
-    const handleAutoJoin = (e: CustomEvent) => {
-      const { type, roomId } = e.detail;
-      console.log('App received auto-join:', type, roomId);
-      handleJoinServer(type, roomId);
-    };
-
-    window.addEventListener('game:auto-join', handleAutoJoin as EventListener);
-    return () => {
-      window.removeEventListener('game:auto-join', handleAutoJoin as EventListener);
-    };
-  }, [handleJoinServer]);
-
   if (isLoading)
     return (
       <div className="flex h-screen items-center justify-center bg-[#313338] text-white">
@@ -415,18 +386,6 @@ function MainApp() {
               <UPGNews />
             ) : activeView === AppView.HALL_OF_FAME ? (
               <HallOfFame />
-            ) : activeView === AppView.CS16 ? (
-              <CS16Game
-                onClose={() => {
-                  setShowHome(true);
-                  setActiveView(AppView.CHAT);
-                  setActiveSection('home');
-                  setAutoJoinRoomId(undefined);
-                  setAutoJoinPassword(undefined);
-                }}
-                autoJoinRoomId={autoJoinRoomId}
-                autoJoinPassword={autoJoinPassword}
-              />
             ) : null}
           </Suspense>
         </div>
@@ -515,18 +474,6 @@ function MainApp() {
                 )}
                 {activeView === AppView.NEWS && <UPGNews onOpenSidebar={() => setMobileSidebarOpen(true)} />}
                 {activeView === AppView.HALL_OF_FAME && <HallOfFame onOpenSidebar={() => setMobileSidebarOpen(true)} />}
-                {activeView === AppView.CS16 && (
-                  <CS16Game
-                    onClose={() => {
-                      setShowHome(true);
-                      setActiveView(AppView.CHAT);
-                      setActiveSection('home');
-                    }}
-                    autoJoinRoomId={autoJoinRoomId}
-                    autoJoinPassword={autoJoinPassword}
-                    onOpenSidebar={() => setMobileSidebarOpen(true)}
-                  />
-                )}
               </>
             )}
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 interface CreateServerModalProps {
-  gameType: 'impostor' | 'cs16';
+  gameType: 'impostor';
   onCreate: (serverData: {
     name: string;
     password?: string;
@@ -14,7 +14,6 @@ const CreateServerModal: React.FC<CreateServerModalProps> = ({ gameType, onCreat
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [usePassword, setUsePassword] = useState(false);
-  const [botCount, setBotCount] = useState(gameType === 'cs16' ? 2 : 0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,10 +27,6 @@ const CreateServerModal: React.FC<CreateServerModalProps> = ({ gameType, onCreat
       serverData.password = password.trim();
     }
 
-    if (gameType === 'cs16') {
-      serverData.botCount = Math.max(0, Math.min(8, botCount));
-    }
-
     onCreate(serverData);
   };
 
@@ -39,7 +34,7 @@ const CreateServerModal: React.FC<CreateServerModalProps> = ({ gameType, onCreat
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
         <h2 className="text-xl font-bold text-white mb-4">
-          Crear Servidor {gameType === 'impostor' ? 'Impostor' : 'CS 1.6'}
+          Crear Servidor Impostor
         </h2>
 
         <form onSubmit={handleSubmit}>
@@ -52,7 +47,7 @@ const CreateServerModal: React.FC<CreateServerModalProps> = ({ gameType, onCreat
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={`Mi servidor ${gameType === 'impostor' ? 'Impostor' : 'CS16'}`}
+              placeholder="Mi servidor Impostor"
               className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               maxLength={50}
               required
@@ -84,26 +79,6 @@ const CreateServerModal: React.FC<CreateServerModalProps> = ({ gameType, onCreat
               </>
             )}
           </div>
-
-          {gameType === 'cs16' && (
-            <div className="mb-6">
-              <label htmlFor="bot-count" className="block text-sm font-medium text-gray-300 mb-2">
-                Cantidad de Bots (0-8)
-              </label>
-              <input
-                id="bot-count"
-                type="number"
-                value={botCount}
-                onChange={(e) => setBotCount(parseInt(e.target.value) || 0)}
-                min={0}
-                max={8}
-                className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <p className="text-xs text-gray-400 mt-1">
-                Los bots ayudan a equilibrar el juego cuando hay pocos jugadores
-              </p>
-            </div>
-          )}
 
           <div className="flex gap-3">
             <button
