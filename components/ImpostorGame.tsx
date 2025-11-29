@@ -126,6 +126,11 @@ export default function ImpostorGame({
       setJoined(true);
       setGameStarted(data.started || false);
       setCustomWords(data.customWords || []);
+      
+      // Update turn info
+      if (data.turnOrder) setTurnOrder(data.turnOrder);
+      if (data.currentTurn) setCurrentTurn(data.currentTurn);
+      
       // Update roomId if provided
       if (data.roomId && data.roomId !== roomId) {
         setRoomId(data.roomId);
@@ -145,12 +150,9 @@ export default function ImpostorGame({
       }, 1400);
     };
 
-    const onTurn = (d: any) => {
-      setCurrentTurn(d.currentTurn || null);
-    };
-
-    const onTurnOrder = (d: any) => {
-      setTurnOrder(d.turnOrder || []);
+    const onTurnUpdate = (d: any) => {
+      if (d.currentTurn) setCurrentTurn(d.currentTurn);
+      if (d.turnOrder) setTurnOrder(d.turnOrder);
     };
 
     const onVotingStart = (d: any) => {
@@ -220,6 +222,8 @@ export default function ImpostorGame({
     const onStarted = (d: any) => {
       setStatusMessage('Ronda iniciada');
       setGameStarted(true);
+      if (d.turnOrder) setTurnOrder(d.turnOrder);
+      if (d.currentTurn) setCurrentTurn(d.currentTurn);
     };
 
     const onRevealAll = (d: any) => {
@@ -246,8 +250,7 @@ export default function ImpostorGame({
     socket.on('impostor:started', onStarted);
     socket.on('impostor:reveal-all', onRevealAll);
     socket.on('impostor:player-left', onPlayerLeft);
-    socket.on('impostor:turn', onTurn);
-    socket.on('impostor:turn-order', onTurnOrder);
+    socket.on('impostor:turn-update', onTurnUpdate);
     socket.on('impostor:voting-start', onVotingStart);
     socket.on('impostor:voting-update', onVotingUpdate);
     socket.on('impostor:voting-result', onVotingResult);
@@ -309,14 +312,15 @@ export default function ImpostorGame({
       setRevealedRoles(null);
       setGameStarted(false);
       setGameOverInfo(null);
+      setTurnOrder([]);
+      setCurrentTurn(null);
     });
 
     return () => {
       socket.off('impostor:room-state', onRoomState);
       socket.off('impostor:assign', onAssign);
       socket.off('impostor:started', onStarted);
-      socket.off('impostor:turn', onTurn);
-      socket.off('impostor:turn-order', onTurnOrder);
+      socket.off('impostor:turn-update', onTurnUpdate);
       socket.off('impostor:voting-start', onVotingStart);
       socket.off('impostor:voting-update', onVotingUpdate);
       socket.off('impostor:voting-result', onVotingResult);
