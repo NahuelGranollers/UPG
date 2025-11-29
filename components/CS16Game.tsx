@@ -78,16 +78,10 @@ export default function CS16Game({
          }
       },
       canvas: canvasRef.current,
-      // Prefer default attributes to maximize compatibility
-      webglContextAttributes: {
-        alpha: false,
-        antialias: false,
-        depth: true,
-        stencil: false,
-        preserveDrawingBuffer: false
-      },
-      // Force windowed mode, standard resolution, and software renderer fallback
-      arguments: ['-windowed', '-width', '1024', '-height', '768', '-ref', 'soft'],
+      // Let the engine/browser decide the best attributes
+      // webglContextAttributes: {}, 
+      // Use default arguments (auto-detect renderer)
+      arguments: ['-windowed', '-width', '1024', '-height', '768'],
       setStatus: (text: string) => setStatus(text),
       totalDependencies: 0,
       monitorRunDependencies: (left: number) => {
@@ -175,6 +169,18 @@ export default function CS16Game({
 
   const launchEngine = () => {
     if (!engineReady) return;
+
+    // Pre-flight check: Does the browser support WebGL?
+    const canvas = canvasRef.current;
+    if (canvas) {
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (!gl) {
+            toast.error('FATAL: Tu navegador no soporta WebGL. El juego no funcionará.');
+            setStatus('Error: WebGL no soportado.');
+            return;
+        }
+    }
+
     setGameRunning(true);
 
     // Suppress "Uncaught Infinity" errors from Emscripten's quit()
