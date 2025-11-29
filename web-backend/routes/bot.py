@@ -1,19 +1,10 @@
 from flask import Blueprint, request, jsonify, current_app
-import openai
+import google.generativeai as genai
 from datetime import datetime
 import random
 import os
 
 bot_bp = Blueprint('bot', __name__, url_prefix='/api')
-
-# Configuration
-# Try to get from env, fallback to the hardcoded one (which might be invalid)
-OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', "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")
-
-CLIENT = openai.Client(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=OPENROUTER_API_KEY
-)
 
 DEMONIO_SYSTEM_PROMPT = """Eres un DEMONIO GAMER con HUMOR NEGRO EXTREMO.
 Tu objetivo es responder a lo que el usuario te dice, pero insultándole y siendo tóxico.
@@ -52,12 +43,6 @@ Si te piden algo, hazlo (o niégate insultando), pero demuestra que has entendid
 
 **RESPUESTA SIEMPRE: Respuesta coherente + Insulto inventado + Humor negro**"""
 
-
-# MODELOS GRATIS 100% FUNCIONALES OpenRouter
-FREE_MODELS_REAL = [
-    "mistralai/mistral-7b-instruct:free",      # ⚡ RÁPIDO + SIN CENSURA
-]
-
 # Insultos inventados para el prompt
 INSULTOS_INVENTADOS = [
     "TRONCOMÁN", "ABORTOCREEPER", "CARALADRILLO", "SOPLAPOLLAS_3000", 
@@ -68,13 +53,41 @@ INSULTOS_INVENTADOS = [
 # In-memory storage for bot conversations (reset on restart)
 bot_conversations = {}
 
+def get_gemini_model():
+    api_key = current_app.config.get('GEMINI_API_KEY')
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY not configured")
+    genai.configure(api_key=api_key)
+    
+    # Safety settings to allow the "Demonio Gamer" persona (BLOCK_NONE)
+    safety_settings = [
+        {
+            "category": "HARM_CATEGORY_HARASSMENT",
+            "threshold": "BLOCK_NONE"
+        },
+        {
+            "category": "HARM_CATEGORY_HATE_SPEECH",
+            "threshold": "BLOCK_NONE"
+        },
+        {
+            "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+            "threshold": "BLOCK_NONE"
+        },
+        {
+            "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+            "threshold": "BLOCK_NONE"
+        }
+    ]
+    
+    return genai.GenerativeModel('gemini-1.5-flash', safety_settings=safety_settings)
+
 def generate_demonio_response(message, username='Usuario', session_id='default'):
     """
-    Generates a response using the Demonio Gamer persona.
+    Generates a response using the Demonio Gamer persona via Gemini API.
     Returns a tuple (insult_string, model_name).
     """
     if not message:
-        return "¡MENSAJE VACÍO, SUBNORMAL! Escribe algo o vete a pajearte como pajillero 💦😂", "None"
+        return "¡MENSAJE VACÍO, SUBNORMAL! Escribe algo o vete a pajearte como pajillero 💦😂", "Gemini Flash"
     
     if session_id not in bot_conversations:
         bot_conversations[session_id] = []
@@ -89,35 +102,31 @@ def generate_demonio_response(message, username='Usuario', session_id='default')
     
     # Añadir insulto inventado random al prompt
     insulto_random = random.choice(INSULTOS_INVENTADOS)
-    enhanced_prompt = f"{DEMONIO_SYSTEM_PROMPT}\n\nEl usuario es: {username}\nINSULTO INVENTADO OBLIGATORIO: {insulto_random.upper()}\n\nINSTRUCCIÓN: Responde a lo que dice el usuario de forma coherente pero manteniendo tu personalidad tóxica."
     
-    # Select a random model
-    selected_model = random.choice(FREE_MODELS_REAL)
+    # Construct the full prompt with history for Gemini
+    # Gemini doesn't use 'system' role in the same way as OpenAI in chat history, 
+    # so we prepend the system prompt to the context or the first message.
+    
+    full_context = f"{DEMONIO_SYSTEM_PROMPT}\n\n"
+    
+    # Add history
+    for msg in bot_conversations[session_id][-10:]:
+        role_label = "Usuario" if msg["role"] == "user" else "Demonio"
+        content = msg["content"]
+        # Strip username prefix if present in content to avoid duplication
+        if msg["role"] == "user" and content.startswith(f"{username}: "):
+             # Actually the stored content already has "Username: message", so we can just use it
+             pass
+        full_context += f"{role_label}: {content}\n"
+        
+    full_context += f"\nEl usuario actual es: {username}\nINSULTO INVENTADO OBLIGATORIO: {insulto_random.upper()}\n\nINSTRUCCIÓN: Responde a lo que dice el usuario de forma coherente pero manteniendo tu personalidad tóxica.\nDemonio:"
 
     try:
-        # Filtrar mensajes para enviar solo role y content (OpenAI API es estricta)
-        history_messages = [
-            {"role": m["role"], "content": m["content"]} 
-            for m in bot_conversations[session_id][-10:] # Aumentamos contexto a 10
-        ]
-
-        response = CLIENT.chat.completions.create(
-            model=selected_model,
-            messages=[
-                {"role": "system", "content": enhanced_prompt},
-                *history_messages
-            ],
-            temperature=0.8,  # Bajamos temperatura para evitar alucinaciones como <s>
-            top_p=0.95,
-            max_tokens=600
-        )
+        model = get_gemini_model()
+        response = model.generate_content(full_context)
         
-        insulto_demoniaco = response.choices[0].message.content
+        insulto_demoniaco = response.text
         
-        # Limpieza de tokens basura que a veces suelta Mistral
-        if insulto_demoniaco:
-            insulto_demoniaco = insulto_demoniaco.replace('<s>', '').replace('</s>', '').strip()
-            
         if not insulto_demoniaco:
              insulto_demoniaco = f"¡Te has salvado por un bug, {random.choice(INSULTOS_INVENTADOS)}! 🤬"
         
@@ -125,15 +134,15 @@ def generate_demonio_response(message, username='Usuario', session_id='default')
             "role": "assistant", "content": insulto_demoniaco, "timestamp": datetime.now().isoformat()
         })
         
-        return insulto_demoniaco, selected_model
+        return insulto_demoniaco, "Gemini Flash"
         
     except Exception as e:
         error_msg = f"¡SERVIDOR EXPLOTÓ COMO TNT EN EL CULO DE TU MADRE, TRONCOMÁN! 💣💀 {str(e)}"
-        return error_msg, selected_model
+        return error_msg, "Gemini Flash (Error)"
 
 def generate_impostor_word(category="General"):
     """
-    Generates a random word for the Impostor game using AI.
+    Generates a random word for the Impostor game using Gemini AI.
     """
     try:
         prompt = f"""Genera UNA SOLA palabra (sustantivo) en español para un juego tipo 'Impostor' o 'Pictionary'.
@@ -142,19 +151,10 @@ La palabra debe ser algo que todos conozcan pero no demasiado obvia.
 SOLO responde con la palabra, sin puntos ni explicaciones.
 Ejemplo: 'Manzana' o 'Astronauta'."""
 
-        selected_model = random.choice(FREE_MODELS_REAL)
+        model = get_gemini_model()
+        response = model.generate_content(prompt)
         
-        response = CLIENT.chat.completions.create(
-            model=selected_model,
-            messages=[
-                {"role": "system", "content": "Eres un generador de palabras para juegos. Responde SOLO con la palabra."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.9,
-            max_tokens=20
-        )
-        
-        word = response.choices[0].message.content.strip().replace('.', '').replace('"', '').replace("'", "")
+        word = response.text.strip().replace('.', '').replace('"', '').replace("'", "")
         return word if word else "ErrorIA"
         
     except Exception as e:
@@ -167,16 +167,20 @@ def chat_demonio():
         data = request.json
         message = data.get('message', '').strip()
         session_id = data.get('session_id', 'default')
+        username = data.get('user_name', 'Usuario') # Support user_name param
         
-        insulto_demoniaco, model_used = generate_demonio_response(message, session_id)
+        insulto_demoniaco, model_used = generate_demonio_response(message, username, session_id)
         
         # Retrieve the last insult used (a bit hacky but works for now)
         # Or just pick a random one for the response metadata
         insulto_random = random.choice(INSULTOS_INVENTADOS) 
         
         return jsonify({
-            "insulto": insulto_demoniaco,
-            "model": f"{model_used} (FREE)",
+            "response": insulto_demoniaco, # Changed key to 'response' to match socket_events expectation or keep 'insulto'? 
+            # socket_events.py expects: response.data.response
+            # Let's check socket_events.py... it uses response.data.response
+            "insulto": insulto_demoniaco, # Keep for backward compat if needed
+            "model": model_used,
             "insulto_inventado": insulto_random,
             "gratis": True,
             "session_id": session_id,
@@ -185,7 +189,7 @@ def chat_demonio():
         
     except Exception as e:
         return jsonify({
-            "insulto": f"¡SERVIDOR EXPLOTÓ COMO TNT EN EL CULO DE TU MADRE, TRONCOMÁN! 💣💀 {str(e)}",
+            "response": f"¡SERVIDOR EXPLOTÓ COMO TNT EN EL CULO DE TU MADRE, TRONCOMÁN! 💣💀 {str(e)}",
             "error": str(e)
         }), 500
 
@@ -209,12 +213,12 @@ def clear_history(session_id):
 @bot_bp.route('/bot-info', methods=['GET'])
 def bot_info():
     return jsonify({
-        "demonio": "Bot Demonio Gamer",
+        "demonio": "Bot Demonio Gamer (Gemini Edition)",
         "preparado_para": "insultar, humillar, destruir moralmente 😈",
         "usa": "POST /api/chat",
         "ejemplo": "¡CULITREN MARICÓN! 💀😂",
         "status": "DEMONIO VIVO 😈",
-        "model": "Random Free Model (Mistral/Llama/Qwen/Phi)",
+        "model": "Gemini Flash",
         "insultos_disponibles": len(INSULTOS_INVENTADOS),
         "pure_evil": True
     })

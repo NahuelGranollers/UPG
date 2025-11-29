@@ -44,13 +44,13 @@ def register_socket_events(socketio, app=None):
     
     def handle_bot_response(channel_id, user_name, user_message):
         try:
-            # Use the new Demonio Gamer logic
-            # We use channel_id as session_id to keep context per channel
-            text, model_name = generate_demonio_response(user_message, username=user_name, session_id=channel_id)
-            
-            if text:
-                if app:
-                    with app.app_context():
+            if app:
+                with app.app_context():
+                    # Use the new Demonio Gamer logic
+                    # We use channel_id as session_id to keep context per channel
+                    text, model_name = generate_demonio_response(user_message, username=user_name, session_id=channel_id)
+                    
+                    if text:
                         bot_msg = Message(
                             id=str(uuid.uuid4()),
                             channel_id=channel_id,
@@ -64,20 +64,8 @@ def register_socket_events(socketio, app=None):
                         db.session.add(bot_msg)
                         db.session.commit()
                         socketio.emit('message:received', bot_msg.to_dict(), room=channel_id)
-                else:
-                    logger.error("App context missing in handle_bot_response - Message NOT saved to DB")
-                    # Fallback without DB save if app context missing
-                    bot_msg_dict = {
-                        'id': str(uuid.uuid4()),
-                        'channelId': channel_id,
-                        'userId': 'bot',
-                        'username': 'UPG',
-                        'avatar': BOT_USER['avatar'],
-                        'content': text,
-                        'timestamp': datetime.utcnow().isoformat(),
-                        'isSystem': False
-                    }
-                    socketio.emit('message:received', bot_msg_dict, room=channel_id)
+            else:
+                logger.error("App context missing in handle_bot_response - Cannot generate response")
 
         except Exception as e:
             logger.error(f"Bot error: {e}")
@@ -399,6 +387,7 @@ def register_socket_events(socketio, app=None):
         room_id = data.get('roomId')
         room = impostor_rooms.get(room_id)
         if not room or not room['started']: return {'ok': False}
+        if room.get('voting'): return {'ok': False, 'error': 'voting_active'}
         
         # Verify it's the current player's turn requesting the next turn
         # Optional: strict check
@@ -497,6 +486,13 @@ def register_socket_events(socketio, app=None):
                 'revealedInnocent': pid in room.get('revealedInnocents', set())
             })
             
+        # Calculate currentTurn ID
+        current_turn_id = None
+        if room.get('turnOrder') and 'currentTurnIndex' in room:
+            idx = room.get('currentTurnIndex', 0)
+            if idx < len(room['turnOrder']):
+                current_turn_id = room['turnOrder'][idx]
+
         socketio.emit('impostor:room-state', {
             'roomId': room_id,
             'hostId': room['hostId'],
@@ -506,7 +502,8 @@ def register_socket_events(socketio, app=None):
             'name': room['name'],
             'hasPassword': bool(room['password']),
             'turnOrder': room.get('turnOrder', []),
-            'currentTurnIndex': room.get('currentTurnIndex', 0)
+            'currentTurnIndex': room.get('currentTurnIndex', 0),
+            'currentTurn': current_turn_id
         }, room=f"impostor:{room_id}")
         
         return {'ok': True, 'eliminated': eliminated_name, 'wasImpostor': was_impostor}

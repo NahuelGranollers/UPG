@@ -88,9 +88,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
             className="w-32 h-32 object-cover rounded-discord shadow-discord"
             fallbackSrc="/upg.png"
           />
-          <h1 className="text-4xl font-black text-discord-text-header">Bienvenido a UPG</h1>
+          <h1 className="text-4xl font-black text-discord-text-header">Unas Partidillas Gang (UPG)</h1>
           <p className="text-lg text-discord-text-normal max-w-lg">
-            Esta es la comunidad. Aquí encontrarás canales, eventos y salas de voz. Mantén el
+            Bienvenido a la comunidad oficial. Aquí encontrarás canales, eventos y salas de voz para echar unas partidillas. Mantén el
             respeto y disfruta.
           </p>
 
