@@ -412,10 +412,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {/* Mensajes */}
       <MessageList
         orderedMessages={orderedMessages}
-        users={users}
         currentUser={currentUser}
         isAdmin={isAdmin}
-        userColors={userColors}
         hoveredMessageId={hoveredMessageId}
         setHoveredMessageId={setHoveredMessageId}
         handleDeleteMessage={handleDeleteMessage}

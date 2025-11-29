@@ -1,5 +1,6 @@
 ﻿import React, { memo, useState } from 'react';
 import { useSocket } from '../context/SocketContext';
+import { useUsers } from '../context/UserContext';
 import { Home, Shield, Users, Vote, Newspaper, Trophy, Gamepad2, Wifi, WifiOff } from 'lucide-react';
 import SafeImage from './SafeImage';
 import AdminPanel from './AdminPanel';
@@ -7,7 +8,6 @@ import { UserRole, User } from '../types';
 
 interface SidebarProps {
   currentUser: User | null;
-  users: User[];
   setCurrentUser: (user: User | null) => void;
   onHomeClick?: () => void;
   onUPGClick?: () => void;
@@ -22,13 +22,13 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = memo(
   ({
     currentUser,
-    users,
     setCurrentUser: _setCurrentUser,
     onHomeClick,
     onUPGClick,
     activeSection,
     onNavigate,
   }) => {
+    const { users } = useUsers();
     const [showAdminPanel, setShowAdminPanel] = useState(false);
     // Impostor is now a full page route/view
     const isAdmin = currentUser?.role === UserRole.ADMIN;
@@ -224,7 +224,6 @@ const Sidebar: React.FC<SidebarProps> = memo(
             isOpen={showAdminPanel}
             onClose={() => setShowAdminPanel(false)}
             currentUser={currentUser}
-            users={users}
             socket={socket}
           />
         )}

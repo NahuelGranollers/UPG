@@ -3,6 +3,7 @@ import { readableTextColor } from '../utils/colorUtils';
 import { Message, User, UserRole } from '../types';
 import { Trash2, Shield, Ban, UserX, VolumeX, Palette, Zap } from 'lucide-react';
 import SafeImage from './SafeImage';
+import { useUsers } from '../context/UserContext';
 
 interface MessageItemProps {
   msg: Message;
@@ -175,10 +176,8 @@ MessageItem.displayName = 'MessageItem';
 
 interface MessageListProps {
   orderedMessages: Message[];
-  users: User[];
   currentUser: User;
   isAdmin: boolean;
-  userColors: Record<string, string>;
   hoveredMessageId: string | null;
   setHoveredMessageId: (id: string | null) => void;
   handleDeleteMessage: (id: string) => void;
@@ -194,10 +193,8 @@ interface MessageListProps {
 const MessageList: React.FC<MessageListProps> = memo(
   ({
     orderedMessages,
-    users,
     currentUser,
     isAdmin,
-    userColors,
     hoveredMessageId,
     setHoveredMessageId,
     handleDeleteMessage,
@@ -209,6 +206,7 @@ const MessageList: React.FC<MessageListProps> = memo(
     isBotTyping,
     messagesEndRef,
   }) => {
+    const { users, userColors } = useUsers();
     // Optimización: Crear mapa de usuarios para búsqueda O(1)
     const userMap = useMemo(() => {
       const map = new Map<string, User>();

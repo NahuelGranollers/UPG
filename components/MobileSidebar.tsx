@@ -7,11 +7,10 @@ interface Props {
   onClose: () => void;
   onNavigate: (section: 'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor' | 'news' | 'hall_of_fame') => void;
   currentUser: User | null;
-  users: User[];
   activeSection: 'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor' | 'news' | 'hall_of_fame';
 }
 
-const MobileSidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate, currentUser, users, activeSection }) => {
+const MobileSidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate, currentUser, activeSection }) => {
   return (
     <div
       className={`fixed inset-0 z-50 transition-opacity ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
@@ -25,7 +24,6 @@ const MobileSidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate, currentUs
       >
         <Sidebar
           currentUser={currentUser}
-          users={users}
           setCurrentUser={() => {}}
           activeSection={activeSection}
           onNavigate={(section) => {

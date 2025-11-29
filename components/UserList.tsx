@@ -1,15 +1,14 @@
 ﻿import React, { memo, useMemo } from 'react';
 import { readableTextColor } from '../utils/colorUtils';
 import { toast } from 'sonner';
+import { useUsers } from '../context/UserContext';
 import { User } from '../types';
 import SafeImage from './SafeImage';
 
 interface UserListProps {
-  users: User[];
   currentUserId?: string;
   currentUser?: User | null;
   isMobileView?: boolean;
-  userColors?: Record<string, string>;
 }
 
 const UserItem: React.FC<{
@@ -88,7 +87,9 @@ const UserItem: React.FC<{
 UserItem.displayName = 'UserItem';
 
 const UserList: React.FC<UserListProps> = memo(
-  ({ users, currentUserId, currentUser, isMobileView = false, userColors = {} }) => {
+  ({ currentUserId, currentUser, isMobileView = false }) => {
+    const { users, userColors } = useUsers();
+
     const usersWithBot = useMemo(() => {
       // Forzar inclusión del bot UPG si no está presente
       const botUser = {

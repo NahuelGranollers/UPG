@@ -3,16 +3,17 @@ import { toast } from 'sonner';
 import { X, Trash2, MessageSquare, Shield, AlertTriangle, Zap, Palette, VolumeX } from 'lucide-react';
 import { Socket } from 'socket.io-client';
 import { User } from '../types';
+import { useUsers } from '../context/UserContext';
 
 interface AdminPanelProps {
   isOpen: boolean;
   onClose: () => void;
   currentUser: User | null;
-  users: User[];
   socket: Socket | null;
 }
 
-const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUser, users, socket }) => {
+const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUser, socket }) => {
+  const { users } = useUsers();
   const [isLoading, setIsLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState<string | null>(null);
   const [activeForm, setActiveForm] = useState<null | {

@@ -2,6 +2,7 @@
 import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider, useSocket } from './context/SocketContext';
+import { UserProvider, useUsers } from './context/UserContext';
 import { useChat } from './hooks/useChat';
 import { AppView, ChannelData, User } from './types';
 import useVoice from './hooks/useVoice';
@@ -25,6 +26,7 @@ const HallOfFame = React.lazy(() => import('./components/HallOfFame'));
 function MainApp() {
   const { currentUser, isLoading, loginWithDiscord, loginAsGuest, logout } = useAuth();
   const { isConnected, socket } = useSocket();
+  const { activeEffect } = useUsers();
 
   const [activeView, setActiveView] = useState<AppView>(AppView.IMPOSTOR);
   const [showHome, setShowHome] = useState(true);
@@ -75,17 +77,6 @@ function MainApp() {
 
   // Hook de chat para el canal actual
   const { messages, setMessages, sendMessage } = useChat(currentChannel.id);
-
-  // Mock de usuarios (idealmente mover a un UsersContext o Hook)
-  const [users, setUsers] = useState<User[]>([]);
-
-  // Estado de voz
-  const [voiceStates, setVoiceStates] = useState<Record<string, string>>({});
-  const activeVoiceChannel = currentUser ? voiceStates[currentUser.id] || null : null;
-
-  // Estado de colores de usuario
-  const [userColors, setUserColors] = useState<Record<string, string>>({});
-  const [activeEffect, setActiveEffect] = useState<string | null>(null);
 
   const voice = useVoice();
 
@@ -180,97 +171,6 @@ function MainApp() {
     }
   }, [voice]);
 
-  // Escuchar lista de usuarios globalmente (simplificado para este refactor)
-  React.useEffect(() => {
-    if (!socket) return;
-    socket.on('users:list', list => {
-      if (!Array.isArray(list)) {
-        console.warn('Received invalid users list:', list);
-        return;
-      }
-      setUsers(list);
-      // Initialize user colors from list
-      const mapping = (list || []).reduce(
-        (acc, u) => {
-          if (u && u.id && u.color) acc[u.id] = u.color;
-          return acc;
-        },
-        {} as Record<string, string>
-      );
-      setUserColors(prev => ({ ...prev, ...mapping }));
-    });
-    socket.on('user:online', u =>
-      setUsers(prev => {
-        const exists = prev.find(x => x.id === u.id);
-        if (exists)
-          return prev.map(x => (x.id === u.id ? { ...u, online: true, status: 'online' } : x));
-        return [...prev, u];
-      })
-    );
-    // Handle profile updates (name/color)
-    socket.on('user:updated', updated => {
-      setUsers(prev => prev.map(u => (u.id === updated.id ? { ...u, ...updated } : u)));
-      if (updated.color) setUserColors(prev => ({ ...prev, [updated.id]: updated.color }));
-    });
-    socket.on('user:color-changed', ({ userId, color }) => {
-      setUserColors(prev => ({ ...prev, [userId]: color }));
-      setUsers(prev => prev.map(u => (u.id === userId ? { ...u, color } : u)));
-    });
-    socket.on('user:profile-updated', updated => {
-      setUsers(prev => prev.map(u => (u.id === updated.id ? { ...u, ...updated } : u)));
-    });
-    socket.on('user:offline', ({ userId }) =>
-      setUsers(prev =>
-        prev.map(u => (u.id === userId ? { ...u, online: false, status: 'offline' } : u))
-      )
-    );
-
-    // Escuchar cambios en canales de voz
-    socket.on('voice:state', states => {
-      setVoiceStates(states);
-    });
-
-    socket.on('admin:effect-triggered', ({ effect }) => {
-      setActiveEffect(effect);
-      if (effect === 'rotate') {
-        document.body.style.transform = 'rotate(180deg)';
-        document.body.style.transition = 'transform 1s';
-        setTimeout(() => {
-          document.body.style.transform = '';
-          setActiveEffect(null);
-        }, 10000);
-      } else if (effect === 'jumpscare') {
-        const audio = new Audio('https://www.myinstants.com/media/sounds/fnaf-scream.mp3');
-        audio.volume = 0.5;
-        audio.play().catch(e => console.error(e));
-        setTimeout(() => setActiveEffect(null), 3000);
-      } else if (effect === 'fart') {
-         const audio = new Audio('https://www.myinstants.com/media/sounds/fart-with-reverb.mp3');
-         audio.volume = 0.8;
-         audio.play().catch(e => console.error(e));
-         setTimeout(() => setActiveEffect(null), 3000);
-      } else if (effect === 'confetti') {
-         setTimeout(() => setActiveEffect(null), 5000);
-      }
-    });
-
-    // Escuchar cambios de color de usuario (legacy/admin and user updates)
-    socket.on('admin:user-color-changed', ({ userId, color }) => {
-      setUserColors(prev => ({ ...prev, [userId]: color }));
-    });
-
-    // Solicitar usuarios iniciales
-    socket.emit('users:request');
-
-    return () => {
-      socket.off('users:list');
-      socket.off('user:online');
-      socket.off('user:offline');
-      socket.off('voice:state');
-      socket.off('admin:user-color-changed');
-    };
-  }, [socket]);
-
   if (isLoading)
     return (
       <div className="flex h-screen items-center justify-center bg-[#313338] text-white">
@@ -299,7 +199,6 @@ function MainApp() {
         {/* Sidebar (single instance, fixed left) */}
         <Sidebar
           currentUser={currentUser}
-          users={users}
           setCurrentUser={() => {}}
           activeSection={activeSection}
           onNavigate={navigateToSection}
@@ -352,10 +251,7 @@ function MainApp() {
                     }
                   }}
                   currentUser={currentUser}
-                  activeVoiceChannel={activeVoiceChannel}
                   onVoiceJoin={handleVoiceJoin}
-                  voiceStates={voiceStates}
-                  users={users}
                   onLoginWithDiscord={loginWithDiscord}
                   onLogoutDiscord={logout}
                   onToggleMic={handleToggleMute}
@@ -363,19 +259,15 @@ function MainApp() {
                 />
                 <ChatInterface
                   currentUser={currentUser}
-                  users={users}
                   currentChannel={currentChannel}
                   onSendMessage={sendMessage}
                   messages={messages}
                   setMessages={setMessages}
                   onMenuToggle={() => {}}
-                  userColors={userColors}
                 />
                 <UserList
-                  users={users}
                   currentUserId={currentUser.id}
                   currentUser={currentUser}
-                  userColors={userColors}
                 />
               </div>
             ) : activeView === AppView.WHO_WE_ARE ? (
@@ -428,10 +320,7 @@ function MainApp() {
                   setMobileActiveTab('chat');
                 }}
                 currentUser={currentUser}
-                activeVoiceChannel={activeVoiceChannel}
                 onVoiceJoin={handleVoiceJoin}
-                voiceStates={voiceStates}
-                users={users}
                 onLoginWithDiscord={loginWithDiscord}
                 onLogoutDiscord={logout}
                 onToggleMic={handleToggleMute}
@@ -445,13 +334,11 @@ function MainApp() {
                 {activeView === AppView.CHAT && (
                   <ChatInterface
                     currentUser={currentUser}
-                    users={users}
                     currentChannel={currentChannel}
                     onSendMessage={sendMessage}
                     messages={messages}
                     setMessages={setMessages}
                     onMenuToggle={() => setMobileActiveTab('channels')}
-                    userColors={userColors}
                   />
                 )}
                 {activeView === AppView.IMPOSTOR && (
@@ -479,10 +366,8 @@ function MainApp() {
 
             {mobileActiveTab === 'users' && (
               <UserList
-                users={users}
                 currentUserId={currentUser.id}
                 currentUser={currentUser}
-                userColors={userColors}
                 isMobileView
               />
             )}
@@ -495,7 +380,6 @@ function MainApp() {
           onClose={() => setMobileSidebarOpen(false)}
           onNavigate={navigateToSection}
           currentUser={currentUser}
-          users={users}
           activeSection={activeSection}
         />
       </div>
@@ -504,7 +388,7 @@ function MainApp() {
       {activeEffect === 'jumpscare' && (
         <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center animate-pulse">
           <img 
-            src="https://media.tenor.com/images/1c9332979d92076f647196d1c2082075/tenor.gif" 
+            src="https://tenor.com/ioss9i5xV4L.gif" 
             alt="scare" 
             className="w-full h-full object-cover"
           />
@@ -537,8 +421,10 @@ export default function App() {
     <ErrorBoundary>
       <AuthProvider>
         <SocketProvider>
-          <MainApp />
-          <Toaster position="top-right" theme="dark" richColors />
+          <UserProvider>
+            <MainApp />
+            <Toaster position="top-right" theme="dark" richColors />
+          </UserProvider>
         </SocketProvider>
       </AuthProvider>
     </ErrorBoundary>
