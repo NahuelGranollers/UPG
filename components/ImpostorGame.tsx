@@ -1108,7 +1108,7 @@ export default function ImpostorGame({
                  <p className="text-discord-text-muted text-sm">Pasa el dispositivo al jugador correspondiente para que vea su rol en secreto.</p>
                </div>
                
-               <div className="grid grid-cols-1 gap-3 max-h-[50vh] overflow-y-auto custom-scrollbar pr-1">
+               <div className="grid grid-cols-1 gap-3 max-h-[60vh] overflow-y-auto custom-scrollbar pr-1 pb-[7vh]" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
                  {offlinePlayers.map(p => (
                    <button
                      key={p.id}
