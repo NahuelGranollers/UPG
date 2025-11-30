@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, LogIn } from 'lucide-react';
 import { User } from '../types';
 import SafeImage from './SafeImage';
@@ -16,9 +16,19 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
   user,
   onLoginWithDiscord,
 }) => {
+  const [editName, setEditName] = useState(user.username);
+  const [editColor, setEditColor] = useState(user.color || '#5865F2');
+  const [editing, setEditing] = useState(false);
   if (!isOpen) return null;
 
   const isGuest = user.isGuest || user.username.startsWith('Invitado');
+
+  function handleSave() {
+    // TODO: Implement backend update logic here
+    // For now, just close modal
+    setEditing(false);
+    onClose();
+  }
 
   return (
     <div
@@ -64,23 +74,54 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
             </div>
           </div>
 
-          {/* User Info */}
+          {/* User Info & Editable Fields */}
           <div className="pt-14">
             <div className="bg-discord-dark rounded-lg p-4 mb-4">
-              <h2 className="text-xl font-bold text-white mb-1" style={{ color: user.color }}>
-                {user.username}
-              </h2>
-              <p className="text-sm text-discord-text-muted">{user.id}</p>
-
-              {isGuest && (
-                <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded">
-                  <p className="text-sm text-yellow-200">👋 Estás navegando como invitado</p>
-                </div>
+              {editing ? (
+                <>
+                  <label className="block mb-2 text-sm text-discord-text-muted">Nombre de usuario</label>
+                  <input
+                    type="text"
+                    className="w-full bg-discord-chat border border-gray-700 rounded p-2 text-white mb-3"
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                  />
+                  <label className="block mb-2 text-sm text-discord-text-muted">Color del nombre</label>
+                  <div className="flex items-center gap-3 mb-3">
+                    <input
+                      type="color"
+                      className="w-12 h-10 p-0 border-0"
+                      value={editColor}
+                      onChange={e => setEditColor(e.target.value)}
+                    />
+                    <span className="text-sm text-discord-text-muted">Actual: <span className="font-medium" style={{ color: editColor }}>{editColor}</span></span>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <button className="px-3 py-1 rounded border border-gray-700 text-sm" onClick={() => setEditing(false)}>Cancelar</button>
+                    <button className="px-3 py-1 rounded bg-discord-blurple text-white text-sm" onClick={handleSave}>Guardar</button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-xl font-bold text-white mb-1" style={{ color: user.color }}>
+                    {user.username}
+                  </h2>
+                  <p className="text-sm text-discord-text-muted">{user.id}</p>
+                  <button
+                    className="mt-2 px-3 py-1 rounded bg-discord-blurple text-white text-sm"
+                    onClick={() => setEditing(true)}
+                  >Editar perfil</button>
+                  {isGuest && (
+                    <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded">
+                      <p className="text-sm text-yellow-200">👋 Estás navegando como invitado</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
             {/* Login Button for Guests */}
-            {isGuest && (
+            {isGuest && !editing && (
               <button
                 onClick={onLoginWithDiscord}
                 className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
