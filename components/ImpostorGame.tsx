@@ -734,7 +734,11 @@ export default function ImpostorGame({
 
   // Create public server
   const handleCreatePublicServer = (explicitRoomId?: string) => {
-    if (!socket) return;
+    if (!socket) {
+      console.error('[FRONTEND] No socket available');
+      return;
+    }
+    console.log('[FRONTEND] Socket connected:', socket.connected);
     const finalRoomId = explicitRoomId || roomId || `room_${Date.now()}`;
     if (!username) return;
 
