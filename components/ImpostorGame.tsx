@@ -138,10 +138,10 @@ export default function ImpostorGame({
     };
 
     if (socket && socket.connected) {
-        const randomCat = OFFLINE_WORDS[Math.floor(Math.random() * OFFLINE_WORDS.length)].category;
-        const toastId = toast.loading('Generando palabra con IA...');
+        const categoryToUse = selectedCategory.trim() || 'General';
+        const toastId = toast.loading(`Generando palabra (${categoryToUse})...`);
         
-        socket.emit('impostor:generate-word', { category: randomCat }, (res: any) => {
+        socket.emit('impostor:generate-word', { category: categoryToUse }, (res: any) => {
             toast.dismiss(toastId);
             if (res && res.ok && res.word) {
                 startWithWord(res.word);
@@ -977,6 +977,19 @@ export default function ImpostorGame({
                       </div>
                     ))
                   )}
+                </div>
+
+                <div className="pt-4 space-y-1">
+                    <label className="text-xs font-bold text-discord-text-muted uppercase">
+                        Categoría de palabras (IA)
+                    </label>
+                    <input 
+                        type="text"
+                        className="discord-input w-full"
+                        placeholder="Ej: Animales, Comida... (Vacío = General)"
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                    />
                 </div>
 
                 <div className="pt-4 flex gap-3">
