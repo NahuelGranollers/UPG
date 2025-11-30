@@ -52,7 +52,11 @@ const ServerBrowser: React.FC<ServerBrowserProps> = ({ gameType, onJoinServer, o
 
   useEffect(() => {
     if (!socket) return;
+    socket.on('connect', () => {
+      console.log('[SOCKET] Connected to backend Socket.IO');
+    });
     const handler = (payload: any) => {
+      console.log('[SOCKET] servers:updated received:', payload);
       try {
         const list = (payload && payload.servers && payload.servers[gameType]) || [];
         setServers(list);
@@ -63,6 +67,7 @@ const ServerBrowser: React.FC<ServerBrowserProps> = ({ gameType, onJoinServer, o
     socket.on('servers:updated', handler);
     return () => {
       socket.off('servers:updated', handler);
+      socket.off('connect');
     };
   }, [socket, gameType]);
 

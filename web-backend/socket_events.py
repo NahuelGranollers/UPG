@@ -96,11 +96,13 @@ def handle_bot_response(channel_id, user_name, user_message):
     
     @socketio.on('connect')
     def on_connect():
-        logger.info(f"Client connected: {request.sid}")
+        logger.info(f"[SOCKET] Client connected: {request.sid}")
+        print(f"[SOCKET] Client connected: {request.sid}")
 
     @socketio.on('disconnect')
     def on_disconnect():
-        logger.info(f"Client disconnected: {request.sid}")
+        logger.info(f"[SOCKET] Client disconnected: {request.sid}")
+        print(f"[SOCKET] Client disconnected: {request.sid}")
         user = connected_users.get(request.sid)
         if user:
             del connected_users[request.sid]
@@ -268,20 +270,19 @@ def handle_bot_response(channel_id, user_name, user_message):
     def on_impostor_create(data):
         room_id = data.get('roomId')
         user_id = data.get('userId')
+        logger.info(f"[SOCKET] impostor:create-room received: roomId={room_id}, userId={user_id}, username={data.get('username')}")
+        print(f"[SOCKET] impostor:create-room received: roomId={room_id}, userId={user_id}, username={data.get('username')}")
         if not room_id or not user_id: return {'ok': False}
-        
         if room_id in impostor_rooms: return {'ok': False, 'error': 'exists'}
-        
         impostor_rooms[room_id] = {
             'hostId': user_id,
             'players': {user_id: {'socketId': request.sid, 'username': data.get('username')}},
             'started': False,
             'customWords': [],
-            'name': data.get('name', f"Sala de {data.get('username')}"),
+            'name': data.get('name', f"Sala de {data.get('username')}") ,
             'password': data.get('password'),
             'createdAt': datetime.utcnow().isoformat()
         }
-        
         public_servers['impostor'][room_id] = {
             'name': impostor_rooms[room_id]['name'],
             'hostId': user_id,
@@ -291,10 +292,10 @@ def handle_bot_response(channel_id, user_name, user_message):
             'hasPassword': bool(data.get('password')),
             'gameState': {'started': False}
         }
-        
         join_room(f"impostor:{room_id}")
+        logger.info(f"[SOCKET] broadcasting servers:updated after create-room")
+        print(f"[SOCKET] broadcasting servers:updated after create-room")
         broadcast_servers(socketio)
-        
         emit('impostor:room-state', {
             'roomId': room_id,
             'hostId': user_id,
@@ -838,6 +839,8 @@ def handle_bot_response(channel_id, user_name, user_message):
                 {'roomId': rid, **info} for rid, info in public_servers['impostor'].items()
             ]
         }
+        print(f"[SOCKET] Emitting servers:updated: {snapshot}")
+        logger.info(f"[SOCKET] Emitting servers:updated: {snapshot}")
         sio.emit('servers:updated', {'servers': snapshot})
 
     def cleanup_impostor_player(user_id, username):
