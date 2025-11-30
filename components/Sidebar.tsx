@@ -11,6 +11,7 @@ interface SidebarProps {
   onHomeClick?: () => void;
   onUPGClick?: () => void;
   onOpenAdmin?: () => void;
+  onEditProfile?: () => void;
   // activeSection allows parent to indicate which sidebar node is active
   activeSection?: 'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor' | 'news' | 'hall_of_fame';
   // navigation callback when clicking a sidebar node
@@ -37,6 +38,20 @@ const Sidebar: React.FC<SidebarProps> = memo(
     const { socket, isConnected } = useSocket();
     return (
       <div className="w-[84px] discord-sidebar flex flex-col items-center py-5 space-y-4 overflow-y-auto shrink-0 relative h-full">
+        {/* Profile/Config Button */}
+        <button
+          onClick={() => { if (typeof onEditProfile === 'function') onEditProfile(); }}
+          className="w-14 h-14 bg-discord-chat text-discord-text-normal hover:bg-discord-blurple hover:text-white rounded-full flex items-center justify-center mb-2 border-2 border-discord-blurple"
+          title="Editar perfil"
+          aria-label="Editar perfil"
+        >
+          <SafeImage
+            src={currentUser?.avatar || '/upg.png'}
+            alt={currentUser?.username || 'Perfil'}
+            className="object-cover w-10 h-10 rounded-full"
+            fallbackSrc="https://ui-avatars.com/api/?name=Perfil&background=5865F2&color=fff&size=128"
+          />
+        </button>
         {/* Direct Messages / Home */}
         {(() => {
           const active = activeSection === 'home';
