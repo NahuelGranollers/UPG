@@ -37,7 +37,7 @@ class SocketService {
 
     try {
       this.socket = io(this.serverUrl, {
-        transports: ['websocket', 'polling'],
+        transports: ['polling'], // Force polling to test
         secure: true,
         withCredentials: true,
         path: '/socket.io/',
