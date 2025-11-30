@@ -156,14 +156,6 @@ const HallOfFame: React.FC<HallOfFameProps> = ({ onOpenSidebar }) => {
 
   return (
     <div className="flex flex-col h-full w-full bg-discord-chat overflow-hidden relative">
-      {onOpenSidebar && (
-        <button
-          onClick={onOpenSidebar}
-          className="md:hidden absolute top-4 left-4 p-2 bg-discord-surface rounded-full shadow-lg z-10 text-discord-text-normal hover:text-white"
-        >
-          <Menu size={24} />
-        </button>
-      )}
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-8">
         <div className="max-w-7xl mx-auto">
           <header className="discord-header discord-glass-card p-4 mb-6 flex items-center justify-between">

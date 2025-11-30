@@ -292,6 +292,22 @@ function MainApp() {
 
       {/* Mobile Layout */}
       <div className="flex md:hidden h-full w-full flex-col relative overflow-hidden">
+        {/* Centralized Menu Button (only when sidebar is closed) */}
+        {!mobileSidebarOpen && (
+          <button
+            className="md:hidden fixed top-3 left-3 p-3 liquid-glass rounded-full shadow-lg z-[100] text-discord-text-normal hover:text-white"
+            style={{
+              paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))',
+              paddingLeft: 'max(0.75rem, env(safe-area-inset-left, 0px))',
+              minWidth: 48,
+              minHeight: 48,
+            }}
+            aria-label="Abrir menú"
+            onClick={() => setMobileSidebarOpen(true)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-menu" aria-hidden="true"><path d="M4 5h16"></path><path d="M4 12h16"></path><path d="M4 19h16"></path></svg>
+          </button>
+        )}
         {showHome ? (
           <div className="flex h-full w-full">
             <HomeScreen
@@ -308,7 +324,6 @@ function MainApp() {
               }}
               onJoinServer={handleJoinServer}
               onCreateServer={handleCreateServer}
-              onOpenSidebar={() => setMobileSidebarOpen(true)}
             />
           </div>
         ) : (
@@ -335,7 +350,6 @@ function MainApp() {
                 onLogoutDiscord={logout}
                 onToggleMic={handleToggleMute}
                 onVoiceLeave={handleVoiceLeave}
-                onOpenSidebar={() => setMobileSidebarOpen(true)}
               />
             )}
 
@@ -360,17 +374,16 @@ function MainApp() {
                     }}
                     autoJoinRoomId={autoJoinRoomId}
                     autoJoinPassword={autoJoinPassword}
-                    onOpenSidebar={() => setMobileSidebarOpen(true)}
                   />
                 )}
                 {activeView === AppView.WHO_WE_ARE && (
-                  <WhoWeAre onMenuToggle={() => setMobileSidebarOpen(true)} />
+                  <WhoWeAre />
                 )}
                 {activeView === AppView.VOTING && (
-                  <Voting onMenuToggle={() => setMobileSidebarOpen(true)} />
+                  <Voting />
                 )}
-                {activeView === AppView.NEWS && <UPGNews onOpenSidebar={() => setMobileSidebarOpen(true)} />}
-                {activeView === AppView.HALL_OF_FAME && <HallOfFame onOpenSidebar={() => setMobileSidebarOpen(true)} />}
+                {activeView === AppView.NEWS && <UPGNews />}
+                {activeView === AppView.HALL_OF_FAME && <HallOfFame />}
               </>
             )}
 

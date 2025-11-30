@@ -806,15 +806,6 @@ export default function ImpostorGame({
       <div className="w-full py-4 px-2 sm:py-4 sm:px-4 lg:py-4 lg:px-6 flex-shrink-0 z-10 bg-discord-chat">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {onOpenSidebar && (
-              <button
-                onClick={onOpenSidebar}
-                className="md:hidden text-discord-text-muted hover:text-white"
-                aria-label="Abrir menú"
-              >
-                <Menu size={24} />
-              </button>
-            )}
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-discord-text-header">
               🎭 Impostor
             </h1>
