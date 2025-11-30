@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { getBackendUrl } from '../utils/config';
 
 export default function CookieClicker() {
-  const { currentUser } = useAuth();
+  const { currentUser, isAuthenticated, loginWithDiscord } = useAuth();
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -16,7 +16,7 @@ export default function CookieClicker() {
 
   useEffect(() => {
     async function fetchProgress() {
-      if (!currentUser?.id) return;
+      if (!isAuthenticated || !currentUser?.id) return;
       setLoading(true);
       setError(null);
       try {
@@ -37,7 +37,7 @@ export default function CookieClicker() {
     return () => {
       if (autoClickerInterval.current) clearInterval(autoClickerInterval.current);
     };
-  }, [currentUser?.id]);
+  }, [isAuthenticated, currentUser?.id]);
 
   useEffect(() => {
     // Start auto-clicker if purchased
@@ -60,7 +60,7 @@ export default function CookieClicker() {
   }, [autoClicker]);
 
   async function saveProgress(newCount: number) {
-    if (!currentUser?.id) return;
+    if (!isAuthenticated || !currentUser?.id) return;
     setSaving(true);
     setError(null);
     try {
@@ -94,6 +94,17 @@ export default function CookieClicker() {
     saveProgress(count - upgradeCost);
   }
 
+  if (!isAuthenticated) {
+    return (
+      <div className="flex flex-col items-center justify-center">
+        <button
+          className="bg-discord-blurple text-white font-bold rounded-full p-4 mb-4"
+          onClick={loginWithDiscord}
+        >Iniciar sesión con Discord</button>
+        <div className="text-gray-500">Debes iniciar sesión para jugar y guardar tu progreso.</div>
+      </div>
+    );
+  }
   return (
     <div className="flex flex-col items-center justify-center">
       <button
@@ -110,6 +121,5 @@ export default function CookieClicker() {
       <div className="text-xl font-bold mb-2 text-yellow-900">Cookies: {count}</div>
       {error && <div className="text-red-500 mt-2">{error}</div>}
     </div>
-    // Only cookie button and score UI remain
   );
 }
