@@ -40,7 +40,10 @@ const Sidebar: React.FC<SidebarProps> = memo(
       <div className="w-[84px] discord-sidebar flex flex-col items-center py-5 space-y-4 overflow-y-auto shrink-0 relative h-full">
         {/* Profile/Config Button */}
         <button
-          onClick={() => { if (typeof onEditProfile === 'function') onEditProfile(); }}
+          onClick={() => { 
+            console.log('Profile button clicked');
+            if (typeof onEditProfile === 'function') onEditProfile(); 
+          }}
           className="w-14 h-14 bg-discord-chat text-discord-text-normal hover:bg-discord-blurple hover:text-white rounded-full flex items-center justify-center mb-2 border-2 border-discord-blurple"
           title="Editar perfil"
           aria-label="Editar perfil"
