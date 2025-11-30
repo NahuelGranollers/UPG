@@ -200,27 +200,27 @@ const HallOfFame: React.FC<HallOfFameProps> = ({ onOpenSidebar }) => {
                   className="flex items-center justify-between py-6"
                   style={{ boxShadow: 'inset 0 -6px 10px rgba(0,0,0,0.35)' }}
                 >
-                  <div className="grid grid-cols-3 gap-6 w-full">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 w-full justify-items-center">
                     {achievements.slice(row * 3, row * 3 + 3).map((ach, i) => (
-                      <div key={ach?.id ?? i} className="relative flex items-center justify-center">
+                      <div key={ach?.id ?? i} className={`relative flex items-center justify-center ${!ach ? 'hidden sm:flex' : ''}`}>
                         {ach ? (
                           <div
                             role="button"
                             tabIndex={0}
                             aria-label={`${ach.title} — Ganador: ${ach.winner}`}
-                            className="w-32 h-32 sm:w-40 sm:h-40 inline-block rounded-lg relative transition-transform duration-200 ease-in-out hover:-translate-y-2.5 hover:-rotate-3 hover:scale-110 hover:drop-shadow-2xl focus:outline-2 focus:outline-blue-500/14 focus:-translate-y-2 focus:scale-105 after:content-[''] after:absolute after:top-2 after:right-3 after:w-2 after:h-2 after:bg-white/50 after:shadow-lg after:rounded-sm after:opacity-95"
+                            className="w-28 h-28 xs:w-32 xs:h-32 sm:w-40 sm:h-40 inline-block rounded-lg relative transition-transform duration-200 ease-in-out hover:-translate-y-2.5 hover:-rotate-3 hover:scale-110 hover:drop-shadow-2xl focus:outline-2 focus:outline-blue-500/14 focus:-translate-y-2 focus:scale-105 after:content-[''] after:absolute after:top-2 after:right-3 after:w-2 after:h-2 after:bg-white/50 after:shadow-lg after:rounded-sm after:opacity-95"
                             onClick={() => setSelected(ach)}
                             onKeyDown={e => {
                               if (e.key === 'Enter' || e.key === ' ') setSelected(ach);
                             }}
                           >
                             <div className="absolute inset-0 flex flex-col items-center justify-center text-white/95 p-2 text-center">
-                              <ach.icon className="w-10 h-10 sm:w-14 sm:h-14 mb-2" style={{ color: ach.color }} />
-                              <span className="text-xs sm:text-sm leading-tight font-bold line-clamp-2">{ach.title}</span>
+                              <ach.icon className="w-8 h-8 xs:w-10 xs:h-10 sm:w-14 sm:h-14 mb-2" style={{ color: ach.color }} />
+                              <span className="text-[10px] xs:text-xs sm:text-sm leading-tight font-bold line-clamp-2">{ach.title}</span>
                             </div>
                           </div>
                         ) : (
-                          <div className="h-40 w-full bg-transparent" />
+                          <div className="h-28 w-full bg-transparent" />
                         )}
                       </div>
                     ))}

@@ -92,24 +92,24 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 lg:p-12 flex flex-col items-center">
         {/* Hero Section */}
         <div className="max-w-4xl w-full liquid-glass mb-12 mt-8 md:mt-0">
-        <div className="p-10 md:p-14 lg:p-16 flex flex-col justify-center items-center text-center gap-8">
+        <div className="p-6 sm:p-10 md:p-14 lg:p-16 flex flex-col justify-center items-center text-center gap-6 sm:gap-8">
           <SafeImage
             src="/upg.png"
             alt="UPG"
-            className="w-32 h-32 object-cover rounded-2xl shadow-lg"
+            className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-2xl shadow-lg"
             fallbackSrc="/upg.png"
           />
-          <h1 className="text-4xl font-black text-white drop-shadow-md">Unas Partidillas Gang (UPG)</h1>
-          <p className="text-lg text-gray-200 max-w-lg">
+          <h1 className="text-2xl sm:text-4xl font-black text-white drop-shadow-md">Unas Partidillas Gang (UPG)</h1>
+          <p className="text-base sm:text-lg text-gray-200 max-w-lg">
             Bienvenido a la comunidad oficial. Aquí encontrarás canales, eventos y salas de voz para echar unas partidillas. Mantén el
             respeto y disfruta.
           </p>
 
-          <div className="flex items-center gap-3 mt-3">
-            <button onClick={onGoToChat} className="glass-btn primary px-8 py-3 text-lg font-bold">
+          <div className="flex flex-col sm:flex-row items-center gap-3 mt-3 w-full sm:w-auto">
+            <button onClick={onGoToChat} className="glass-btn primary w-full sm:w-auto px-8 py-3 text-lg font-bold">
               Ir al Chat
             </button>
-            <button onClick={onGoToWhoWeAre} className="glass-btn px-8 py-3 text-lg font-bold">
+            <button onClick={onGoToWhoWeAre} className="glass-btn w-full sm:w-auto px-8 py-3 text-lg font-bold">
               ¿Qué es UPG?
             </button>
           </div>
@@ -121,15 +121,15 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
 
       {/* Active Servers Section */}
       <div className="max-w-6xl w-full">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
           <h2 className="text-2xl font-bold text-discord-text-header flex items-center gap-2">
             <Gamepad2 className="text-discord-blurple" />
             Servidores Activos
           </h2>
-          <div className="flex gap-2 relative group">
+          <div className="flex gap-2 relative group w-full sm:w-auto">
             <button 
               onClick={() => onCreateServer('impostor')}
-              className="glass-btn flex items-center gap-2 px-6 py-3 text-lg font-bold relative overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-discord-blurple/20"
+              className="glass-btn flex items-center justify-center gap-2 px-6 py-3 text-lg font-bold relative overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-discord-blurple/20 w-full sm:w-auto"
             >
               <Plus size={24} /> Crear Impostor
               
