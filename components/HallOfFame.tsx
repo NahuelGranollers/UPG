@@ -165,7 +165,7 @@ const HallOfFame: React.FC<HallOfFameProps> = ({ onOpenSidebar }) => {
         </button>
       )}
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <header className="discord-header discord-glass-card p-4 mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-discord-text-header mb-2">Salón de la Fama — UPG</h1>
@@ -194,14 +194,14 @@ const HallOfFame: React.FC<HallOfFameProps> = ({ onOpenSidebar }) => {
 
             {/* Shelves */}
             <div className="grid grid-cols-1 gap-6">
-              {Array.from({ length: Math.ceil(achievements.length / 3) }).map((_, row) => (
+              {Array.from({ length: Math.ceil(achievements.length / 6) }).map((_, row) => (
                 <div
                   key={row}
                   className="flex items-center justify-between py-6"
                   style={{ boxShadow: 'inset 0 -6px 10px rgba(0,0,0,0.35)' }}
                 >
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 w-full justify-items-center">
-                    {achievements.slice(row * 3, row * 3 + 3).map((ach, i) => (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6 w-full justify-items-center">
+                    {achievements.slice(row * 6, row * 6 + 6).map((ach, i) => (
                       <div key={ach?.id ?? i} className={`relative flex items-center justify-center ${!ach ? 'hidden sm:flex' : ''}`}>
                         {ach ? (
                           <div
