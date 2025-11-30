@@ -246,9 +246,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
       </div>
     </div>
   );
-      </div>
-    </div>
-  );
 };
 export default HomeScreen;
 
