@@ -3,6 +3,7 @@ import SafeImage from './SafeImage';
 import { ArrowRight, Gamepad2, Users, Lock, Plus, Menu } from 'lucide-react';
 import MinecraftServerStatus from './MinecraftServerStatus';
 import { getBackendUrl } from '../utils/config';
+import CookieClicker from './CookieClicker';
 
 interface HomeScreenProps {
   onGoToChat: () => void;
@@ -94,6 +95,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
           <Menu size={28} />
         </button>
       )}
+
+      {/* Cookie Clicker Access */}
+      <div className="w-full flex justify-center mt-4">
+        <div className="max-w-md w-full">
+          <CookieClicker />
+        </div>
+      </div>
 
       <div className="flex-1 custom-scrollbar p-4 md:p-8 lg:p-12 flex flex-col items-center justify-center">
         {/* Responsive Hero Section - always fully visible */}

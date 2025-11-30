@@ -6,6 +6,7 @@ from models import db
 from config import Config
 from routes import api, auth
 from routes.bot import bot_bp
+from routes.cookie_clicker import cookie_clicker_bp
 from socket_events import register_socket_events
 import logging, os, sys
 
@@ -29,6 +30,7 @@ socketio = SocketIO(app, cors_allowed_origins=allow_all_origins, async_mode='eve
 app.register_blueprint(api)
 app.register_blueprint(auth)
 app.register_blueprint(bot_bp)
+app.register_blueprint(cookie_clicker_bp)
 register_socket_events(socketio, app)
 
 with app.app_context():
