@@ -5,6 +5,7 @@ from flask_socketio import SocketIO
 from models import db
 from config import Config
 from routes import api, auth
+from routes.api import api as servers_api
 from routes.bot import bot_bp
 from routes.cookie_clicker import cookie_clicker_bp
 from socket_events import register_socket_events
@@ -28,6 +29,7 @@ Compress(app)
 socketio = SocketIO(app, cors_allowed_origins=allow_all_origins, async_mode='eventlet')
 
 app.register_blueprint(api)
+app.register_blueprint(servers_api)
 app.register_blueprint(auth)
 app.register_blueprint(bot_bp)
 app.register_blueprint(cookie_clicker_bp)
