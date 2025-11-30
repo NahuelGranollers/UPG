@@ -63,12 +63,12 @@ const MinecraftServerStatus: React.FC = () => {
       <div className="relative overflow-hidden rounded-3xl bg-[#0f0f0f]/40 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] transition-all duration-500 hover:shadow-[0_8px_32px_0_rgba(88,101,242,0.2)] hover:border-white/20">
         
         {/* Background Gradient Glow */}
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-green-500/20 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-500/20 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute -top-24 -right-24 w-64 h-64 bg-green-500/20 rounded-full pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-500/20 rounded-full pointer-events-none" />
 
         {/* Countdown Overlay removed as requested */}
 
-        <div className="relative p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 md:gap-8 opacity-20 pointer-events-none filter blur-sm">
+        <div className="relative p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 md:gap-8 opacity-20 pointer-events-none">
           
           {/* Server Icon / Status Indicator */}
           <div className="relative shrink-0">
