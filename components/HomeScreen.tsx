@@ -4,6 +4,7 @@ import { ArrowRight, Gamepad2, Users, Lock, Plus, Menu } from 'lucide-react';
 import MinecraftServerStatus from './MinecraftServerStatus';
 import { getBackendUrl } from '../utils/config';
 import CookieClicker from './CookieClicker';
+import { FaCookieBite } from 'react-icons/fa';
 
 interface HomeScreenProps {
   onGoToChat: () => void;
@@ -26,6 +27,7 @@ interface GameServer {
 const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJoinServer, onCreateServer, onOpenSidebar }) => {
   const [servers, setServers] = useState<GameServer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCookieClicker, setShowCookieClicker] = useState(false);
 
   useEffect(() => {
     const fetchServers = async () => {
@@ -96,12 +98,29 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
         </button>
       )}
 
-      {/* Cookie Clicker Access */}
-      <div className="w-full flex justify-center mt-4">
-        <div className="max-w-md w-full">
-          <CookieClicker />
+      {/* Floating Cookie Icon */}
+      <button
+        onClick={() => setShowCookieClicker(true)}
+        className="fixed bottom-6 right-6 z-[101] bg-white rounded-full shadow-lg p-4 hover:bg-yellow-200 transition-colors"
+        style={{ minWidth: 56, minHeight: 56 }}
+        aria-label="Abrir Cookie Clicker"
+      >
+        <FaCookieBite size={32} color="#fbbf24" />
+      </button>
+
+      {/* Cookie Clicker Modal/Panel */}
+      {showCookieClicker && (
+        <div className="fixed inset-0 z-[102] flex items-center justify-center bg-black bg-opacity-40" onClick={() => setShowCookieClicker(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl p-0 max-w-md w-full relative" onClick={e => e.stopPropagation()}>
+            <button
+              onClick={() => setShowCookieClicker(false)}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-xl font-bold"
+              aria-label="Cerrar"
+            >×</button>
+            <CookieClicker />
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="flex-1 custom-scrollbar p-4 md:p-8 lg:p-12 flex flex-col items-center justify-center">
         {/* Responsive Hero Section - always fully visible */}
