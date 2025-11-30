@@ -9,7 +9,7 @@ from game_state import (
 from routes.bot import generate_demonio_response, generate_impostor_word
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 import random
 import time
 import html
@@ -154,8 +154,8 @@ def register_socket_events(socketio, app=None):
         content = apply_troll_transform(data.get('userId'), content)
         
         msg_id = str(uuid.uuid4())
-        timestamp = datetime.utcnow()
-        
+        # Adjust to UTC+1
+        timestamp = datetime.utcnow() + timedelta(hours=1)
         msg = Message(
             id=msg_id,
             channel_id=data.get('channelId'),
@@ -168,10 +168,8 @@ def register_socket_events(socketio, app=None):
         )
         db.session.add(msg)
         db.session.commit()
-        
         msg_data = msg.to_dict()
         msg_data['localId'] = data.get('localId')
-        
         socketio.emit('message:received', msg_data, room=data.get('channelId'))
         
         # Bot ping

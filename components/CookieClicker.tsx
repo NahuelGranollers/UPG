@@ -1,8 +1,9 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import clsx from 'clsx';
-// If clsx is not installed, replace with a simple join or remove
+import { useAuth } from '../context/AuthContext';
+import { getBackendUrl } from '../utils/config';
 
+export default function CookieClicker() {
   const { currentUser } = useAuth();
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(true);
