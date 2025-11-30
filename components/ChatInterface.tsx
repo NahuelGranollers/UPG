@@ -393,9 +393,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   // Render
   return (
-    <div className="flex-1 flex flex-col bg-discord-chat min-w-0 h-full overflow-hidden">
+    <div className="flex-1 flex flex-col discord-chat min-w-0 h-full overflow-hidden">
       {/* Header */}
-      <div className="h-14 flex items-center justify-between px-4 shadow-sm border-b border-gray-900/20 shrink-0">
+      <div className="h-14 flex items-center justify-between px-4 shadow-sm border-b border-white/5 shrink-0 discord-header">
         <div className="flex items-center text-discord-text-header font-bold truncate">
           <button
             onClick={onMenuToggle}

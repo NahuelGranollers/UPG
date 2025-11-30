@@ -125,7 +125,7 @@ const UserList: React.FC<UserListProps> = memo(
 
     return (
       <div
-        className={`${isMobileView ? 'w-full bg-discord-dark h-full' : 'w-full lg:w-60 bg-discord-sidebar shrink-0'} flex flex-col p-2 sm:p-3 overflow-y-auto custom-scrollbar border-l border-gray-900/20`}
+        className={`${isMobileView ? 'w-full discord-sidebar h-full' : 'w-full lg:w-60 discord-sidebar shrink-0'} flex flex-col p-2 sm:p-3 overflow-y-auto custom-scrollbar border-l border-white/5`}
       >
         {/* Online Category */}
         <div className="mb-4 sm:mb-5">

@@ -57,7 +57,7 @@ const SystemStatus = ({ socket }: { socket: Socket | null }) => {
         <div className="space-y-6 animate-fadeIn">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Minecraft Server */}
-                <div className="bg-discord-dark p-4 rounded-lg border border-discord-border">
+                <div className="discord-glass-subtle p-4">
                     <div className="flex items-center gap-2 mb-3 text-discord-text-header font-bold">
                         <Server className="text-green-400" size={20} />
                         <h3>Servidor Minecraft</h3>
@@ -93,7 +93,7 @@ const SystemStatus = ({ socket }: { socket: Socket | null }) => {
                 </div>
 
                 {/* Web Server */}
-                <div className="bg-discord-dark p-4 rounded-lg border border-discord-border">
+                <div className="discord-glass-subtle p-4">
                     <div className="flex items-center gap-2 mb-3 text-discord-text-header font-bold">
                         <Globe className="text-blue-400" size={20} />
                         <h3>Servidor Web & Socket</h3>
@@ -124,7 +124,7 @@ const SystemStatus = ({ socket }: { socket: Socket | null }) => {
             </div>
 
             {/* Real Metrics */}
-            <div className="bg-discord-dark p-4 rounded-lg border border-discord-border">
+            <div className="discord-glass-subtle p-4">
                 <div className="flex items-center gap-2 mb-4 text-discord-text-header font-bold">
                     <Activity className="text-purple-400" size={20} />
                     <h3>Métricas del Servidor (Real)</h3>

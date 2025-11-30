@@ -78,12 +78,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
   }, [onJoinServer]);
 
   return (
-    <div className="flex flex-col h-full w-full bg-discord-chat overflow-hidden relative">
+    <div className="flex flex-col h-full w-full bg-discord-bg overflow-hidden relative">
       {/* Mobile Menu Button */}
       {onOpenSidebar && (
         <button
           onClick={onOpenSidebar}
-          className="md:hidden absolute top-4 left-4 p-2 bg-discord-surface rounded-full shadow-lg z-10 text-discord-text-normal hover:text-white"
+          className="md:hidden absolute top-4 left-4 p-2 liquid-glass rounded-full shadow-lg z-10 text-discord-text-normal hover:text-white"
         >
           <Menu size={24} />
         </button>
@@ -91,25 +91,25 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
 
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 lg:p-12 flex flex-col items-center">
         {/* Hero Section */}
-        <div className="max-w-4xl w-full bg-discord-surface backdrop-blur-sm rounded-discord shadow-discord border border-discord-hover overflow-hidden mb-12 mt-8 md:mt-0">
+        <div className="max-w-4xl w-full liquid-glass mb-12 mt-8 md:mt-0">
         <div className="p-10 md:p-14 lg:p-16 flex flex-col justify-center items-center text-center gap-8">
           <SafeImage
             src="/upg.png"
             alt="UPG"
-            className="w-32 h-32 object-cover rounded-discord shadow-discord"
+            className="w-32 h-32 object-cover rounded-2xl shadow-lg"
             fallbackSrc="/upg.png"
           />
-          <h1 className="text-4xl font-black text-discord-text-header">Unas Partidillas Gang (UPG)</h1>
-          <p className="text-lg text-discord-text-normal max-w-lg">
+          <h1 className="text-4xl font-black text-white drop-shadow-md">Unas Partidillas Gang (UPG)</h1>
+          <p className="text-lg text-gray-200 max-w-lg">
             Bienvenido a la comunidad oficial. Aquí encontrarás canales, eventos y salas de voz para echar unas partidillas. Mantén el
             respeto y disfruta.
           </p>
 
           <div className="flex items-center gap-3 mt-3">
-            <button onClick={onGoToChat} className="discord-button">
+            <button onClick={onGoToChat} className="glass-btn primary px-8 py-3 text-lg font-bold">
               Ir al Chat
             </button>
-            <button onClick={onGoToWhoWeAre} className="discord-button secondary">
+            <button onClick={onGoToWhoWeAre} className="glass-btn px-8 py-3 text-lg font-bold">
               ¿Qué es UPG?
             </button>
           </div>
@@ -129,7 +129,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
           <div className="flex gap-2">
             <button 
               onClick={() => onCreateServer('impostor')}
-              className="discord-button small secondary flex items-center gap-1"
+              className="glass-btn flex items-center gap-1"
             >
               <Plus size={16} /> Crear Impostor
             </button>
@@ -139,7 +139,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
         {loading ? (
           <div className="text-center py-12 text-discord-text-muted">Cargando servidores...</div>
         ) : servers.length === 0 ? (
-          <div className="text-center py-12 bg-discord-surface rounded-lg border border-discord-hover">
+          <div className="text-center py-12 liquid-glass">
             <p className="text-discord-text-muted mb-4">No hay servidores activos en este momento.</p>
             <p className="text-sm text-discord-text-normal">¡Sé el primero en crear uno!</p>
           </div>
@@ -148,7 +148,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
             {servers.map((server) => (
               <div 
                 key={server.roomId} 
-                className="bg-discord-surface p-4 rounded-lg border border-discord-hover hover:border-discord-blurple transition-all group"
+                className="discord-glass-card p-4 hover:border-discord-blurple transition-all group"
               >
                 <div className="flex justify-between items-start mb-3">
                   <div>
@@ -173,13 +173,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between mt-auto pt-3 border-t border-discord-border">
+                <div className="flex items-center justify-between mt-auto pt-3 border-t border-white/10">
                   <span className="text-xs text-discord-text-muted truncate max-w-[100px]">
                     Host: {server.hostName}
                   </span>
                   <button 
                     onClick={() => handleJoinClick(server)}
-                    className="discord-button small w-full ml-4"
+                    className="glass-btn primary w-full ml-4"
                     disabled={server.playerCount >= server.maxPlayers}
                   >
                     {server.playerCount >= server.maxPlayers ? 'Lleno' : 'Unirse'}

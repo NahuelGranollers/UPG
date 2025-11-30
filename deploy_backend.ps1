@@ -19,11 +19,12 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "Archivos copiados. Configurando entorno y reiniciando servicio..."
     
     # Comandos remotos en una sola línea
-    # 1. Instalar dependencias de sistema
+    # 1. Instalar dependencias de sistema (incluyendo herramientas de compilación para psutil)
     # 2. Recrear venv (limpio)
     # 3. Instalar requirements
     # 4. Configurar servicio y reiniciar
-    $remoteScript = "cd /home/nahuel/web-backend && echo nahuel | sudo -S apt-get update && echo nahuel | sudo -S apt-get install -y python3-venv python3-full && rm -rf venv && python3 -m venv venv && ./venv/bin/pip install -r requirements.txt && echo nahuel | sudo -S cp web-backend.service /etc/systemd/system/ && echo nahuel | sudo -S chmod 644 /etc/systemd/system/web-backend.service && echo nahuel | sudo -S systemctl daemon-reload && echo nahuel | sudo -S systemctl restart web-backend"
+    # NOTA: Usamos ';' después de apt-get update para que continúe aunque falle algún repo (como cloudflare i386)
+    $remoteScript = "cd /home/nahuel/web-backend && echo nahuel | sudo -S apt-get update; echo nahuel | sudo -S apt-get install -y python3-venv python3-full python3-dev build-essential && rm -rf venv && python3 -m venv venv && ./venv/bin/pip install -r requirements.txt && echo nahuel | sudo -S cp web-backend.service /etc/systemd/system/ && echo nahuel | sudo -S chmod 644 /etc/systemd/system/web-backend.service && echo nahuel | sudo -S systemctl daemon-reload && echo nahuel | sudo -S systemctl restart web-backend"
     
     # Ejecutar todo en una sesión SSH
     ssh -t nahuel@192.168.1.93 $remoteScript

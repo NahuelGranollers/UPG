@@ -36,7 +36,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
     // Obtener socket desde el contexto
     const { socket, isConnected } = useSocket();
     return (
-      <div className="w-[84px] bg-discord-dark flex flex-col items-center py-5 space-y-4 overflow-y-auto shrink-0 relative">
+      <div className="w-[84px] discord-sidebar flex flex-col items-center py-5 space-y-4 overflow-y-auto shrink-0 relative">
         {/* Direct Messages / Home */}
         {(() => {
           const active = activeSection === 'home';

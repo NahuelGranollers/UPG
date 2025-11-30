@@ -173,7 +173,7 @@ function MainApp() {
 
   if (isLoading)
     return (
-      <div className="flex h-screen items-center justify-center bg-[#313338] text-white">
+      <div className="flex h-screen items-center justify-center bg-discord-bg text-white">
         Cargando...
       </div>
     );
@@ -189,7 +189,7 @@ function MainApp() {
 
   return (
     <div
-      className="flex h-[100dvh] w-full bg-[#313338] font-sans antialiased overflow-hidden relative text-white"
+      className="flex h-[100dvh] w-full bg-discord-bg font-sans antialiased overflow-hidden relative text-white"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}

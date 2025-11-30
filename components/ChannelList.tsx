@@ -173,9 +173,9 @@ const ChannelList: React.FC<ChannelListProps> = ({
   // We will use sonner directly when needed via import in ServerSettings and here call window.toaster via toast import is unnecessary
 
   return (
-    <div className="flex-1 md:w-60 md:flex-none bg-discord-sidebar flex flex-col shrink-0 relative min-w-0">
+    <div className="flex-1 md:w-60 md:flex-none discord-sidebar flex flex-col shrink-0 relative min-w-0">
       {/* Server Header */}
-      <div className="h-12 px-4 flex items-center justify-between shadow-sm hover:bg-discord-hover transition-colors cursor-pointer border-b border-gray-900/20 shrink-0">
+      <div className="h-12 px-4 flex items-center justify-between shadow-sm hover:bg-white/5 transition-colors cursor-pointer border-b border-white/5 shrink-0">
         <div className="flex items-center gap-3 overflow-hidden">
           {onOpenSidebar && (
             <button
