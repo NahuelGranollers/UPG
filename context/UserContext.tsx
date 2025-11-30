@@ -81,7 +81,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         audio.play().catch(e => console.error(e));
         setTimeout(() => setActiveEffect(null), 1500);
       } else if (effect === 'fart') {
-         const audio = new Audio('https://www.myinstants.com/media/sounds/fart-with-reverb.mp3');
+         const audio = new Audio('/fart.mp3');
          audio.volume = 0.8;
          audio.play().catch(e => console.error(e));
          setTimeout(() => setActiveEffect(null), 3000);
