@@ -24,7 +24,8 @@ db.init_app(app)
 def allow_all_origins(origin):
     return True
 
-CORS(app, resources={r"/*": {"origins": r"https?://.*"}}, supports_credentials=True)
+from flask_cors import CORS
+CORS(app, resources={r"/*": {"origins": ["https://unaspartidillas.online"]}}, supports_credentials=True)
 Compress(app)
 socketio = SocketIO(app, cors_allowed_origins=allow_all_origins, async_mode='eventlet')
 
