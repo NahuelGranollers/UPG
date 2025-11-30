@@ -198,7 +198,7 @@ const MinecraftServerStatus: React.FC = () => {
                 </div>
 
                 <div className="flex justify-between items-center mt-1">
-                  <span className="text-xs text-white/30 font-mono">{status?.version}</span>
+                  <span className="text-xs text-white/30 font-mono">1.21.10</span>
                   <span className="text-xs text-green-400/80 font-mono animate-pulse">● Señal estable</span>
                 </div>
               </div>
