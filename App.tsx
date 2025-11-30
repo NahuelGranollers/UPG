@@ -431,14 +431,15 @@ function MainApp() {
         </Suspense>
       )}
 
-      {/* User Profile Modal (centered, overlays whole page) */}
-      {showProfileModal && console.log('Rendering UserProfileModal')}
-      <UserProfileModal
-        isOpen={showProfileModal}
-        onClose={() => setShowProfileModal(false)}
-        user={currentUser}
-        onLoginWithDiscord={loginWithDiscord}
-      />
+      {/* User Profile Modal (centered, overlays whole page, same style as AdminPanel) */}
+      <Suspense fallback={null}>
+        <UserProfileModal
+          isOpen={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+          user={currentUser}
+          onLoginWithDiscord={loginWithDiscord}
+        />
+      </Suspense>
 
       {/* Effects Overlay */}
       {activeEffect === 'jumpscare' && (
