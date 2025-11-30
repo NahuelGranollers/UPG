@@ -135,6 +135,7 @@ export default function ImpostorGame({
         setOfflineImpostorName(playersWithRoles[impostorIndex].name);
         setOfflinePlayers(playersWithRoles);
         setOfflinePhase('reveal');
+        setJoined(true);
     };
 
     const categoryToUse = selectedCategory.trim() || 'General';
