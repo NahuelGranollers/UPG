@@ -300,17 +300,9 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
           setActiveForm(null);
           break;
         }
-        case 'trigger-effect': {
-          const uid = formValues.userId || '';
-          const effect = formValues.effect || '';
-          if (uid && effect && currentUser) {
-            res = await emitWithAck('admin:trigger-effect', {
-              userId: uid,
-              effect,
-              adminId: currentUser.id,
-            });
-          }
-          setActiveForm(null);
+        case 'reset-ips-cache': {
+          if (currentUser)
+            res = await emitWithAck('admin:reset-ips-cache', { adminId: currentUser.id });
           break;
         }
       }
@@ -599,13 +591,13 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
               />
 
               <ActionButton
-                icon={<Activity size={24} />}
-                title="Estado Sistema"
-                description="Ver métricas y servidores"
-                onClick={() => openForm('system-status')}
-                isConfirming={false}
+                icon={<Shield size={24} />}
+                title="Reiniciar IPs/Caché"
+                description="Limpiar IPs y caché de usuarios"
+                onClick={() => handleAction('reset-ips-cache')}
+                isConfirming={confirmAction === 'reset-ips-cache'}
                 isLoading={isLoading}
-                variant="info"
+                variant="danger"
               />
             </div>
           )}

@@ -120,6 +120,8 @@ def handle_bot_response(channel_id, user_name, user_message):
 
     @socketio.on('user:join')
     def on_user_join(user_data):
+        logger.info(f"[SOCKET] user:join received: {user_data}")
+        print(f"[SOCKET] user:join received: {user_data}")
         role = 'user'
         if user_data.get('id') == ADMIN_DISCORD_ID:
             role = 'admin'
@@ -154,6 +156,8 @@ def handle_bot_response(channel_id, user_name, user_message):
         emit('user:registered', final_user)
         socketio.emit('user:online', final_user)
         emit('users:list', list(connected_users.values()))
+        logger.info(f"[SOCKET] emitted users:list to {request.sid}: {list(connected_users.values())}")
+        print(f"[SOCKET] emitted users:list to {request.sid}")
 
     @socketio.on('message:send')
     def on_message_send(data):
