@@ -95,16 +95,7 @@ export default function CookieClicker() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center h-full p-6 bg-gradient-to-br from-yellow-100 via-yellow-200 to-yellow-300 min-h-screen">
-      <h2 className="text-3xl font-extrabold mb-4 text-yellow-700 drop-shadow">Cookie Clicker</h2>
-      {currentUser && (
-        <div className="flex items-center mb-2">
-          {currentUser.avatar && (
-            <img src={currentUser.avatar} alt="avatar" className="w-8 h-8 rounded-full mr-2 border-2 border-yellow-400" />
-          )}
-          <span className="font-semibold text-lg text-yellow-800">{currentUser.username}</span>
-        </div>
-      )}
+    <div className="flex flex-col items-center justify-center">
       <button
         className={clsx(
           "bg-yellow-400 hover:bg-yellow-500 text-white font-bold rounded-full p-8 shadow-lg text-4xl mb-4 transition-transform duration-200",
@@ -115,10 +106,10 @@ export default function CookieClicker() {
         aria-label="Click the cookie"
         style={{ boxShadow: '0 0 24px 4px #facc15' }}
       >🍪</button>
+      <div className="text-xl font-bold mb-2 text-yellow-900">+1</div>
       <div className="text-xl font-bold mb-2 text-yellow-900">Cookies: {count}</div>
-      <div className="w-full max-w-xs mb-2">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-sm text-yellow-800">Auto-Clicker</span>
+      {error && <div className="text-red-500 mt-2">{error}</div>}
+    </div>
           <span className="text-sm text-yellow-800">{upgradeCost} cookies</span>
         </div>
         <div className="w-full h-3 bg-yellow-300 rounded-full overflow-hidden">
