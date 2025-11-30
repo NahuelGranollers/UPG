@@ -432,6 +432,7 @@ function MainApp() {
       )}
 
       {/* User Profile Modal (centered, overlays whole page) */}
+      {showProfileModal && console.log('Rendering UserProfileModal')}
       <UserProfileModal
         isOpen={showProfileModal}
         onClose={() => setShowProfileModal(false)}
