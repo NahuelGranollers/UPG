@@ -1,9 +1,10 @@
-import React, { useState, memo, useMemo } from 'react';
+import React, { useState, memo, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
-import { X, Trash2, MessageSquare, Shield, AlertTriangle, Zap, Palette, VolumeX } from 'lucide-react';
+import { X, Trash2, MessageSquare, Shield, AlertTriangle, Zap, Palette, VolumeX, Activity, Server, Cpu, Globe, Wifi } from 'lucide-react';
 import { Socket } from 'socket.io-client';
 import { User } from '../types';
 import { useUsers } from '../context/UserContext';
+import { getBackendUrl } from '../utils/config';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -12,12 +13,159 @@ interface AdminPanelProps {
   socket: Socket | null;
 }
 
+const SystemStatus = ({ socket }: { socket: Socket | null }) => {
+    const [mcStatus, setMcStatus] = useState<any>(null);
+    const [loadingMc, setLoadingMc] = useState(true);
+    const [backendLatency, setBackendLatency] = useState<number | null>(null);
+    const [mockStats, setMockStats] = useState({ cpu: 0, memory: 0, requests: 0 });
+
+    useEffect(() => {
+        // Fetch MC Status
+        fetch('https://api.mcsrvstat.us/2/mc.unaspartidillas.online')
+            .then(res => res.json())
+            .then(data => {
+                setMcStatus(data);
+                setLoadingMc(false);
+            })
+            .catch(() => setLoadingMc(false));
+
+        // Measure Latency
+        const start = Date.now();
+        fetch(`${getBackendUrl()}/api/health`) // Assuming health endpoint or just root
+            .then(() => setBackendLatency(Date.now() - start))
+            .catch(() => setBackendLatency(-1));
+
+        // Mock Stats Interval
+        const interval = setInterval(() => {
+            setMockStats({
+                cpu: Math.floor(Math.random() * 30) + 10, // 10-40%
+                memory: Math.floor(Math.random() * 20) + 40, // 40-60%
+                requests: Math.floor(Math.random() * 100) + 50
+            });
+        }, 2000);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <div className="space-y-6 animate-fadeIn">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Minecraft Server */}
+                <div className="bg-discord-dark p-4 rounded-lg border border-discord-border">
+                    <div className="flex items-center gap-2 mb-3 text-discord-text-header font-bold">
+                        <Server className="text-green-400" size={20} />
+                        <h3>Servidor Minecraft</h3>
+                    </div>
+                    {loadingMc ? (
+                        <div className="animate-pulse h-20 bg-discord-surface rounded"></div>
+                    ) : (
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                                <span className="text-discord-text-muted">Estado</span>
+                                <span className={`px-2 py-0.5 rounded text-xs font-bold ${mcStatus?.online ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                                    {mcStatus?.online ? 'ONLINE' : 'OFFLINE'}
+                                </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-discord-text-muted">IP</span>
+                                <span className="text-discord-text-normal font-mono text-sm">mc.unaspartidillas.online</span>
+                            </div>
+                            {mcStatus?.online && (
+                                <>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-discord-text-muted">Jugadores</span>
+                                        <span className="text-discord-text-normal">{mcStatus.players.online} / {mcStatus.players.max}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-discord-text-muted">Versión</span>
+                                        <span className="text-discord-text-normal text-xs">{mcStatus.version}</span>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* Web Server */}
+                <div className="bg-discord-dark p-4 rounded-lg border border-discord-border">
+                    <div className="flex items-center gap-2 mb-3 text-discord-text-header font-bold">
+                        <Globe className="text-blue-400" size={20} />
+                        <h3>Servidor Web & Socket</h3>
+                    </div>
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                            <span className="text-discord-text-muted">Socket.IO</span>
+                            <span className={`px-2 py-0.5 rounded text-xs font-bold ${socket?.connected ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                                {socket?.connected ? 'CONECTADO' : 'DESCONECTADO'}
+                            </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-discord-text-muted">ID de Sesión</span>
+                            <span className="text-discord-text-normal font-mono text-xs truncate max-w-[150px]">{socket?.id || '-'}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-discord-text-muted">Latencia API</span>
+                            <span className={`font-mono text-sm ${!backendLatency || backendLatency > 500 ? 'text-red-400' : 'text-green-400'}`}>
+                                {backendLatency ? `${backendLatency}ms` : 'Calculando...'}
+                            </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-discord-text-muted">Transporte</span>
+                            <span className="text-discord-text-normal text-xs uppercase">{socket?.io?.engine?.transport?.name || 'Unknown'}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Mock Metrics */}
+            <div className="bg-discord-dark p-4 rounded-lg border border-discord-border">
+                <div className="flex items-center gap-2 mb-4 text-discord-text-header font-bold">
+                    <Activity className="text-purple-400" size={20} />
+                    <h3>Métricas del Sistema (Simulado)</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div className="text-center">
+                        <div className="text-discord-text-muted text-xs uppercase font-bold mb-2">Uso de CPU</div>
+                        <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
+                            <svg className="w-full h-full transform -rotate-90">
+                                <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-discord-surface" />
+                                <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-purple-500 transition-all duration-500" strokeDasharray={`${mockStats.cpu * 2.51} 251`} />
+                            </svg>
+                            <span className="absolute text-xl font-bold text-white">{mockStats.cpu}%</span>
+                        </div>
+                    </div>
+                    <div className="text-center">
+                        <div className="text-discord-text-muted text-xs uppercase font-bold mb-2">Memoria RAM</div>
+                        <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
+                            <svg className="w-full h-full transform -rotate-90">
+                                <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-discord-surface" />
+                                <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-blue-500 transition-all duration-500" strokeDasharray={`${mockStats.memory * 2.51} 251`} />
+                            </svg>
+                            <span className="absolute text-xl font-bold text-white">{mockStats.memory}%</span>
+                        </div>
+                    </div>
+                    <div className="text-center">
+                        <div className="text-discord-text-muted text-xs uppercase font-bold mb-2">Requests / min</div>
+                        <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
+                            <div className="text-3xl font-bold text-green-400 animate-pulse">{mockStats.requests}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div className="text-xs text-discord-text-muted text-center italic">
+                * Algunas métricas son simuladas para demostración visual.
+            </div>
+        </div>
+    );
+};
+
 const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUser, socket }) => {
   const { users } = useUsers();
   const [isLoading, setIsLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState<string | null>(null);
   const [activeForm, setActiveForm] = useState<null | {
-    action: 'silence-user' | 'change-color' | 'global-message' | 'troll-mode' | 'trigger-effect';
+    action: 'silence-user' | 'change-color' | 'global-message' | 'troll-mode' | 'trigger-effect' | 'system-status';
     values: Record<string, string>;
   }>(null);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
@@ -148,7 +296,7 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
     }
   };
 
-  const openForm = (action: 'silence-user' | 'change-color' | 'global-message' | 'troll-mode' | 'trigger-effect') => {
+  const openForm = (action: 'silence-user' | 'change-color' | 'global-message' | 'troll-mode' | 'trigger-effect' | 'system-status') => {
     setFormValues({});
     setActiveForm({ action, values: {} });
   };
@@ -171,6 +319,24 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
   const renderForm = () => {
     if (!activeForm) return null;
     const { action } = activeForm;
+
+    if (action === 'system-status') {
+        return (
+            <div className="discord-panel animate-fadeIn">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-discord-text-header flex items-center gap-2">
+                        <Activity size={20} />
+                        Estado del Sistema
+                    </h3>
+                    <button onClick={() => setActiveForm(null)} className="discord-button secondary text-xs py-1 px-2">
+                        Volver
+                    </button>
+                </div>
+                <SystemStatus socket={socket} />
+            </div>
+        );
+    }
+
     return (
       <div className="discord-panel animate-fadeIn">
         <h3 className="text-lg font-semibold mb-4 text-discord-text-header flex items-center gap-2">
@@ -393,6 +559,16 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
                 isConfirming={false}
                 isLoading={isLoading}
                 variant="warning"
+              />
+
+              <ActionButton
+                icon={<Activity size={24} />}
+                title="Estado Sistema"
+                description="Ver métricas y servidores"
+                onClick={() => openForm('system-status')}
+                isConfirming={false}
+                isLoading={isLoading}
+                variant="info"
               />
             </div>
           )}
