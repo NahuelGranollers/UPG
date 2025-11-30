@@ -801,7 +801,7 @@ export default function ImpostorGame({
   const allAliveVoted = totalVotes >= alivePlayersCount;
 
   return (
-    <div className="flex flex-col h-screen w-full bg-discord-chat overflow-hidden" style={{ paddingTop: 'calc(4.5rem + env(safe-area-inset-top, 0px))', paddingLeft: 'calc(1rem + env(safe-area-inset-left, 0px))' }}>
+    <div className="flex flex-col h-screen w-full bg-discord-chat overflow-y-auto custom-scrollbar" style={{ paddingTop: 'calc(4.5rem + env(safe-area-inset-top, 0px))', paddingLeft: 'calc(1rem + env(safe-area-inset-left, 0px))' }}>
       {/* Header - Fixed */}
       <div className="w-full py-4 px-2 sm:py-4 sm:px-4 lg:py-4 lg:px-6 flex-shrink-0 z-10 bg-discord-chat">
         <div className="flex items-center justify-between">
@@ -825,7 +825,7 @@ export default function ImpostorGame({
       </div>
 
       {/* Main Content - Flex/Scrollable */}
-      <div className="flex-1 w-full px-2 sm:px-4 lg:px-6 pb-4 overflow-hidden relative">
+      <div className="flex-1 w-full px-2 sm:px-4 lg:px-6 pb-4 overflow-y-auto custom-scrollbar relative">
         {showCreateForm && !joined && (
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
             <div className="bg-discord-surface p-6 rounded-lg max-w-md w-full space-y-4">
@@ -887,7 +887,7 @@ export default function ImpostorGame({
               {/* Online Mode Card */}
               <button 
                 onClick={() => setGameMode('online')}
-                className="group relative overflow-hidden bg-discord-surface hover:bg-discord-surface-hover border border-discord-blurple/30 hover:border-discord-blurple rounded-2xl p-8 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl text-left"
+                className="discord-button w-full group relative overflow-hidden rounded-2xl p-8 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl text-left"
               >
                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                   <Globe size={120} />
@@ -910,7 +910,7 @@ export default function ImpostorGame({
               {/* Offline Mode Card */}
               <button 
                 onClick={() => setGameMode('offline')}
-                className="group relative overflow-hidden bg-discord-surface hover:bg-discord-surface-hover border border-green-500/30 hover:border-green-500 rounded-2xl p-8 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl text-left"
+                className="discord-button w-full group relative overflow-hidden rounded-2xl p-8 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl text-left"
               >
                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                   <Smartphone size={120} />
@@ -1697,8 +1697,7 @@ export default function ImpostorGame({
                             {!showGuessInput ? (
                               <button 
                                 onClick={() => setShowGuessInput(true)}
-                                className="discord-button w-full"
-                                style={{ background: '#9b59b6', color: 'white' }}
+                                className="discord-button w-full bg-discord-blurple text-white"
                               >
                                 Adivinar Palabra
                               </button>
@@ -1748,8 +1747,7 @@ export default function ImpostorGame({
                         {gameStarted && currentTurn === userId && !voting && (
                           <button
                             onClick={handleNextTurn}
-                            className="discord-button w-full animate-pulse"
-                            style={{ background: '#2ecc71', color: 'white' }}
+                            className="discord-button w-full success animate-pulse"
                           >
                             Terminar Turno
                           </button>
@@ -1757,11 +1755,7 @@ export default function ImpostorGame({
                         {isHost && assigned && (
                           <button
                             onClick={handleRevealAll}
-                            className="discord-button"
-                            style={{
-                              background: 'linear-gradient(180deg,#ff8c00,#ff4500)',
-                              color: 'white',
-                            }}
+                            className="discord-button warning"
                           >
                             Revelar todas
                           </button>
