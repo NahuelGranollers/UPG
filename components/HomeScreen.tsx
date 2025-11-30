@@ -78,7 +78,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
   }, [onJoinServer]);
 
   return (
-    <div className="flex flex-col min-h-screen w-full bg-discord-bg overflow-x-hidden overflow-y-auto relative" style={{ paddingTop: 'calc(4.5rem + env(safe-area-inset-top, 0px))' }}>
+    <div className="flex flex-col min-h-screen w-full bg-discord-bg overflow-x-hidden overflow-y-auto relative" style={{ paddingTop: 'calc(4.5rem + env(safe-area-inset-top, 0px))', paddingLeft: 'calc(1rem + env(safe-area-inset-left, 0px))' }}>
       {/* Mobile Menu Button */}
       {onOpenSidebar && (
         <button

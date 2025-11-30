@@ -7,7 +7,7 @@ interface WhoWeAreProps {
 
 const WhoWeAre: React.FC<WhoWeAreProps> = ({ onMenuToggle }) => {
   return (
-    <div className="flex flex-col h-full w-full bg-discord-chat overflow-hidden relative" style={{ paddingTop: 'calc(4.5rem + env(safe-area-inset-top, 0px))' }}>
+    <div className="flex flex-col h-full w-full bg-discord-chat overflow-hidden relative" style={{ paddingTop: 'calc(4.5rem + env(safe-area-inset-top, 0px))', paddingLeft: 'calc(1rem + env(safe-area-inset-left, 0px))' }}>
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-8">
         <div className="max-w-4xl mx-auto pt-8 md:pt-0">
           <div className="text-center mb-8 sm:mb-10 md:mb-12">
