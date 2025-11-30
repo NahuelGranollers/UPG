@@ -3,7 +3,8 @@ import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { getBackendUrl } from '../utils/config';
 import { toast } from 'sonner';
-import { Menu, Gamepad2, Users, Smartphone, Globe, Check, Eye, EyeOff } from 'lucide-react';
+import { Menu, Gamepad2, Users, Smartphone, Globe, Check, Eye, EyeOff, LogOut, Trash2, Lock, Play, Zap, Skull, User, RotateCcw, MessageSquare } from 'lucide-react';
+import Modal from './Modal';
 
 interface PlayerInfo {
   id: string;
@@ -102,6 +103,14 @@ export default function ImpostorGame({
     impostorName: string;
     reason?: string;
   } | null>(null);
+
+  // UI / Modal States
+  const [showEliminateModal, setShowEliminateModal] = useState(false);
+  const [playerToEliminate, setPlayerToEliminate] = useState<{id: string, name: string} | null>(null);
+  const [showExitModal, setShowExitModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [targetServerId, setTargetServerId] = useState<string | null>(null);
 
   // Offline Logic
   const handleAddOfflinePlayer = () => {
@@ -967,18 +976,19 @@ export default function ImpostorGame({
                     </div>
                   ) : (
                     offlinePlayers.map((p, idx) => (
-                      <div key={p.id} className="flex items-center justify-between bg-discord-surface p-3 rounded-lg animate-slide-in-up">
+                      <div key={p.id} className="flex items-center justify-between bg-discord-surface p-3 rounded-lg animate-slide-in-up group border border-transparent hover:border-discord-hover transition-all">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-discord-blurple flex items-center justify-center font-bold text-white">
+                          <div className="w-8 h-8 rounded-full bg-discord-blurple flex items-center justify-center font-bold text-white shadow-sm">
                             {p.name.charAt(0).toUpperCase()}
                           </div>
                           <span className="font-medium text-white">{p.name}</span>
                         </div>
                         <button 
                           onClick={() => setOfflinePlayers(offlinePlayers.filter(x => x.id !== p.id))}
-                          className="text-red-400 hover:text-red-300 p-2"
+                          className="text-discord-text-muted hover:text-red-400 p-2 transition-colors opacity-0 group-hover:opacity-100"
+                          title="Eliminar"
                         >
-                          ✕
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     ))
@@ -986,7 +996,8 @@ export default function ImpostorGame({
                 </div>
 
                 <div className="pt-4 space-y-1">
-                    <label className="text-xs font-bold text-discord-text-muted uppercase">
+                    <label className="text-xs font-bold text-discord-text-muted uppercase flex items-center gap-2">
+                        <Zap size={12} className="text-yellow-400" />
                         Categoría de palabras (IA)
                     </label>
                     <input 
@@ -1008,9 +1019,10 @@ export default function ImpostorGame({
                   <button 
                     onClick={handleStartOfflineGame}
                     disabled={offlinePlayers.length < 3}
-                    className={`discord-button flex-1 ${offlinePlayers.length < 3 ? 'opacity-50 cursor-not-allowed' : 'success'}`}
+                    className={`discord-button flex-1 flex items-center justify-center gap-2 ${offlinePlayers.length < 3 ? 'opacity-50 cursor-not-allowed' : 'success'}`}
                   >
-                    Iniciar Partida ({offlinePlayers.length})
+                    <Play size={18} fill="currentColor" />
+                    Iniciar ({offlinePlayers.length})
                   </button>
                 </div>
               </div>
@@ -1061,10 +1073,9 @@ export default function ImpostorGame({
                           <button
                             onClick={() => {
                               if (server.hasPassword) {
-                                const password = prompt('Ingresa la contraseña del servidor:');
-                                if (password !== null) {
-                                  handleJoinPublicServer(server.roomId, password);
-                                }
+                                setTargetServerId(server.roomId);
+                                setPasswordInput('');
+                                setShowPasswordModal(true);
                               } else {
                                 handleJoinPublicServer(server.roomId);
                               }
@@ -1087,23 +1098,41 @@ export default function ImpostorGame({
            // Offline Reveal Phase
            <div className="flex flex-col items-center justify-center h-full p-4 animate-fade-in">
              <div className="bg-discord-surface p-6 rounded-2xl max-w-md w-full border border-discord-hover shadow-2xl text-center">
-               <h2 className="text-2xl font-bold text-white mb-2">Revelar Roles</h2>
-               <p className="text-discord-text-muted mb-6">Pasa el dispositivo al jugador correspondiente</p>
+               <div className="mb-6">
+                 <div className="w-16 h-16 bg-discord-blurple/20 rounded-full flex items-center justify-center mx-auto mb-3 text-discord-blurple">
+                   <Eye size={32} />
+                 </div>
+                 <h2 className="text-2xl font-bold text-white mb-1">Revelar Roles</h2>
+                 <p className="text-discord-text-muted text-sm">Pasa el dispositivo al jugador correspondiente para que vea su rol en secreto.</p>
+               </div>
                
-               <div className="grid grid-cols-1 gap-3">
+               <div className="grid grid-cols-1 gap-3 max-h-[50vh] overflow-y-auto custom-scrollbar pr-1">
                  {offlinePlayers.map(p => (
                    <button
                      key={p.id}
                      onClick={() => !p.seen && handleOfflineReveal(p.id)}
                      disabled={p.seen}
-                     className={`p-4 rounded-xl border transition-all flex items-center justify-between ${
+                     className={`p-4 rounded-xl border transition-all flex items-center justify-between group ${
                        p.seen 
                          ? 'bg-discord-chat border-transparent opacity-50 cursor-not-allowed' 
-                         : 'bg-discord-blurple/10 border-discord-blurple hover:bg-discord-blurple/20'
+                         : 'bg-discord-surface hover:bg-discord-surface-hover border-discord-blurple/50 hover:border-discord-blurple shadow-sm hover:shadow-md hover:scale-[1.02]'
                      }`}
                    >
-                     <span className={`font-bold ${p.seen ? 'text-discord-text-muted' : 'text-white'}`}>{p.name}</span>
-                     {p.seen ? <Check className="text-green-500" /> : <Eye className="text-discord-blurple" />}
+                     <div className="flex items-center gap-3">
+                       <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${p.seen ? 'bg-gray-600' : 'bg-discord-blurple'}`}>
+                         {p.name.charAt(0).toUpperCase()}
+                       </div>
+                       <span className={`font-bold text-lg ${p.seen ? 'text-discord-text-muted line-through' : 'text-white'}`}>{p.name}</span>
+                     </div>
+                     {p.seen ? (
+                        <div className="flex items-center gap-1 text-green-500 text-sm font-bold uppercase">
+                            <Check size={18} /> Listo
+                        </div>
+                     ) : (
+                        <div className="flex items-center gap-1 text-discord-blurple text-sm font-bold uppercase group-hover:text-white transition-colors">
+                            <Eye size={18} /> Ver
+                        </div>
+                     )}
                    </button>
                  ))}
                </div>
@@ -1111,27 +1140,46 @@ export default function ImpostorGame({
 
              {/* Reveal Modal */}
              {offlineRevealingPlayer && (
-               <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center p-4">
-                 <div className="bg-discord-surface p-8 rounded-2xl max-w-sm w-full text-center space-y-6 animate-scale-in border border-discord-hover">
-                   <div className="space-y-2">
-                     <h3 className="text-discord-text-muted uppercase text-sm font-bold">Jugador</h3>
+               <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+                 <div className="bg-discord-surface p-8 rounded-2xl max-w-sm w-full text-center space-y-6 animate-scale-in border border-discord-hover shadow-2xl relative overflow-hidden">
+                   <div className="absolute inset-0 bg-gradient-to-br from-discord-blurple/5 to-transparent pointer-events-none" />
+                   
+                   <div className="space-y-2 relative z-10">
+                     <h3 className="text-discord-text-muted uppercase text-xs font-bold tracking-widest">Jugador</h3>
                      <h2 className="text-3xl font-bold text-white">
                        {offlinePlayers.find(p => p.id === offlineRevealingPlayer)?.name}
                      </h2>
                    </div>
 
-                   <div className="py-8">
-                     <div className="text-discord-text-muted uppercase text-sm font-bold mb-2">Tu Rol es</div>
+                   <div className="py-6 relative z-10">
+                     <div className="text-discord-text-muted uppercase text-xs font-bold mb-4 tracking-widest">Tu Rol Secreto</div>
                      {(() => {
                        const p = offlinePlayers.find(x => x.id === offlineRevealingPlayer);
                        if (p?.role === 'impostor') {
-                         return <div className="text-4xl font-black text-red-500 animate-pulse">IMPOSTOR</div>;
+                         return (
+                            <div className="flex flex-col items-center gap-4">
+                                <div className="w-24 h-24 bg-red-500/20 rounded-full flex items-center justify-center text-red-500 mb-2 animate-pulse">
+                                    <Skull size={48} />
+                                </div>
+                                <div className="text-5xl font-black text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)] tracking-tighter">IMPOSTOR</div>
+                                <p className="text-red-400/80 text-sm font-medium">Engaña a los demás. No dejes que te descubran.</p>
+                            </div>
+                         );
                        } else {
                          return (
-                           <div className="space-y-2">
-                             <div className="text-xl font-bold text-green-400">TRIPULANTE</div>
-                             <div className="text-3xl font-bold text-white bg-discord-chat p-4 rounded-xl border border-discord-hover">
-                               {p?.word}
+                           <div className="space-y-6">
+                             <div className="flex flex-col items-center">
+                                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center text-green-500 mb-2">
+                                    <User size={32} />
+                                </div>
+                                <div className="text-2xl font-black text-green-500 tracking-tight">CIVIL</div>
+                             </div>
+                             
+                             <div className="bg-discord-chat/50 p-6 rounded-xl border border-discord-hover">
+                               <p className="text-discord-text-muted text-xs uppercase font-bold mb-2">Tu palabra secreta</p>
+                               <div className="text-4xl font-black text-white tracking-wide">
+                                 {p?.word}
+                               </div>
                              </div>
                            </div>
                          );
@@ -1141,9 +1189,10 @@ export default function ImpostorGame({
 
                    <button 
                      onClick={handleOfflineConfirmSeen}
-                     className="discord-button success w-full py-4 text-lg"
+                     className="w-full py-4 rounded-xl bg-discord-blurple hover:bg-discord-blurple-hover text-white font-bold text-lg transition-all transform active:scale-95 shadow-lg shadow-discord-blurple/20 flex items-center justify-center gap-2"
                    >
-                     ✅ Entendido, ocultar
+                     <Check size={20} />
+                     Entendido, ocultar
                    </button>
                  </div>
                </div>
@@ -1378,57 +1427,80 @@ export default function ImpostorGame({
                         <div className="flex flex-col h-full animate-fade-in">
                             {/* Offline Turn List - Full Screen */}
                             <div className="flex-1 overflow-y-auto custom-scrollbar bg-discord-sidebar rounded-xl border border-discord-hover p-4 mb-4">
-                                <div className="flex items-center justify-between mb-4 sticky top-0 bg-discord-sidebar py-2 z-10 backdrop-blur-sm bg-discord-sidebar/90">
-                                    <h3 className="text-discord-text-muted uppercase text-xs font-bold flex items-center gap-2">
+                                <div className="flex items-center justify-between mb-6 sticky top-0 bg-discord-sidebar/95 backdrop-blur-sm py-3 z-10 border-b border-discord-hover">
+                                    <h3 className="text-discord-text-muted uppercase text-xs font-bold flex items-center gap-2 tracking-wider">
                                         <Users size={16} />
                                         Orden de Turnos
                                     </h3>
                                     <button 
                                         onClick={handleOfflineNextTurn}
-                                        className="discord-button success text-xs px-3 py-1"
+                                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 shadow-lg shadow-green-900/20 active:scale-95"
                                     >
-                                        Siguiente Turno →
+                                        <RotateCcw size={16} />
+                                        Siguiente Turno
                                     </button>
                                 </div>
                                 
-                                <div className="grid grid-cols-1 gap-3">
+                                <div className="grid grid-cols-1 gap-3 pb-2">
                                     {turnOrder.map((playerId, idx) => {
                                         const p = offlinePlayers.find(x => x.id === playerId);
                                         if (!p) return null;
                                         const isCurrent = currentTurn === playerId;
                                         
                                         return (
-                                            <div key={p.id} className={`flex items-center justify-between p-4 rounded-lg border transition-all ${
+                                            <div key={p.id} className={`relative overflow-hidden flex items-center justify-between p-4 rounded-xl border transition-all group ${
                                                 p.isDead 
-                                                    ? 'bg-discord-chat border-transparent opacity-50' 
+                                                    ? 'bg-discord-chat border-transparent opacity-60 grayscale' 
                                                     : isCurrent
-                                                        ? 'bg-discord-blurple/20 border-discord-blurple shadow-lg scale-[1.02]'
-                                                        : 'bg-discord-surface border-discord-hover'
+                                                        ? 'bg-discord-blurple/10 border-discord-blurple shadow-lg shadow-discord-blurple/10 scale-[1.01]'
+                                                        : 'bg-discord-surface border-discord-hover hover:border-discord-blurple/50'
                                             }`}>
-                                                <div className="flex items-center gap-4">
-                                                    <div className="text-discord-text-muted font-mono font-bold text-lg w-6">
-                                                        #{idx + 1}
+                                                {isCurrent && !p.isDead && (
+                                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-discord-blurple animate-pulse" />
+                                                )}
+
+                                                <div className="flex items-center gap-4 z-10">
+                                                    <div className={`font-mono font-bold text-lg w-8 h-8 flex items-center justify-center rounded-lg ${isCurrent ? 'bg-discord-blurple text-white' : 'bg-discord-chat text-discord-text-muted'}`}>
+                                                        {idx + 1}
                                                     </div>
-                                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl text-white shadow-sm ${p.isDead ? 'bg-gray-600' : 'bg-discord-blurple'}`}>
-                                                        {p.name.charAt(0).toUpperCase()}
+                                                    
+                                                    <div className="relative">
+                                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl text-white shadow-sm border-2 ${p.isDead ? 'bg-gray-700 border-gray-600' : isCurrent ? 'bg-discord-blurple border-white/20' : 'bg-discord-blurple border-transparent'}`}>
+                                                            {p.name.charAt(0).toUpperCase()}
+                                                        </div>
+                                                        {isCurrent && !p.isDead && (
+                                                            <div className="absolute -bottom-1 -right-1 bg-green-500 w-4 h-4 rounded-full border-2 border-discord-surface animate-bounce" />
+                                                        )}
                                                     </div>
+
                                                     <div>
-                                                        <div className={`font-bold text-lg ${p.isDead ? 'text-discord-text-muted line-through' : 'text-white'}`}>
+                                                        <div className={`font-bold text-lg ${p.isDead ? 'text-discord-text-muted line-through decoration-2' : 'text-white'}`}>
                                                             {p.name}
                                                         </div>
-                                                        {p.isDead && <div className="text-xs text-red-400 font-bold uppercase">Eliminado</div>}
-                                                        {isCurrent && !p.isDead && <div className="text-xs text-green-400 font-bold uppercase animate-pulse">Turno Actual</div>}
+                                                        {p.isDead ? (
+                                                            <div className="text-xs text-red-400 font-bold uppercase flex items-center gap-1">
+                                                                <Skull size={12} /> Eliminado
+                                                            </div>
+                                                        ) : isCurrent ? (
+                                                            <div className="text-xs text-green-400 font-bold uppercase animate-pulse flex items-center gap-1">
+                                                                <MessageSquare size={12} /> Turno Actual
+                                                            </div>
+                                                        ) : (
+                                                            <div className="text-xs text-discord-text-muted font-medium">Esperando...</div>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 
                                                 {!p.isDead && (
                                                     <button 
                                                         onClick={() => {
-                                                            if(confirm(`¿Estás seguro de que quieres eliminar a ${p.name}?`)) handleOfflineEliminate(p.id);
+                                                            setPlayerToEliminate({ id: p.id, name: p.name });
+                                                            setShowEliminateModal(true);
                                                         }}
-                                                        className="discord-button danger text-sm px-4 py-2 shadow-md hover:bg-red-600"
+                                                        className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white p-3 rounded-lg transition-all active:scale-95 border border-red-500/20 hover:border-red-500"
+                                                        title="Eliminar Jugador"
                                                     >
-                                                        Eliminar
+                                                        <Trash2 size={20} />
                                                     </button>
                                                 )}
                                             </div>
@@ -1437,17 +1509,12 @@ export default function ImpostorGame({
                                 </div>
                             </div>
                             
-                            <div className="mt-auto">
+                            <div className="mt-auto pt-4 border-t border-discord-hover">
                                 <button 
-                                    onClick={() => {
-                                        if(confirm('¿Terminar partida y volver al menú?')) {
-                                            setGameMode(null);
-                                            setJoined(false);
-                                            setOfflinePlayers([]);
-                                        }
-                                    }}
-                                    className="discord-button secondary w-full"
+                                    onClick={() => setShowExitModal(true)}
+                                    className="discord-button secondary w-full flex items-center justify-center gap-2 py-3"
                                 >
+                                    <LogOut size={18} />
                                     Salir de la Partida
                                 </button>
                             </div>
@@ -1859,6 +1926,136 @@ export default function ImpostorGame({
           </button>
         </div>
       )}
+      {/* Modals */}
+      <Modal
+        isOpen={showEliminateModal}
+        onClose={() => setShowEliminateModal(false)}
+        title="Confirmar Eliminación"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="flex flex-col items-center text-center p-4">
+            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center text-red-500 mb-4">
+              <Trash2 size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">¿Eliminar Jugador?</h3>
+            <p className="text-discord-text-muted">
+              ¿Estás seguro de que quieres eliminar a <span className="font-bold text-white">{playerToEliminate?.name}</span>?
+              <br />
+              Esta acción no se puede deshacer.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowEliminateModal(false)}
+              className="discord-button secondary flex-1"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => {
+                if (playerToEliminate) handleOfflineEliminate(playerToEliminate.id);
+                setShowEliminateModal(false);
+              }}
+              className="discord-button danger flex-1"
+            >
+              Sí, Eliminar
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={showExitModal}
+        onClose={() => setShowExitModal(false)}
+        title="Salir de la Partida"
+        size="sm"
+        headerColor="bg-yellow-600"
+      >
+        <div className="space-y-4">
+          <div className="flex flex-col items-center text-center p-4">
+            <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center text-yellow-500 mb-4">
+              <LogOut size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">¿Abandonar Partida?</h3>
+            <p className="text-discord-text-muted">
+              El progreso actual se perderá y volverás al menú principal.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowExitModal(false)}
+              className="discord-button secondary flex-1"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => {
+                setGameMode(null);
+                setJoined(false);
+                setOfflinePlayers([]);
+                setShowExitModal(false);
+              }}
+              className="discord-button danger flex-1"
+            >
+              Salir
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        title="Servidor Protegido"
+        size="sm"
+        headerColor="bg-discord-blurple"
+      >
+        <div className="space-y-4">
+          <div className="flex flex-col items-center text-center p-4">
+            <div className="w-16 h-16 bg-discord-blurple/20 rounded-full flex items-center justify-center text-discord-blurple mb-4">
+              <Lock size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Contraseña Requerida</h3>
+            <p className="text-discord-text-muted mb-4">
+              Este servidor está protegido. Ingresa la contraseña para entrar.
+            </p>
+            <input
+              type="password"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              placeholder="Contraseña..."
+              className="discord-input w-full text-center"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && targetServerId) {
+                  handleJoinPublicServer(targetServerId, passwordInput);
+                  setShowPasswordModal(false);
+                }
+              }}
+            />
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowPasswordModal(false)}
+              className="discord-button secondary flex-1"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => {
+                if (targetServerId) {
+                  handleJoinPublicServer(targetServerId, passwordInput);
+                  setShowPasswordModal(false);
+                }
+              }}
+              className="discord-button success flex-1"
+            >
+              Entrar
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

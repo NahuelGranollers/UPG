@@ -7,9 +7,10 @@ interface ModalProps {
   title: string;
   children: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  headerColor?: string;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 'md' }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 'md', headerColor = 'bg-gradient-to-r from-red-600 to-orange-600' }) => {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -39,7 +40,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
         className={`bg-discord-sidebar rounded-lg shadow-2xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-hidden animate-scaleIn border border-gray-800`}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-red-600 to-orange-600 p-4 flex items-center justify-between">
+        <div className={`${headerColor} p-4 flex items-center justify-between`}>
           <h2 className="text-xl font-bold text-white">{title}</h2>
           <button
             onClick={onClose}

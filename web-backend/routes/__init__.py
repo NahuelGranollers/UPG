@@ -11,6 +11,7 @@ auth = Blueprint('auth', __name__, url_prefix='/auth')
 import hashlib
 import json
 import os
+import psutil
 
 # --- Admin Routes ---
 @api.route('/admin/unlock', methods=['POST'])
@@ -54,6 +55,23 @@ def admin_unlock():
 @api.route('/health', methods=['GET'])
 def health():
     return {'status': 'ok'}, 200
+
+@api.route('/system-stats', methods=['GET'])
+def system_stats():
+    try:
+        cpu_percent = psutil.cpu_percent(interval=None)
+        memory = psutil.virtual_memory()
+        return {
+            'cpu': cpu_percent,
+            'memory': {
+                'percent': memory.percent,
+                'used': memory.used,
+                'total': memory.total
+            }
+        }, 200
+    except Exception as e:
+        current_app.logger.error(f"Error getting system stats: {e}")
+        return {'error': 'Failed to get stats'}, 500
 
 @api.route('/servers', methods=['GET'])
 def get_servers():

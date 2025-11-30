@@ -17,7 +17,7 @@ const SystemStatus = ({ socket }: { socket: Socket | null }) => {
     const [mcStatus, setMcStatus] = useState<any>(null);
     const [loadingMc, setLoadingMc] = useState(true);
     const [backendLatency, setBackendLatency] = useState<number | null>(null);
-    const [mockStats, setMockStats] = useState({ cpu: 0, memory: 0, requests: 0 });
+    const [systemStats, setSystemStats] = useState<{ cpu: number, memory: { percent: number } } | null>(null);
 
     useEffect(() => {
         // Fetch MC Status
@@ -35,14 +35,20 @@ const SystemStatus = ({ socket }: { socket: Socket | null }) => {
             .then(() => setBackendLatency(Date.now() - start))
             .catch(() => setBackendLatency(-1));
 
-        // Mock Stats Interval
-        const interval = setInterval(() => {
-            setMockStats({
-                cpu: Math.floor(Math.random() * 30) + 10, // 10-40%
-                memory: Math.floor(Math.random() * 20) + 40, // 40-60%
-                requests: Math.floor(Math.random() * 100) + 50
-            });
-        }, 2000);
+        // Real System Stats
+        const fetchStats = () => {
+            fetch(`${getBackendUrl()}/api/system-stats`)
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.error) {
+                        setSystemStats(data);
+                    }
+                })
+                .catch(console.error);
+        };
+
+        fetchStats();
+        const interval = setInterval(fetchStats, 2000);
 
         return () => clearInterval(interval);
     }, []);
@@ -78,7 +84,7 @@ const SystemStatus = ({ socket }: { socket: Socket | null }) => {
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <span className="text-discord-text-muted">Versión</span>
-                                        <span className="text-discord-text-normal text-xs">{mcStatus.version}</span>
+                                        <span className="text-discord-text-normal text-xs">1.20.4 - 1.21.10</span>
                                     </div>
                                 </>
                             )}
@@ -117,44 +123,40 @@ const SystemStatus = ({ socket }: { socket: Socket | null }) => {
                 </div>
             </div>
 
-            {/* Mock Metrics */}
+            {/* Real Metrics */}
             <div className="bg-discord-dark p-4 rounded-lg border border-discord-border">
                 <div className="flex items-center gap-2 mb-4 text-discord-text-header font-bold">
                     <Activity className="text-purple-400" size={20} />
-                    <h3>Métricas del Sistema (Simulado)</h3>
+                    <h3>Métricas del Servidor (Real)</h3>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    <div className="text-center">
-                        <div className="text-discord-text-muted text-xs uppercase font-bold mb-2">Uso de CPU</div>
-                        <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
-                            <svg className="w-full h-full transform -rotate-90">
-                                <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-discord-surface" />
-                                <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-purple-500 transition-all duration-500" strokeDasharray={`${mockStats.cpu * 2.51} 251`} />
-                            </svg>
-                            <span className="absolute text-xl font-bold text-white">{mockStats.cpu}%</span>
+                {systemStats ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div className="text-center">
+                            <div className="text-discord-text-muted text-xs uppercase font-bold mb-2">Uso de CPU</div>
+                            <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
+                                <svg className="w-full h-full transform -rotate-90">
+                                    <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-discord-surface" />
+                                    <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-purple-500 transition-all duration-500" strokeDasharray={`${systemStats.cpu * 2.51} 251`} />
+                                </svg>
+                                <span className="absolute text-xl font-bold text-white">{systemStats.cpu}%</span>
+                            </div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-discord-text-muted text-xs uppercase font-bold mb-2">Memoria RAM</div>
+                            <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
+                                <svg className="w-full h-full transform -rotate-90">
+                                    <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-discord-surface" />
+                                    <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-blue-500 transition-all duration-500" strokeDasharray={`${systemStats.memory.percent * 2.51} 251`} />
+                                </svg>
+                                <span className="absolute text-xl font-bold text-white">{systemStats.memory.percent}%</span>
+                            </div>
                         </div>
                     </div>
-                    <div className="text-center">
-                        <div className="text-discord-text-muted text-xs uppercase font-bold mb-2">Memoria RAM</div>
-                        <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
-                            <svg className="w-full h-full transform -rotate-90">
-                                <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-discord-surface" />
-                                <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-blue-500 transition-all duration-500" strokeDasharray={`${mockStats.memory * 2.51} 251`} />
-                            </svg>
-                            <span className="absolute text-xl font-bold text-white">{mockStats.memory}%</span>
-                        </div>
+                ) : (
+                    <div className="text-center py-8 text-discord-text-muted animate-pulse">
+                        Conectando con el servidor...
                     </div>
-                    <div className="text-center">
-                        <div className="text-discord-text-muted text-xs uppercase font-bold mb-2">Requests / min</div>
-                        <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
-                            <div className="text-3xl font-bold text-green-400 animate-pulse">{mockStats.requests}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div className="text-xs text-discord-text-muted text-center italic">
-                * Algunas métricas son simuladas para demostración visual.
+                )}
             </div>
         </div>
     );
@@ -478,8 +480,14 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
-      <div className="discord-card max-w-2xl w-full max-h-[90vh] overflow-hidden animate-scaleIn flex flex-col">
+    <div 
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn"
+      onClick={onClose}
+    >
+      <div 
+        className="discord-card max-w-2xl w-full max-h-[90vh] overflow-hidden animate-scaleIn flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="bg-discord-blurple p-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
