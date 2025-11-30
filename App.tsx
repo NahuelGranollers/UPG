@@ -409,7 +409,7 @@ function MainApp() {
       {activeEffect === 'jumpscare' && (
         <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center animate-pulse">
           <img 
-            src="https://tenor.com/ioss9i5xV4L.gif" 
+            src="/scare.gif" 
             alt="scare" 
             className="w-full h-full object-cover"
           />
