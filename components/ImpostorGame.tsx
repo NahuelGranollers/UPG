@@ -940,7 +940,7 @@ export default function ImpostorGame({
                 <p className="text-discord-text-muted text-sm">Añade los nombres de los jugadores</p>
               </div>
 
-              <div className="space-y-4 overflow-y-auto custom-scrollbar max-h-[80vh] pb-[7vh]">
+              <div className="space-y-4 overflow-y-auto custom-scrollbar max-h-[80vh] pb-[7vh]" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -953,6 +953,11 @@ export default function ImpostorGame({
                     autoComplete="off"
                     inputMode="text"
                     spellCheck={false}
+                    name="new-player-name"
+                    id="new-player-name"
+                    enterKeyHint="done"
+                    autoCorrect="off"
+                    autoCapitalize="off"
                   />
                   <button 
                     onClick={handleAddOfflinePlayer}
