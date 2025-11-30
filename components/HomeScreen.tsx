@@ -78,7 +78,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
   }, [onJoinServer]);
 
   return (
-    <div className="flex flex-col h-full w-full bg-discord-bg overflow-hidden relative">
+    <div className="flex flex-col min-h-screen w-full bg-discord-bg overflow-x-hidden overflow-y-auto relative">
       {/* Mobile Menu Button */}
       {onOpenSidebar && (
         <button
@@ -89,10 +89,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
         </button>
       )}
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 lg:p-12 flex flex-col items-center">
-        
-        {/* Unified Hero Section */}
-        <div className="w-full max-w-4xl liquid-glass mb-8 mt-8 md:mt-0 p-6 sm:p-10 md:p-14 flex flex-col items-center text-center">
+      <div className="flex-1 custom-scrollbar p-4 md:p-8 lg:p-12 flex flex-col items-center justify-center">
+        {/* Responsive Hero Section - always fully visible */}
+        <div
+          className="liquid-glass mb-8 mt-8 md:mt-0 p-6 sm:p-10 md:p-14 flex flex-col items-center text-center"
+          style={{
+            width: '100%',
+            maxWidth: 'clamp(320px, 90vw, 900px)',
+            minWidth: 'min(320px, 100vw)',
+          }}
+        >
           <SafeImage
             src="/upg.png"
             alt="UPG"
@@ -102,10 +108,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 drop-shadow-md">
             UPG
           </h1>
-          <p className="text-base sm:text-lg text-discord-text-muted max-w-xl mb-8">
+          <p className="text-base sm:text-lg text-discord-text-muted mb-8" style={{maxWidth: 'clamp(220px, 80vw, 600px)'}}>
             Bienvenido a la comunidad oficial. Aquí encontrarás canales, eventos y salas de voz para echar unas partidillas. Mantén el respeto y disfruta.
           </p>
-          
           <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-row gap-3 w-full sm:max-w-md md:max-w-none justify-center">
             <button 
               onClick={onGoToChat} 
@@ -113,7 +118,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
             >
               Entrar al Chat
             </button>
-            
             <button 
               onClick={() => onCreateServer('impostor')}
               className="glass-btn w-full md:w-auto px-8 py-3 text-lg font-bold relative overflow-hidden group"
@@ -130,7 +134,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
                 style={{ left: '-60px' }}
               />
             </button>
-
             <button 
               onClick={onGoToWhoWeAre} 
               className="glass-btn w-full md:w-auto px-8 py-3 text-lg font-bold sm:col-span-2 md:col-span-1"
