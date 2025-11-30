@@ -214,8 +214,9 @@ const HallOfFame: React.FC<HallOfFameProps> = ({ onOpenSidebar }) => {
                               if (e.key === 'Enter' || e.key === ' ') setSelected(ach);
                             }}
                           >
-                            <div className="absolute inset-0 flex items-center justify-center text-white/95">
-                              <ach.icon className="w-12 h-12" style={{ color: ach.color }} />
+                            <div className="absolute inset-0 flex flex-col items-center justify-center text-white/95 p-2 text-center">
+                              <ach.icon className="w-8 h-8 mb-1" style={{ color: ach.color }} />
+                              <span className="text-[10px] leading-tight font-bold line-clamp-2">{ach.title}</span>
                             </div>
                           </div>
                         ) : (
@@ -270,12 +271,6 @@ const HallOfFame: React.FC<HallOfFameProps> = ({ onOpenSidebar }) => {
               <div className="mt-6 flex justify-end gap-3">
                 <button className="discord-button secondary" onClick={() => setSelected(null)}>
                   Cerrar
-                </button>
-                <button
-                  className="discord-button"
-                  onClick={() => alert('Ver historial (placeholder)')}
-                >
-                  Ver historial
                 </button>
               </div>
             </div>

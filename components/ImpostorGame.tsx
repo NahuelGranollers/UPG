@@ -1216,7 +1216,7 @@ export default function ImpostorGame({
                       {players.length} jugador{players.length !== 1 ? 'es' : ''}
                     </div>
                     {timeLeft !== null && timeLeft > 0 && (
-                      <div className="text-xl font-mono font-bold text-yellow-400">
+                      <div className="text-sm sm:text-xl font-mono font-bold text-yellow-400">
                         {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
                       </div>
                     )}

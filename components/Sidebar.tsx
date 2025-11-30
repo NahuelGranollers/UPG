@@ -3,7 +3,6 @@ import { useSocket } from '../context/SocketContext';
 import { useUsers } from '../context/UserContext';
 import { Home, Shield, Users, Vote, Newspaper, Trophy, Gamepad2, Wifi, WifiOff } from 'lucide-react';
 import SafeImage from './SafeImage';
-import AdminPanel from './AdminPanel';
 import { UserRole, User } from '../types';
 
 interface SidebarProps {
@@ -11,6 +10,7 @@ interface SidebarProps {
   setCurrentUser: (user: User | null) => void;
   onHomeClick?: () => void;
   onUPGClick?: () => void;
+  onOpenAdmin?: () => void;
   // activeSection allows parent to indicate which sidebar node is active
   activeSection?: 'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor' | 'news' | 'hall_of_fame';
   // navigation callback when clicking a sidebar node
@@ -25,11 +25,11 @@ const Sidebar: React.FC<SidebarProps> = memo(
     setCurrentUser: _setCurrentUser,
     onHomeClick,
     onUPGClick,
+    onOpenAdmin,
     activeSection,
     onNavigate,
   }) => {
     const { users } = useUsers();
-    const [showAdminPanel, setShowAdminPanel] = useState(false);
     // Impostor is now a full page route/view
     const isAdmin = currentUser?.role === UserRole.ADMIN;
 
@@ -209,23 +209,13 @@ const Sidebar: React.FC<SidebarProps> = memo(
           <>
             <div className="w-10 h-[2px] bg-discord-chat rounded-lg mx-auto mt-auto" />
             <button
-              onClick={() => setShowAdminPanel(true)}
+              onClick={onOpenAdmin}
               className="w-14 h-14 bg-red-600 hover:bg-red-700 text-white rounded-[28px] hover:rounded-[18px] transition-all duration-200 flex items-center justify-center"
               title="Panel de Administración"
             >
               <Shield size={28} />
             </button>
           </>
-        )}
-
-        {/* Admin Panel Modal */}
-        {isAdmin && (
-          <AdminPanel
-            isOpen={showAdminPanel}
-            onClose={() => setShowAdminPanel(false)}
-            currentUser={currentUser}
-            socket={socket}
-          />
         )}
 
         {/* Impostor is displayed as a full page in App when selected */}

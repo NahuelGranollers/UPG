@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider, useSocket } from './context/SocketContext';
 import { UserProvider, useUsers } from './context/UserContext';
 import { useChat } from './hooks/useChat';
-import { AppView, ChannelData, User } from './types';
+import { AppView, ChannelData, User, UserRole } from './types';
 import useVoice from './hooks/useVoice';
 
 // Componentes críticos (carga inmediata)
@@ -22,6 +22,7 @@ const WhoWeAre = React.lazy(() => import('./components/WhoWeAre'));
 const Voting = React.lazy(() => import('./components/Voting'));
 const UPGNews = React.lazy(() => import('./components/UPGNews'));
 const HallOfFame = React.lazy(() => import('./components/HallOfFame'));
+const AdminPanel = React.lazy(() => import('./components/AdminPanel'));
 
 function MainApp() {
   const { currentUser, isLoading, loginWithDiscord, loginAsGuest, logout } = useAuth();
@@ -30,6 +31,7 @@ function MainApp() {
 
   const [activeView, setActiveView] = useState<AppView>(AppView.IMPOSTOR);
   const [showHome, setShowHome] = useState(true);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [currentChannel, setCurrentChannel] = useState<ChannelData>({
     id: 'general',
     name: 'general',
@@ -204,6 +206,7 @@ function MainApp() {
           onNavigate={navigateToSection}
           onHomeClick={handleHomeClick}
           onUPGClick={handleUPGClick}
+          onOpenAdmin={() => setShowAdminPanel(true)}
         />
         <div className="flex flex-1 min-w-0 relative">
           <Suspense
@@ -389,6 +392,18 @@ function MainApp() {
           activeSection={activeSection}
         />
       </div>
+
+      {/* Admin Panel Modal */}
+      {currentUser?.role === UserRole.ADMIN && (
+        <Suspense fallback={null}>
+          <AdminPanel
+            isOpen={showAdminPanel}
+            onClose={() => setShowAdminPanel(false)}
+            currentUser={currentUser}
+            socket={socket}
+          />
+        </Suspense>
+      )}
 
       {/* Effects Overlay */}
       {activeEffect === 'jumpscare' && (

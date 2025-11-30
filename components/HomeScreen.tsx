@@ -126,12 +126,20 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
             <Gamepad2 className="text-discord-blurple" />
             Servidores Activos
           </h2>
-          <div className="flex gap-2">
+          <div className="flex gap-2 relative group">
             <button 
               onClick={() => onCreateServer('impostor')}
-              className="glass-btn flex items-center gap-1"
+              className="glass-btn flex items-center gap-2 px-6 py-3 text-lg font-bold relative overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-discord-blurple/20"
             >
-              <Plus size={16} /> Crear Impostor
+              <Plus size={24} /> Crear Impostor
+              
+              {/* Easter Egg Animation */}
+              <img 
+                src="https://media.tenor.com/y246e3Tdo0kAAAAj/among-us.gif" 
+                alt="Among Us" 
+                className="absolute top-1/2 -translate-y-1/2 w-10 h-10 pointer-events-none hidden group-hover:block animate-run-across"
+                style={{ left: '-40px' }}
+              />
             </button>
           </div>
         </div>
