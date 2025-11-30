@@ -79,7 +79,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         const audio = new Audio('https://www.myinstants.com/media/sounds/fnaf-scream.mp3');
         audio.volume = 0.5;
         audio.play().catch(e => console.error(e));
-        setTimeout(() => setActiveEffect(null), 1500);
+        setTimeout(() => setActiveEffect(null), 500);
       } else if (effect === 'fart') {
          const audio = new Audio('/fart.mp3');
          audio.volume = 0.8;
