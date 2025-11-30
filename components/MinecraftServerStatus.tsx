@@ -31,7 +31,7 @@ const MinecraftServerStatus: React.FC = () => {
   // Let's set it to 48 hours from the moment this code runs, or better, a fixed timestamp if I knew the event.
   // Since I don't, I'll set it to a fixed date 2 days in the future from the current context date (Nov 28).
   // Target: Nov 30, 2025 21:00:00
-  const TARGET_DATE = new Date('2025-11-30T21:00:00').getTime();
+  const TARGET_DATE = new Date('2025-11-30T21:15:00').getTime();
 
   useEffect(() => {
     const timer = setInterval(() => {
