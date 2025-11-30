@@ -27,10 +27,9 @@ def allow_all_origins(origin):
 from flask_cors import CORS
 CORS(app, resources={r"/*": {"origins": ["https://unaspartidillas.online"]}}, supports_credentials=True)
 Compress(app)
-socketio = SocketIO(app, cors_allowed_origins=allow_all_origins, async_mode='eventlet')
+socketio = SocketIO(app, cors_allowed_origins=["https://unaspartidillas.online"], async_mode='threading')
 
 app.register_blueprint(api)
-app.register_blueprint(servers_api)
 app.register_blueprint(auth)
 app.register_blueprint(bot_bp)
 app.register_blueprint(cookie_clicker_bp)
