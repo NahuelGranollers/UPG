@@ -91,28 +91,32 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
 
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 lg:p-12 flex flex-col items-center">
         
-        {/* Mobile-Optimized Header */}
-        <div className="md:hidden w-full flex flex-col items-center gap-6 mt-12 mb-8">
+        {/* Unified Hero Section */}
+        <div className="w-full max-w-4xl liquid-glass mb-8 mt-8 md:mt-0 p-6 sm:p-10 md:p-14 flex flex-col items-center text-center">
           <SafeImage
             src="/upg.png"
             alt="UPG"
-            className="w-24 h-24 object-cover rounded-2xl shadow-lg"
+            className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-2xl shadow-lg mb-6"
             fallbackSrc="/upg.png"
           />
-          <div className="text-center">
-            <h1 className="text-3xl font-black text-white mb-2">UPG</h1>
-            <p className="text-discord-text-muted text-sm px-4">
-              Comunidad oficial de Unas Partidillas Gang
-            </p>
-          </div>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 drop-shadow-md">
+            UPG
+          </h1>
+          <p className="text-base sm:text-lg text-discord-text-muted max-w-xl mb-8">
+            Bienvenido a la comunidad oficial. Aquí encontrarás canales, eventos y salas de voz para echar unas partidillas. Mantén el respeto y disfruta.
+          </p>
           
-          <div className="grid grid-cols-1 gap-3 w-full max-w-xs">
-            <button onClick={onGoToChat} className="glass-btn primary w-full py-4 text-lg font-bold">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-row gap-3 w-full sm:max-w-md md:max-w-none justify-center">
+            <button 
+              onClick={onGoToChat} 
+              className="glass-btn primary w-full md:w-auto px-8 py-3 text-lg font-bold"
+            >
               Entrar al Chat
             </button>
+            
             <button 
               onClick={() => onCreateServer('impostor')}
-              className="glass-btn w-full py-4 text-lg font-bold relative overflow-hidden group"
+              className="glass-btn w-full md:w-auto px-8 py-3 text-lg font-bold relative overflow-hidden group"
             >
               <div className="flex items-center justify-center gap-2">
                 <Plus size={20} />
@@ -126,68 +130,29 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
                 style={{ left: '-60px' }}
               />
             </button>
-            <button onClick={onGoToWhoWeAre} className="glass-btn w-full py-3 text-base font-medium text-discord-text-muted">
-              ¿Qué es esto?
-            </button>
-          </div>
-        </div>
 
-        {/* Desktop Hero Section */}
-        <div className="hidden md:block max-w-4xl w-full liquid-glass mb-12 mt-8 md:mt-0">
-        <div className="p-6 sm:p-10 md:p-14 lg:p-16 flex flex-col justify-center items-center text-center gap-6 sm:gap-8">
-          <SafeImage
-            src="/upg.png"
-            alt="UPG"
-            className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-2xl shadow-lg"
-            fallbackSrc="/upg.png"
-          />
-          <h1 className="text-2xl sm:text-4xl font-black text-white drop-shadow-md">Unas Partidillas Gang (UPG)</h1>
-          <p className="text-base sm:text-lg text-gray-200 max-w-lg">
-            Bienvenido a la comunidad oficial. Aquí encontrarás canales, eventos y salas de voz para echar unas partidillas. Mantén el
-            respeto y disfruta.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center gap-3 mt-3 w-full sm:w-auto">
-            <button onClick={onGoToChat} className="glass-btn primary w-full sm:w-auto px-8 py-3 text-lg font-bold">
-              Ir al Chat
-            </button>
-            <button onClick={onGoToWhoWeAre} className="glass-btn w-full sm:w-auto px-8 py-3 text-lg font-bold">
+            <button 
+              onClick={onGoToWhoWeAre} 
+              className="glass-btn w-full md:w-auto px-8 py-3 text-lg font-bold sm:col-span-2 md:col-span-1"
+            >
               ¿Qué es UPG?
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Minecraft Server Status - Hidden on mobile to simplify */}
-      <div className="hidden md:block w-full">
-        <MinecraftServerStatus />
-      </div>
-
-      {/* Active Servers Section */}
-      <div className="max-w-6xl w-full">
-        <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
-          <h2 className="text-xl md:text-2xl font-bold text-discord-text-header flex items-center gap-2">
-            <Gamepad2 className="text-discord-blurple" />
-            Servidores Activos
-          </h2>
-          {/* Desktop Create Button */}
-          <div className="hidden md:flex gap-2 relative group w-full sm:w-auto">
-            <button 
-              onClick={() => onCreateServer('impostor')}
-              className="glass-btn flex items-center justify-center gap-2 px-6 py-3 text-lg font-bold relative overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-discord-blurple/20 w-full sm:w-auto"
-            >
-              <Plus size={24} /> Crear Impostor
-              
-              {/* Easter Egg Animation */}
-              <img 
-                src="/among-us.gif" 
-                alt="Among Us" 
-                className="absolute top-0 h-full w-auto pointer-events-none hidden group-hover:block animate-run-across"
-                style={{ left: '-60px' }}
-              />
-            </button>
-          </div>
+        {/* Minecraft Server Status */}
+        <div className="w-full max-w-4xl mb-8">
+          <MinecraftServerStatus />
         </div>
+
+        {/* Active Servers Section */}
+        <div className="max-w-6xl w-full">
+          <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
+            <h2 className="text-xl md:text-2xl font-bold text-discord-text-header flex items-center gap-2">
+              <Gamepad2 className="text-discord-blurple" />
+              Servidores Activos
+            </h2>
+          </div>
 
         {loading ? (
           <div className="text-center py-12 text-discord-text-muted">Cargando servidores...</div>
