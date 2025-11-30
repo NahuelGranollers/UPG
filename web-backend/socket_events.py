@@ -40,6 +40,12 @@ def apply_troll_transform(user_id, text):
     except:
         return text
 
+def is_admin(user_id):
+    if user_id == ADMIN_DISCORD_ID: return True
+    # Check session or DB if needed, but socket doesn't have easy access to session
+    # For now rely on ID check or if we passed a token
+    return False
+
 def register_socket_events(socketio, app=None):
     @socketio.on('admin:reset-ips-cache')
     def on_admin_reset_ips_cache(data):
@@ -55,44 +61,44 @@ def register_socket_events(socketio, app=None):
         # Optionally clear other in-memory user/session caches
         return {'ok': True}
     
-def handle_bot_response(channel_id, user_name, user_message):
-    try:
-        if app:
-            with app.app_context():
-                # Use the new Demonio Gamer logic
-                # We use channel_id as session_id to keep context per channel
-                text, model_name = generate_demonio_response(user_message, username=user_name, session_id=channel_id)
-                
-                if text:
-                    bot_msg = Message(
-                        id=str(uuid.uuid4()),
-                        channel_id=channel_id,
-                        user_id='bot',
-                        username='UPG',
-                        avatar=BOT_USER['avatar'],
-                        content=text,
-                        timestamp=datetime.utcnow(),
-                        is_system=False
-                    )
-                    db.session.add(bot_msg)
-                    db.session.commit()
-                    socketio.emit('message:received', bot_msg.to_dict(), room=channel_id)
-        else:
-            logger.error("App context missing in handle_bot_response - Cannot generate response")
+    def handle_bot_response(channel_id, user_name, user_message):
+        try:
+            if app:
+                with app.app_context():
+                    # Use the new Demonio Gamer logic
+                    # We use channel_id as session_id to keep context per channel
+                    text, model_name = generate_demonio_response(user_message, username=user_name, session_id=channel_id)
+                    
+                    if text:
+                        bot_msg = Message(
+                            id=str(uuid.uuid4()),
+                            channel_id=channel_id,
+                            user_id='bot',
+                            username='UPG',
+                            avatar=BOT_USER['avatar'],
+                            content=text,
+                            timestamp=datetime.utcnow(),
+                            is_system=False
+                        )
+                        db.session.add(bot_msg)
+                        db.session.commit()
+                        socketio.emit('message:received', bot_msg.to_dict(), room=channel_id)
+            else:
+                logger.error("App context missing in handle_bot_response - Cannot generate response")
 
-    except Exception as e:
-        logger.error(f"Bot error: {e}")
-        error_msg = {
-            'id': str(uuid.uuid4()),
-            'channelId': channel_id,
-            'userId': 'bot',
-            'username': 'UPG',
-            'avatar': BOT_USER['avatar'],
-            'content': '¡Ups! Mis circuitos se han cruzado. Inténtalo de nuevo más tarde. 🤖💥',
-            'timestamp': datetime.utcnow().isoformat(),
-            'isSystem': False
-        }
-        socketio.emit('message:received', error_msg, room=channel_id)
+        except Exception as e:
+            logger.error(f"Bot error: {e}")
+            error_msg = {
+                'id': str(uuid.uuid4()),
+                'channelId': channel_id,
+                'userId': 'bot',
+                'username': 'UPG',
+                'avatar': BOT_USER['avatar'],
+                'content': '¡Ups! Mis circuitos se han cruzado. Inténtalo de nuevo más tarde. 🤖💥',
+                'timestamp': datetime.utcnow().isoformat(),
+                'isSystem': False
+            }
+            socketio.emit('message:received', error_msg, room=channel_id)
     
     @socketio.on('connect')
     def on_connect():
@@ -829,12 +835,6 @@ def handle_bot_response(channel_id, user_name, user_message):
         
         if target_sid:
             socketio.emit('admin:effect-triggered', {'effect': effect}, room=target_sid)
-
-    def is_admin(user_id):
-        if user_id == ADMIN_DISCORD_ID: return True
-        # Check session or DB if needed, but socket doesn't have easy access to session
-        # For now rely on ID check or if we passed a token
-        return False
 
     # Helper functions
     def get_global_voice_state():

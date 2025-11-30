@@ -68,7 +68,7 @@ const MinecraftServerStatus: React.FC = () => {
 
         {/* Countdown Overlay removed as requested */}
 
-        <div className="relative p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 md:gap-8 opacity-20 pointer-events-none">
+        <div className="relative p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 md:gap-8">
           
           {/* Server Icon / Status Indicator */}
           <div className="relative shrink-0">
