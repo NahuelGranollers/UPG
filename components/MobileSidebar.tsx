@@ -19,7 +19,7 @@ const MobileSidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate, currentUs
       <div className={`absolute inset-0 bg-black/50`} onClick={onClose} />
 
       <aside
-        className={`absolute left-0 top-0 h-full w-auto discord-sidebar shadow-xl transform transition-transform ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`absolute left-0 top-0 h-full w-auto shadow-xl transform transition-transform ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
         style={{ transitionProperty: 'transform', transitionDuration: '220ms' }}
       >
         <Sidebar

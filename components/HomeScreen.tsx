@@ -90,8 +90,50 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
       )}
 
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 lg:p-12 flex flex-col items-center">
-        {/* Hero Section */}
-        <div className="max-w-4xl w-full liquid-glass mb-12 mt-8 md:mt-0">
+        
+        {/* Mobile-Optimized Header */}
+        <div className="md:hidden w-full flex flex-col items-center gap-6 mt-12 mb-8">
+          <SafeImage
+            src="/upg.png"
+            alt="UPG"
+            className="w-24 h-24 object-cover rounded-2xl shadow-lg"
+            fallbackSrc="/upg.png"
+          />
+          <div className="text-center">
+            <h1 className="text-3xl font-black text-white mb-2">UPG</h1>
+            <p className="text-discord-text-muted text-sm px-4">
+              Comunidad oficial de Unas Partidillas Gang
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 gap-3 w-full max-w-xs">
+            <button onClick={onGoToChat} className="glass-btn primary w-full py-4 text-lg font-bold">
+              Entrar al Chat
+            </button>
+            <button 
+              onClick={() => onCreateServer('impostor')}
+              className="glass-btn w-full py-4 text-lg font-bold relative overflow-hidden group"
+            >
+              <div className="flex items-center justify-center gap-2">
+                <Plus size={20} />
+                <span>Crear Impostor</span>
+              </div>
+               {/* Easter Egg Animation */}
+               <img 
+                src="/among-us.gif" 
+                alt="Among Us" 
+                className="absolute top-0 h-full w-auto pointer-events-none hidden group-hover:block animate-run-across"
+                style={{ left: '-60px' }}
+              />
+            </button>
+            <button onClick={onGoToWhoWeAre} className="glass-btn w-full py-3 text-base font-medium text-discord-text-muted">
+              ¿Qué es esto?
+            </button>
+          </div>
+        </div>
+
+        {/* Desktop Hero Section */}
+        <div className="hidden md:block max-w-4xl w-full liquid-glass mb-12 mt-8 md:mt-0">
         <div className="p-6 sm:p-10 md:p-14 lg:p-16 flex flex-col justify-center items-center text-center gap-6 sm:gap-8">
           <SafeImage
             src="/upg.png"
@@ -116,17 +158,20 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
         </div>
       </div>
 
-      {/* Minecraft Server Status */}
-      <MinecraftServerStatus />
+      {/* Minecraft Server Status - Hidden on mobile to simplify */}
+      <div className="hidden md:block w-full">
+        <MinecraftServerStatus />
+      </div>
 
       {/* Active Servers Section */}
       <div className="max-w-6xl w-full">
         <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
-          <h2 className="text-2xl font-bold text-discord-text-header flex items-center gap-2">
+          <h2 className="text-xl md:text-2xl font-bold text-discord-text-header flex items-center gap-2">
             <Gamepad2 className="text-discord-blurple" />
             Servidores Activos
           </h2>
-          <div className="flex gap-2 relative group w-full sm:w-auto">
+          {/* Desktop Create Button */}
+          <div className="hidden md:flex gap-2 relative group w-full sm:w-auto">
             <button 
               onClick={() => onCreateServer('impostor')}
               className="glass-btn flex items-center justify-center gap-2 px-6 py-3 text-lg font-bold relative overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-discord-blurple/20 w-full sm:w-auto"
@@ -147,12 +192,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
         {loading ? (
           <div className="text-center py-12 text-discord-text-muted">Cargando servidores...</div>
         ) : servers.length === 0 ? (
-          <div className="text-center py-12 liquid-glass">
-            <p className="text-discord-text-muted mb-4">No hay servidores activos en este momento.</p>
-            <p className="text-sm text-discord-text-normal">¡Sé el primero en crear uno!</p>
+          <div className="text-center py-8 md:py-12 liquid-glass">
+            <p className="text-discord-text-muted mb-2 md:mb-4">No hay servidores activos.</p>
+            <p className="text-sm text-discord-text-normal hidden md:block">¡Sé el primero en crear uno!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
             {servers.map((server) => (
               <div 
                 key={server.roomId} 
@@ -177,7 +222,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                    <span>En espera</span>
+                    <span className="hidden md:inline">En espera</span>
                   </div>
                 </div>
 
@@ -187,7 +232,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
                   </span>
                   <button 
                     onClick={() => handleJoinClick(server)}
-                    className="glass-btn primary w-full ml-4"
+                    className="glass-btn primary w-full ml-4 py-2 text-sm"
                     disabled={server.playerCount >= server.maxPlayers}
                   >
                     {server.playerCount >= server.maxPlayers ? 'Lleno' : 'Unirse'}
@@ -198,6 +243,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
           </div>
         )}
       </div>
+      </div>
+    </div>
+  );
       </div>
     </div>
   );
