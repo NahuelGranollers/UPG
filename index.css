@@ -1460,13 +1460,13 @@ button[aria-disabled='true'] {
 
 @keyframes run-across {
   0% {
-    left: -40px;
+    left: -60px;
     opacity: 0;
   }
-  10% {
+  5% {
     opacity: 1;
   }
-  90% {
+  95% {
     opacity: 1;
   }
   100% {

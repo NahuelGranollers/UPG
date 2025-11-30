@@ -135,10 +135,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
               
               {/* Easter Egg Animation */}
               <img 
-                src="https://media.tenor.com/y246e3Tdo0kAAAAj/among-us.gif" 
+                src="/among-us.gif" 
                 alt="Among Us" 
-                className="absolute top-1/2 -translate-y-1/2 w-10 h-10 pointer-events-none hidden group-hover:block animate-run-across"
-                style={{ left: '-40px' }}
+                className="absolute top-0 h-full w-auto pointer-events-none hidden group-hover:block animate-run-across"
+                style={{ left: '-60px' }}
               />
             </button>
           </div>
