@@ -417,7 +417,7 @@ function MainApp() {
 
       {/* Effects Overlay */}
       {activeEffect === 'jumpscare' && (
-        <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center animate-pulse">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none">
           <img 
             src="/scare.gif" 
             alt="scare" 
