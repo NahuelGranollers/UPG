@@ -10,6 +10,7 @@ import useVoice from './hooks/useVoice';
 // Componentes críticos (carga inmediata)
 import ErrorBoundary from './components/ErrorBoundary';
 import MobileSidebar from './components/MobileSidebar';
+import MobileTabBar from './components/MobileTabBar';
 import Sidebar from './components/Sidebar';
 import ChannelList from './components/ChannelList';
 import ChatInterface from './components/ChatInterface';
@@ -311,7 +312,7 @@ function MainApp() {
             />
           </div>
         ) : (
-          <>
+          <div className={`flex-1 w-full overflow-hidden relative ${activeView === AppView.CHAT ? 'pb-16' : ''}`}>
             {mobileActiveTab === 'channels' && activeView === AppView.CHAT && (
               <ChannelList
                 activeView={activeView}
@@ -380,7 +381,16 @@ function MainApp() {
                 isMobileView
               />
             )}
-          </>
+          </div>
+        )}
+
+        {/* Mobile Tab Bar - Only in Chat View */}
+        {!showHome && activeView === AppView.CHAT && (
+          <MobileTabBar
+            activeTab={mobileActiveTab}
+            onTabChange={setMobileActiveTab}
+            unreadCount={0} // TODO: Implement unread count
+          />
         )}
 
         {/* Mobile Sidebar available in all views */}

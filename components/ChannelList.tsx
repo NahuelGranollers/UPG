@@ -173,7 +173,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
   // We will use sonner directly when needed via import in ServerSettings and here call window.toaster via toast import is unnecessary
 
   return (
-    <div className="flex-1 md:w-60 md:flex-none discord-sidebar flex flex-col shrink-0 relative min-w-0">
+    <div className="flex-1 w-full md:w-60 md:flex-none discord-sidebar flex flex-col shrink-0 relative min-w-0 h-full">
       {/* Server Header */}
       <div className="h-12 px-4 flex items-center justify-between shadow-sm hover:bg-white/5 transition-colors cursor-pointer border-b border-white/5 shrink-0">
         <div className="flex items-center gap-3 overflow-hidden">
@@ -194,7 +194,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
       </div>
 
       {/* Scrollable Channels */}
-      <div className="flex-1 overflow-y-auto p-3 custom-scrollbar space-y-5 pb-28 md:pb-24">
+      <div className="flex-1 overflow-y-auto p-3 custom-scrollbar space-y-5 pb-4 md:pb-24">
         {/* Category: Text Channels */}
         <div>
           <div className="flex items-center justify-between px-0.5 mb-1 text-xs font-bold text-discord-text-muted hover:text-discord-text-header uppercase tracking-wide cursor-pointer">
@@ -263,7 +263,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
       )}
 
       {/* Bottom Controls (User) */}
-      <div className="bg-[#232428] shrink-0 flex flex-col z-30 md:static fixed bottom-0 left-0 right-0 md:rounded-t-none rounded-t-lg">
+      <div className="bg-[#232428] shrink-0 flex flex-col z-30 md:static mt-auto md:mt-0 md:rounded-t-none rounded-t-lg">
         <div className="h-[64px] sm:h-[52px] px-2 flex items-center">
           <div className="group flex items-center py-1 px-1 pl-0.5 rounded-md hover:bg-discord-hover cursor-pointer mr-2 min-w-0 flex-1">
             <div className="relative w-9 h-9 sm:w-8 sm:h-8 mr-2 ml-1 shrink-0">
