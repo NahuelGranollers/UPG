@@ -20,7 +20,9 @@ export default function CookieClicker() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`${getBackendUrl()}/api/cookie-clicker/progress?discordId=${currentUser.id}`);
+        const res = await fetch(`${getBackendUrl()}/api/cookie-clicker/progress?discordId=${currentUser.id}`, {
+          credentials: 'include'
+        });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         setCount(data.count || 0);
@@ -65,7 +67,8 @@ export default function CookieClicker() {
       const res = await fetch(`${getBackendUrl()}/api/cookie-clicker/progress`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ discordId: currentUser.id, count: newCount })
+        body: JSON.stringify({ discordId: currentUser.id, count: newCount }),
+        credentials: 'include'
       });
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || 'Error al guardar progreso');
