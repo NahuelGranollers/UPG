@@ -156,8 +156,10 @@ Ejemplo: 'Manzana' o 'Astronauta'."""
         print(f"Error generating word: {e}")
         return "ErrorIA"
 
-@bot_bp.route('/generate-word', methods=['POST'])
+@bot_bp.route('/generate-word', methods=['POST', 'OPTIONS'])
 def generate_word_route():
+    if request.method == 'OPTIONS':
+        return jsonify({'ok': True}), 200
     try:
         data = request.json or {}
         category = data.get('category', 'General')
