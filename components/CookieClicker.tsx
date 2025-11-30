@@ -110,25 +110,6 @@ export default function CookieClicker() {
       <div className="text-xl font-bold mb-2 text-yellow-900">Cookies: {count}</div>
       {error && <div className="text-red-500 mt-2">{error}</div>}
     </div>
-          <span className="text-sm text-yellow-800">{upgradeCost} cookies</span>
-        </div>
-        <div className="w-full h-3 bg-yellow-300 rounded-full overflow-hidden">
-          <div
-            className="h-3 bg-blue-400 rounded-full transition-all duration-300"
-            style={{ width: `${Math.min(100, (count / upgradeCost) * 100)}%` }}
-          />
-        </div>
-      </div>
-      <button
-        className="bg-blue-500 hover:bg-blue-600 text-white font-bold rounded px-4 py-2 mb-2 shadow"
-        onClick={handleBuyAutoClicker}
-        disabled={count < upgradeCost || loading || saving}
-        aria-label="Buy auto-clicker"
-      >Comprar Auto-Clicker</button>
-      <div className="text-sm text-blue-700 mb-2">Auto-Clickers: {autoClicker}</div>
-      {loading && <div className="text-sm text-gray-400">Cargando progreso...</div>}
-      {saving && <div className="text-sm text-gray-400">Guardando...</div>}
-      {error && <div className="text-sm text-red-500">{error}</div>}
-    </div>
+    // Only cookie button and score UI remain
   );
 }
