@@ -156,6 +156,16 @@ Ejemplo: 'Manzana' o 'Astronauta'."""
         print(f"Error generating word: {e}")
         return "ErrorIA"
 
+@bot_bp.route('/generate-word', methods=['POST'])
+def generate_word_route():
+    try:
+        data = request.json or {}
+        category = data.get('category', 'General')
+        word = generate_impostor_word(category)
+        return jsonify({'word': word})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @bot_bp.route('/chat', methods=['POST'])
 def chat_demonio():
     try:

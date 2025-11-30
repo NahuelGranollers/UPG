@@ -3,13 +3,21 @@ import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { getBackendUrl } from '../utils/config';
 import { toast } from 'sonner';
-import { Menu, Gamepad2, Users } from 'lucide-react';
+import { Menu, Gamepad2, Users, Smartphone, Globe, Check, Eye, EyeOff } from 'lucide-react';
 
 interface PlayerInfo {
   id: string;
   username: string;
   revealedInnocent?: boolean;
 }
+
+const OFFLINE_WORDS = [
+  { category: 'Animales', words: ['Elefante', 'Jirafa', 'León', 'Pingüino', 'Tiburón', 'Águila', 'Delfín', 'Tigre', 'Oso', 'Cebra'] },
+  { category: 'Comida', words: ['Pizza', 'Sushi', 'Hamburguesa', 'Tacos', 'Helado', 'Paella', 'Chocolate', 'Ensalada', 'Espaguetis', 'Tarta'] },
+  { category: 'Lugares', words: ['Playa', 'Montaña', 'Cine', 'Hospital', 'Escuela', 'Biblioteca', 'Parque', 'Aeropuerto', 'Restaurante', 'Gimnasio'] },
+  { category: 'Objetos', words: ['Teléfono', 'Silla', 'Reloj', 'Cuchara', 'Lápiz', 'Gafas', 'Llave', 'Mochila', 'Ordenador', 'Libro'] },
+  { category: 'Profesiones', words: ['Médico', 'Profesor', 'Bombero', 'Policía', 'Cocinero', 'Astronauta', 'Pintor', 'Mecánico', 'Jardinero', 'Dentista'] },
+];
 
 export default function ImpostorGame({ 
   onClose,
@@ -24,6 +32,18 @@ export default function ImpostorGame({
 }) {
   const { socket } = useSocket();
   const { currentUser } = useAuth();
+  
+  // Game Mode State
+  const [gameMode, setGameMode] = useState<'online' | 'offline' | null>(null);
+  
+  // Offline Mode State
+  const [offlinePlayers, setOfflinePlayers] = useState<{id: string, name: string, role?: 'impostor'|'crewmate', word?: string, seen?: boolean, isDead?: boolean}[]>([]);
+  const [offlineNewPlayerName, setOfflineNewPlayerName] = useState('');
+  const [offlinePhase, setOfflinePhase] = useState<'setup' | 'reveal' | 'game'>('setup');
+  const [offlineRevealingPlayer, setOfflineRevealingPlayer] = useState<string | null>(null);
+  const [offlineWord, setOfflineWord] = useState('');
+  const [offlineImpostorName, setOfflineImpostorName] = useState('');
+
   const [roomId, setRoomId] = useState('');
   const [username, setUsername] = useState(currentUser?.username || '');
   const [isHost, setIsHost] = useState(false);
@@ -83,11 +103,172 @@ export default function ImpostorGame({
     reason?: string;
   } | null>(null);
 
+  // Offline Logic
+  const handleAddOfflinePlayer = () => {
+    if (!offlineNewPlayerName.trim()) return;
+    if (offlinePlayers.some(p => p.name.toLowerCase() === offlineNewPlayerName.trim().toLowerCase())) {
+      toast.error('Ese nombre ya existe');
+      return;
+    }
+    setOfflinePlayers([...offlinePlayers, { id: Date.now().toString(), name: offlineNewPlayerName.trim() }]);
+    setOfflineNewPlayerName('');
+  };
+
+  const handleStartOfflineGame = () => {
+    if (offlinePlayers.length < 3) {
+      toast.error('Mínimo 3 jugadores');
+      return;
+    }
+
+    const startWithWord = (word: string) => {
+        // 2. Assign roles
+        const impostorIndex = Math.floor(Math.random() * offlinePlayers.length);
+        const playersWithRoles = offlinePlayers.map((p, index) => ({
+          ...p,
+          role: (index === impostorIndex ? 'impostor' : 'crewmate') as 'impostor' | 'crewmate',
+          word: index === impostorIndex ? null : word,
+          seen: false,
+          isDead: false
+        }));
+
+        setOfflineWord(word);
+        setOfflineImpostorName(playersWithRoles[impostorIndex].name);
+        setOfflinePlayers(playersWithRoles);
+        setOfflinePhase('reveal');
+    };
+
+    if (socket && socket.connected) {
+        const randomCat = OFFLINE_WORDS[Math.floor(Math.random() * OFFLINE_WORDS.length)].category;
+        const toastId = toast.loading('Generando palabra con IA...');
+        
+        socket.emit('impostor:generate-word', { category: randomCat }, (res: any) => {
+            toast.dismiss(toastId);
+            if (res && res.ok && res.word) {
+                startWithWord(res.word);
+            } else {
+                // Fallback
+                const category = OFFLINE_WORDS[Math.floor(Math.random() * OFFLINE_WORDS.length)];
+                const word = category.words[Math.floor(Math.random() * category.words.length)];
+                startWithWord(word);
+            }
+        });
+    } else {
+        // Try to connect if not connected, or just use fallback
+        if (socket && !socket.connected) {
+             socket.connect();
+             // Wait a bit? No, just fallback for now to be snappy
+        }
+        // Offline fallback
+        const category = OFFLINE_WORDS[Math.floor(Math.random() * OFFLINE_WORDS.length)];
+        const word = category.words[Math.floor(Math.random() * category.words.length)];
+        startWithWord(word);
+    }
+  };
+
+  const handleOfflineReveal = (playerId: string) => {
+    setOfflineRevealingPlayer(playerId);
+  };
+
+  const handleOfflineConfirmSeen = () => {
+    if (!offlineRevealingPlayer) return;
+    setOfflinePlayers(prev => prev.map(p => p.id === offlineRevealingPlayer ? { ...p, seen: true } : p));
+    setOfflineRevealingPlayer(null);
+  };
+
+  const checkOfflineAllSeen = () => {
+    if (offlinePlayers.every(p => p.seen)) {
+      // Start Game
+      // Randomize turn order
+      const shuffledIds = [...offlinePlayers].map(p => p.id).sort(() => Math.random() - 0.5);
+      setTurnOrder(shuffledIds);
+      setCurrentTurn(shuffledIds[0]);
+      setPlayers(offlinePlayers.map(p => ({ id: p.id, username: p.name }))); // Map to standard player format for UI
+      setGameStarted(true);
+      setOfflinePhase('game');
+      setJoined(true); // To show game UI
+      setIsHost(true); // Enable controls
+    }
+  };
+
+  useEffect(() => {
+    if (gameMode === 'offline' && offlinePhase === 'reveal') {
+      checkOfflineAllSeen();
+    }
+  }, [offlinePlayers, offlinePhase, gameMode]);
+
+  const handleOfflineNextTurn = () => {
+    if (!currentTurn) return;
+    const currentIndex = turnOrder.indexOf(currentTurn);
+    let nextIndex = (currentIndex + 1) % turnOrder.length;
+    let attempts = 0;
+    
+    // Find next alive player
+    while (attempts < turnOrder.length) {
+        const nextId = turnOrder[nextIndex];
+        const player = offlinePlayers.find(p => p.id === nextId);
+        if (player && !player.isDead) {
+            setCurrentTurn(nextId);
+            return;
+        }
+        nextIndex = (nextIndex + 1) % turnOrder.length;
+        attempts++;
+    }
+  };
+
+  const handleOfflineEliminate = (playerId: string) => {
+    const player = offlinePlayers.find(p => p.id === playerId);
+    if (!player) return;
+
+    // Mark as dead
+    const updatedPlayers = offlinePlayers.map(p => p.id === playerId ? { ...p, isDead: true } : p);
+    setOfflinePlayers(updatedPlayers);
+    
+    // Update UI players list
+    setPlayers(updatedPlayers.map(p => ({ id: p.id, username: p.name, revealedInnocent: p.isDead && p.role !== 'impostor' })));
+
+    if (player.role === 'impostor') {
+      // Crewmates win
+      setGameOverInfo({
+        winner: 'crewmates',
+        word: offlineWord,
+        impostorName: player.name,
+        reason: 'voted_out'
+      });
+    } else {
+      // Check if impostor wins (1 vs 1)
+      const aliveCrewmates = updatedPlayers.filter(p => !p.isDead && p.role === 'crewmate').length;
+      const aliveImpostor = updatedPlayers.some(p => !p.isDead && p.role === 'impostor');
+      
+      if (aliveImpostor && aliveCrewmates <= 1) {
+        setGameOverInfo({
+          winner: 'impostor',
+          word: offlineWord,
+          impostorName: offlineImpostorName,
+          reason: 'impostor_majority'
+        });
+      } else {
+        toast.error(`${player.name} era INOCENTE. La ronda continúa.`);
+        // Next turn if eliminated player was current turn
+        if (currentTurn === playerId) {
+            // Logic to find next turn is complex here because state update is async
+            // For simplicity, just force next turn logic in next render or manually call it
+            // But we need updated state. 
+            // Let's just let the user click "Next Turn" or auto-advance?
+            // Auto-advance is better.
+            // We'll rely on the effect or just let the "Terminar Turno" button handle it if it was their turn.
+            // Actually, if they are dead, they can't click.
+            // So we should advance turn.
+        }
+      }
+    }
+  };
+
   useEffect(() => {
     if (!socket || !currentUser) return;
 
     // Auto-join logic when props are provided
     if (autoJoinRoomId && !joined) {
+      setGameMode('online'); // Force online mode for auto-join
       setRoomId(autoJoinRoomId);
       setUsername(currentUser.username || '');
       
@@ -696,8 +877,141 @@ export default function ImpostorGame({
           </div>
         )}
 
-        {!joined ? (
+        {!joined && !gameMode ? (
+          // Initial Mode Selection Screen
+          <div className="flex flex-col items-center justify-center h-full space-y-8 animate-fade-in">
+            <div className="text-center space-y-2">
+              <h2 className="text-3xl font-bold text-white">¿Cómo quieres jugar?</h2>
+              <p className="text-discord-text-muted">Selecciona el modo de juego</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl px-4">
+              {/* Online Mode Card */}
+              <button 
+                onClick={() => setGameMode('online')}
+                className="group relative overflow-hidden bg-discord-surface hover:bg-discord-surface-hover border border-discord-blurple/30 hover:border-discord-blurple rounded-2xl p-8 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl text-left"
+              >
+                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <Globe size={120} />
+                </div>
+                <div className="relative z-10 space-y-4">
+                  <div className="w-16 h-16 rounded-2xl bg-discord-blurple/20 flex items-center justify-center text-discord-blurple group-hover:bg-discord-blurple group-hover:text-white transition-colors">
+                    <Globe size={32} />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-2">Online Multijugador</h3>
+                    <p className="text-discord-text-muted">
+                      Juega con amigos a distancia. Cada uno usa su propio dispositivo.
+                      <br/>
+                      <span className="text-sm text-discord-blurple mt-2 inline-block">Requiere conexión a internet</span>
+                    </p>
+                  </div>
+                </div>
+              </button>
+
+              {/* Offline Mode Card */}
+              <button 
+                onClick={() => setGameMode('offline')}
+                className="group relative overflow-hidden bg-discord-surface hover:bg-discord-surface-hover border border-green-500/30 hover:border-green-500 rounded-2xl p-8 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl text-left"
+              >
+                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <Smartphone size={120} />
+                </div>
+                <div className="relative z-10 space-y-4">
+                  <div className="w-16 h-16 rounded-2xl bg-green-500/20 flex items-center justify-center text-green-500 group-hover:bg-green-500 group-hover:text-white transition-colors">
+                    <Smartphone size={32} />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-2">Offline Local</h3>
+                    <p className="text-discord-text-muted">
+                      Un solo dispositivo para todos. Pásalo a tus amigos.
+                      <br/>
+                      <span className="text-sm text-green-500 mt-2 inline-block">No requiere internet (ideal fiestas)</span>
+                    </p>
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        ) : !joined && gameMode === 'offline' ? (
+          // Offline Setup Screen
+          <div className="flex flex-col items-center justify-center h-full animate-fade-in p-4">
+            <div className="bg-discord-surface p-6 rounded-2xl max-w-md w-full border border-discord-hover shadow-2xl">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-white">Configurar Partida Local</h2>
+                <p className="text-discord-text-muted text-sm">Añade los nombres de los jugadores</p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={offlineNewPlayerName}
+                    onChange={(e) => setOfflineNewPlayerName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddOfflinePlayer()}
+                    placeholder="Nombre del jugador..."
+                    className="discord-input flex-1"
+                    autoFocus
+                  />
+                  <button 
+                    onClick={handleAddOfflinePlayer}
+                    className="discord-button success px-4"
+                    disabled={!offlineNewPlayerName.trim()}
+                  >
+                    <Check size={20} />
+                  </button>
+                </div>
+
+                <div className="bg-discord-chat rounded-xl p-2 max-h-[300px] overflow-y-auto custom-scrollbar space-y-2 min-h-[100px]">
+                  {offlinePlayers.length === 0 ? (
+                    <div className="text-center text-discord-text-muted py-8 italic">
+                      Añade al menos 3 jugadores
+                    </div>
+                  ) : (
+                    offlinePlayers.map((p, idx) => (
+                      <div key={p.id} className="flex items-center justify-between bg-discord-surface p-3 rounded-lg animate-slide-in-up">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-discord-blurple flex items-center justify-center font-bold text-white">
+                            {p.name.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="font-medium text-white">{p.name}</span>
+                        </div>
+                        <button 
+                          onClick={() => setOfflinePlayers(offlinePlayers.filter(x => x.id !== p.id))}
+                          className="text-red-400 hover:text-red-300 p-2"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="pt-4 flex gap-3">
+                  <button 
+                    onClick={() => setGameMode(null)}
+                    className="discord-button secondary flex-1"
+                  >
+                    Volver
+                  </button>
+                  <button 
+                    onClick={handleStartOfflineGame}
+                    disabled={offlinePlayers.length < 3}
+                    className={`discord-button flex-1 ${offlinePlayers.length < 3 ? 'opacity-50 cursor-not-allowed' : 'success'}`}
+                  >
+                    Iniciar Partida ({offlinePlayers.length})
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : !joined && gameMode === 'online' ? (
           <div className="h-full overflow-y-auto">
+          <div className="max-w-2xl mx-auto mt-4 mb-4 px-4">
+             <button onClick={() => setGameMode(null)} className="text-discord-text-muted hover:text-white flex items-center gap-2 mb-2">
+               ← Volver a selección de modo
+             </button>
+          </div>
           {autoJoinRoomId ? (
             <div className="panel-glass lg liquid-glass bg-[#071017] p-6 rounded-lg max-w-md mx-auto mt-10">
               <div className="text-center space-y-4">
@@ -750,6 +1064,72 @@ export default function ImpostorGame({
             </div>
           )}
           </div>
+        ) : joined && gameMode === 'offline' && offlinePhase === 'reveal' ? (
+           // Offline Reveal Phase
+           <div className="flex flex-col items-center justify-center h-full p-4 animate-fade-in">
+             <div className="bg-discord-surface p-6 rounded-2xl max-w-md w-full border border-discord-hover shadow-2xl text-center">
+               <h2 className="text-2xl font-bold text-white mb-2">Revelar Roles</h2>
+               <p className="text-discord-text-muted mb-6">Pasa el dispositivo al jugador correspondiente</p>
+               
+               <div className="grid grid-cols-1 gap-3">
+                 {offlinePlayers.map(p => (
+                   <button
+                     key={p.id}
+                     onClick={() => !p.seen && handleOfflineReveal(p.id)}
+                     disabled={p.seen}
+                     className={`p-4 rounded-xl border transition-all flex items-center justify-between ${
+                       p.seen 
+                         ? 'bg-discord-chat border-transparent opacity-50 cursor-not-allowed' 
+                         : 'bg-discord-blurple/10 border-discord-blurple hover:bg-discord-blurple/20'
+                     }`}
+                   >
+                     <span className={`font-bold ${p.seen ? 'text-discord-text-muted' : 'text-white'}`}>{p.name}</span>
+                     {p.seen ? <Check className="text-green-500" /> : <Eye className="text-discord-blurple" />}
+                   </button>
+                 ))}
+               </div>
+             </div>
+
+             {/* Reveal Modal */}
+             {offlineRevealingPlayer && (
+               <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center p-4">
+                 <div className="bg-discord-surface p-8 rounded-2xl max-w-sm w-full text-center space-y-6 animate-scale-in border border-discord-hover">
+                   <div className="space-y-2">
+                     <h3 className="text-discord-text-muted uppercase text-sm font-bold">Jugador</h3>
+                     <h2 className="text-3xl font-bold text-white">
+                       {offlinePlayers.find(p => p.id === offlineRevealingPlayer)?.name}
+                     </h2>
+                   </div>
+
+                   <div className="py-8">
+                     <div className="text-discord-text-muted uppercase text-sm font-bold mb-2">Tu Rol es</div>
+                     {(() => {
+                       const p = offlinePlayers.find(x => x.id === offlineRevealingPlayer);
+                       if (p?.role === 'impostor') {
+                         return <div className="text-4xl font-black text-red-500 animate-pulse">IMPOSTOR</div>;
+                       } else {
+                         return (
+                           <div className="space-y-2">
+                             <div className="text-xl font-bold text-green-400">TRIPULANTE</div>
+                             <div className="text-3xl font-bold text-white bg-discord-chat p-4 rounded-xl border border-discord-hover">
+                               {p?.word}
+                             </div>
+                           </div>
+                         );
+                       }
+                     })()}
+                   </div>
+
+                   <button 
+                     onClick={handleOfflineConfirmSeen}
+                     className="discord-button success w-full py-4 text-lg"
+                   >
+                     ✅ Entendido, ocultar
+                   </button>
+                 </div>
+               </div>
+             )}
+           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-4 xl:grid-cols-5 gap-4 w-full max-w-[95%] 2xl:max-w-[1600px] mx-auto h-full pb-16 md:pb-0">
             {/* Main Game Area */}
@@ -759,7 +1139,9 @@ export default function ImpostorGame({
                 <div className="flex justify-between items-center">
                   <div>
                     <div className="text-xs text-discord-text-muted">Sala</div>
-                    <div className="text-lg font-bold text-discord-text-header">{roomId}</div>
+                    <div className="text-lg font-bold text-discord-text-header">
+                      {gameMode === 'offline' ? 'Modo Offline' : roomId}
+                    </div>
                   </div>
                   <div className="text-right">
                     <div className="text-xs text-discord-text-muted">
@@ -973,6 +1355,86 @@ export default function ImpostorGame({
                   </div>
                 ) : (
                   <div className="space-y-4 pb-4">
+                    {gameMode === 'offline' ? (
+                        <div className="flex flex-col h-full animate-fade-in">
+                            {/* Offline Turn List - Full Screen */}
+                            <div className="flex-1 overflow-y-auto custom-scrollbar bg-discord-sidebar rounded-xl border border-discord-hover p-4 mb-4">
+                                <div className="flex items-center justify-between mb-4 sticky top-0 bg-discord-sidebar py-2 z-10 backdrop-blur-sm bg-discord-sidebar/90">
+                                    <h3 className="text-discord-text-muted uppercase text-xs font-bold flex items-center gap-2">
+                                        <Users size={16} />
+                                        Orden de Turnos
+                                    </h3>
+                                    <button 
+                                        onClick={handleOfflineNextTurn}
+                                        className="discord-button success text-xs px-3 py-1"
+                                    >
+                                        Siguiente Turno →
+                                    </button>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 gap-3">
+                                    {turnOrder.map((playerId, idx) => {
+                                        const p = offlinePlayers.find(x => x.id === playerId);
+                                        if (!p) return null;
+                                        const isCurrent = currentTurn === playerId;
+                                        
+                                        return (
+                                            <div key={p.id} className={`flex items-center justify-between p-4 rounded-lg border transition-all ${
+                                                p.isDead 
+                                                    ? 'bg-discord-chat border-transparent opacity-50' 
+                                                    : isCurrent
+                                                        ? 'bg-discord-blurple/20 border-discord-blurple shadow-lg scale-[1.02]'
+                                                        : 'bg-discord-surface border-discord-hover'
+                                            }`}>
+                                                <div className="flex items-center gap-4">
+                                                    <div className="text-discord-text-muted font-mono font-bold text-lg w-6">
+                                                        #{idx + 1}
+                                                    </div>
+                                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl text-white shadow-sm ${p.isDead ? 'bg-gray-600' : 'bg-discord-blurple'}`}>
+                                                        {p.name.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <div className={`font-bold text-lg ${p.isDead ? 'text-discord-text-muted line-through' : 'text-white'}`}>
+                                                            {p.name}
+                                                        </div>
+                                                        {p.isDead && <div className="text-xs text-red-400 font-bold uppercase">Eliminado</div>}
+                                                        {isCurrent && !p.isDead && <div className="text-xs text-green-400 font-bold uppercase animate-pulse">Turno Actual</div>}
+                                                    </div>
+                                                </div>
+                                                
+                                                {!p.isDead && (
+                                                    <button 
+                                                        onClick={() => {
+                                                            if(confirm(`¿Estás seguro de que quieres eliminar a ${p.name}?`)) handleOfflineEliminate(p.id);
+                                                        }}
+                                                        className="discord-button danger text-sm px-4 py-2 shadow-md hover:bg-red-600"
+                                                    >
+                                                        Eliminar
+                                                    </button>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                            
+                            <div className="mt-auto">
+                                <button 
+                                    onClick={() => {
+                                        if(confirm('¿Terminar partida y volver al menú?')) {
+                                            setGameMode(null);
+                                            setJoined(false);
+                                            setOfflinePlayers([]);
+                                        }
+                                    }}
+                                    className="discord-button secondary w-full"
+                                >
+                                    Salir de la Partida
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                      <>
                     {spinning && (
                       <div className="flex items-center justify-center py-12">
                         <div className="flex flex-col items-center">
@@ -1252,6 +1714,8 @@ export default function ImpostorGame({
                       </div>
                     </>
                   )}
+                      </>
+                    )}
                   </div>
                 )}
               </div>

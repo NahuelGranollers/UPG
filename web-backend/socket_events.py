@@ -332,6 +332,21 @@ def register_socket_events(socketio, app=None):
         
         return {'ok': True, 'roomId': room_id}
 
+    @socketio.on('impostor:generate-word')
+    def on_impostor_generate_word(data):
+        category = data.get('category', 'General')
+        word = "ErrorIA"
+        if app:
+            with app.app_context():
+                word = generate_impostor_word(category)
+        else:
+             logger.error("App context missing in on_impostor_generate_word")
+        
+        if word and word != "ErrorIA":
+            return {'ok': True, 'word': word}
+        else:
+            return {'ok': False, 'error': 'ai_error'}
+
     @socketio.on('impostor:start')
     def on_impostor_start(data):
         room_id = data.get('roomId')

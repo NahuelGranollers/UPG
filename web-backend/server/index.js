@@ -1474,6 +1474,27 @@ io.on('connection', socket => {
     }
   });
 
+  // Generate a word using AI (for offline mode or custom games)
+  socket.on('impostor:generate-word', async ({ category }, ack) => {
+    try {
+      const response = await axios.post('http://127.0.0.1:5000/api/generate-word', { category });
+      if (response.data && response.data.word) {
+        return ack && ack({ ok: true, word: response.data.word });
+      } else {
+        return ack && ack({ ok: false, error: 'ai_error' });
+      }
+    } catch (e) {
+      logger.error('Error generating AI word', e);
+      // Fallback to local list if AI fails
+      let wordList = IMPOSTOR_WORDS;
+      if (category && IMPOSTOR_CATEGORIES[category]) {
+        wordList = IMPOSTOR_CATEGORIES[category];
+      }
+      const word = wordList[Math.floor(Math.random() * wordList.length)];
+      return ack && ack({ ok: true, word, fallback: true });
+    }
+  });
+
   // Host starts a round: pick word and assign one impostor
   socket.on('impostor:start', ({ roomId, hostId, category, timerDuration }, ack) => {
     try {
