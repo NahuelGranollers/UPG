@@ -175,29 +175,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
   return (
     <div className="bg-[#232428] shrink-0 flex flex-col z-30 md:static mt-auto md:mt-0 md:rounded-t-none rounded-t-lg">
       <div className="h-[64px] sm:h-[52px] px-2 flex items-center">
-        <div className="group flex items-center py-1 px-1 pl-0.5 rounded-md hover:bg-discord-hover cursor-pointer mr-2 min-w-0 flex-1">
-          <div className="relative w-9 h-9 sm:w-8 sm:h-8 mr-2 ml-1 shrink-0">
-            <SafeImage
-              src={currentUser?.avatar || ''}
-              className="w-9 h-9 sm:w-8 sm:h-8 rounded-full object-cover"
-              alt="User"
-              fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.username || 'U')}&background=5865F2&color=fff&size=128`}
-            />
-            <div
-              className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-[#232428] rounded-full ${
-                currentUser?.status === 'online' ? 'bg-green-500' : 'bg-yellow-500'
-              }`}
-            ></div>
-          </div>
-          <div className="text-sm min-w-0 flex-1">
-            <div className="font-semibold text-white text-xs truncate">
-              {currentUser?.username || 'User'}
-            </div>
-            <div className="text-[10px] text-gray-400 truncate">
-              #{currentUser?.id?.substring(0, 4) || '0000'}
-            </div>
-          </div>
-        </div>
+        {/* User avatar/name/status block removed as requested */}
         <div className="flex items-center gap-1 ml-2">
           {onOpenSidebar && (
             <button
