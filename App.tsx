@@ -16,6 +16,7 @@ import ChannelList from './components/ChannelList';
 import ChatInterface from './components/ChatInterface';
 import UserList from './components/UserList';
 import UsernamePrompt from './components/UsernamePrompt';
+import UserProfileModal from './components/UserProfileModal';
 
 const HomeScreen = React.lazy(() => import('./components/HomeScreen'));
 const ImpostorGame = React.lazy(() => import('./components/ImpostorGame'));
@@ -26,6 +27,7 @@ const HallOfFame = React.lazy(() => import('./components/HallOfFame'));
 const AdminPanel = React.lazy(() => import('./components/AdminPanel'));
 
 function MainApp() {
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const { currentUser, isLoading, loginWithDiscord, loginAsGuest, logout } = useAuth();
   const { isConnected, socket } = useSocket();
   const { activeEffect } = useUsers();
@@ -208,6 +210,7 @@ function MainApp() {
           onHomeClick={handleHomeClick}
           onUPGClick={handleUPGClick}
           onOpenAdmin={() => setShowAdminPanel(true)}
+          onEditProfile={() => setShowProfileModal(true)}
         />
         <div className="flex flex-1 min-w-0 relative">
           <Suspense
@@ -427,6 +430,14 @@ function MainApp() {
           />
         </Suspense>
       )}
+
+      {/* User Profile Modal (centered, overlays whole page) */}
+      <UserProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        user={currentUser}
+        onLoginWithDiscord={loginWithDiscord}
+      />
 
       {/* Effects Overlay */}
       {activeEffect === 'jumpscare' && (
