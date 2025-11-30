@@ -83,9 +83,15 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
       {onOpenSidebar && (
         <button
           onClick={onOpenSidebar}
-          className="md:hidden absolute top-4 left-4 p-2 liquid-glass rounded-full shadow-lg z-10 text-discord-text-normal hover:text-white"
+          className="md:hidden fixed top-3 left-3 p-3 liquid-glass rounded-full shadow-lg z-[100] text-discord-text-normal hover:text-white"
+          style={{
+            paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))',
+            paddingLeft: 'max(0.75rem, env(safe-area-inset-left, 0px))',
+            minWidth: 48,
+            minHeight: 48,
+          }}
         >
-          <Menu size={24} />
+          <Menu size={28} />
         </button>
       )}
 
