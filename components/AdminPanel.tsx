@@ -163,6 +163,30 @@ const SystemStatus = ({ socket }: { socket: Socket | null }) => {
 };
 
 const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUser, socket }) => {
+    const handleResetIpsCache = async () => {
+      setIsLoading(true);
+      try {
+        const emitWithAck = (event: string, payload: any) =>
+          new Promise<any>(resolve => {
+            try {
+              socket?.emit(event, payload, (res: any) => resolve(res));
+              setTimeout(() => resolve(null), 2000);
+            } catch (e) {
+              resolve({ ok: false, error: 'emit_error' });
+            }
+          });
+        let res = await emitWithAck('admin:reset-ips-cache', { adminId: currentUser?.id });
+        if (res && res.ok) {
+          toast.success('IPs y caché de usuarios reiniciados');
+        } else {
+          toast.error(res?.error || 'Error al reiniciar IPs/caché');
+        }
+      } catch (err) {
+        toast.error('Error ejecutando la acción');
+      } finally {
+        setTimeout(() => setIsLoading(false), 1000);
+      }
+    };
   const { users } = useUsers();
   const [isLoading, setIsLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState<string | null>(null);
@@ -178,6 +202,11 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
   }, [users, currentUser]);
 
   if (!isOpen) return null;
+  // ...existing code...
+  // Add button to UI (for example, above other admin actions)
+  // Place this where other admin actions/buttons are rendered:
+  // Example:
+  // <button onClick={handleResetIpsCache} className="discord-button danger w-full mb-2">Reiniciar IPs y limpiar caché de usuarios</button>
 
   if (!socket) {
     return (

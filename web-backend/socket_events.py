@@ -41,6 +41,19 @@ def apply_troll_transform(user_id, text):
         return text
 
 def register_socket_events(socketio, app=None):
+        @socketio.on('admin:reset-ips-cache')
+        def on_admin_reset_ips_cache(data):
+            admin_id = data.get('adminId')
+            if not is_admin(admin_id): return {'ok': False, 'error': 'Not admin'}
+            # Clear all connected IPs
+            if hasattr(app, 'ip_cache'):
+                app.ip_cache.clear()
+            # Clear all connected_users and any user cache
+            connected_users.clear()
+            if hasattr(app, 'user_cache'):
+                app.user_cache.clear()
+            # Optionally clear other in-memory user/session caches
+            return {'ok': True}
     
     def handle_bot_response(channel_id, user_name, user_message):
         try:
