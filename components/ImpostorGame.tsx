@@ -114,7 +114,7 @@ export default function ImpostorGame({
     setOfflineNewPlayerName('');
   };
 
-  const handleStartOfflineGame = () => {
+  const handleStartOfflineGame = async () => {
     if (offlinePlayers.length < 3) {
       toast.error('Mínimo 3 jugadores');
       return;
@@ -137,28 +137,33 @@ export default function ImpostorGame({
         setOfflinePhase('reveal');
     };
 
-    if (socket && socket.connected) {
-        const categoryToUse = selectedCategory.trim() || 'General';
-        const toastId = toast.loading(`Generando palabra (${categoryToUse})...`);
-        
-        socket.emit('impostor:generate-word', { category: categoryToUse }, (res: any) => {
-            toast.dismiss(toastId);
-            if (res && res.ok && res.word) {
-                startWithWord(res.word);
-            } else {
-                // Fallback
-                const category = OFFLINE_WORDS[Math.floor(Math.random() * OFFLINE_WORDS.length)];
-                const word = category.words[Math.floor(Math.random() * category.words.length)];
-                startWithWord(word);
-            }
+    const categoryToUse = selectedCategory.trim() || 'General';
+    const toastId = toast.loading(`Generando palabra (${categoryToUse})...`);
+
+    try {
+        const API_URL = getBackendUrl();
+        const response = await fetch(`${API_URL}/api/generate-word`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ category: categoryToUse })
         });
-    } else {
-        // Try to connect if not connected, or just use fallback
-        if (socket && !socket.connected) {
-             socket.connect();
-             // Wait a bit? No, just fallback for now to be snappy
+
+        if (!response.ok) throw new Error('Network response was not ok');
+
+        const data = await response.json();
+        toast.dismiss(toastId);
+
+        if (data && data.word) {
+            startWithWord(data.word);
+        } else {
+            throw new Error('Invalid response');
         }
-        // Offline fallback
+    } catch (error) {
+        console.error("Error generating word:", error);
+        toast.dismiss(toastId);
+        toast.error("Error conectando con IA. Usando palabras locales.");
+        
+        // Fallback
         const category = OFFLINE_WORDS[Math.floor(Math.random() * OFFLINE_WORDS.length)];
         const word = category.words[Math.floor(Math.random() * category.words.length)];
         startWithWord(word);
