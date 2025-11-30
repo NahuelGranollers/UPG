@@ -276,8 +276,14 @@ def handle_bot_response(channel_id, user_name, user_message):
         user_id = data.get('userId')
         logger.info(f"[SOCKET] impostor:create-room received: roomId={room_id}, userId={user_id}, username={data.get('username')}")
         print(f"[SOCKET] impostor:create-room received: roomId={room_id}, userId={user_id}, username={data.get('username')}")
-        if not room_id or not user_id: return {'ok': False}
-        if room_id in impostor_rooms: return {'ok': False, 'error': 'exists'}
+        if not room_id or not user_id: 
+            logger.error(f"[SOCKET] impostor:create-room failed: missing room_id or user_id")
+            print(f"[SOCKET] impostor:create-room failed: missing room_id or user_id")
+            return {'ok': False}
+        if room_id in impostor_rooms: 
+            logger.warning(f"[SOCKET] impostor:create-room failed: room {room_id} already exists")
+            print(f"[SOCKET] impostor:create-room failed: room {room_id} already exists")
+            return {'ok': False, 'error': 'exists'}
         impostor_rooms[room_id] = {
             'hostId': user_id,
             'players': {user_id: {'socketId': request.sid, 'username': data.get('username')}},
@@ -309,6 +315,8 @@ def handle_bot_response(channel_id, user_name, user_message):
             'name': impostor_rooms[room_id]['name'],
             'hasPassword': bool(impostor_rooms[room_id]['password'])
         })
+        logger.info(f"[SOCKET] impostor:create-room success: room {room_id} created")
+        print(f"[SOCKET] impostor:create-room success: room {room_id} created")
         return {'ok': True, 'roomId': room_id}
 
     @socketio.on('impostor:join-room')

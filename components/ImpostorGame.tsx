@@ -562,14 +562,17 @@ export default function ImpostorGame({
     const generatedUserId =
       userId || currentUser?.id || `guest-${Math.random().toString(36).slice(2, 8)}`;
     setUserId(generatedUserId);
+    console.log('[FRONTEND] Emitting impostor:create-room (manual):', { roomId, userId: generatedUserId, username });
     socket.emit(
       'impostor:create-room',
       { roomId, userId: generatedUserId, username },
       (res: any) => {
+        console.log('[FRONTEND] impostor:create-room (manual) response:', res);
         if (res && res.ok) {
           setJoined(true);
           setStatusMessage('Sala creada. Esperando jugadores...');
         } else {
+          console.error('[FRONTEND] Failed to create room (manual):', res?.error);
           setStatusMessage(res?.error || 'Error creando sala');
         }
       }
@@ -715,6 +718,7 @@ export default function ImpostorGame({
   useEffect(() => {
     if (!socket) return;
     const handler = (payload: any) => {
+      console.log('ImpostorGame: servers:updated received', payload);
       try {
         const list = (payload && payload.servers && payload.servers.impostor) || [];
         setPublicServers(list);
@@ -742,6 +746,13 @@ export default function ImpostorGame({
     // Set userId BEFORE emitting so it's available when room-state arrives
     setUserId(generatedUserId);
 
+    console.log('[FRONTEND] Emitting impostor:create-room (public):', {
+      roomId: finalRoomId,
+      userId: generatedUserId,
+      username,
+      name: serverName || `Sala de ${username}`,
+      password: serverPassword || null
+    });
     socket.emit(
       'impostor:create-room',
       {
@@ -752,6 +763,7 @@ export default function ImpostorGame({
         password: serverPassword || null
       },
       (res: any) => {
+        console.log('[FRONTEND] impostor:create-room (public) response:', res);
         if (res && res.ok) {
           // Ensure roomId is set from server response
           if (res.roomId && res.roomId !== roomId) {
@@ -763,6 +775,7 @@ export default function ImpostorGame({
           fetchPublicServers(); // Refresh the list
           toast.success('Sala pública creada');
         } else {
+          console.error('[FRONTEND] Failed to create room (public):', res?.error);
           toast.error('Error al crear sala pública: ' + (res?.error || 'Error desconocido'));
         }
       }
