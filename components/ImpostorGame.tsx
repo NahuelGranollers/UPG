@@ -805,14 +805,6 @@ export default function ImpostorGame({
             </h1>
           </div>
           <div className="flex gap-2">
-            {!joined && (
-              <button
-                onClick={() => setShowCreateForm(true)}
-                className="discord-button success"
-              >
-                Crear Servidor
-              </button>
-            )}
             <button
               onClick={() => {
                 if (joined) handleLeave();
@@ -1022,7 +1014,15 @@ export default function ImpostorGame({
           ) : (
             <div className="panel-glass lg liquid-glass bg-[#071017] p-6 rounded-lg max-w-2xl mx-auto mt-4">
               <div className="space-y-4">
-                <h3 className="text-lg text-discord-text-header font-semibold">Servidores Públicos Impostor</h3>
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg text-discord-text-header font-semibold">Servidores Públicos Impostor</h3>
+                  <button
+                    onClick={() => setShowCreateForm(true)}
+                    className="discord-button success"
+                  >
+                    Crear Servidor
+                  </button>
+                </div>
                 <div className="max-h-[60vh] overflow-y-auto space-y-2 custom-scrollbar">
                   {publicServers.length === 0 ? (
                     <div className="text-center text-discord-text-muted py-8">No hay servidores públicos disponibles</div>
