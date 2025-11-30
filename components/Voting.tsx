@@ -35,7 +35,7 @@ const Voting: React.FC<VotingProps> = ({ onMenuToggle }) => {
   }, []);
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center overflow-hidden w-full h-full px-4 bg-discord-chat relative">
+    <div className="flex-1 flex flex-col items-center justify-center overflow-hidden w-full h-full px-4 bg-discord-chat relative" style={{ paddingLeft: 'calc(3.5rem + env(safe-area-inset-left, 0px))', paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
       <img
         ref={logoRef}
         src="/upg.png"

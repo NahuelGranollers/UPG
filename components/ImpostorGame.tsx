@@ -801,7 +801,7 @@ export default function ImpostorGame({
   const allAliveVoted = totalVotes >= alivePlayersCount;
 
   return (
-    <div className="flex flex-col h-screen w-full bg-discord-chat overflow-hidden">
+    <div className="flex flex-col h-screen w-full bg-discord-chat overflow-hidden" style={{ paddingLeft: 'calc(3.5rem + env(safe-area-inset-left, 0px))', paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
       {/* Header - Fixed */}
       <div className="w-full py-4 px-2 sm:py-4 sm:px-4 lg:py-4 lg:px-6 flex-shrink-0 z-10 bg-discord-chat">
         <div className="flex items-center justify-between">

@@ -155,7 +155,7 @@ const HallOfFame: React.FC<HallOfFameProps> = ({ onOpenSidebar }) => {
   const handleMouseLeave = () => setReflect({ x: 0, y: 0, opacity: 0 });
 
   return (
-    <div className="flex flex-col h-full w-full bg-discord-chat overflow-hidden relative">
+    <div className="flex flex-col h-full w-full bg-discord-chat overflow-hidden relative" style={{ paddingLeft: 'calc(3.5rem + env(safe-area-inset-left, 0px))', paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-8">
         <div className="max-w-7xl mx-auto">
           <header className="discord-header discord-glass-card p-4 mb-6 flex items-center justify-between">
