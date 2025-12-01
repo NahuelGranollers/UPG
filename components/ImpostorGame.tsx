@@ -502,21 +502,82 @@ export default function ImpostorGame({
       ]);
     };
 
-    const onRestarted = () => {
+    const onRoomDeleted = (data: any) => {
+      setStatusMessage(`La sala ha sido eliminada por un administrador`);
+      setJoined(false);
+      setPlayers([]);
       setAssigned(null);
-      setPendingAssigned(null);
+      setIsHost(false);
+      setHostId('');
+      setGameStarted(false);
+      setGameOverInfo(null);
       setVoting(false);
       setMyVote(null);
       setVoteCounts({});
       setVotingResult(null);
       setTotalVotes(0);
-      setStatusMessage('Ronda reiniciada');
+      setTurnOrder([]);
+      setCurrentTurn(null);
+      setRevealedRoles(null);
+      setCustomWords([]);
+      setNotifications(prev => [
+        ...prev,
+        {
+          id: Date.now(),
+          type: 'error',
+          message: 'La sala ha sido eliminada por un administrador',
+          timestamp: new Date(),
+        },
+      ]);
+      setTimeout(() => setNotifications(prev => prev.slice(1)), 5000);
+    };
+
+    const onGameTerminated = (data: any) => {
+      setStatusMessage(`La partida ha sido terminada por un administrador`);
+      setGameStarted(false);
+      setVoting(false);
+      setAssigned(null);
       setCardRevealed(false);
       setRevealedRoles(null);
-      setGameStarted(false);
       setGameOverInfo(null);
       setTurnOrder([]);
       setCurrentTurn(null);
+      setNotifications(prev => [
+        ...prev,
+        {
+          id: Date.now(),
+          type: 'warning',
+          message: 'La partida ha sido terminada por un administrador',
+          timestamp: new Date(),
+        },
+      ]);
+      setTimeout(() => setNotifications(prev => prev.slice(1)), 5000);
+    };
+
+    const onRestarted = (data: any) => {
+      console.log('[FRONTEND] Game restarted:', data);
+      setGameStarted(false);
+      setVoting(false);
+      setVotingResult(null);
+      setMyVote(null);
+      setTotalVotes(0);
+      setCardRevealed(false);
+      setRevealedRoles(null);
+      setGameOverInfo(null);
+      setTurnOrder([]);
+      setCurrentTurn(null);
+      setAssigned(null);
+      setStatusMessage('Ronda reiniciada. Esperando al host...');
+      setNotifications(prev => [
+        ...prev,
+        {
+          id: Date.now(),
+          type: 'info',
+          message: 'La partida ha sido reiniciada',
+          timestamp: new Date(),
+        },
+      ]);
+      setTimeout(() => setNotifications(prev => prev.slice(1)), 5000);
     };
 
     socket.on('impostor:room-state', onRoomState);
@@ -532,6 +593,8 @@ export default function ImpostorGame({
     socket.on('impostor:timer-end', onTimerEnd);
     socket.on('impostor:game-over', onGameOver);
     socket.on('impostor:restarted', onRestarted);
+    socket.on('impostor:room-deleted', onRoomDeleted);
+    socket.on('impostor:game-terminated', onGameTerminated);
 
     return () => {
       socket.off('impostor:room-state', onRoomState);

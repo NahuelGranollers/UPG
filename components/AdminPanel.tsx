@@ -1,6 +1,6 @@
 import React, { useState, memo, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
-import { X, Trash2, MessageSquare, Shield, AlertTriangle, Zap, Palette, VolumeX, Activity, Server, Cpu, Globe, Wifi } from 'lucide-react';
+import { X, Trash2, MessageSquare, Shield, AlertTriangle, Zap, Palette, VolumeX, Activity, Server, Cpu, Globe, Wifi, Users, Eye, StopCircle } from 'lucide-react';
 import { Socket } from 'socket.io-client';
 import { User } from '../types';
 import { useUsers } from '../context/UserContext';
@@ -191,10 +191,12 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
   const [isLoading, setIsLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState<string | null>(null);
   const [activeForm, setActiveForm] = useState<null | {
-    action: 'silence-user' | 'change-color' | 'global-message' | 'troll-mode' | 'trigger-effect' | 'system-status';
+    action: 'silence-user' | 'change-color' | 'global-message' | 'troll-mode' | 'trigger-effect' | 'system-status' | 'room-management';
     values: Record<string, string>;
   }>(null);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
+  const [activeRooms, setActiveRooms] = useState<any[]>([]);
+  const [roomsLoading, setRoomsLoading] = useState(false);
 
   // Filter out bots and current user from selectable users
   const selectableUsers = useMemo(() => {
@@ -319,9 +321,93 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
     }
   };
 
-  const openForm = (action: 'silence-user' | 'change-color' | 'global-message' | 'troll-mode' | 'trigger-effect' | 'system-status') => {
-    setFormValues({});
-    setActiveForm({ action, values: {} });
+  const loadActiveRooms = async () => {
+    setRoomsLoading(true);
+    try {
+      const emitWithAck = (event: string, payload: any) =>
+        new Promise<any>(resolve => {
+          try {
+            socket?.emit(event, payload, (res: any) => resolve(res));
+            setTimeout(() => resolve(null), 2000);
+          } catch (e) {
+            resolve({ ok: false, error: 'emit_error' });
+          }
+        });
+      
+      const res = await emitWithAck('admin:get-active-rooms', { adminId: currentUser?.id });
+      if (res && res.ok) {
+        setActiveRooms(res.rooms || []);
+      } else {
+        toast.error('Error al cargar salas activas');
+      }
+    } catch (err) {
+      toast.error('Error al cargar salas activas');
+    } finally {
+      setRoomsLoading(false);
+    }
+  };
+
+  const handleRoomAction = async (action: string, roomId: string) => {
+    setIsLoading(true);
+    try {
+      const emitWithAck = (event: string, payload: any) =>
+        new Promise<any>(resolve => {
+          try {
+            socket?.emit(event, payload, (res: any) => resolve(res));
+            setTimeout(() => resolve(null), 2000);
+          } catch (e) {
+            resolve({ ok: false, error: 'emit_error' });
+          }
+        });
+
+      const res = await emitWithAck(`admin:${action}`, { 
+        adminId: currentUser?.id,
+        roomId: roomId
+      });
+      
+      if (res && res.ok) {
+        toast.success(`Sala ${action === 'delete-room' ? 'eliminada' : 'terminada'} exitosamente`);
+        // Reload rooms list
+        loadActiveRooms();
+      } else {
+        toast.error(res?.error || `Error al ${action === 'delete-room' ? 'eliminar' : 'terminar'} la sala`);
+      }
+    } catch (err) {
+      toast.error(`Error al ${action === 'delete-room' ? 'eliminar' : 'terminar'} la sala`);
+    } finally {
+      setTimeout(() => setIsLoading(false), 1000);
+    }
+  };
+
+  const handleJoinRoomAsAdmin = async (roomId: string) => {
+    setIsLoading(true);
+    try {
+      const emitWithAck = (event: string, payload: any) =>
+        new Promise<any>(resolve => {
+          try {
+            socket?.emit(event, payload, (res: any) => resolve(res));
+            setTimeout(() => resolve(null), 2000);
+          } catch (e) {
+            resolve({ ok: false, error: 'emit_error' });
+          }
+        });
+
+      const res = await emitWithAck('admin:join-room-as-admin', { 
+        adminId: currentUser?.id,
+        roomId: roomId
+      });
+      
+      if (res && res.ok) {
+        toast.success('Te has unido a la sala como observador');
+        setActiveForm(null); // Close the panel
+      } else {
+        toast.error(res?.error || 'Error al unirte a la sala');
+      }
+    } catch (err) {
+      toast.error('Error al unirte a la sala');
+    } finally {
+      setTimeout(() => setIsLoading(false), 1000);
+    }
   };
 
   const UserSelect = ({ value, onChange }: { value: string, onChange: (val: string) => void }) => (
@@ -356,6 +442,97 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
                     </button>
                 </div>
                 <SystemStatus socket={socket} />
+            </div>
+        );
+    }
+
+    if (action === 'room-management') {
+        return (
+            <div className="discord-panel animate-fadeIn">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-discord-text-header flex items-center gap-2">
+                        <Shield size={20} />
+                        Gestión de Salas
+                    </h3>
+                    <button onClick={() => setActiveForm(null)} className="discord-button secondary text-xs py-1 px-2">
+                        Volver
+                    </button>
+                </div>
+                
+                <div className="space-y-4">
+                    <button 
+                        onClick={loadActiveRooms}
+                        className="discord-button w-full"
+                        disabled={roomsLoading}
+                    >
+                        {roomsLoading ? 'Cargando...' : 'Actualizar Lista'}
+                    </button>
+                    
+                    {roomsLoading ? (
+                        <div className="text-center py-8 text-discord-text-muted animate-pulse">
+                            Cargando salas activas...
+                        </div>
+                    ) : activeRooms.length === 0 ? (
+                        <div className="text-center py-8 text-discord-text-muted">
+                            No hay salas activas
+                        </div>
+                    ) : (
+                        <div className="space-y-3 max-h-96 overflow-y-auto">
+                            {activeRooms.map((room) => (
+                                <div key={room.roomId} className="discord-glass-subtle p-4 rounded-lg">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div>
+                                            <h4 className="font-bold text-discord-text-header">{room.name}</h4>
+                                            <p className="text-sm text-discord-text-muted">
+                                                Host: {room.hostName} • {room.playerCount}/10 jugadores
+                                            </p>
+                                            <p className="text-xs text-discord-text-normal">
+                                                Estado: {room.started ? 'En juego' : 'Esperando'} • 
+                                                {room.hasPassword ? 'Privada' : 'Pública'}
+                                            </p>
+                                        </div>
+                                        <div className={`px-2 py-1 rounded text-xs font-bold ${
+                                            room.started 
+                                                ? 'bg-green-500/20 text-green-400' 
+                                                : 'bg-yellow-500/20 text-yellow-400'
+                                        }`}>
+                                            {room.started ? 'ACTIVA' : 'ESPERANDO'}
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => handleJoinRoomAsAdmin(room.roomId)}
+                                            className="flex-1 discord-button secondary text-xs py-2"
+                                            disabled={isLoading}
+                                        >
+                                            <Eye size={14} className="inline mr-1" />
+                                            Observar
+                                        </button>
+                                        {room.started && (
+                                            <button
+                                                onClick={() => handleRoomAction('terminate-room', room.roomId)}
+                                                className="flex-1 discord-button warning text-xs py-2"
+                                                disabled={isLoading}
+                                            >
+                                                <StopCircle size={14} className="inline mr-1" />
+                                                Terminar
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => handleRoomAction('delete-room', room.roomId)}
+                                            className="flex-1 discord-button danger text-xs py-2"
+                                            disabled={isLoading}
+                                        >
+                                            <Trash2 size={14} className="inline mr-1" />
+                                            Eliminar
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
         );
     }
@@ -598,6 +775,16 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
                 isConfirming={confirmAction === 'reset-ips-cache'}
                 isLoading={isLoading}
                 variant="danger"
+              />
+
+              <ActionButton
+                icon={<Users size={24} />}
+                title="Gestionar Salas"
+                description="Ver, unirte y eliminar salas activas"
+                onClick={() => openForm('room-management')}
+                isConfirming={false}
+                isLoading={isLoading}
+                variant="info"
               />
             </div>
           )}

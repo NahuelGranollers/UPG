@@ -820,21 +820,94 @@ def register_socket_events(socketio, app=None):
             
         socketio.emit('admin:troll-mode-updated', {'userId': user_id, 'mode': mode})
 
-    @socketio.on('admin:trigger-effect')
-    def on_admin_trigger_effect(data):
-        if not is_admin(data.get('adminId')): return
-        user_id = data.get('userId')
-        effect = data.get('effect')
+    @socketio.on('admin:delete-room')
+    def on_admin_delete_room(data):
+        admin_id = data.get('adminId')
+        room_id = data.get('roomId')
+        if not is_admin(admin_id): return {'ok': False, 'error': 'Not admin'}
         
-        # Find the socket ID for the target user
-        target_sid = None
-        for sid, user in connected_users.items():
-            if user['id'] == user_id:
-                target_sid = sid
-                break
+        room = impostor_rooms.get(room_id)
+        if not room: return {'ok': False, 'error': 'Room not found'}
         
-        if target_sid:
-            socketio.emit('admin:effect-triggered', {'effect': effect}, room=target_sid)
+        # Notify all players in the room
+        socketio.emit('impostor:room-deleted', {
+            'roomId': room_id,
+            'reason': 'Admin deleted the room'
+        }, room=f"impostor:{room_id}")
+        
+        # Clean up the room
+        del impostor_rooms[room_id]
+        if room_id in public_servers['impostor']:
+            del public_servers['impostor'][room_id]
+        
+        # Broadcast updated server list
+        broadcast_servers(socketio)
+        
+        logger.info(f"[ADMIN] Room {room_id} deleted by admin {admin_id}")
+        return {'ok': True}
+
+    @socketio.on('admin:terminate-room')
+    def on_admin_terminate_room(data):
+        admin_id = data.get('adminId')
+        room_id = data.get('roomId')
+        if not is_admin(admin_id): return {'ok': False, 'error': 'Not admin'}
+        
+        room = impostor_rooms.get(room_id)
+        if not room: return {'ok': False, 'error': 'Room not found'}
+        if not room.get('started'): return {'ok': False, 'error': 'Room not started'}
+        
+        # End the game immediately
+        room['started'] = False
+        room['word'] = None
+        room['impostorId'] = None
+        room['voting'] = False
+        room['votes'] = {}
+        room['revealedInnocents'] = set()
+        
+        # Notify all players
+        socketio.emit('impostor:game-terminated', {
+            'roomId': room_id,
+            'reason': 'Admin terminated the game'
+        }, room=f"impostor:{room_id}")
+        
+        # Update room state
+        players_list = [{'id': pid, 'username': p['username'], 'revealedInnocent': False} for pid, p in room['players'].items()]
+        socketio.emit('impostor:room-state', {
+            'roomId': room_id,
+            'hostId': room['hostId'],
+            'players': players_list,
+            'started': room['started'],
+            'customWords': room['customWords'],
+            'name': room['name'],
+            'hasPassword': bool(room['password']),
+            'turnOrder': room.get('turnOrder', []),
+            'currentTurnIndex': room.get('currentTurnIndex', 0)
+        }, room=f"impostor:{room_id}")
+        
+        logger.info(f"[ADMIN] Room {room_id} terminated by admin {admin_id}")
+        return {'ok': True}
+
+    @socketio.on('admin:get-active-rooms')
+    def on_admin_get_active_rooms(data):
+        admin_id = data.get('adminId')
+        if not is_admin(admin_id): return {'ok': False, 'error': 'Not admin'}
+        
+        rooms_list = []
+        for room_id, room in impostor_rooms.items():
+            rooms_list.append({
+                'roomId': room_id,
+                'name': room['name'],
+                'hostId': room['hostId'],
+                'hostName': room['players'][room['hostId']]['username'] if room['hostId'] in room['players'] else 'Unknown',
+                'playerCount': len(room['players']),
+                'maxPlayers': 10,
+                'started': room['started'],
+                'hasPassword': bool(room['password']),
+                'createdAt': room.get('createdAt', ''),
+                'players': [{'id': pid, 'username': p['username']} for pid, p in room['players'].items()]
+            })
+        
+        return {'ok': True, 'rooms': rooms_list}
 
     # Helper functions
     def get_global_voice_state():
