@@ -4,6 +4,7 @@ import { Message, User, UserRole } from '../types';
 import { Trash2, Shield, Ban, UserX, VolumeX, Palette, Zap } from 'lucide-react';
 import SafeImage from './SafeImage';
 import { useUsers } from '../context/UserContext';
+import MessageInput from './MessageInput';
 
 interface MessageListProps {
   orderedMessages: Message[];
@@ -19,6 +20,19 @@ interface MessageListProps {
   handleTrollMode: (userId: string, username: string) => void;
   isBotTyping: boolean;
   messagesEndRef: React.RefObject<HTMLDivElement>;
+  // MessageInput props
+  inputText: string;
+  setInputText: (text: string) => void;
+  handleSendMessage: (e: React.FormEvent) => void;
+  inputRef: React.RefObject<HTMLInputElement>;
+  showMentionSuggestions: boolean;
+  mentionSuggestions: User[];
+  selectedSuggestionIndex: number;
+  setSelectedSuggestionIndex: (index: number) => void;
+  completeMention: (user: { username: string }) => void;
+  renderInputPreview: (text: string) => React.ReactNode;
+  currentChannel: { id: string; name: string };
+  onInputChange?: (value: string) => void;
 }
 
 const MessageList: React.FC<MessageListProps> = memo(({
@@ -35,6 +49,19 @@ const MessageList: React.FC<MessageListProps> = memo(({
   handleTrollMode,
   isBotTyping,
   messagesEndRef,
+  // MessageInput props
+  inputText,
+  setInputText,
+  handleSendMessage,
+  inputRef,
+  showMentionSuggestions,
+  mentionSuggestions,
+  selectedSuggestionIndex,
+  setSelectedSuggestionIndex,
+  completeMention,
+  renderInputPreview,
+  currentChannel,
+  onInputChange,
 }) => {
   const { users, userColors } = useUsers();
 
@@ -318,6 +345,24 @@ const MessageList: React.FC<MessageListProps> = memo(({
         )}
 
         <div ref={messagesEndRef} />
+      </div>
+
+      {/* Chat Input */}
+      <div className="mt-4">
+        <MessageInput
+          inputText={inputText}
+          setInputText={setInputText}
+          handleSendMessage={handleSendMessage}
+          inputRef={inputRef}
+          showMentionSuggestions={showMentionSuggestions}
+          mentionSuggestions={mentionSuggestions}
+          selectedSuggestionIndex={selectedSuggestionIndex}
+          setSelectedSuggestionIndex={setSelectedSuggestionIndex}
+          completeMention={completeMention}
+          renderInputPreview={renderInputPreview}
+          currentChannel={currentChannel}
+          onInputChange={onInputChange}
+        />
       </div>
     </div>
   );

@@ -72,7 +72,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
   );
 
   return (
-    <div className="chat-input-fixed safe-bottom">
+    <div className="safe-bottom">
       {/* Sugerencias de menciones */}
       {showMentionSuggestions && mentionSuggestions.length > 0 && (
         <div

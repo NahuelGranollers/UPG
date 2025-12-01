@@ -462,10 +462,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         handleTrollMode={handleTrollMode}
         isBotTyping={shouldShowBotTyping}
         messagesEndRef={messagesEndRef}
-      />
-
-      {/* Input */}
-      <MessageInput
+        // MessageInput props
         inputText={inputText}
         setInputText={setInputText}
         handleSendMessage={handleSendMessage}
