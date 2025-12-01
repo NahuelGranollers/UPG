@@ -22,7 +22,7 @@ interface GameServer {
   playerCount: number;
   maxPlayers: number;
   hasPassword: boolean;
-  gameType: 'cs16' | 'impostor';
+  gameType: 'impostor';
 }
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJoinServer, onCreateServer, onOpenSidebar }) => {
