@@ -186,83 +186,81 @@ function Home() {
     );
 
   return (
-    <Layout activeSection={activeSection} onActiveSectionChange={setActiveSection}>
-      <Suspense
-        fallback={<div className="flex-1 flex items-center justify-center">Cargando...</div>}
-      >
-        {showHome ? (
-          <HomeScreen
-            onGoToChat={() => {
-              navigate('/chat');
+    <Suspense
+      fallback={<div className="flex-1 flex items-center justify-center">Cargando...</div>}
+    >
+      {showHome ? (
+        <HomeScreen
+          onGoToChat={() => {
+            navigate('/chat');
+          }}
+          onGoToWhoWeAre={() => {
+            setShowHome(false);
+            setActiveView(AppView.WHO_WE_ARE);
+            setActiveSection('who');
+          }}
+          onJoinServer={handleJoinServer}
+          onCreateServer={handleCreateServer}
+          onOpenSidebar={() => setMobileSidebarOpen(true)}
+        />
+      ) : activeView === AppView.IMPOSTOR ? (
+        <ImpostorGame
+          onClose={() => {
+            setShowHome(true);
+            setActiveView(AppView.CHAT);
+            setActiveSection('home');
+            setAutoJoinRoomId(undefined);
+            setAutoJoinPassword(undefined);
+          }}
+          autoJoinRoomId={autoJoinRoomId}
+          autoJoinPassword={autoJoinPassword}
+        />
+      ) : activeView === AppView.CHAT ? (
+        <div className="flex w-full h-full">
+          <ChannelList
+            activeView={activeView}
+            currentChannelId={currentChannel.id}
+            onChannelSelect={(view, channel) => {
+              if (view && channel) {
+                setActiveView(view);
+                setCurrentChannel(channel);
+              } else if (channel) {
+                setCurrentChannel(channel);
+              }
             }}
-            onGoToWhoWeAre={() => {
-              setShowHome(false);
-              setActiveView(AppView.WHO_WE_ARE);
-              setActiveSection('who');
-            }}
-            onJoinServer={handleJoinServer}
-            onCreateServer={handleCreateServer}
-            onOpenSidebar={() => setMobileSidebarOpen(true)}
+            currentUser={currentUser}
+            activeVoiceChannel={voice.inChannel}
+            micActive={!voice.isMuted}
+            voiceLevel={voice.voiceLevel}
+            onVoiceJoin={handleVoiceJoin}
+            onLoginWithDiscord={loginWithDiscord}
+            onLogoutDiscord={logout}
+            onToggleMic={handleToggleMute}
+            onVoiceLeave={handleVoiceLeave}
           />
-        ) : activeView === AppView.IMPOSTOR ? (
-          <ImpostorGame
-            onClose={() => {
-              setShowHome(true);
-              setActiveView(AppView.CHAT);
-              setActiveSection('home');
-              setAutoJoinRoomId(undefined);
-              setAutoJoinPassword(undefined);
-            }}
-            autoJoinRoomId={autoJoinRoomId}
-            autoJoinPassword={autoJoinPassword}
+          <ChatInterface
+            currentUser={currentUser}
+            currentChannel={currentChannel}
+            onSendMessage={sendMessage}
+            messages={messages}
+            setMessages={setMessages}
+            onMenuToggle={() => {}}
           />
-        ) : activeView === AppView.CHAT ? (
-          <div className="flex w-full h-full">
-            <ChannelList
-              activeView={activeView}
-              currentChannelId={currentChannel.id}
-              onChannelSelect={(view, channel) => {
-                if (view && channel) {
-                  setActiveView(view);
-                  setCurrentChannel(channel);
-                } else if (channel) {
-                  setCurrentChannel(channel);
-                }
-              }}
-              currentUser={currentUser}
-              activeVoiceChannel={voice.inChannel}
-              micActive={!voice.isMuted}
-              voiceLevel={voice.voiceLevel}
-              onVoiceJoin={handleVoiceJoin}
-              onLoginWithDiscord={loginWithDiscord}
-              onLogoutDiscord={logout}
-              onToggleMic={handleToggleMute}
-              onVoiceLeave={handleVoiceLeave}
-            />
-            <ChatInterface
-              currentUser={currentUser}
-              currentChannel={currentChannel}
-              onSendMessage={sendMessage}
-              messages={messages}
-              setMessages={setMessages}
-              onMenuToggle={() => {}}
-            />
-            <UserList
-              currentUserId={currentUser.id}
-              currentUser={currentUser}
-            />
-          </div>
-        ) : activeView === AppView.WHO_WE_ARE ? (
-          <WhoWeAre />
-        ) : activeView === AppView.VOTING ? (
-          <Voting />
-        ) : activeView === AppView.NEWS ? (
-          <UPGNews />
-        ) : activeView === AppView.HALL_OF_FAME ? (
-          <HallOfFame />
-        ) : null}
-      </Suspense>
-    </Layout>
+          <UserList
+            currentUserId={currentUser.id}
+            currentUser={currentUser}
+          />
+        </div>
+      ) : activeView === AppView.WHO_WE_ARE ? (
+        <WhoWeAre />
+      ) : activeView === AppView.VOTING ? (
+        <Voting />
+      ) : activeView === AppView.NEWS ? (
+        <UPGNews />
+      ) : activeView === AppView.HALL_OF_FAME ? (
+        <HallOfFame />
+      ) : null}
+    </Suspense>
   );
 }
 
@@ -284,7 +282,8 @@ export default function App() {
                         } else if (section === 'impostor') {
                           window.location.href = '/impostor';
                         } else if (section === 'who') {
-                          window.location.href = '/quienes-somos';
+                          // Stay on home page but show "who we are" content
+                          // This will be handled by the Home component's internal state
                         } else if (section === 'voting') {
                           window.location.href = '/votaciones';
                         } else if (section === 'news') {
