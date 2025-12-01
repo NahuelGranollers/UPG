@@ -298,13 +298,7 @@ function MainApp() {
         {/* Centralized Menu Button (only when sidebar is closed) */}
         {!mobileSidebarOpen && (
           <button
-            className="md:hidden fixed top-3 left-3 p-3 liquid-glass rounded-lg shadow-lg z-[100] text-discord-text-normal hover:text-white border border-discord-hover"
-            style={{
-              paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))',
-              paddingLeft: 'max(0.75rem, env(safe-area-inset-left, 0px))',
-              minWidth: 48,
-              minHeight: 48,
-            }}
+            className="md:hidden fixed top-3 left-3 aspect-square w-12 liquid-glass rounded-lg shadow-lg z-[100] text-discord-text-normal hover:text-white border border-discord-hover flex items-center justify-center"
             aria-label="Abrir menú"
             onClick={() => setMobileSidebarOpen(true)}
           >

@@ -15,6 +15,41 @@ import time
 import html
 import os
 
+# Custom logging handler for real-time log broadcasting
+class SocketIOLogHandler(logging.Handler):
+    def __init__(self, socketio_instance, app_context):
+        super().__init__()
+        self.socketio = socketio_instance
+        self.app = app_context
+        self.setLevel(logging.INFO)  # Only broadcast INFO and above
+
+    def emit(self, record):
+        try:
+            # Format the log message
+            message = self.format(record)
+            
+            # Determine log level
+            level = record.levelname
+            
+            # Create log data
+            log_data = {
+                'timestamp': datetime.utcnow().isoformat(),
+                'level': level,
+                'message': message,
+                'logger': record.name,
+                'extra': {
+                    'filename': record.filename,
+                    'lineno': record.lineno,
+                    'funcName': record.funcName
+                }
+            }
+            
+            # Broadcast to admin logs room
+            self.socketio.emit('admin:log-entry', log_data, room='admin-logs')
+        except Exception as e:
+            # Don't let logging errors crash the app
+            print(f"Error in SocketIOLogHandler: {e}")
+
 logger = logging.getLogger(__name__)
 
 def uwuify(text):
@@ -58,6 +93,33 @@ def register_socket_events(socketio, app=None):
     # Log current state
     logger.info(f"[SOCKET] 📊 Initial state: {len(connected_users)} connected users, {len(impostor_rooms)} impostor rooms")
     print(f"[SOCKET] Initial state: {len(connected_users)} connected users, {len(impostor_rooms)} impostor rooms")
+
+    # Function to broadcast logs to subscribed admins
+    def broadcast_log_to_admins(level, message, extra_data=None):
+        try:
+            log_data = {
+                'timestamp': datetime.utcnow().isoformat(),
+                'level': level,
+                'message': message,
+                'extra': extra_data or {}
+            }
+            socketio.emit('admin:log-entry', log_data, room='admin-logs')
+        except Exception as e:
+            print(f"Error broadcasting log to admins: {e}")
+
+    # Store the broadcast function in app for use in other modules
+    if app:
+        app.broadcast_log_to_admins = broadcast_log_to_admins
+        
+        # Add SocketIO log handler to the root logger
+        socketio_handler = SocketIOLogHandler(socketio, app)
+        socketio_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        
+        # Add handler to root logger to capture all logs
+        root_logger = logging.getLogger()
+        root_logger.addHandler(socketio_handler)
+        
+        logger.info("[SOCKET] 📡 SocketIO log handler added to root logger")
     @socketio.on('admin:reset-ips-cache')
     def on_admin_reset_ips_cache(data):
         admin_id = data.get('adminId')
@@ -1147,35 +1209,25 @@ def register_socket_events(socketio, app=None):
         
         return {'ok': True, 'rooms': rooms_list}
 
-    @socketio.on('admin:join-room-as-admin')
-    def on_admin_join_room_as_admin(data):
+    @socketio.on('admin:subscribe-logs')
+    def on_admin_subscribe_logs(data):
         admin_id = data.get('adminId')
-        room_id = data.get('roomId')
         if not is_admin(admin_id): return {'ok': False, 'error': 'Not admin'}
         
-        # Check Impostor rooms
-        room = impostor_rooms.get(room_id)
-        if room:
-            # Unir al admin a la sala como observador
-            join_room(f"impostor:{room_id}")
-            
-            # Enviar estado actual de la sala al admin
-            socketio.emit('impostor:joined-room', {
-                'roomId': room_id,
-                'players': [{'id': pid, 'username': p['username'], 'revealedInnocent': pid in room.get('revealedInnocents', set())} for pid, p in room['players'].items()],
-                'gameState': {
-                    'started': room['started'],
-                    'voting': room.get('voting', False),
-                    'currentTurn': room.get('turnOrder', [])[room.get('currentTurnIndex', 0)] if room.get('turnOrder') else None
-                },
-                'isObserver': True,
-                'isAdmin': True
-            }, room=request.sid)
-            
-            logger.info(f"[ADMIN] Admin {admin_id} joined Impostor room {room_id} as observer")
-            return {'ok': True}
+        # Join admin to logs room
+        join_room('admin-logs')
+        logger.info(f"[ADMIN] Admin {admin_id} subscribed to real-time logs")
+        return {'ok': True}
+
+    @socketio.on('admin:unsubscribe-logs')
+    def on_admin_unsubscribe_logs(data):
+        admin_id = data.get('adminId')
+        if not is_admin(admin_id): return {'ok': False, 'error': 'Not admin'}
         
-        return {'ok': False, 'error': 'Room not found'}
+        # Leave admin from logs room
+        leave_room('admin-logs')
+        logger.info(f"[ADMIN] Admin {admin_id} unsubscribed from real-time logs")
+        return {'ok': True}
 
     # Helper functions
     def get_global_voice_state():

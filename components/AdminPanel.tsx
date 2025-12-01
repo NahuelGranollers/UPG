@@ -13,11 +13,64 @@ interface AdminPanelProps {
   socket: Socket | null;
 }
 
+const RealTimeLogs = ({ socket }: { socket: Socket | null }) => {
+  const [logs, setLogs] = useState<string[]>([]);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleLog = (logData: any) => {
+      const timestamp = new Date().toLocaleTimeString();
+      const logEntry = `[${timestamp}] ${logData.message || logData}`;
+      setLogs(prev => [...prev.slice(-49), logEntry]); // Keep last 50 logs
+    };
+
+    if (!isSubscribed) {
+      socket.emit('admin:subscribe-logs');
+      socket.on('admin:log-entry', handleLog);
+      setIsSubscribed(true);
+    }
+
+    return () => {
+      if (socket && isSubscribed) {
+        socket.emit('admin:unsubscribe-logs');
+        socket.off('admin:log-entry', handleLog);
+        setIsSubscribed(false);
+      }
+    };
+  }, [socket, isSubscribed]);
+
+  return (
+    <div className="discord-glass-subtle p-4">
+      <div className="flex items-center gap-2 mb-3 text-discord-text-header font-bold">
+        <Activity className="text-purple-400" size={20} />
+        <h3>Logs del Backend en Tiempo Real</h3>
+      </div>
+      <div className="bg-black/50 rounded p-3 max-h-64 overflow-y-auto custom-scrollbar font-mono text-xs space-y-1">
+        {logs.length === 0 ? (
+          <div className="text-discord-text-muted text-center py-4">
+            Esperando logs del servidor...
+          </div>
+        ) : (
+          logs.map((log, index) => (
+            <div key={index} className="text-discord-text-normal whitespace-pre-wrap break-words">
+              {log}
+            </div>
+          ))
+        )}
+      </div>
+      <div className="mt-2 text-xs text-discord-text-muted">
+        Mostrando los últimos {logs.length} logs • Estado: {isSubscribed ? 'Conectado' : 'Desconectado'}
+      </div>
+    </div>
+  );
+};
+
 const SystemStatus = ({ socket }: { socket: Socket | null }) => {
     const [mcStatus, setMcStatus] = useState<any>(null);
     const [loadingMc, setLoadingMc] = useState(true);
     const [backendLatency, setBackendLatency] = useState<number | null>(null);
-    const [systemStats, setSystemStats] = useState<{ cpu: number, memory: { percent: number } } | null>(null);
 
     useEffect(() => {
         // Fetch MC Status
@@ -34,23 +87,6 @@ const SystemStatus = ({ socket }: { socket: Socket | null }) => {
         fetch(`${getBackendUrl()}/api/health`) // Assuming health endpoint or just root
             .then(() => setBackendLatency(Date.now() - start))
             .catch(() => setBackendLatency(-1));
-
-        // Real System Stats
-        const fetchStats = () => {
-            fetch(`${getBackendUrl()}/api/system-stats`)
-                .then(res => res.json())
-                .then(data => {
-                    if (!data.error) {
-                        setSystemStats(data);
-                    }
-                })
-                .catch(console.error);
-        };
-
-        fetchStats();
-        const interval = setInterval(fetchStats, 2000);
-
-        return () => clearInterval(interval);
     }, []);
 
     return (
@@ -123,41 +159,8 @@ const SystemStatus = ({ socket }: { socket: Socket | null }) => {
                 </div>
             </div>
 
-            {/* Real Metrics */}
-            <div className="discord-glass-subtle p-4">
-                <div className="flex items-center gap-2 mb-4 text-discord-text-header font-bold">
-                    <Activity className="text-purple-400" size={20} />
-                    <h3>Métricas del Servidor (Real)</h3>
-                </div>
-                {systemStats ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div className="text-center">
-                            <div className="text-discord-text-muted text-xs uppercase font-bold mb-2">Uso de CPU</div>
-                            <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
-                                <svg className="w-full h-full transform -rotate-90">
-                                    <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-discord-surface" />
-                                    <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-purple-500 transition-all duration-500" strokeDasharray={`${systemStats.cpu * 2.51} 251`} />
-                                </svg>
-                                <span className="absolute text-xl font-bold text-white">{systemStats.cpu}%</span>
-                            </div>
-                        </div>
-                        <div className="text-center">
-                            <div className="text-discord-text-muted text-xs uppercase font-bold mb-2">Memoria RAM</div>
-                            <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
-                                <svg className="w-full h-full transform -rotate-90">
-                                    <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-discord-surface" />
-                                    <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-blue-500 transition-all duration-500" strokeDasharray={`${systemStats.memory.percent * 2.51} 251`} />
-                                </svg>
-                                <span className="absolute text-xl font-bold text-white">{systemStats.memory.percent}%</span>
-                            </div>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="text-center py-8 text-discord-text-muted animate-pulse">
-                        Conectando con el servidor...
-                    </div>
-                )}
-            </div>
+            {/* Real-time Backend Logs */}
+            <RealTimeLogs socket={socket} />
         </div>
     );
 };
