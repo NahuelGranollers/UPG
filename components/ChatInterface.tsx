@@ -413,22 +413,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   // Render
   return (
-    <div className="flex-1 flex flex-col discord-chat min-w-0 h-full overflow-hidden">
+    <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
       {/* Header */}
-      <div className="h-14 flex items-center justify-between px-4 shadow-sm border-b border-white/5 shrink-0 discord-header">
-        <div className="flex items-center text-discord-text-header font-bold truncate">
+      <header className="header flex items-center justify-between px-4 shrink-0">
+        <div className="flex items-center text-header font-bold truncate">
           <button
             onClick={onMenuToggle}
-            className="md:hidden mr-4 text-discord-text-muted hover:text-white"
+            className="md:hidden mr-4 btn-ghost touch-target"
             aria-label="Abrir menú"
-            aria-expanded="false"
           >
             <Menu size={24} />
           </button>
-          <Hash size={24} className="text-discord-text-muted mr-3 shrink-0" />
+          <Hash size={24} className="text-muted mr-3 shrink-0" />
           <span className="truncate">{currentChannel.name}</span>
         </div>
-      </div>
+      </header>
+
       {/* Mensajes */}
       <MessageList
         orderedMessages={orderedMessages}
@@ -445,8 +445,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         isBotTyping={shouldShowBotTyping}
         messagesEndRef={messagesEndRef}
       />
-      {/* Input: separado y con z-index para evitar solapamientos */}
-      <div className="w-full px-2 sm:px-6 lg:px-8 pb-2 sm:pb-6 lg:pb-8 z-base bg-transparent">
+
+      {/* Input */}
+      <div className="w-full px-4 pb-4 safe-bottom bg-transparent">
         <MessageInput
           inputText={inputText}
           setInputText={setInputText}

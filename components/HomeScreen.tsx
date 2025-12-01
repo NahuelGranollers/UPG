@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import SafeImage from './SafeImage';
-import { ArrowRight, Gamepad2, Users, Lock, Plus, Menu } from 'lucide-react';
+import { ArrowRight, Gamepad2, Users, Lock, Plus, Menu, Zap, Shield, Globe } from 'lucide-react';
 import MinecraftServerStatus from './MinecraftServerStatus';
 import { getBackendUrl } from '../utils/config';
 import CookieClicker from './CookieClicker';
@@ -26,7 +26,13 @@ interface GameServer {
   gameType: 'impostor';
 }
 
-const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJoinServer, onCreateServer, onOpenSidebar }) => {
+const HomeScreen: React.FC<HomeScreenProps> = ({
+  onGoToChat,
+  onGoToWhoWeAre,
+  onJoinServer,
+  onCreateServer,
+  onOpenSidebar
+}) => {
   const [servers, setServers] = useState<GameServer[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCookieClicker, setShowCookieClicker] = useState(false);
@@ -36,15 +42,15 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
     const fetchServers = async () => {
       try {
         const API_URL = getBackendUrl();
-          
+
         const res = await fetch(`${API_URL}/api/servers`);
         const data = await res.json();
         const allServers: GameServer[] = [];
-        
+
         if (data.servers?.impostor) {
           data.servers.impostor.forEach((s: any) => allServers.push({ ...s, gameType: 'impostor' }));
         }
-        
+
         setServers(allServers);
       } catch (e) {
         console.error('Error fetching servers', e);
@@ -63,7 +69,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
     password?: string;
     botCount?: number;
   }) => {
-    // For now, just call the original onCreateServer to maintain compatibility
     onCreateServer('impostor');
     setShowCreateModal(false);
   };
@@ -79,184 +84,251 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
     }
   };
 
-  // Auto-join listener
-  useEffect(() => {
-    const handleAutoJoin = (e: CustomEvent) => {
-      const { type, roomId } = e.detail;
-      onJoinServer(type, roomId);
-    };
-    
-    // Listen for socket event dispatched as DOM event or direct socket
-    // Since we don't have direct socket access here easily without context, 
-    // we rely on the parent or a global event if implemented.
-    // Ideally, SocketContext should handle this, but for now let's assume
-    // the socket event 'game:auto-join' triggers a navigation.
-  }, [onJoinServer]);
-
   return (
-    <div className="flex flex-col min-h-screen w-full bg-discord-bg overflow-x-hidden overflow-y-auto relative" style={{ paddingTop: 'calc(4.5rem + env(safe-area-inset-top, 0px))', paddingLeft: 'calc(1rem + env(safe-area-inset-left, 0px))' }}>
+    <div className="app-container">
       {/* Mobile Menu Button */}
       {onOpenSidebar && (
         <button
           onClick={onOpenSidebar}
-          className="md:hidden fixed top-3 left-3 p-3 liquid-glass rounded-full shadow-lg z-[100] text-discord-text-normal hover:text-white"
-          style={{
-            paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))',
-            paddingLeft: 'max(0.75rem, env(safe-area-inset-left, 0px))',
-            minWidth: 48,
-            minHeight: 48,
-          }}
+          className="md:hidden fixed top-4 left-4 z-50 btn-ghost touch-target safe-top safe-left"
+          aria-label="Abrir menú"
         >
-          <Menu size={28} />
+          <Menu size={24} />
         </button>
       )}
 
       {/* Floating Cookie Icon */}
       <button
         onClick={() => setShowCookieClicker(true)}
-        className="fixed bottom-6 right-6 z-[101] bg-white rounded-full shadow-lg p-4 hover:bg-yellow-200 transition-colors"
-        style={{ minWidth: 56, minHeight: 56 }}
+        className="fixed bottom-6 right-6 z-50 glass touch-target hover-lift animate-fade-in"
         aria-label="Abrir Cookie Clicker"
       >
-        <FaCookieBite size={32} color="#fbbf24" />
+        <div className="text-yellow-400">
+          <FaCookieBite size={28} />
+        </div>
       </button>
 
-      {/* Cookie Clicker Modal/Panel */}
+      {/* Cookie Clicker Modal */}
       {showCookieClicker && (
-        <div className="fixed inset-0 z-[102] flex items-center justify-center bg-black bg-opacity-40" onClick={() => setShowCookieClicker(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl p-0 max-w-md w-full relative" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[102] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="glass p-0 max-w-md w-full mx-4 relative animate-scale-in" onClick={e => e.stopPropagation()}>
             <button
               onClick={() => setShowCookieClicker(false)}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-xl font-bold"
+              className="absolute top-4 right-4 btn-ghost touch-target"
               aria-label="Cerrar"
-            >×</button>
+            >
+              ✕
+            </button>
             <CookieClicker />
           </div>
         </div>
       )}
 
-      <div className="flex-1 custom-scrollbar p-4 md:p-8 lg:p-12 flex flex-col items-center md:justify-center">
-        {/* Responsive Hero Section - always fully visible */}
-        <div
-          className="liquid-glass mb-8 mt-8 md:mt-0 p-6 sm:p-10 md:p-14 flex flex-col items-center text-center"
-          style={{
-            width: '100%',
-            maxWidth: 'clamp(320px, 90vw, 900px)',
-            minWidth: 'min(320px, 100vw)',
-          }}
-        >
-          <SafeImage
-            src="/upg.png"
-            alt="UPG"
-            className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-2xl shadow-lg mb-6"
-            fallbackSrc="/upg.png"
-          />
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 drop-shadow-md">
-            {TEXTS.appTitle}
-          </h1>
-          <p className="text-base sm:text-lg text-discord-text-muted mb-8" style={{maxWidth: 'clamp(220px, 80vw, 600px)'}}>
-            {TEXTS.welcomeMessage}
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-row gap-3 w-full sm:max-w-md md:max-w-none justify-center">
-            <button 
-              onClick={onGoToChat} 
-              className="glass-btn primary w-full md:w-auto px-8 py-3 text-lg font-bold"
-            >
-              {TEXTS.enterChat}
-            </button>
-            <button 
-              onClick={() => setShowCreateModal(true)}
-              className="glass-btn w-full md:w-auto px-8 py-3 text-lg font-bold relative overflow-hidden group"
-            >
-              <div className="flex items-center justify-center gap-2">
-                <Plus size={20} />
-                <span>{TEXTS.createImpostor}</span>
-              </div>
-               {/* Easter Egg Animation */}
-               <img 
-                src="/among-us.gif" 
-                alt="Among Us" 
-                className="absolute top-0 h-full w-auto pointer-events-none hidden group-hover:block animate-run-across"
-                style={{ left: '-60px' }}
+      <div className="scroll-area custom-scrollbar">
+        <div className="container-responsive py-8 space-y-8">
+          {/* Hero Section */}
+          <section className="text-center space-y-6 animate-fade-in">
+            <div className="glass p-8 md:p-12 max-w-4xl mx-auto">
+              <SafeImage
+                src="/upg.png"
+                alt="UPG Logo"
+                className="w-20 h-20 md:w-28 md:h-28 mx-auto mb-6 rounded-2xl shadow-lg"
+                fallbackSrc="/upg.png"
               />
-            </button>
-            <button 
-              onClick={onGoToWhoWeAre} 
-              className="glass-btn w-full md:w-auto px-8 py-3 text-lg font-bold sm:col-span-2 md:col-span-1"
-            >
-              {TEXTS.whatIsUPG}
-            </button>
-          </div>
-        </div>
 
-        {/* Minecraft Server Status */}
-        <div className="w-full max-w-4xl mb-8">
-          <MinecraftServerStatus />
-        </div>
+              <h1 className="text-3xl md:text-5xl font-black text-white mb-4 text-balance">
+                {TEXTS.appTitle}
+              </h1>
 
-        {/* Active Servers Section */}
-        <div className="max-w-6xl w-full">
-          <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
-            <h2 className="text-xl md:text-2xl font-bold text-discord-text-header flex items-center gap-2">
-              <Gamepad2 className="text-discord-blurple" />
-              {TEXTS.activeServers}
-            </h2>
-          </div>
+              <p className="text-lg md:text-xl text-secondary mb-8 max-w-2xl mx-auto text-balance">
+                {TEXTS.welcomeMessage}
+              </p>
 
-        {loading ? (
-          <div className="text-center py-12 text-discord-text-muted">{TEXTS.loadingServers}</div>
-        ) : servers.length === 0 ? (
-          <div className="text-center py-8 md:py-12 liquid-glass">
-            <p className="text-discord-text-muted mb-2 md:mb-4">{TEXTS.noActiveServers}</p>
-            <p className="text-sm text-discord-text-normal hidden md:block">{TEXTS.beTheFirst}</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-            {servers.map((server) => (
-              <div 
-                key={server.roomId} 
-                className="discord-glass-card p-4 hover:border-discord-blurple transition-all group"
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-bold text-discord-text-header truncate max-w-[200px]" title={server.name}>
-                      {server.name}
-                    </h3>
-                    <p className="text-xs text-discord-text-muted uppercase tracking-wider font-semibold mt-1">
-                      {TEXTS.impostor}
-                    </p>
-                  </div>
-                  {server.hasPassword && <Lock size={16} className="text-yellow-500" />}
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-3xl mx-auto">
+                <button
+                  onClick={onGoToChat}
+                  className="btn btn-primary w-full group"
+                >
+                  <Zap size={20} />
+                  {TEXTS.enterChat}
+                  <ArrowRight size={16} className="ml-auto group-hover:translate-x-1 transition-transform" />
+                </button>
 
-                <div className="flex items-center gap-4 text-sm text-discord-text-normal mb-4">
-                  <div className="flex items-center gap-1">
-                    <Users size={14} />
-                    <span>{server.playerCount}/{server.maxPlayers}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                    <span className="hidden md:inline">{TEXTS.waiting}</span>
-                  </div>
-                </div>
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="btn btn-secondary w-full group relative overflow-hidden"
+                >
+                  <Plus size={20} />
+                  {TEXTS.createImpostor}
+                  <img
+                    src="/among-us.gif"
+                    alt="Among Us"
+                    className="absolute top-0 h-full w-auto pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity animate-run-across"
+                    style={{ left: '-60px' }}
+                  />
+                </button>
 
-                <div className="flex items-center justify-between mt-auto pt-3 border-t border-white/10">
-                  <span className="text-xs text-discord-text-muted truncate max-w-[100px]">
-                    {TEXTS.host}: {server.hostName}
-                  </span>
-                  <button 
-                    onClick={() => handleJoinClick(server)}
-                    className="glass-btn primary w-full ml-4 py-2 text-sm"
-                    disabled={server.playerCount >= server.maxPlayers}
-                  >
-                    {server.playerCount >= server.maxPlayers ? TEXTS.full : TEXTS.join}
-                  </button>
-                </div>
+                <button
+                  onClick={onGoToWhoWeAre}
+                  className="btn btn-ghost w-full sm:col-span-2 lg:col-span-1"
+                >
+                  <Globe size={20} />
+                  {TEXTS.whatIsUPG}
+                </button>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            </div>
+          </section>
+
+          {/* Features Section */}
+          <section className="grid-responsive max-w-5xl mx-auto animate-slide-in">
+            <div className="card text-center">
+              <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Gamepad2 className="w-6 h-6 text-accent" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Juegos Multijugador</h3>
+              <p className="text-secondary text-sm">
+                Disfruta de partidas emocionantes de Impostor y CS16 con amigos en tiempo real.
+              </p>
+            </div>
+
+            <div className="card text-center">
+              <div className="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="w-6 h-6 text-success" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Comunidad Activa</h3>
+              <p className="text-secondary text-sm">
+                Únete a una comunidad vibrante en nuestro chat integrado.
+              </p>
+            </div>
+
+            <div className="card text-center">
+              <div className="w-12 h-12 bg-warning/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Shield className="w-6 h-6 text-warning" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Seguro y Moderado</h3>
+              <p className="text-secondary text-sm">
+                Ambiente seguro con moderación activa y herramientas de administración.
+              </p>
+            </div>
+          </section>
+
+          {/* Minecraft Server Status */}
+          <section className="animate-slide-in">
+            <MinecraftServerStatus />
+          </section>
+
+          {/* Active Servers Section */}
+          <section className="space-y-6 animate-slide-in">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
+                  <Gamepad2 className="text-accent" size={28} />
+                  {TEXTS.activeServers}
+                </h2>
+                <p className="text-secondary mt-1">
+                  {servers.length} {servers.length === 1 ? 'servidor activo' : 'servidores activos'}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="btn btn-secondary group"
+              >
+                <Plus size={20} />
+                {TEXTS.createServer}
+                <ArrowRight size={16} className="ml-2 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
+
+            {loading ? (
+              <div className="card text-center py-12">
+                <div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p className="text-secondary">{TEXTS.loadingServers}</p>
+              </div>
+            ) : servers.length === 0 ? (
+              <div className="card text-center py-12">
+                <Gamepad2 className="w-16 h-16 text-muted mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg font-semibold mb-2">{TEXTS.noActiveServers}</h3>
+                <p className="text-secondary mb-6">{TEXTS.beTheFirst}</p>
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="btn btn-primary"
+                >
+                  <Plus size={20} />
+                  {TEXTS.createFirstServer}
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {servers.map((server, index) => (
+                  <div
+                    key={server.roomId}
+                    className="card group animate-fade-in"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-lg truncate mb-1" title={server.name}>
+                          {server.name}
+                        </h3>
+                        <div className="flex items-center gap-2 text-sm text-secondary">
+                          <span className="px-2 py-1 bg-accent/10 text-accent rounded-md text-xs font-medium uppercase">
+                            {TEXTS.impostor}
+                          </span>
+                          {server.hasPassword && (
+                            <Lock size={14} className="text-warning" title="Requiere contraseña" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 mb-4">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <Users size={16} className="text-muted" />
+                          <span className="font-medium">
+                            {server.playerCount}/{server.maxPlayers}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${
+                            server.playerCount >= server.maxPlayers ? 'bg-danger' :
+                            server.playerCount > server.maxPlayers * 0.8 ? 'bg-warning' : 'bg-success'
+                          }`}></div>
+                          <span className="text-secondary text-xs">
+                            {server.playerCount >= server.maxPlayers ? 'Lleno' : 'Disponible'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="text-xs text-muted">
+                        {TEXTS.host}: <span className="font-medium">{server.hostName}</span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleJoinClick(server)}
+                      className="btn btn-primary w-full group"
+                      disabled={server.playerCount >= server.maxPlayers}
+                    >
+                      {server.playerCount >= server.maxPlayers ? (
+                        <>
+                          <Lock size={16} />
+                          {TEXTS.full}
+                        </>
+                      ) : (
+                        <>
+                          <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                          {TEXTS.join}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
       </div>
 
       {/* Create Server Modal */}
@@ -271,5 +343,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
     </div>
   );
 };
+
 export default HomeScreen;
 

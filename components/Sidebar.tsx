@@ -37,31 +37,35 @@ const Sidebar: React.FC<SidebarProps> = memo(
     // Obtener socket desde el contexto
     const { socket, isConnected } = useSocket();
     return (
-      <div className="w-[84px] discord-sidebar flex flex-col items-center py-5 space-y-4 overflow-y-auto shrink-0 relative h-full">
+      <div className="sidebar w-20 flex flex-col items-center py-5 space-y-4 overflow-y-auto custom-scrollbar h-full">
         {/* Profile/Config Button removed as requested */}
         {/* Direct Messages / Home */}
         {(() => {
           const active = activeSection === 'home';
           return (
-            <div className={`relative ${active ? 'group active' : 'group'}`}>
+            <div className="relative group">
               {active && (
-                <div className="absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1" />
+                <div className="absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1 animate-fade-in" />
               )}
               <button
                 onClick={() => {
                   if (onNavigate) onNavigate('home');
                   if (onHomeClick) onHomeClick();
                 }}
-                className={`w-14 h-14 ${active ? 'bg-discord-blurple text-white' : 'bg-discord-chat text-discord-text-normal hover:bg-discord-blurple hover:text-white'} rounded-[28px] hover:rounded-[18px] transition-all duration-200 flex items-center justify-center`}
+                className={`touch-target rounded-2xl transition-all duration-200 flex items-center justify-center hover-lift ${
+                  active
+                    ? 'bg-accent text-white shadow-lg'
+                    : 'bg-surface text-secondary hover:bg-accent hover:text-white'
+                }`}
                 aria-pressed={active}
               >
-                <Home size={32} />
+                <Home size={28} />
               </button>
             </div>
           );
         })()}
 
-        <div className="w-10 h-[2px] bg-discord-chat rounded-lg mx-auto" />
+        <div className="w-8 h-px bg-border rounded-lg mx-auto" />
 
         {/* UPG Server (Active) */}
         {(() => {
@@ -69,21 +73,25 @@ const Sidebar: React.FC<SidebarProps> = memo(
           return (
             <div className="relative">
               {active && (
-                <div className="absolute left-0 bg-white rounded-r-md w-1 h-12 top-1/2 -translate-y-1/2 -ml-1" />
+                <div className="absolute left-0 bg-white rounded-r-md w-1 h-12 top-1/2 -translate-y-1/2 -ml-1 animate-fade-in" />
               )}
               <button
                 onClick={() => {
                   if (onNavigate) onNavigate('chat');
                   if (onUPGClick) onUPGClick();
                 }}
-                className={`w-14 h-14 ${active ? 'bg-discord-green text-white' : 'bg-discord-chat text-discord-green hover:bg-discord-yellow hover:text-white'} rounded-[28px] hover:rounded-[18px] transition-all duration-200 flex items-center justify-center`}
+                className={`touch-target rounded-2xl transition-all duration-200 flex items-center justify-center hover-lift ${
+                  active
+                    ? 'bg-success text-white shadow-lg'
+                    : 'bg-surface text-success hover:bg-warning hover:text-white'
+                }`}
                 title="UPG"
                 aria-pressed={active}
               >
                 <SafeImage
                   src="/upg.png"
                   alt="UPG"
-                  className="object-cover w-full h-full"
+                  className="object-cover w-full h-full rounded-xl"
                   fallbackSrc="https://ui-avatars.com/api/?name=UPG&background=ffcc17&color=ffcc17&size=128"
                 />
               </button>
@@ -91,7 +99,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
           );
         })()}
 
-        <div className="w-10 h-[2px] bg-discord-chat rounded-lg mx-auto" />
+        <div className="w-8 h-px bg-border rounded-lg mx-auto" />
 
         {/* Impostor game (navigate to full page) */}
         {(() => {
@@ -99,11 +107,15 @@ const Sidebar: React.FC<SidebarProps> = memo(
           return (
             <div className="relative">
               {active && (
-                <div className="absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1" />
+                <div className="absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1 animate-fade-in" />
               )}
               <button
                 onClick={() => onNavigate && onNavigate('impostor')}
-                className={`w-14 h-14 ${active ? 'bg-discord-blurple text-white' : 'bg-discord-chat text-discord-text-normal hover:bg-discord-blurple hover:text-white'} rounded-[28px] hover:rounded-[18px] transition-all duration-200 flex items-center justify-center`}
+                className={`touch-target rounded-2xl transition-all duration-200 flex items-center justify-center hover-lift ${
+                  active
+                    ? 'bg-accent text-white shadow-lg'
+                    : 'bg-surface text-secondary hover:bg-accent hover:text-white'
+                }`}
                 title="Impostor"
                 aria-pressed={active}
               >
@@ -125,13 +137,17 @@ const Sidebar: React.FC<SidebarProps> = memo(
             return (
               <div className="relative">
                 {active && (
-                  <div className="absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1" />
+                  <div className="absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1 animate-fade-in" />
                 )}
                 <button
                   onClick={() => {
                     if (onNavigate) onNavigate('who');
                   }}
-                  className={`w-14 h-14 ${active ? 'bg-discord-blurple text-white' : 'bg-discord-chat text-discord-text-normal hover:bg-discord-hover hover:text-discord-text-normal'} rounded-[28px] hover:rounded-[18px] transition-all duration-200 flex items-center justify-center`}
+                  className={`touch-target rounded-2xl transition-all duration-200 flex items-center justify-center hover-lift ${
+                    active
+                      ? 'bg-accent text-white shadow-lg'
+                      : 'bg-surface text-secondary hover:bg-surface-hover hover:text-white'
+                  }`}
                   title="Quiénes somos"
                   aria-pressed={active}
                 >
@@ -146,13 +162,17 @@ const Sidebar: React.FC<SidebarProps> = memo(
             return (
               <div className="relative">
                 {active && (
-                  <div className="absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1" />
+                  <div className="absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1 animate-fade-in" />
                 )}
                 <button
                   onClick={() => {
                     if (onNavigate) onNavigate('voting');
                   }}
-                  className={`w-14 h-14 ${active ? 'bg-discord-blurple text-white' : 'bg-discord-chat text-discord-text-normal hover:bg-discord-hover hover:text-discord-text-normal'} rounded-[28px] hover:rounded-[18px] transition-all duration-200 flex items-center justify-center`}
+                  className={`touch-target rounded-2xl transition-all duration-200 flex items-center justify-center hover-lift ${
+                    active
+                      ? 'bg-accent text-white shadow-lg'
+                      : 'bg-surface text-secondary hover:bg-surface-hover hover:text-white'
+                  }`}
                   title="Votaciones"
                   aria-pressed={active}
                 >
@@ -167,13 +187,17 @@ const Sidebar: React.FC<SidebarProps> = memo(
             return (
               <div className="relative">
                 {active && (
-                  <div className="absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1" />
+                  <div className="absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1 animate-fade-in" />
                 )}
                 <button
                   onClick={() => {
                     if (onNavigate) onNavigate('news');
                   }}
-                  className={`w-14 h-14 ${active ? 'bg-discord-blurple text-white' : 'bg-discord-chat text-discord-text-normal hover:bg-discord-hover hover:text-discord-text-normal'} rounded-[28px] hover:rounded-[18px] transition-all duration-200 flex items-center justify-center`}
+                  className={`touch-target rounded-2xl transition-all duration-200 flex items-center justify-center hover-lift ${
+                    active
+                      ? 'bg-accent text-white shadow-lg'
+                      : 'bg-surface text-secondary hover:bg-surface-hover hover:text-white'
+                  }`}
                   title="Noticias UPG"
                   aria-pressed={active}
                 >
@@ -188,13 +212,17 @@ const Sidebar: React.FC<SidebarProps> = memo(
             return (
               <div className="relative">
                 {active && (
-                  <div className="absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1" />
+                  <div className="absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1 animate-fade-in" />
                 )}
                 <button
                   onClick={() => {
                     if (onNavigate) onNavigate('hall_of_fame');
                   }}
-                  className={`w-14 h-14 ${active ? 'bg-discord-blurple text-white' : 'bg-discord-chat text-discord-text-normal hover:bg-discord-hover hover:text-discord-text-normal'} rounded-[28px] hover:rounded-[18px] transition-all duration-200 flex items-center justify-center`}
+                  className={`touch-target rounded-2xl transition-all duration-200 flex items-center justify-center hover-lift ${
+                    active
+                      ? 'bg-accent text-white shadow-lg'
+                      : 'bg-surface text-secondary hover:bg-surface-hover hover:text-white'
+                  }`}
                   title="Salón de la Fama"
                   aria-pressed={active}
                 >
@@ -209,25 +237,23 @@ const Sidebar: React.FC<SidebarProps> = memo(
         {/* Admin Panel Button - Only visible for admins */}
         {isAdmin && (
           <>
-            <div className="w-10 h-[2px] bg-discord-chat rounded-lg mx-auto mt-auto" />
+            <div className="w-8 h-px bg-border rounded-lg mx-auto mt-auto" />
             <button
               onClick={onOpenAdmin}
-              className="w-14 h-14 bg-red-600 hover:bg-red-700 text-white rounded-[28px] hover:rounded-[18px] transition-all duration-200 flex items-center justify-center"
+              className="touch-target bg-danger hover:bg-danger text-white rounded-2xl transition-all duration-200 flex items-center justify-center hover-lift shadow-lg"
               title="Panel de Administración"
             >
-              <Shield size={28} />
+              <Shield size={24} />
             </button>
           </>
         )}
 
-        {/* Impostor is displayed as a full page in App when selected */}
-        
         {/* Connection Status Indicator */}
         <div className="mt-auto pb-2 flex flex-col items-center gap-1" title={isConnected ? "Conectado" : "Desconectado"}>
           {isConnected ? (
-            <div className="w-3 h-3 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
+            <div className="w-3 h-3 bg-success rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
           ) : (
-            <WifiOff size={20} className="text-red-500 animate-pulse" />
+            <WifiOff size={20} className="text-danger animate-pulse" />
           )}
         </div>
       </div>

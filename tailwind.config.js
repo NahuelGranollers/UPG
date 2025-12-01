@@ -2,8 +2,7 @@
 export default {
   content: [
     './index.html',
-    // Remove the broad "./**/*.{js,ts,jsx,tsx}" pattern
-    './src/**/*.{js,ts,jsx,tsx}', // Add this line if your code is in a 'src' folder
+    './src/**/*.{js,ts,jsx,tsx}',
     './components/**/*.{js,ts,jsx,tsx}',
     './App.tsx',
     './index.tsx',
@@ -11,13 +10,35 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Sistema de colores unificado
+        bg: 'var(--bg)',
+        'bg-secondary': 'var(--bg-secondary)',
+        surface: 'var(--surface)',
+        'surface-hover': 'var(--surface-hover)',
+        'surface-active': 'var(--surface-active)',
+        border: 'var(--border)',
+        'border-hover': 'var(--border-hover)',
+        text: 'var(--text)',
+        'text-secondary': 'var(--text-secondary)',
+        'text-muted': 'var(--text-muted)',
+        'text-header': 'var(--text-header)',
+        accent: 'var(--accent)',
+        'accent-hover': 'var(--accent-hover)',
+        'accent-light': 'var(--accent-light)',
+        success: 'var(--success)',
+        warning: 'var(--warning)',
+        danger: 'var(--danger)',
+        info: 'var(--info)',
+        muted: 'var(--text-muted)',
+
+        // Compatibilidad con colores anteriores
         discord: {
-          dark: '#1a1a1e',
+          dark: '#0f0f0f',
           sidebar: '#2b2d31',
           'sidebar-hover': '#35373c',
-          chat: '#313338',
+          chat: '#1a1a1a',
           header: '#2b2d31',
-          hover: '#3f4147',
+          hover: '#404249',
           blurple: '#5865F2',
           'blurple-hover': '#4752c4',
           green: '#23a559',
@@ -29,37 +50,83 @@ export default {
             header: '#f2f3f5',
           },
         },
-        // Colores UPG consistentes con Discord
         upg: {
-          primary: '#5865F2', // Discord blurple como primary
-          secondary: '#23a559', // Discord green
-          accent: '#ffcc17', // UPG yellow
-          danger: '#da373c', // Discord red
+          primary: '#5865F2',
+          secondary: '#23a559',
+          accent: '#ffcc17',
+          danger: '#da373c',
           warning: '#faa61a',
           success: '#23a559',
-          surface: '#2b2d31', // Discord sidebar
-          'surface-hover': '#35373c', // Discord sidebar-hover
-          background: '#313338', // Discord chat
-          border: '#3f4147', // Discord hover
+          surface: '#2b2d31',
+          'surface-hover': '#35373c',
+          background: '#1a1a1a',
+          border: '#404249',
           text: {
-            primary: '#f2f3f5', // Discord header
-            secondary: '#dbdee1', // Discord normal
-            muted: '#949ba4', // Discord muted
+            primary: '#f2f3f5',
+            secondary: '#dbdee1',
+            muted: '#949ba4',
           },
         },
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+      },
+      spacing: {
+        'safe-top': 'max(var(--space-lg), env(safe-area-inset-top))',
+        'safe-bottom': 'max(var(--space-lg), env(safe-area-inset-bottom))',
+        'safe-left': 'max(var(--space-lg), env(safe-area-inset-left))',
+        'safe-right': 'max(var(--space-lg), env(safe-area-inset-right))',
       },
       borderRadius: {
+        'radius-sm': 'var(--radius-sm)',
+        'radius': 'var(--radius)',
+        'radius-md': 'var(--radius-md)',
+        'radius-lg': 'var(--radius-lg)',
+        'radius-xl': 'var(--radius-xl)',
+        'radius-2xl': 'var(--radius-2xl)',
         discord: '8px',
         'discord-lg': '12px',
         'discord-xl': '16px',
       },
       boxShadow: {
+        'shadow-sm': 'var(--shadow-sm)',
+        'shadow': 'var(--shadow)',
+        'shadow-md': 'var(--shadow-md)',
+        'shadow-lg': 'var(--shadow-lg)',
+        'shadow-xl': 'var(--shadow-xl)',
+        'shadow-2xl': 'var(--shadow-2xl)',
         discord: '0 2px 10px rgba(0, 0, 0, 0.2)',
         'discord-lg': '0 4px 20px rgba(0, 0, 0, 0.3)',
         'discord-xl': '0 8px 32px rgba(0, 0, 0, 0.4)',
+      },
+      transitionDuration: {
+        'fast': 'var(--transition-fast)',
+        'normal': 'var(--transition-normal)',
+        'slow': 'var(--transition-slow)',
+      },
+      animation: {
+        'fade-in': 'fade-in 0.3s ease-out',
+        'slide-in': 'slide-in 0.3s ease-out',
+        'scale-in': 'scale-in 0.2s ease-out',
+        'run-across': 'run-across 2s linear infinite',
+      },
+      keyframes: {
+        'fade-in': {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'slide-in': {
+          '0%': { opacity: '0', transform: 'translateX(-20px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
+        'scale-in': {
+          '0%': { opacity: '0', transform: 'scale(0.95)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        'run-across': {
+          '0%': { left: '-60px' },
+          '100%': { left: '100%' },
+        },
       },
     },
   },

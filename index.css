@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== SISTEMA DE DISEÑO UNIFICADO UPG ===== */
+
 /* Optimizaciones globales para móvil */
 * {
   -webkit-tap-highlight-color: transparent;
@@ -39,43 +41,551 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Tema: variables reutilizables para coherencia visual estilo Discord con Liquid Glass iOS 26 */
+/* ===== VARIABLES DE SISTEMA DE DISEÑO ===== */
+
+/* Tema base: Diseño moderno con inspiración iOS 26 Liquid Glass */
 :root {
-  --bg: #313338; /* Discord chat background */
-  --chat-bg: #313338; /* Chat input background */
-  --sidebar-bg: #2b2d31; /* Discord sidebar */
-  --header-bg: #2b2d31; /* Discord header */
-  --surface: #2b2d31; /* Surface elements */
+  /* Colores base */
+  --bg: #0f0f0f; /* Fondo principal oscuro */
+  --bg-secondary: #1a1a1a; /* Fondo secundario */
+  --surface: #2b2d31; /* Superficies elevadas */
   --surface-hover: #35373c; /* Hover states */
-  --muted: #949ba4; /* Discord muted text */
-  --text: #dbdee1; /* Discord normal text */
-  --text-header: #f2f3f5; /* Discord header text */
-  --blurple: #5865F2; /* Discord blurple */
-  --blurple-hover: #4752c4; /* Discord blurple hover */
-  --green: #23a559; /* Discord green */
-  --red: #da373c; /* Discord red */
-  --yellow: #ffcc17; /* UPG accent */
-  --border: #3f4147; /* Discord hover/border */
-  --glass: rgba(255,255,255,0.02); /* Subtle glass effect */
+  --surface-active: #404249; /* Active states */
+  --border: #404249; /* Bordes sutiles */
+  --border-hover: #4f545c; /* Bordes en hover */
 
-  /* Sombras iOS 26 Liquid Glass */
-  --shadow: 0 4px 16px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.08);
-  --shadow-xl: 0 16px 64px rgba(0,0,0,0.16), 0 8px 32px rgba(0,0,0,0.12);
-  --shadow-2xl: 0 24px 96px rgba(0,0,0,0.2), 0 12px 48px rgba(0,0,0,0.16);
+  /* Texto */
+  --text: #ffffff; /* Texto principal */
+  --text-secondary: #dbdee1; /* Texto secundario */
+  --text-muted: #949ba4; /* Texto muted */
+  --text-header: #f2f3f5; /* Headers */
 
-  /* Efectos de profundidad iOS 26 */
-  --depth-1: 0 2px 8px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
-  --depth-2: 0 4px 16px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
-  --depth-3: 0 8px 32px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.08);
-  --depth-4: 0 16px 64px rgba(0,0,0,0.16), 0 8px 32px rgba(0,0,0,0.12);
-  --depth-5: 0 24px 96px rgba(0,0,0,0.2), 0 12px 48px rgba(0,0,0,0.16);
+  /* Colores de acento */
+  --accent: #5865F2; /* Azul principal (Discord blurple) */
+  --accent-hover: #4752c4; /* Hover del acento */
+  --accent-light: rgba(88, 101, 242, 0.1); /* Fondo acento sutil */
 
-  /* Transparencias iOS 26 */
-  --glass-subtle: rgba(255,255,255,0.04);
-  --glass-medium: rgba(255,255,255,0.08);
-  --glass-strong: rgba(255,255,255,0.12);
-  --glass-intense: rgba(255,255,255,0.16);
+  --success: #23a559; /* Verde éxito */
+  --warning: #ffcc17; /* Amarillo warning */
+  --danger: #da373c; /* Rojo danger */
+  --info: #00b8d4; /* Azul info */
+
+  /* Glass morphism */
+  --glass-bg: rgba(255, 255, 255, 0.02); /* Fondo glass sutil */
+  --glass-border: rgba(255, 255, 255, 0.08); /* Borde glass */
+  --glass-highlight: rgba(255, 255, 255, 0.04); /* Resaltado glass */
+
+  /* Sombras modernas */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  /* Espaciado consistente */
+  --space-xs: 0.25rem; /* 4px */
+  --space-sm: 0.5rem;  /* 8px */
+  --space-md: 0.75rem; /* 12px */
+  --space-lg: 1rem;    /* 16px */
+  --space-xl: 1.25rem; /* 20px */
+  --space-2xl: 1.5rem; /* 24px */
+  --space-3xl: 2rem;   /* 32px */
+  --space-4xl: 2.5rem; /* 40px */
+
+  /* Bordes redondeados */
+  --radius-sm: 0.25rem; /* 4px */
+  --radius: 0.375rem;   /* 6px */
+  --radius-md: 0.5rem;  /* 8px */
+  --radius-lg: 0.75rem; /* 12px */
+  --radius-xl: 1rem;    /* 16px */
+  --radius-2xl: 1.5rem; /* 24px */
+
+  /* Transiciones */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== CLASES DE UTILIDAD UNIFICADAS ===== */
+
+/* Botones principales */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  text-decoration: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.02) 50%,
+    transparent 100%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.btn:hover::before {
+  opacity: 1;
+}
+
+.btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-light);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+  box-shadow: var(--shadow);
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow);
+}
+
+.btn-success {
+  background: var(--success);
+  color: white;
+}
+
+.btn-success:hover {
+  background: #1e8c4a;
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #c13b40;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: transparent;
+}
+
+.btn-ghost:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+/* Inputs unificados */
+.input {
+  width: 100%;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--text);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.input::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    transparent 50%);
+  pointer-events: none;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-light);
+  background: var(--surface-hover);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+.input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Cards unificadas */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.02) 0%,
+    transparent 50%);
+  pointer-events: none;
+}
+
+.card:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* Paneles */
+.panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow);
+}
+
+/* Glass morphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-xl);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.02) 50%,
+    transparent 100%);
+  pointer-events: none;
+}
+
+/* ===== CORRECCIONES DE SCROLL MÓVIL ===== */
+
+/* Contenedor principal con scroll mejorado */
+.app-container {
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Área de contenido scrollable */
+.scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling en iOS */
+  overscroll-behavior-y: contain; /* Prevenir scroll chain */
+  scroll-behavior: smooth;
+}
+
+/* Scrollbars personalizadas */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Safe areas para dispositivos con notch */
+.safe-top {
+  padding-top: max(var(--space-lg), env(safe-area-inset-top));
+}
+
+.safe-bottom {
+  padding-bottom: max(var(--space-lg), env(safe-area-inset-bottom));
+}
+
+.safe-left {
+  padding-left: max(var(--space-lg), env(safe-area-inset-left));
+}
+
+.safe-right {
+  padding-right: max(var(--space-lg), env(safe-area-inset-right));
+}
+
+/* Touch targets mínimos */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Prevenir zoom en inputs */
+@media screen and (max-width: 768px) {
+  input, textarea, select {
+    font-size: 16px !important; /* Prevenir zoom en iOS */
+  }
+}
+
+/* ===== ANIMACIONES Y TRANSICIONES ===== */
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
+}
+
+/* Hover effects sutiles */
+.hover-lift {
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+
+/* Mobile first */
+@media (max-width: 640px) {
+  :root {
+    --space-lg: 0.875rem;
+    --space-xl: 1rem;
+    --space-2xl: 1.25rem;
+  }
+
+  .btn {
+    padding: var(--space-sm) var(--space-md);
+    font-size: 0.8125rem;
+  }
+
+  .card {
+    padding: var(--space-md);
+  }
+
+  .panel {
+    padding: var(--space-lg);
+  }
+}
+
+/* Tablet */
+@media (min-width: 641px) and (max-width: 1024px) {
+  :root {
+    --space-lg: 0.9375rem;
+    --space-xl: 1.125rem;
+    --space-2xl: 1.375rem;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1025px) {
+  :root {
+    --space-lg: 1rem;
+    --space-xl: 1.25rem;
+    --space-2xl: 1.5rem;
+  }
+}
+
+/* ===== LEGACY COMPATIBILITY ===== */
+
+/* Mantener compatibilidad con clases existentes */
+.discord-card,
+.discord-glass-card {
+  @apply card;
+}
+
+.discord-button,
+.discord-button.primary {
+  @apply btn btn-primary;
+}
+
+.discord-button.secondary {
+  @apply btn btn-secondary;
+}
+
+.discord-input {
+  @apply input;
+}
+
+.discord-panel {
+  @apply panel;
+}
+
+.discord-glass,
+.liquid-glass {
+  @apply glass;
+}
+
+/* ===== COMPONENTES ESPECÍFICOS ===== */
+
+/* Headers */
+.header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: var(--space-lg) var(--space-xl);
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text-header);
+}
+
+/* Sidebar */
+.sidebar {
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  padding: var(--space-lg);
+}
+
+/* Chat area */
+.chat-area {
+  background: var(--bg);
+  padding: var(--space-lg);
+}
+
+/* ===== UTILIDADES ===== */
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.container-responsive {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
+}
+
+.grid-responsive {
+  display: grid;
+  gap: var(--space-lg);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+@media (max-width: 640px) {
+  .grid-responsive {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== FOCUS Y ACCESIBILIDAD ===== */
+
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* Ensure the `bg-discord-green` utility (used in sidebar buttons) uses the UPG yellow accent

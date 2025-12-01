@@ -72,19 +72,16 @@ const MessageInput: React.FC<MessageInputProps> = ({
   );
 
   return (
-    <div
-      className="px-0 sm:px-4 lg:px-6 pt-0 shrink-0 relative"
-      style={{ paddingBottom: 'max(0.25rem, env(safe-area-inset-bottom))' }}
-    >
+    <div className="shrink-0 relative safe-bottom">
       {/* Sugerencias de menciones */}
       {showMentionSuggestions && mentionSuggestions.length > 0 && (
         <div
-          className="mention-suggestions z-top"
+          className="glass mb-2 max-h-60 overflow-y-auto custom-scrollbar animate-slide-in"
           role="listbox"
           aria-label="Sugerencias de mención"
         >
-          <div className="py-2">
-            <div className="px-3 py-1 text-xs font-semibold text-discord-text-muted uppercase">
+          <div className="p-2">
+            <div className="px-3 py-1 text-xs font-semibold text-muted uppercase">
               Mencionar
             </div>
             {/* Renderizar sugerencias */}
@@ -93,11 +90,15 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 key={user.id}
                 onClick={() => completeMention(user)}
                 onMouseEnter={() => setSelectedSuggestionIndex(globalIndex)}
-                className={`w-full px-3 py-2 flex items-center gap-3 transition-all duration-150 ${globalIndex === selectedSuggestionIndex ? 'bg-discord-blurple scale-[1.02] shadow-lg' : 'hover:bg-[#36373d] hover:scale-[1.01]'}`}
+                className={`w-full px-3 py-2 flex items-center gap-3 rounded-md transition-all duration-150 ${
+                  globalIndex === selectedSuggestionIndex
+                    ? 'bg-accent scale-[1.02] shadow-lg'
+                    : 'hover:bg-surface-hover hover:scale-[1.01]'
+                }`}
                 aria-label={`Mencionar a ${user.username}`}
                 role="option"
               >
-                <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 bg-gray-600">
+                <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 bg-surface">
                   <img
                     src={user.avatar || ''}
                     alt={user.username}
@@ -105,7 +106,9 @@ const MessageInput: React.FC<MessageInputProps> = ({
                   />
                   {'online' in user && (
                     <div
-                      className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#2f3136] ${user.online ? 'bg-green-500' : 'bg-gray-500'}`}
+                      className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-bg ${
+                        user.online ? 'bg-success' : 'bg-muted'
+                      }`}
                     />
                   )}
                 </div>
@@ -113,20 +116,20 @@ const MessageInput: React.FC<MessageInputProps> = ({
                   <div className="font-medium text-white flex items-center gap-2">
                     {user.username}
                     {user.id === 'bot' && (
-                      <span className="text-[10px] bg-discord-blurple px-1.5 py-0.5 rounded uppercase">
+                      <span className="text-[10px] bg-accent px-1.5 py-0.5 rounded uppercase">
                         Bot
                       </span>
                     )}
                   </div>
                   {'online' in user && (
-                    <div className="text-xs text-discord-text-muted">
+                    <div className="text-xs text-muted">
                       {user.online ? '🟢 En línea' : '⚫ Desconectado'}
                     </div>
                   )}
                 </div>
-                <div className="text-xs text-discord-text-muted">
+                <div className="text-xs text-muted">
                   {globalIndex === selectedSuggestionIndex && (
-                    <span className="bg-gray-700 px-2 py-0.5 rounded">Tab</span>
+                    <span className="bg-surface px-2 py-0.5 rounded">Tab</span>
                   )}
                 </div>
               </button>
@@ -135,14 +138,16 @@ const MessageInput: React.FC<MessageInputProps> = ({
         </div>
       )}
 
-      <div className="flex items-end gap-2">
+      <div className="flex items-end gap-3">
         <div
-          className={`flex-1 bg-[var(--chat-bg)] rounded-md px-3 sm:px-4 lg:px-6 py-1 flex items-center gap-2 transition-all duration-150 relative z-base ${showMentionSuggestions ? 'ring-1 ring-[var(--blurple)]' : ''}`}
+          className={`flex-1 glass px-4 py-3 flex items-center gap-2 transition-all duration-150 relative ${
+            showMentionSuggestions ? 'ring-2 ring-accent' : ''
+          }`}
         >
           <form onSubmit={handleSendMessage} className="flex-1 flex items-center relative">
             {/* Preview layer */}
             <div
-              className="absolute left-3 right-10 inset-y-0 flex items-center pointer-events-none overflow-hidden whitespace-pre text-sm text-discord-text-normal"
+              className="absolute left-4 right-10 inset-y-0 flex items-center pointer-events-none overflow-hidden whitespace-pre text-sm text-secondary"
               aria-hidden="true"
             >
               {renderInputPreview(inputText)}
@@ -157,7 +162,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               placeholder={`Enviar mensaje a #${currentChannel.name}`}
-              className={`relative z-10 bg-[var(--chat-bg)] w-full text-base md:text-sm outline-none min-h-[28px] pl-1 pr-2 transition-all text-[var(--text)] placeholder-[var(--muted)] rounded-md`}
+              className="input relative z-10 bg-transparent w-full outline-none min-h-[28px] pl-1 pr-2 transition-all"
               aria-label="Escribir mensaje"
               maxLength={2000}
               autoComplete="off"
@@ -168,7 +173,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
         {/* Botón de envío */}
         <button
           onClick={(e) => handleSendMessage(e)}
-          className="p-3 bg-[#5865F2] rounded-full text-white shadow-lg active:scale-95 transition-transform flex items-center justify-center shrink-0 mb-[1px] hover:bg-[#4752c4]"
+          className="btn btn-primary touch-target mb-[1px] active:scale-95 transition-transform"
           aria-label="Enviar mensaje"
         >
           <Send size={20} />

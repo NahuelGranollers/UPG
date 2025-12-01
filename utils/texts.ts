@@ -54,6 +54,8 @@ export const TEXTS = {
   maxPlayers: 'Máximo de Jugadores',
   botCount: 'Cantidad de Bots',
   create: 'Crear',
+  createServer: 'Crear Servidor',
+  createFirstServer: 'Crear el Primer Servidor',
   cancel: 'Cancelar',
   waitingForPlayers: 'Esperando jugadores...',
   gameStarting: 'El juego comenzará pronto',
