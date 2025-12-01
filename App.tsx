@@ -28,6 +28,7 @@ const UPGNews = React.lazy(() => import('./components/UPGNews'));
 const HallOfFame = React.lazy(() => import('./components/HallOfFame'));
 const AdminPanel = React.lazy(() => import('./components/AdminPanel'));
 const Layout = React.lazy(() => import('./components/Layout'));
+const ChatPage = React.lazy(() => import('./components/ChatPage'));
 
 function Home() {
   const navigate = useNavigate();
@@ -98,9 +99,7 @@ function Home() {
       setShowHome(false);
       switch (section) {
         case 'chat':
-          navigate('/');
-          setActiveView(AppView.CHAT);
-          setActiveSection('chat');
+          navigate('/chat');
           break;
         case 'impostor':
           navigate('/impostor');
@@ -128,10 +127,8 @@ function Home() {
   }, []);
 
   const handleUPGClick = useCallback(() => {
-    setShowHome(false);
-    setActiveView(AppView.CHAT);
-    setActiveSection('chat');
-  }, []);
+    navigate('/chat');
+  }, [navigate]);
 
   const handleJoinServer = useCallback((gameType: string, roomId: string, password?: string) => {
     setAutoJoinRoomId(roomId);
@@ -196,9 +193,7 @@ function Home() {
         {showHome ? (
           <HomeScreen
             onGoToChat={() => {
-              setShowHome(false);
-              setActiveView(AppView.CHAT);
-              setActiveSection('chat');
+              navigate('/chat');
             }}
             onGoToWhoWeAre={() => {
               setShowHome(false);
@@ -277,14 +272,51 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={
-            <AuthProvider>
-              <SocketProvider>
-                <UserProvider>
-                  <Home />
-                  <Toaster position="top-right" theme="dark" richColors />
-                </UserProvider>
-              </SocketProvider>
-            </AuthProvider>
+            <ErrorBoundary>
+              <AuthProvider>
+                <SocketProvider>
+                  <UserProvider>
+                    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-discord-bg text-white">Cargando...</div>}>
+                      <Layout activeSection="home" onActiveSectionChange={(section) => {
+                        // Handle navigation from sidebar in home page
+                        if (section === 'chat') {
+                          window.location.href = '/chat';
+                        } else if (section === 'impostor') {
+                          window.location.href = '/impostor';
+                        } else if (section === 'who') {
+                          window.location.href = '/quienes-somos';
+                        } else if (section === 'voting') {
+                          window.location.href = '/votaciones';
+                        } else if (section === 'news') {
+                          window.location.href = '/noticias';
+                        } else if (section === 'hall_of_fame') {
+                          window.location.href = '/salon-fama';
+                        }
+                      }}>
+                        <Home />
+                      </Layout>
+                    </Suspense>
+                    <Toaster position="top-right" theme="dark" richColors />
+                  </UserProvider>
+                </SocketProvider>
+              </AuthProvider>
+            </ErrorBoundary>
+          } />
+          <Route path="/chat" element={
+            <ErrorBoundary>
+              <AuthProvider>
+                <SocketProvider>
+                  <UserProvider>
+                    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-discord-bg text-white">Cargando...</div>}>
+                      <Layout activeSection="chat">
+                        <ChatPage />
+                      </Layout>
+                    </Suspense>
+                    <Toaster position="top-right" theme="dark" richColors />
+                  </UserProvider>
+                </SocketProvider>
+              </AuthProvider>
+            </ErrorBoundary>
           } />
           <Route path="/impostor" element={
             <ErrorBoundary>

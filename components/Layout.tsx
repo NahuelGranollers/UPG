@@ -61,7 +61,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeSection = 'home', onAct
     } else {
       switch (section) {
         case 'chat':
-          navigate('/');
+          navigate('/chat');
           if (onActiveSectionChange) onActiveSectionChange('chat');
           break;
         case 'impostor':
@@ -94,7 +94,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeSection = 'home', onAct
   }, [navigate, onActiveSectionChange]);
 
   const handleUPGClick = useCallback(() => {
-    navigate('/');
+    navigate('/chat');
     if (onActiveSectionChange) onActiveSectionChange('chat');
   }, [navigate, onActiveSectionChange]);
 
