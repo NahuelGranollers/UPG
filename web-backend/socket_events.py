@@ -118,8 +118,8 @@ def register_socket_events(socketio, app=None):
                 del voice_states[request.sid]
                 socketio.emit('voice:state', get_global_voice_state())
 
-            # Impostor cleanup
-            cleanup_impostor_player(user['id'], user['username'])
+            # Game cleanup
+            cleanup_player_from_games(user['id'], user['username'])
 
             socketio.emit('user:offline', {'userId': user['id']})
             socketio.emit('users:list', list(connected_users.values()))
@@ -747,6 +747,37 @@ def register_socket_events(socketio, app=None):
         db.session.commit()
         socketio.emit('channel:history', {'channelId': None, 'messages': []})
 
+    @socketio.on('admin:clear-users')
+    def on_admin_clear_users(data):
+        admin_id = data.get('adminId')
+        if not is_admin(admin_id): return
+        
+        # Clear all connected users except bot
+        users_to_disconnect = []
+        for sid, user in list(connected_users.items()):
+            if user['id'] != 'bot':
+                users_to_disconnect.append((sid, user['id']))
+        
+        for sid, user_id in users_to_disconnect:
+            if sid in connected_users:
+                del connected_users[sid]
+            socketio.disconnect(sid)
+        
+        # Clear voice states
+        voice_states.clear()
+        
+        # Clear user room maps
+        user_room_map.clear()
+        
+        # Clear all game rooms
+        impostor_rooms.clear()
+        public_servers['impostor'].clear()
+        
+        # Emit updates
+        socketio.emit('voice:state', get_global_voice_state())
+        broadcast_servers(socketio)
+        socketio.emit('users:list', list(connected_users.values()))
+
     @socketio.on('admin:ban-user')
     def on_admin_ban(data):
         admin_id = data.get('adminId')
@@ -826,25 +857,26 @@ def register_socket_events(socketio, app=None):
         room_id = data.get('roomId')
         if not is_admin(admin_id): return {'ok': False, 'error': 'Not admin'}
         
+        # Check Impostor rooms
         room = impostor_rooms.get(room_id)
-        if not room: return {'ok': False, 'error': 'Room not found'}
+        if room:
+            # Notify all players in the room
+            socketio.emit('impostor:room-deleted', {
+                'roomId': room_id,
+                'reason': 'Admin deleted the room'
+            }, room=f"impostor:{room_id}")
+            
+            # Clean up the room
+            del impostor_rooms[room_id]
+            if room_id in public_servers['impostor']:
+                del public_servers['impostor'][room_id]
+            
+            # Broadcast updated server list
+            broadcast_servers(socketio)
+            logger.info(f"[ADMIN] Impostor room {room_id} deleted by admin {admin_id}")
+            return {'ok': True}
         
-        # Notify all players in the room
-        socketio.emit('impostor:room-deleted', {
-            'roomId': room_id,
-            'reason': 'Admin deleted the room'
-        }, room=f"impostor:{room_id}")
-        
-        # Clean up the room
-        del impostor_rooms[room_id]
-        if room_id in public_servers['impostor']:
-            del public_servers['impostor'][room_id]
-        
-        # Broadcast updated server list
-        broadcast_servers(socketio)
-        
-        logger.info(f"[ADMIN] Room {room_id} deleted by admin {admin_id}")
-        return {'ok': True}
+        return {'ok': False, 'error': 'Room not found'}
 
     @socketio.on('admin:terminate-room')
     def on_admin_terminate_room(data):
@@ -852,40 +884,43 @@ def register_socket_events(socketio, app=None):
         room_id = data.get('roomId')
         if not is_admin(admin_id): return {'ok': False, 'error': 'Not admin'}
         
+        # Check Impostor rooms
         room = impostor_rooms.get(room_id)
-        if not room: return {'ok': False, 'error': 'Room not found'}
-        if not room.get('started'): return {'ok': False, 'error': 'Room not started'}
+        if room:
+            if not room.get('started'): return {'ok': False, 'error': 'Room not started'}
+            
+            # End the game immediately
+            room['started'] = False
+            room['word'] = None
+            room['impostorId'] = None
+            room['voting'] = False
+            room['votes'] = {}
+            room['revealedInnocents'] = set()
+            
+            # Notify all players
+            socketio.emit('impostor:game-terminated', {
+                'roomId': room_id,
+                'reason': 'Admin terminated the game'
+            }, room=f"impostor:{room_id}")
+            
+            # Update room state
+            players_list = [{'id': pid, 'username': p['username'], 'revealedInnocent': False} for pid, p in room['players'].items()]
+            socketio.emit('impostor:room-state', {
+                'roomId': room_id,
+                'hostId': room['hostId'],
+                'players': players_list,
+                'started': room['started'],
+                'customWords': room['customWords'],
+                'name': room['name'],
+                'hasPassword': bool(room['password']),
+                'turnOrder': room.get('turnOrder', []),
+                'currentTurnIndex': room.get('currentTurnIndex', 0)
+            }, room=f"impostor:{room_id}")
+            
+            logger.info(f"[ADMIN] Impostor room {room_id} terminated by admin {admin_id}")
+            return {'ok': True}
         
-        # End the game immediately
-        room['started'] = False
-        room['word'] = None
-        room['impostorId'] = None
-        room['voting'] = False
-        room['votes'] = {}
-        room['revealedInnocents'] = set()
-        
-        # Notify all players
-        socketio.emit('impostor:game-terminated', {
-            'roomId': room_id,
-            'reason': 'Admin terminated the game'
-        }, room=f"impostor:{room_id}")
-        
-        # Update room state
-        players_list = [{'id': pid, 'username': p['username'], 'revealedInnocent': False} for pid, p in room['players'].items()]
-        socketio.emit('impostor:room-state', {
-            'roomId': room_id,
-            'hostId': room['hostId'],
-            'players': players_list,
-            'started': room['started'],
-            'customWords': room['customWords'],
-            'name': room['name'],
-            'hasPassword': bool(room['password']),
-            'turnOrder': room.get('turnOrder', []),
-            'currentTurnIndex': room.get('currentTurnIndex', 0)
-        }, room=f"impostor:{room_id}")
-        
-        logger.info(f"[ADMIN] Room {room_id} terminated by admin {admin_id}")
-        return {'ok': True}
+        return {'ok': False, 'error': 'Room not found'}
 
     @socketio.on('admin:get-active-rooms')
     def on_admin_get_active_rooms(data):
@@ -893,6 +928,8 @@ def register_socket_events(socketio, app=None):
         if not is_admin(admin_id): return {'ok': False, 'error': 'Not admin'}
         
         rooms_list = []
+        
+        # Add Impostor rooms
         for room_id, room in impostor_rooms.items():
             rooms_list.append({
                 'roomId': room_id,
@@ -904,10 +941,41 @@ def register_socket_events(socketio, app=None):
                 'started': room['started'],
                 'hasPassword': bool(room['password']),
                 'createdAt': room.get('createdAt', ''),
+                'gameType': 'impostor',
                 'players': [{'id': pid, 'username': p['username']} for pid, p in room['players'].items()]
             })
         
         return {'ok': True, 'rooms': rooms_list}
+
+    @socketio.on('admin:join-room-as-admin')
+    def on_admin_join_room_as_admin(data):
+        admin_id = data.get('adminId')
+        room_id = data.get('roomId')
+        if not is_admin(admin_id): return {'ok': False, 'error': 'Not admin'}
+        
+        # Check Impostor rooms
+        room = impostor_rooms.get(room_id)
+        if room:
+            # Unir al admin a la sala como observador
+            join_room(f"impostor:{room_id}")
+            
+            # Enviar estado actual de la sala al admin
+            socketio.emit('impostor:joined-room', {
+                'roomId': room_id,
+                'players': [{'id': pid, 'username': p['username'], 'revealedInnocent': pid in room.get('revealedInnocents', set())} for pid, p in room['players'].items()],
+                'gameState': {
+                    'started': room['started'],
+                    'voting': room.get('voting', False),
+                    'currentTurn': room.get('turnOrder', [])[room.get('currentTurnIndex', 0)] if room.get('turnOrder') else None
+                },
+                'isObserver': True,
+                'isAdmin': True
+            }, room=request.sid)
+            
+            logger.info(f"[ADMIN] Admin {admin_id} joined Impostor room {room_id} as observer")
+            return {'ok': True}
+        
+        return {'ok': False, 'error': 'Room not found'}
 
     # Helper functions
     def get_global_voice_state():
@@ -928,7 +996,8 @@ def register_socket_events(socketio, app=None):
         logger.info(f"[SOCKET] Emitting servers:updated: {snapshot}")
         sio.emit('servers:updated', {'servers': snapshot})
 
-    def cleanup_impostor_player(user_id, username):
+    def cleanup_player_from_games(user_id, username):
+        # Cleanup from Impostor rooms
         for room_id, room in list(impostor_rooms.items()):
             if user_id in room['players']:
                 del room['players'][user_id]
@@ -967,5 +1036,4 @@ def register_socket_events(socketio, app=None):
                     }, room=f"impostor:{room_id}")
                     
                     broadcast_servers(socketio)
-
 
