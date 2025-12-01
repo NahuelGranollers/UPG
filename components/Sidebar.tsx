@@ -80,7 +80,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                   if (onNavigate) onNavigate('chat');
                   if (onUPGClick) onUPGClick();
                 }}
-                className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift ${
+                className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift w-12 h-12 ${
                   active
                     ? 'bg-[#ffcc17] text-white shadow-lg'
                     : 'bg-surface text-success hover:bg-warning hover:text-white'
