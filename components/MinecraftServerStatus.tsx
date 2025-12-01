@@ -9,6 +9,7 @@ interface ServerStatus {
   players: {
     online: number;
     max: number;
+    list?: string[];
   };
   motd: {
     html: string[];
@@ -27,8 +28,9 @@ const MinecraftServerStatus: React.FC = () => {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const res = await fetch(`https://api.mcsrvstat.us/2/${SERVER_IP}`);
+        const res = await fetch(`https://api.mcsrvstat.us/2/${SERVER_IP}?query=players`);
         const data = await res.json();
+        // console.log('Minecraft server status:', data); // Debug log - removed for production
         setStatus(data);
       } catch (e) {
         console.error('Error fetching MC status', e);
