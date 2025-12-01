@@ -37,7 +37,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
     // Obtener socket desde el contexto
     const { socket, isConnected } = useSocket();
     return (
-      <div className="sidebar w-32 flex flex-col items-center py-5 space-y-4 overflow-y-auto custom-scrollbar h-full">
+      <div className="sidebar w-24 flex flex-col items-center py-5 space-y-4 overflow-y-auto custom-scrollbar h-full">
         {/* Profile/Config Button removed as requested */}
         {/* Direct Messages / Home */}
         {(() => {

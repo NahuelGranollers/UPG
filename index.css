@@ -350,12 +350,20 @@ body {
 .chat-input-fixed {
   position: fixed;
   bottom: 0;
-  left: 0;
-  right: 0;
+  left: 0.5rem;
+  right: 0.5rem;
   background: var(--bg);
   border-top: 1px solid var(--border);
   padding: var(--space-md) var(--space-lg);
   z-index: 10;
+}
+
+/* Responsive positioning to match chat messages container */
+@media (min-width: 640px) {
+  .chat-input-fixed {
+    left: 1rem;
+    right: 1rem;
+  }
 }
 
 /* Mejorar scroll en móviles */

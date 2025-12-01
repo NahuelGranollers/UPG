@@ -286,7 +286,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
       )}
 
       {/* Bottom Controls (User) */}
-      <div className="bg-[#232428] shrink-0 flex flex-col md:static mt-auto md:mt-0 md:rounded-t-none rounded-t-lg">
+      <div className="bg-[#232428] shrink-0 flex flex-col z-30 md:static mt-auto md:mt-0 md:rounded-t-none rounded-t-lg">
         <div className="h-[64px] sm:h-[52px] px-2 flex items-center">
           <div className="group flex items-center py-1 px-1 pl-0.5 rounded-md hover:bg-discord-hover cursor-pointer mr-2 min-w-0 flex-1">
             <div className="relative w-9 h-9 sm:w-8 sm:h-8 mr-2 ml-1 shrink-0">
