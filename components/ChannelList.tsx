@@ -66,6 +66,7 @@ const TextChannelItem = React.memo(
             ? 'bg-discord-hover text-discord-text-header'
             : 'text-discord-text-muted hover:bg-discord-hover hover:text-discord-text-normal'
         }`}
+        title={description}
       >
         <Icon size={20} className="mr-2 sm:mr-1.5 text-gray-400 shrink-0" />
         <span
@@ -109,12 +110,18 @@ const VoiceChannelItem = React.memo(({
             ? 'bg-discord-hover text-white'
             : 'text-discord-text-muted hover:bg-discord-hover hover:text-discord-text-normal'
         }`}
+        title={`${name} - ${usersInChannel.length} usuario${usersInChannel.length !== 1 ? 's' : ''} conectado${usersInChannel.length !== 1 ? 's' : ''}`}
       >
         <Volume2
           size={20}
           className={`mr-2 sm:mr-1.5 shrink-0 ${isConnected ? 'text-green-500' : 'text-gray-400'}`}
         />
         <span className="font-medium text-sm sm:text-[15px] truncate flex-1">{name}</span>
+        {usersInChannel.length > 0 && (
+          <span className="text-xs text-discord-text-muted ml-2">
+            ({usersInChannel.length})
+          </span>
+        )}
       </div>
       {/* Render Users Inside Channel */}
       {usersInChannel.length > 0 && (
@@ -168,9 +175,23 @@ const ChannelList: React.FC<ChannelListProps> = ({
   // micActive is now controlled by parent via props; keep local for fallback
   const [localMicActive, setLocalMicActive] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [textChannelsCollapsed, setTextChannelsCollapsed] = useState(false);
+  const [voiceChannelsCollapsed, setVoiceChannelsCollapsed] = useState(false);
   const { updateUser } = useAuth();
   const { socket } = useSocket();
-  // We will use sonner directly when needed via import in ServerSettings and here call window.toaster via toast import is unnecessary
+
+  // Define available text channels
+  const textChannels = [
+    { id: 'general', name: 'general', description: 'Chat general de UPG' },
+    { id: 'juegos', name: 'juegos', description: 'Discusiones sobre juegos' },
+    { id: 'ayuda', name: 'ayuda', description: 'Preguntas y soporte técnico' },
+    { id: 'off-topic', name: 'off-topic', description: 'Conversaciones casuales' },
+  ];
+
+  // Define available voice channels
+  const voiceChannels = [
+    { id: 'plaza-upg', name: 'Plaza UPG', description: 'Canal de voz principal' },
+  ];
 
   return (
     <div className="bg-[#232428] shrink-0 flex flex-col z-30 md:static mt-auto md:mt-0 md:rounded-t-none rounded-t-lg">
@@ -198,39 +219,57 @@ const ChannelList: React.FC<ChannelListProps> = ({
       <div className="flex-1 overflow-y-auto p-3 custom-scrollbar space-y-5 pb-4 md:pb-24">
         {/* Category: Text Channels */}
         <div>
-          <div className="flex items-center justify-between px-0.5 mb-1 text-xs font-bold text-discord-text-muted hover:text-discord-text-header uppercase tracking-wide cursor-pointer">
+          <div 
+            className="flex items-center justify-between px-0.5 mb-1 text-xs font-bold text-discord-text-muted hover:text-discord-text-header uppercase tracking-wide cursor-pointer"
+            onClick={() => setTextChannelsCollapsed(!textChannelsCollapsed)}
+          >
             <div className="flex items-center">
-              <ChevronDown size={10} className="mr-0.5" />
+              <ChevronDown 
+                size={10} 
+                className={`mr-0.5 transition-transform ${textChannelsCollapsed ? 'rotate-[-90deg]' : ''}`} 
+              />
               CANALES DE TEXTO
             </div>
             <span className="text-xl leading-none relative top-[1px]">+</span>
           </div>
 
-          <TextChannelItem 
-            id="general" 
-            name="general" 
-            description="Chat general de UPG" 
-            activeView={activeView}
-            currentChannelId={currentChannelId}
-            onChannelSelect={onChannelSelect}
-          />
+          {!textChannelsCollapsed && textChannels.map(channel => (
+            <TextChannelItem 
+              key={channel.id}
+              id={channel.id} 
+              name={channel.name} 
+              description={channel.description} 
+              activeView={activeView}
+              currentChannelId={currentChannelId}
+              onChannelSelect={onChannelSelect}
+            />
+          ))}
         </div>
 
         {/* Category: Voice Channels */}
         <div>
-          <div className="flex items-center justify-between px-0.5 mb-1 text-xs font-bold text-discord-text-muted hover:text-discord-text-header uppercase tracking-wide cursor-pointer">
+          <div 
+            className="flex items-center justify-between px-0.5 mb-1 text-xs font-bold text-discord-text-muted hover:text-discord-text-header uppercase tracking-wide cursor-pointer"
+            onClick={() => setVoiceChannelsCollapsed(!voiceChannelsCollapsed)}
+          >
             <div className="flex items-center">
-              <ChevronDown size={10} className="mr-0.5" />
+              <ChevronDown 
+                size={10} 
+                className={`mr-0.5 transition-transform ${voiceChannelsCollapsed ? 'rotate-[-90deg]' : ''}`} 
+              />
               CANALES DE VOZ
             </div>
           </div>
 
-          <VoiceChannelItem 
-            name="Plaza UPG" 
-            activeVoiceChannel={activeVoiceChannel}
-            onVoiceJoin={onVoiceJoin}
-            currentUser={currentUser}
-          />
+          {!voiceChannelsCollapsed && voiceChannels.map(channel => (
+            <VoiceChannelItem 
+              key={channel.id}
+              name={channel.name} 
+              activeVoiceChannel={activeVoiceChannel}
+              onVoiceJoin={onVoiceJoin}
+              currentUser={currentUser}
+            />
+          ))}
         </div>
       </div>
 
