@@ -34,6 +34,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
 
+  // Ordenar mensajes: más antiguo arriba, más reciente abajo
+  const orderedMessages = useMemo(() => {
+    const combined = [...(messages || []), ...localMessages];
+    const sorted = combined.sort((a, b) => {
+      const ta = new Date(a.timestamp).getTime();
+      const tb = new Date(b.timestamp).getTime();
+      return ta - tb;
+    });
+    // Limitar a los últimos 100 mensajes para performance
+    return sorted.slice(-100);
+  }, [messages, localMessages]);
+
   // Auto-scroll to bottom when new messages arrive (only if user is near bottom)
   useEffect(() => {
     const container = messagesEndRef.current?.parentElement?.parentElement;
