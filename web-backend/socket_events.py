@@ -179,8 +179,8 @@ def register_socket_events(socketio, app=None):
         content = apply_troll_transform(data.get('userId'), content)
         
         msg_id = str(uuid.uuid4())
-        # Adjust to UTC+1
-        timestamp = datetime.utcnow() + timedelta(hours=1)
+        # Use UTC timestamp consistently with client
+        timestamp = datetime.utcnow()
         msg = Message(
             id=msg_id,
             channel_id=data.get('channelId'),
