@@ -1450,6 +1450,9 @@ button[aria-disabled='true'] {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
 }
+.custom-scrollbar {
+  overscroll-behavior-y: contain;
+}
 
 
 @keyframes run-across {

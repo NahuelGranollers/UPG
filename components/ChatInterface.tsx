@@ -57,6 +57,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   }, [orderedMessages]);
 
+  // Scroll to bottom when changing channels
+  useEffect(() => {
+    setTimeout(() => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'auto' });
+      }
+    }, 100);
+  }, [currentChannel.id]);
+
   // Actualizar chat al recibir channel:history y nuevos mensajes
   const { socket, isConnected } = useSocket();
   useEffect(() => {
