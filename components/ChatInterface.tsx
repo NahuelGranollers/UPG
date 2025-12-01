@@ -210,7 +210,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         username: currentUser.username,
         avatar: currentUser.avatar,
         content: inputText,
-        timestamp: new Date(Date.now() - 1000).toISOString(), // 1 segundo antes para asegurar orden correcto
+        timestamp: new Date(Date.now()).toISOString(), // Timestamp actual para asegurar orden correcto con respuestas del bot
         channelId: currentChannel.id,
         status: 'sending',
       } as any;
