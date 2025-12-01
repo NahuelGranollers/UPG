@@ -164,25 +164,6 @@ export const TEXTS = {
   gameInProgress: 'Juego en progreso',
   notAuthorized: 'No autorizado',
 
-  // Cookie Clicker
-  cookieClicker: 'Cookie Clicker',
-  cookies: 'Galletas',
-  cookiesPerSecond: 'galletas por segundo',
-  clickCookie: 'Haz clic en la galleta',
-  buy: 'Comprar',
-  price: 'Precio',
-  owned: 'Poseído',
-  upgrade: 'Mejora',
-  achievement: 'Logro',
-  achievements: 'Logros',
-  statistics: 'Estadísticas',
-  totalCookies: 'Galletas totales',
-  totalClicks: 'Clics totales',
-  cookiesBaked: 'Galletas horneadas',
-  timePlayed: 'Tiempo jugado',
-  reset: 'Reiniciar',
-  confirmReset: '¿Estás seguro de que quieres reiniciar? Perderás todo el progreso.',
-
   // Quiénes Somos
   whoWeAre: 'Quiénes Somos',
   aboutDescription: 'Somos una comunidad apasionada por los juegos...',

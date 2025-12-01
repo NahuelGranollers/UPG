@@ -3,8 +3,6 @@ import SafeImage from './SafeImage';
 import { ArrowRight, Gamepad2, Users, Lock, Plus, Menu, Zap, Globe } from 'lucide-react';
 import MinecraftServerStatus from './MinecraftServerStatus';
 import { getBackendUrl } from '../utils/config';
-import CookieClicker from './CookieClicker';
-import { FaCookieBite } from 'react-icons/fa';
 import CreateServerModal from './CreateServerModal';
 import { TEXTS } from '../utils/texts';
 
@@ -35,7 +33,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
 }) => {
   const [servers, setServers] = useState<GameServer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCookieClicker, setShowCookieClicker] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
@@ -95,33 +92,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
         >
           <Menu size={24} />
         </button>
-      )}
-
-      {/* Floating Cookie Icon */}
-      <button
-        onClick={() => setShowCookieClicker(true)}
-        className="fixed bottom-6 right-6 z-50 glass touch-target hover-lift animate-fade-in"
-        aria-label="Abrir Cookie Clicker"
-      >
-        <div className="text-yellow-400">
-          <FaCookieBite size={28} />
-        </div>
-      </button>
-
-      {/* Cookie Clicker Modal */}
-      {showCookieClicker && (
-        <div className="fixed inset-0 z-[102] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="glass p-0 max-w-md w-full mx-4 relative animate-scale-in" onClick={e => e.stopPropagation()}>
-            <button
-              onClick={() => setShowCookieClicker(false)}
-              className="absolute top-4 right-4 btn-ghost touch-target"
-              aria-label="Cerrar"
-            >
-              ✕
-            </button>
-            <CookieClicker />
-          </div>
-        </div>
       )}
 
       <div className="scroll-area custom-scrollbar">

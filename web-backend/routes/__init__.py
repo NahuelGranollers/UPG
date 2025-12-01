@@ -245,7 +245,6 @@ def discord_callback():
         
         session['user_id'] = user.id
         session['user_role'] = user.role
-        session['discord_id'] = user.id  # Ensure discord_id is set for CookieClicker
         
         return redirect(f"{frontend_url}/?auth=success")
         

@@ -75,9 +75,3 @@ class Message(db.Model):
             'isSystem': self.is_system
         }
 
-class CookieClickerProgress(db.Model):
-    __tablename__ = 'cookie_clicker_progress'
-    discord_id = db.Column(db.String(100), primary_key=True)
-    count = db.Column(db.Integer, default=0)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
