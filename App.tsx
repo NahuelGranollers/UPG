@@ -27,6 +27,7 @@ const Voting = React.lazy(() => import('./components/Voting'));
 const UPGNews = React.lazy(() => import('./components/UPGNews'));
 const HallOfFame = React.lazy(() => import('./components/HallOfFame'));
 const AdminPanel = React.lazy(() => import('./components/AdminPanel'));
+const Layout = React.lazy(() => import('./components/Layout'));
 
 function Home() {
   const navigate = useNavigate();
@@ -188,277 +189,85 @@ function Home() {
     );
 
   return (
-    <div
-      className="flex h-[100dvh] w-full bg-discord-bg font-sans antialiased overflow-hidden relative text-white"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
-      {/* Desktop Layout */}
-      <div className="hidden md:flex w-full h-full">
-        {/* Sidebar (single instance, fixed left) */}
-        <Sidebar
-          currentUser={currentUser}
-          setCurrentUser={() => {}}
-          activeSection={activeSection}
-          onNavigate={navigateToSection}
-          onHomeClick={handleHomeClick}
-          onUPGClick={handleUPGClick}
-          onOpenAdmin={() => setShowAdminPanel(true)}
-          onEditProfile={() => setShowProfileModal(true)}
-        />
-        <div className="flex flex-1 min-w-0 relative">
-          <Suspense
-            fallback={<div className="flex-1 flex items-center justify-center">Cargando...</div>}
-          >
-            {showHome ? (
-              <HomeScreen
-                onGoToChat={() => {
-                  setShowHome(false);
-                  setActiveView(AppView.CHAT);
-                  setActiveSection('chat');
-                }}
-                onGoToWhoWeAre={() => {
-                  setShowHome(false);
-                  setActiveView(AppView.WHO_WE_ARE);
-                  setActiveSection('who');
-                }}
-                onJoinServer={handleJoinServer}
-                onCreateServer={handleCreateServer}
-                onOpenSidebar={() => setMobileSidebarOpen(true)}
-              />
-            ) : activeView === AppView.IMPOSTOR ? (
-              <ImpostorGame
-                onClose={() => {
-                  setShowHome(true);
-                  setActiveView(AppView.CHAT);
-                  setActiveSection('home');
-                  setAutoJoinRoomId(undefined);
-                  setAutoJoinPassword(undefined);
-                }}
-                autoJoinRoomId={autoJoinRoomId}
-                autoJoinPassword={autoJoinPassword}
-              />
-            ) : activeView === AppView.CHAT ? (
-              <div className="flex w-full h-full">
-                <ChannelList
-                  activeView={activeView}
-                  currentChannelId={currentChannel.id}
-                  onChannelSelect={(view, channel) => {
-                    if (view && channel) {
-                      setActiveView(view);
-                      setCurrentChannel(channel);
-                    } else if (channel) {
-                      setCurrentChannel(channel);
-                    }
-                  }}
-                  currentUser={currentUser}
-                  activeVoiceChannel={voice.inChannel}
-                  micActive={!voice.isMuted}
-                  voiceLevel={voice.voiceLevel}
-                  onVoiceJoin={handleVoiceJoin}
-                  onLoginWithDiscord={loginWithDiscord}
-                  onLogoutDiscord={logout}
-                  onToggleMic={handleToggleMute}
-                  onVoiceLeave={handleVoiceLeave}
-                />
-                <ChatInterface
-                  currentUser={currentUser}
-                  currentChannel={currentChannel}
-                  onSendMessage={sendMessage}
-                  messages={messages}
-                  setMessages={setMessages}
-                  onMenuToggle={() => {}}
-                />
-                <UserList
-                  currentUserId={currentUser.id}
-                  currentUser={currentUser}
-                />
-              </div>
-            ) : activeView === AppView.WHO_WE_ARE ? (
-              <WhoWeAre />
-            ) : activeView === AppView.VOTING ? (
-              <Voting />
-            ) : activeView === AppView.NEWS ? (
-              <UPGNews />
-            ) : activeView === AppView.HALL_OF_FAME ? (
-              <HallOfFame />
-            ) : null}
-          </Suspense>
-        </div>
-      </div>
-
-      {/* Mobile Layout */}
-      <div className="flex md:hidden h-full w-full flex-col relative overflow-hidden">
-        {/* Centralized Menu Button (only when sidebar is closed) */}
-        {!mobileSidebarOpen && (
-          <button
-            className="md:hidden fixed top-3 left-3 aspect-square w-12 liquid-glass rounded-lg shadow-lg z-[100] text-discord-text-normal hover:text-white border border-discord-hover flex items-center justify-center"
-            aria-label="Abrir menú"
-            onClick={() => setMobileSidebarOpen(true)}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-menu mx-auto" aria-hidden="true"><path d="M4 5h16"></path><path d="M4 12h16"></path><path d="M4 19h16"></path></svg>
-          </button>
-        )}
+    <Layout activeSection={activeSection} onActiveSectionChange={setActiveSection}>
+      <Suspense
+        fallback={<div className="flex-1 flex items-center justify-center">Cargando...</div>}
+      >
         {showHome ? (
-          <div className="flex h-full w-full">
-            <HomeScreen
-              onGoToChat={() => {
-                setShowHome(false);
-                setActiveView(AppView.CHAT);
-                setActiveSection('chat');
+          <HomeScreen
+            onGoToChat={() => {
+              setShowHome(false);
+              setActiveView(AppView.CHAT);
+              setActiveSection('chat');
+            }}
+            onGoToWhoWeAre={() => {
+              setShowHome(false);
+              setActiveView(AppView.WHO_WE_ARE);
+              setActiveSection('who');
+            }}
+            onJoinServer={handleJoinServer}
+            onCreateServer={handleCreateServer}
+            onOpenSidebar={() => setMobileSidebarOpen(true)}
+          />
+        ) : activeView === AppView.IMPOSTOR ? (
+          <ImpostorGame
+            onClose={() => {
+              setShowHome(true);
+              setActiveView(AppView.CHAT);
+              setActiveSection('home');
+              setAutoJoinRoomId(undefined);
+              setAutoJoinPassword(undefined);
+            }}
+            autoJoinRoomId={autoJoinRoomId}
+            autoJoinPassword={autoJoinPassword}
+          />
+        ) : activeView === AppView.CHAT ? (
+          <div className="flex w-full h-full">
+            <ChannelList
+              activeView={activeView}
+              currentChannelId={currentChannel.id}
+              onChannelSelect={(view, channel) => {
+                if (view && channel) {
+                  setActiveView(view);
+                  setCurrentChannel(channel);
+                } else if (channel) {
+                  setCurrentChannel(channel);
+                }
               }}
-              onGoToWhoWeAre={() => {
-                setShowHome(false);
-                setActiveView(AppView.WHO_WE_ARE);
-                setActiveSection('who');
-                setMobileActiveTab('chat');
-              }}
-              onJoinServer={handleJoinServer}
-              onCreateServer={handleCreateServer}
+              currentUser={currentUser}
+              activeVoiceChannel={voice.inChannel}
+              micActive={!voice.isMuted}
+              voiceLevel={voice.voiceLevel}
+              onVoiceJoin={handleVoiceJoin}
+              onLoginWithDiscord={loginWithDiscord}
+              onLogoutDiscord={logout}
+              onToggleMic={handleToggleMute}
+              onVoiceLeave={handleVoiceLeave}
+            />
+            <ChatInterface
+              currentUser={currentUser}
+              currentChannel={currentChannel}
+              onSendMessage={sendMessage}
+              messages={messages}
+              setMessages={setMessages}
+              onMenuToggle={() => {}}
+            />
+            <UserList
+              currentUserId={currentUser.id}
+              currentUser={currentUser}
             />
           </div>
-        ) : (
-          <div className={`flex-1 w-full overflow-hidden relative ${activeView === AppView.CHAT ? 'pb-16' : ''}`}>
-            {mobileActiveTab === 'channels' && activeView === AppView.CHAT && (
-              <ChannelList
-                activeView={activeView}
-                currentChannelId={currentChannel.id}
-                onChannelSelect={(view, channel) => {
-                  if (channel) {
-                    setCurrentChannel(channel);
-                  }
-                  if (view) {
-                    setActiveView(view);
-                  }
-                  setMobileActiveTab('chat');
-                }}
-                currentUser={currentUser}
-                activeVoiceChannel={voice.inChannel}
-                micActive={!voice.isMuted}
-                voiceLevel={voice.voiceLevel}
-                onVoiceJoin={handleVoiceJoin}
-                onLoginWithDiscord={loginWithDiscord}
-                onLogoutDiscord={logout}
-                onToggleMic={handleToggleMute}
-                onVoiceLeave={handleVoiceLeave}
-              />
-            )}
-
-            {mobileActiveTab === 'chat' && (
-              <>
-                {activeView === AppView.CHAT && (
-                  <ChatInterface
-                    currentUser={currentUser}
-                    currentChannel={currentChannel}
-                    onSendMessage={sendMessage}
-                    messages={messages}
-                    setMessages={setMessages}
-                    onMenuToggle={() => setMobileActiveTab('channels')}
-                  />
-                )}
-                {activeView === AppView.IMPOSTOR && (
-                  <ImpostorGame
-                    onClose={() => {
-                      setShowHome(true);
-                      setActiveView(AppView.CHAT);
-                      setActiveSection('home');
-                    }}
-                    autoJoinRoomId={autoJoinRoomId}
-                    autoJoinPassword={autoJoinPassword}
-                  />
-                )}
-                {activeView === AppView.WHO_WE_ARE && (
-                  <WhoWeAre />
-                )}
-                {activeView === AppView.VOTING && (
-                  <Voting />
-                )}
-                {activeView === AppView.NEWS && <UPGNews />}
-                {activeView === AppView.HALL_OF_FAME && <HallOfFame />}
-              </>
-            )}
-
-            {mobileActiveTab === 'users' && (
-              <UserList
-                currentUserId={currentUser.id}
-                currentUser={currentUser}
-                isMobileView
-              />
-            )}
-          </div>
-        )}
-
-        {/* Mobile Tab Bar - Only in Chat View */}
-        {!showHome && activeView === AppView.CHAT && (
-          <MobileTabBar
-            activeTab={mobileActiveTab}
-            onTabChange={setMobileActiveTab}
-            unreadCount={0} // TODO: Implement unread count
-          />
-        )}
-
-        {/* Mobile Sidebar available in all views */}
-        <MobileSidebar
-          isOpen={mobileSidebarOpen}
-          onClose={() => setMobileSidebarOpen(false)}
-          onNavigate={navigateToSection}
-          currentUser={currentUser}
-          activeSection={activeSection}
-        />
-      </div>
-
-      {/* Admin Panel Modal */}
-      {currentUser?.role === UserRole.ADMIN && (
-        <Suspense fallback={null}>
-          <AdminPanel
-            isOpen={showAdminPanel}
-            onClose={() => setShowAdminPanel(false)}
-            currentUser={currentUser}
-            socket={socket}
-          />
-        </Suspense>
-      )}
-
-      {/* User Profile Modal (centered, overlays whole page, same style as AdminPanel) */}
-      <Suspense fallback={null}>
-        <UserProfileModal
-          isOpen={showProfileModal}
-          onClose={() => setShowProfileModal(false)}
-          user={currentUser}
-          onLoginWithDiscord={loginWithDiscord}
-        />
+        ) : activeView === AppView.WHO_WE_ARE ? (
+          <WhoWeAre />
+        ) : activeView === AppView.VOTING ? (
+          <Voting />
+        ) : activeView === AppView.NEWS ? (
+          <UPGNews />
+        ) : activeView === AppView.HALL_OF_FAME ? (
+          <HallOfFame />
+        ) : null}
       </Suspense>
-
-      {/* Effects Overlay */}
-      {activeEffect === 'jumpscare' && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none">
-          <img
-            src="/scare.gif"
-            alt="scare"
-            className="w-full h-full object-cover"
-          />
-        </div>
-      )}
-      {activeEffect === 'confetti' && (
-        <div className="fixed inset-0 z-[9999] pointer-events-none overflow-hidden">
-          {Array.from({ length: 50 }).map((_, i) => (
-            <div
-              key={i}
-              className="absolute text-4xl animate-bounce"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDuration: `${Math.random() * 2 + 1}s`,
-                animationDelay: `${Math.random()}s`
-              }}
-            >
-              🎉
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+    </Layout>
   );
 }
 
@@ -477,14 +286,31 @@ export default function App() {
               </SocketProvider>
             </AuthProvider>
           } />
-          <Route path="/impostor" element={<Impostor />} />
+          <Route path="/impostor" element={
+            <ErrorBoundary>
+              <AuthProvider>
+                <SocketProvider>
+                  <UserProvider>
+                    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-discord-bg text-white">Cargando...</div>}>
+                      <Layout activeSection="impostor">
+                        <Impostor />
+                      </Layout>
+                    </Suspense>
+                    <Toaster position="top-right" theme="dark" richColors />
+                  </UserProvider>
+                </SocketProvider>
+              </AuthProvider>
+            </ErrorBoundary>
+          } />
           <Route path="/quienes-somos" element={
             <ErrorBoundary>
               <AuthProvider>
                 <SocketProvider>
                   <UserProvider>
                     <Suspense fallback={<div className="flex h-screen items-center justify-center bg-discord-bg text-white">Cargando...</div>}>
-                      <WhoWeAre />
+                      <Layout activeSection="who">
+                        <WhoWeAre />
+                      </Layout>
                     </Suspense>
                     <Toaster position="top-right" theme="dark" richColors />
                   </UserProvider>
@@ -498,7 +324,9 @@ export default function App() {
                 <SocketProvider>
                   <UserProvider>
                     <Suspense fallback={<div className="flex h-screen items-center justify-center bg-discord-bg text-white">Cargando...</div>}>
-                      <Voting />
+                      <Layout activeSection="voting">
+                        <Voting />
+                      </Layout>
                     </Suspense>
                     <Toaster position="top-right" theme="dark" richColors />
                   </UserProvider>
@@ -512,7 +340,9 @@ export default function App() {
                 <SocketProvider>
                   <UserProvider>
                     <Suspense fallback={<div className="flex h-screen items-center justify-center bg-discord-bg text-white">Cargando...</div>}>
-                      <UPGNews />
+                      <Layout activeSection="news">
+                        <UPGNews />
+                      </Layout>
                     </Suspense>
                     <Toaster position="top-right" theme="dark" richColors />
                   </UserProvider>
@@ -526,7 +356,9 @@ export default function App() {
                 <SocketProvider>
                   <UserProvider>
                     <Suspense fallback={<div className="flex h-screen items-center justify-center bg-discord-bg text-white">Cargando...</div>}>
-                      <HallOfFame />
+                      <Layout activeSection="hall_of_fame">
+                        <HallOfFame />
+                      </Layout>
                     </Suspense>
                     <Toaster position="top-right" theme="dark" richColors />
                   </UserProvider>
