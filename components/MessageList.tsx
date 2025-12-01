@@ -38,12 +38,6 @@ const MessageList: React.FC<MessageListProps> = memo(
     messagesEndRef,
   }) => {
     const { users, userColors } = useUsers();
-    // Optimización: Crear mapa de usuarios para búsqueda O(1)
-    const userMap = useMemo(() => {
-      const map = new Map<string, User>();
-      users.forEach(u => map.set(u.id, u));
-      return map;
-    }, [users]);
 
     // Agrupar mensajes como en Discord: mensajes consecutivos del mismo usuario dentro de 5 minutos
     const groupedMessages = useMemo(() => {
@@ -57,9 +51,17 @@ const MessageList: React.FC<MessageListProps> = memo(
         timestamp: Date;
       }> = [];
 
+      // Crear mapas locales para evitar dependencias complejas
+      const localUserMap = new Map<string, User>();
+      users.forEach(u => localUserMap.set(u.id, u));
+      const localColorMap = new Map<string, string>();
+      Object.entries(userColors).forEach(([userId, color]) => {
+        localColorMap.set(userId, color as string);
+      });
+
       for (let i = 0; i < orderedMessages.length; i++) {
         const msg = orderedMessages[i];
-        const msgUser = userMap.get(msg.userId);
+        const msgUser = localUserMap.get(msg.userId);
         const msgTimestamp = new Date(msg.timestamp);
 
         // Si es el primer mensaje o el usuario cambió o pasaron más de 5 minutos
@@ -73,7 +75,7 @@ const MessageList: React.FC<MessageListProps> = memo(
             userId: msg.userId,
             username: msg.username || msgUser?.username || 'Unknown',
             avatar: msg.avatar || msgUser?.avatar || '',
-            color: userColors[msg.userId] || msgUser?.color || '#ffffff',
+            color: localColorMap.get(msg.userId) || msgUser?.color || '#ffffff',
             role: msgUser?.role,
             messages: [msg],
             timestamp: msgTimestamp,
@@ -85,7 +87,7 @@ const MessageList: React.FC<MessageListProps> = memo(
       }
 
       return groups;
-    }, [orderedMessages, userMap, userColors]);
+    }, [orderedMessages, users, userColors]);
 
     return (
       <div
@@ -109,7 +111,8 @@ const MessageList: React.FC<MessageListProps> = memo(
                 const msgTimestamp = new Date(msg.timestamp);
                 const mentioned = msg.content && currentUser && msg.content.includes(`@${currentUser.username}`);
 
-                const highlightedContent = useMemo(() => {
+                // Renderizar contenido con menciones destacadas
+                const renderMessageContent = () => {
                   if (!msg.content) return null;
                   const mentionRegex = /@([\w]+)/g;
                   const parts = msg.content.split(mentionRegex);
@@ -128,7 +131,7 @@ const MessageList: React.FC<MessageListProps> = memo(
                     }
                     return part;
                   });
-                }, [msg.content, currentUser]);
+                };
 
                 return (
                   <div
@@ -208,7 +211,7 @@ const MessageList: React.FC<MessageListProps> = memo(
 
                       {/* Contenido del mensaje */}
                       <p className={`text-sm sm:text-base text-discord-text-normal whitespace-pre-wrap leading-[1.3rem] sm:leading-[1.375rem] ${msg.status === 'sending' ? 'opacity-70' : ''} ${!isFirstInGroup ? 'ml-0' : ''}`}>
-                        {highlightedContent}
+                        {renderMessageContent()}
                         {/* Estado de envío solo para el primer mensaje del grupo si está enviando */}
                         {isFirstInGroup && msg.status === 'sending' && (
                           <span className="ml-2 text-[10px] text-discord-text-muted italic flex items-center gap-1">
