@@ -21,91 +21,88 @@ interface MessageListProps {
   messagesEndRef: React.RefObject<HTMLDivElement>;
 }
 
-const MessageList: React.FC<MessageListProps> = memo(
-  ({
-    orderedMessages,
-    currentUser,
-    isAdmin,
-    hoveredMessageId,
-    setHoveredMessageId,
-    handleDeleteMessage,
-    handleKickUser,
-    handleBanUser,
-    handleSilenceUser,
-    handleChangeColor,
-    handleTrollMode,
-    isBotTyping,
-    messagesEndRef,
-  }) => {
-    const { users, userColors } = useUsers();
+const MessageList: React.FC<MessageListProps> = memo(({
+  orderedMessages,
+  currentUser,
+  isAdmin,
+  hoveredMessageId,
+  setHoveredMessageId,
+  handleDeleteMessage,
+  handleKickUser,
+  handleBanUser,
+  handleSilenceUser,
+  handleChangeColor,
+  handleTrollMode,
+  isBotTyping,
+  messagesEndRef,
+}) => {
+  const { users, userColors } = useUsers();
 
-    // Agrupar mensajes como en Discord: mensajes consecutivos del mismo usuario dentro de 5 minutos
-    const groupedMessages = useMemo(() => {
-      const groups: Array<{
-        userId: string;
-        username: string;
-        avatar: string;
-        color: string;
-        role?: UserRole;
-        messages: Message[];
-        timestamp: Date;
-      }> = [];
+  // Agrupar mensajes como en Discord: mensajes consecutivos del mismo usuario dentro de 5 minutos
+  const groupedMessages = useMemo(() => {
+    const groups: Array<{
+      userId: string;
+      username: string;
+      avatar: string;
+      color: string;
+      role?: UserRole;
+      messages: Message[];
+      timestamp: Date;
+    }> = [];
 
-      // Crear mapas locales para evitar dependencias complejas
-      const localUserMap = new Map<string, User>();
-      users.forEach(u => localUserMap.set(u.id, u));
-      const localColorMap = new Map<string, string>();
-      Object.entries(userColors).forEach(([userId, color]) => {
-        localColorMap.set(userId, color as string);
-      });
+    // Crear mapas locales para evitar dependencias complejas
+    const localUserMap = new Map<string, User>();
+    users.forEach(u => localUserMap.set(u.id, u));
+    const localColorMap = new Map<string, string>();
+    Object.entries(userColors).forEach(([userId, color]) => {
+      localColorMap.set(userId, color as string);
+    });
 
-      for (let i = 0; i < orderedMessages.length; i++) {
-        const msg = orderedMessages[i];
-        const msgUser = localUserMap.get(msg.userId);
-        const msgTimestamp = new Date(msg.timestamp);
+    for (let i = 0; i < orderedMessages.length; i++) {
+      const msg = orderedMessages[i];
+      const msgUser = localUserMap.get(msg.userId);
+      const msgTimestamp = new Date(msg.timestamp);
 
-        // Si es el primer mensaje o el usuario cambió o pasaron más de 5 minutos
-        const shouldStartNewGroup =
-          groups.length === 0 ||
-          groups[groups.length - 1].userId !== msg.userId ||
-          (msgTimestamp.getTime() - groups[groups.length - 1].timestamp.getTime()) > 5 * 60 * 1000; // 5 minutos
+      // Si es el primer mensaje o el usuario cambió o pasaron más de 5 minutos
+      const shouldStartNewGroup =
+        groups.length === 0 ||
+        groups[groups.length - 1].userId !== msg.userId ||
+        (msgTimestamp.getTime() - groups[groups.length - 1].timestamp.getTime()) > 5 * 60 * 1000; // 5 minutos
 
-        if (shouldStartNewGroup) {
-          groups.push({
-            userId: msg.userId,
-            username: msg.username || msgUser?.username || 'Unknown',
-            avatar: msg.avatar || msgUser?.avatar || '',
-            color: localColorMap.get(msg.userId) || msgUser?.color || '#ffffff',
-            role: msgUser?.role,
-            messages: [msg],
-            timestamp: msgTimestamp,
-          });
-        } else {
-          // Agregar al grupo existente
-          groups[groups.length - 1].messages.push(msg);
-        }
+      if (shouldStartNewGroup) {
+        groups.push({
+          userId: msg.userId,
+          username: msg.username || msgUser?.username || 'Unknown',
+          avatar: msg.avatar || msgUser?.avatar || '',
+          color: localColorMap.get(msg.userId) || msgUser?.color || '#ffffff',
+          role: msgUser?.role,
+          messages: [msg],
+          timestamp: msgTimestamp,
+        });
+      } else {
+        // Agregar al grupo existente
+        groups[groups.length - 1].messages.push(msg);
       }
+    }
 
-      return groups;
-    }, [orderedMessages, users, userColors]);
+    return groups;
+  }, [orderedMessages, users, userColors]);
 
-    return (
-      <div
-        className="flex-1 overflow-y-auto px-3 sm:px-4 pt-3 sm:pt-4 flex flex-col"
-        style={{ maxHeight: '100%' }}
-      >
-        <div className="flex-1">
-          <div className="mb-6 sm:mb-8 mt-3 sm:mt-4">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-discord-text-muted/20 rounded-full flex items-center justify-center mb-3 sm:mb-4">
-              <Shield size={32} className="text-white sm:w-10 sm:h-10" />
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">¡Bienvenido al chat!</h1>
-            <p className="text-sm sm:text-base text-discord-text-muted">Este es el chat real.</p>
+  return (
+    <div className="flex-1 overflow-y-auto px-2 sm:px-4 pt-2 sm:pt-4 flex flex-col custom-scrollbar" style={{ maxHeight: '100%', minHeight: '100%' }}>
+      <div className="flex-1 flex flex-col justify-end min-h-full">
+        <div className="mb-4 sm:mb-6 mt-2 sm:mt-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-discord-text-muted/20 rounded-full flex items-center justify-center mb-2 sm:mb-3">
+            <Shield size={24} className="text-white sm:w-8 sm:h-8" />
           </div>
-          <div className="h-[1px] bg-discord-text-muted/20 w-full my-4" />
+          <h1 className="text-xl sm:text-2xl font-bold text-white mb-1">¡Bienvenido al chat!</h1>
+          <p className="text-sm text-discord-text-muted">Este es el chat real.</p>
+        </div>
+        <div className="h-[1px] bg-discord-text-muted/20 w-full my-2" />
 
+        <div className="flex-1 space-y-1">
           {groupedMessages.map((group, groupIndex) => (
-            <div key={`${group.userId}-${group.timestamp.getTime()}`} className="mb-4">
+            <div key={`${group.userId}-${group.timestamp.getTime()}`} className="mb-2">
               {group.messages.map((msg, msgIndex) => {
                 const isFirstInGroup = msgIndex === 0;
                 const msgTimestamp = new Date(msg.timestamp);
@@ -129,7 +126,7 @@ const MessageList: React.FC<MessageListProps> = memo(
                         </span>
                       );
                     }
-                    return part;
+                    return <span key={index}>{part}</span>;
                   });
                 };
 
@@ -279,52 +276,52 @@ const MessageList: React.FC<MessageListProps> = memo(
               })}
             </div>
           ))}
+        </div>
 
-          {/* Indicador de "bot escribiendo" */}
-          {isBotTyping && (
-            <div className="flex pr-2 sm:pr-4 mt-3 sm:mt-4 py-0.5">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-600 mr-3 sm:mr-4 mt-0.5 overflow-hidden shrink-0">
-                <SafeImage
-                  src="/upg.png"
-                  alt="UPG"
-                  className="w-full h-full object-cover"
-                  fallbackSrc="https://ui-avatars.com/api/?name=UPG&background=5865F2&color=fff&size=128"
-                />
+        {/* Indicador de "bot escribiendo" */}
+        {isBotTyping && (
+          <div className="flex pr-2 sm:pr-4 mt-2 sm:mt-4 py-0.5">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-600 mr-3 sm:mr-4 mt-0.5 overflow-hidden shrink-0">
+              <SafeImage
+                src="/upg.png"
+                alt="UPG"
+                className="w-full h-full object-cover"
+                fallbackSrc="https://ui-avatars.com/api/?name=UPG&background=5865F2&color=fff&size=128"
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center flex-wrap mb-1">
+                <span className="font-medium text-sm sm:text-base mr-2 text-[#5865F2]">UPG</span>
+                <span className="text-[9px] sm:text-[10px] bg-discord-blurple px-1.5 py-0.5 rounded mr-2">
+                  BOT
+                </span>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center flex-wrap mb-1">
-                  <span className="font-medium text-sm sm:text-base mr-2 text-[#5865F2]">UPG</span>
-                  <span className="text-[9px] sm:text-[10px] bg-discord-blurple px-1.5 py-0.5 rounded mr-2">
-                    BOT
-                  </span>
+              <div className="flex items-center gap-1">
+                <div className="flex gap-1">
+                  <span
+                    className="w-2 h-2 bg-discord-text-muted rounded-full animate-bounce"
+                    style={{ animationDelay: '0ms' }}
+                  ></span>
+                  <span
+                    className="w-2 h-2 bg-discord-text-muted rounded-full animate-bounce"
+                    style={{ animationDelay: '150ms' }}
+                  ></span>
+                  <span
+                    className="w-2 h-2 bg-discord-text-muted rounded-full animate-bounce"
+                    style={{ animationDelay: '300ms' }}
+                  ></span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <div className="flex gap-1">
-                    <span
-                      className="w-2 h-2 bg-discord-text-muted rounded-full animate-bounce"
-                      style={{ animationDelay: '0ms' }}
-                    ></span>
-                    <span
-                      className="w-2 h-2 bg-discord-text-muted rounded-full animate-bounce"
-                      style={{ animationDelay: '150ms' }}
-                    ></span>
-                    <span
-                      className="w-2 h-2 bg-discord-text-muted rounded-full animate-bounce"
-                      style={{ animationDelay: '300ms' }}
-                    ></span>
-                  </div>
-                  <span className="text-xs text-discord-text-muted ml-2">escribiendo...</span>
-                </div>
+                <span className="text-xs text-discord-text-muted ml-2">escribiendo...</span>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          <div ref={messagesEndRef} />
-        </div>
+        <div ref={messagesEndRef} />
       </div>
-    );
-  }
-);
+    </div>
+  );
+});
 
 MessageList.displayName = 'MessageList';
 
