@@ -555,7 +555,21 @@ body {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 var(--space-lg);
+  padding: 0 var(--space-xl);
+}
+
+/* Mejor centrado para móviles */
+@media (max-width: 640px) {
+  .container-responsive {
+    padding: 0 var(--space-lg);
+  }
+}
+
+/* Centrado mejorado para tablets */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .container-responsive {
+    padding: 0 var(--space-2xl);
+  }
 }
 
 .grid-responsive {

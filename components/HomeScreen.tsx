@@ -125,18 +125,18 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
       )}
 
       <div className="scroll-area custom-scrollbar">
-        <div className="container-responsive py-8 space-y-8">
+        <div className="container-responsive py-6 md:py-8 space-y-6 md:space-y-8">
           {/* Hero Section */}
           <section className="text-center space-y-6 animate-fade-in">
-            <div className="glass p-8 md:p-12 max-w-4xl mx-auto">
+            <div className="glass p-6 md:p-8 lg:p-12 max-w-4xl mx-auto">
               <SafeImage
                 src="/upg.png"
                 alt="UPG Logo"
-                className="w-20 h-20 md:w-28 md:h-28 mx-auto mb-6 rounded-2xl shadow-lg"
+                className="w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 mx-auto mb-6 rounded-2xl shadow-lg"
                 fallbackSrc="/upg.png"
               />
 
-              <h1 className="text-3xl md:text-5xl font-black text-white mb-4 text-balance">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-white mb-4 text-balance">
                 {TEXTS.appTitle}
               </h1>
 
@@ -144,7 +144,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                 {TEXTS.welcomeMessage}
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-3xl mx-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
                 <button
                   onClick={onGoToChat}
                   className="btn btn-primary w-full group"
@@ -180,7 +180,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
           </section>
 
           {/* Features Section */}
-          <section className="grid-responsive max-w-5xl mx-auto animate-slide-in">
+          <section className="grid-responsive max-w-6xl mx-auto animate-slide-in">
             <div className="card text-center">
               <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Gamepad2 className="w-6 h-6 text-accent" />
@@ -214,12 +214,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
 
           {/* Minecraft Server Status */}
           <section className="animate-slide-in">
-            <MinecraftServerStatus />
+            <div className="max-w-5xl mx-auto">
+              <MinecraftServerStatus />
+            </div>
           </section>
 
           {/* Active Servers Section */}
           <section className="space-y-6 animate-slide-in">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 max-w-7xl mx-auto">
               <div>
                 <h2 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
                   <Gamepad2 className="text-accent" size={28} />
@@ -241,12 +243,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
 
             {loading ? (
-              <div className="card text-center py-12">
+              <div className="card text-center py-12 max-w-4xl mx-auto">
                 <div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full mx-auto mb-4"></div>
                 <p className="text-secondary">{TEXTS.loadingServers}</p>
               </div>
             ) : servers.length === 0 ? (
-              <div className="card text-center py-12">
+              <div className="card text-center py-12 max-w-4xl mx-auto">
                 <Gamepad2 className="w-16 h-16 text-muted mx-auto mb-4 opacity-50" />
                 <h3 className="text-lg font-semibold mb-2">{TEXTS.noActiveServers}</h3>
                 <p className="text-secondary mb-6">{TEXTS.beTheFirst}</p>
@@ -259,7 +261,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-w-7xl mx-auto">
                 {servers.map((server, index) => (
                   <div
                     key={server.roomId}
