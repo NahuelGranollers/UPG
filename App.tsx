@@ -1,4 +1,5 @@
 ﻿import React, { useState, useCallback, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate, useSearchParams } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider, useSocket } from './context/SocketContext';
@@ -20,19 +21,21 @@ import UserProfileModal from './components/UserProfileModal';
 
 const HomeScreen = React.lazy(() => import('./components/HomeScreen'));
 const ImpostorGame = React.lazy(() => import('./components/ImpostorGame'));
+const Impostor = React.lazy(() => import('./components/Impostor'));
 const WhoWeAre = React.lazy(() => import('./components/WhoWeAre'));
 const Voting = React.lazy(() => import('./components/Voting'));
 const UPGNews = React.lazy(() => import('./components/UPGNews'));
 const HallOfFame = React.lazy(() => import('./components/HallOfFame'));
 const AdminPanel = React.lazy(() => import('./components/AdminPanel'));
 
-function MainApp() {
+function Home() {
+  const navigate = useNavigate();
   const [showProfileModal, setShowProfileModal] = useState(false);
   const { currentUser, isLoading, loginWithDiscord, loginAsGuest, logout } = useAuth();
   const { isConnected, socket } = useSocket();
   const { activeEffect } = useUsers();
 
-  const [activeView, setActiveView] = useState<AppView>(AppView.IMPOSTOR);
+  const [activeView, setActiveView] = useState<AppView>(AppView.CHAT);
   const [showHome, setShowHome] = useState(true);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [currentChannel, setCurrentChannel] = useState<ChannelData>({
@@ -94,33 +97,29 @@ function MainApp() {
       setShowHome(false);
       switch (section) {
         case 'chat':
+          navigate('/');
           setActiveView(AppView.CHAT);
           setActiveSection('chat');
           break;
         case 'impostor':
-          setActiveView(AppView.IMPOSTOR);
-          setActiveSection('impostor');
+          navigate('/impostor');
           break;
         case 'who':
-          setActiveView(AppView.WHO_WE_ARE);
-          setActiveSection('who');
+          navigate('/quienes-somos');
           break;
         case 'voting':
-          setActiveView(AppView.VOTING);
-          setActiveSection('voting');
+          navigate('/votaciones');
           break;
         case 'news':
-          setActiveView(AppView.NEWS);
-          setActiveSection('news');
+          navigate('/noticias');
           break;
         case 'hall_of_fame':
-          setActiveView(AppView.HALL_OF_FAME);
-          setActiveSection('hall_of_fame');
+          navigate('/salon-fama');
           break;
       }
       if (setMobileTab) setMobileActiveTab('chat');
     }
-  }, []);
+  }, [navigate]);
 
   const handleHomeClick = useCallback(() => {
     setShowHome(true);
@@ -136,18 +135,14 @@ function MainApp() {
   const handleJoinServer = useCallback((gameType: string, roomId: string, password?: string) => {
     setAutoJoinRoomId(roomId);
     setAutoJoinPassword(password);
-    setShowHome(false);
-    setActiveView(AppView.IMPOSTOR);
-    setActiveSection('impostor');
-  }, []);
+    navigate('/impostor');
+  }, [navigate]);
 
   const handleCreateServer = useCallback((gameType: string) => {
     setAutoJoinRoomId(undefined);
     setAutoJoinPassword(undefined);
-    setShowHome(false);
-    setActiveView(AppView.IMPOSTOR);
-    setActiveSection('impostor');
-  }, []);
+    navigate('/impostor');
+  }, [navigate]);
 
   const handleVoiceJoin = useCallback(
     async (channelId: string) => {
@@ -186,9 +181,9 @@ function MainApp() {
   // Si no hay usuario (caso raro tras isLoading), mostrar loading o error
   if (!currentUser)
     return (
-      <UsernamePrompt 
-        onSubmit={loginAsGuest} 
-        onLoginWithDiscord={loginWithDiscord} 
+      <UsernamePrompt
+        onSubmit={loginAsGuest}
+        onLoginWithDiscord={loginWithDiscord}
       />
     );
 
@@ -438,9 +433,9 @@ function MainApp() {
       {/* Effects Overlay */}
       {activeEffect === 'jumpscare' && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none">
-          <img 
-            src="/scare.gif" 
-            alt="scare" 
+          <img
+            src="/scare.gif"
+            alt="scare"
             className="w-full h-full object-cover"
           />
         </div>
@@ -470,14 +465,77 @@ function MainApp() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <SocketProvider>
-          <UserProvider>
-            <MainApp />
-            <Toaster position="top-right" theme="dark" richColors />
-          </UserProvider>
-        </SocketProvider>
-      </AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={
+            <AuthProvider>
+              <SocketProvider>
+                <UserProvider>
+                  <Home />
+                  <Toaster position="top-right" theme="dark" richColors />
+                </UserProvider>
+              </SocketProvider>
+            </AuthProvider>
+          } />
+          <Route path="/impostor" element={<Impostor />} />
+          <Route path="/quienes-somos" element={
+            <ErrorBoundary>
+              <AuthProvider>
+                <SocketProvider>
+                  <UserProvider>
+                    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-discord-bg text-white">Cargando...</div>}>
+                      <WhoWeAre />
+                    </Suspense>
+                    <Toaster position="top-right" theme="dark" richColors />
+                  </UserProvider>
+                </SocketProvider>
+              </AuthProvider>
+            </ErrorBoundary>
+          } />
+          <Route path="/votaciones" element={
+            <ErrorBoundary>
+              <AuthProvider>
+                <SocketProvider>
+                  <UserProvider>
+                    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-discord-bg text-white">Cargando...</div>}>
+                      <Voting />
+                    </Suspense>
+                    <Toaster position="top-right" theme="dark" richColors />
+                  </UserProvider>
+                </SocketProvider>
+              </AuthProvider>
+            </ErrorBoundary>
+          } />
+          <Route path="/noticias" element={
+            <ErrorBoundary>
+              <AuthProvider>
+                <SocketProvider>
+                  <UserProvider>
+                    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-discord-bg text-white">Cargando...</div>}>
+                      <UPGNews />
+                    </Suspense>
+                    <Toaster position="top-right" theme="dark" richColors />
+                  </UserProvider>
+                </SocketProvider>
+              </AuthProvider>
+            </ErrorBoundary>
+          } />
+          <Route path="/salon-fama" element={
+            <ErrorBoundary>
+              <AuthProvider>
+                <SocketProvider>
+                  <UserProvider>
+                    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-discord-bg text-white">Cargando...</div>}>
+                      <HallOfFame />
+                    </Suspense>
+                    <Toaster position="top-right" theme="dark" richColors />
+                  </UserProvider>
+                </SocketProvider>
+              </AuthProvider>
+            </ErrorBoundary>
+          } />
+        </Routes>
+      </BrowserRouter>
     </ErrorBoundary>
   );
 }
