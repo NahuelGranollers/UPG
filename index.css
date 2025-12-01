@@ -367,7 +367,7 @@ body {
 
   /* Input más grande en móviles */
   .chat-input-fixed {
-    padding: var(--space-lg) var(--space-md);
+    padding: var(--space-lg) 0;
   }
 }
 
