@@ -187,7 +187,11 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
         setTimeout(() => setIsLoading(false), 1000);
       }
     };
-  const { users } = useUsers();
+
+  const openForm = (action: 'silence-user' | 'change-color' | 'global-message' | 'troll-mode' | 'trigger-effect' | 'system-status' | 'room-management') => {
+    setActiveForm({ action, values: {} });
+    setFormValues({});
+  };
   const [isLoading, setIsLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState<string | null>(null);
   const [activeForm, setActiveForm] = useState<null | {
@@ -768,13 +772,13 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
               />
 
               <ActionButton
-                icon={<Shield size={24} />}
-                title="Reiniciar IPs/Caché"
-                description="Limpiar IPs y caché de usuarios"
-                onClick={() => handleAction('reset-ips-cache')}
-                isConfirming={confirmAction === 'reset-ips-cache'}
+                icon={<Activity size={24} />}
+                title="Estado del Sistema"
+                description="Ver métricas del servidor"
+                onClick={() => openForm('system-status')}
+                isConfirming={false}
                 isLoading={isLoading}
-                variant="danger"
+                variant="info"
               />
 
               <ActionButton
