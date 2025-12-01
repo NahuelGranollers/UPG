@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Wifi, Users, Copy, Check, Server, Clock } from 'lucide-react';
+import { TEXTS } from '../utils/texts';
 
 interface ServerStatus {
   online: boolean;
@@ -87,7 +88,7 @@ const MinecraftServerStatus: React.FC = () => {
                   UPG
                   {isOnline && (
                     <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 text-xs font-bold border border-green-500/30 uppercase tracking-wider">
-                      Online
+                      {TEXTS.online}
                     </span>
                   )}
                 </h2>
@@ -103,7 +104,7 @@ const MinecraftServerStatus: React.FC = () => {
               >
                 {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} className="text-white/70 group-hover/btn:text-white" />}
                 <span className={`text-sm font-medium ${copied ? 'text-green-400' : 'text-white/70 group-hover/btn:text-white'}`}>
-                  {copied ? 'Copiado!' : 'Copiar IP'}
+                  {copied ? TEXTS.copied : TEXTS.copyIp}
                 </span>
               </button>
             </div>
@@ -126,6 +127,39 @@ const MinecraftServerStatus: React.FC = () => {
                   <span className="flex items-center gap-1"><Users size={12} /> Jugadores</span>
                   <span>{status?.players.online} / {status?.players.max}</span>
                 </div>
+                
+                {/* Online Players List */}
+                {status?.players.list && status.players.list.length > 0 && (
+                  <div className="mb-2">
+                    <div className="text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Jugadores Online</div>
+                    <div className="flex flex-wrap gap-2">
+                      {status.players.list.slice(0, 10).map((playerName, index) => (
+                        <div key={index} className="flex items-center gap-2 bg-black/20 rounded-lg px-3 py-2 border border-white/5 hover:border-white/10 transition-colors group">
+                          <img 
+                            src={`https://mc-heads.net/avatar/${playerName}/32`}
+                            alt={`${playerName} avatar`}
+                            className="w-6 h-6 rounded border border-white/10 group-hover:border-white/20 transition-colors"
+                            onError={(e) => {
+                              // Fallback to default Minecraft head if avatar fails to load
+                              (e.target as HTMLImageElement).src = 'https://mc-heads.net/avatar/Steve/32';
+                            }}
+                          />
+                          <span className="text-xs text-white/80 font-medium truncate max-w-[80px]" title={playerName}>
+                            {playerName}
+                          </span>
+                        </div>
+                      ))}
+                      {status.players.list.length > 10 && (
+                        <div className="flex items-center gap-2 bg-black/20 rounded-lg px-3 py-2 border border-white/5">
+                          <div className="w-6 h-6 rounded bg-gray-600 flex items-center justify-center text-xs text-white/60">
+                            +{status.players.list.length - 10}
+                          </div>
+                          <span className="text-xs text-white/60 font-medium">más</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
                 
                 {/* Custom Progress Bar */}
                 <div className="h-4 w-full bg-black/40 rounded-full overflow-hidden border border-white/5 relative">

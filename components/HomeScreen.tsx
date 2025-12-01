@@ -6,6 +6,7 @@ import { getBackendUrl } from '../utils/config';
 import CookieClicker from './CookieClicker';
 import { FaCookieBite } from 'react-icons/fa';
 import CreateServerModal from './CreateServerModal';
+import { TEXTS } from '../utils/texts';
 
 interface HomeScreenProps {
   onGoToChat: () => void;
@@ -69,7 +70,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
 
   const handleJoinClick = (server: GameServer) => {
     if (server.hasPassword) {
-      const password = prompt(`Contraseña para ${server.name}:`);
+      const password = prompt(`${TEXTS.enterPassword} ${server.name}:`);
       if (password !== null) {
         onJoinServer(server.gameType, server.roomId, password);
       }
@@ -151,17 +152,17 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
             fallbackSrc="/upg.png"
           />
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 drop-shadow-md">
-            UPG
+            {TEXTS.appTitle}
           </h1>
           <p className="text-base sm:text-lg text-discord-text-muted mb-8" style={{maxWidth: 'clamp(220px, 80vw, 600px)'}}>
-            Bienvenido a la comunidad oficial. Aquí encontrarás canales, eventos y salas de voz para echar unas partidillas. Mantén el respeto y disfruta.
+            {TEXTS.welcomeMessage}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-row gap-3 w-full sm:max-w-md md:max-w-none justify-center">
             <button 
               onClick={onGoToChat} 
               className="glass-btn primary w-full md:w-auto px-8 py-3 text-lg font-bold"
             >
-              Entrar al Chat
+              {TEXTS.enterChat}
             </button>
             <button 
               onClick={() => setShowCreateModal(true)}
@@ -169,7 +170,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
             >
               <div className="flex items-center justify-center gap-2">
                 <Plus size={20} />
-                <span>Crear Impostor</span>
+                <span>{TEXTS.createImpostor}</span>
               </div>
                {/* Easter Egg Animation */}
                <img 
@@ -183,7 +184,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
               onClick={onGoToWhoWeAre} 
               className="glass-btn w-full md:w-auto px-8 py-3 text-lg font-bold sm:col-span-2 md:col-span-1"
             >
-              ¿Qué es UPG?
+              {TEXTS.whatIsUPG}
             </button>
           </div>
         </div>
@@ -198,16 +199,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
           <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
             <h2 className="text-xl md:text-2xl font-bold text-discord-text-header flex items-center gap-2">
               <Gamepad2 className="text-discord-blurple" />
-              Servidores Activos
+              {TEXTS.activeServers}
             </h2>
           </div>
 
         {loading ? (
-          <div className="text-center py-12 text-discord-text-muted">Cargando servidores...</div>
+          <div className="text-center py-12 text-discord-text-muted">{TEXTS.loadingServers}</div>
         ) : servers.length === 0 ? (
           <div className="text-center py-8 md:py-12 liquid-glass">
-            <p className="text-discord-text-muted mb-2 md:mb-4">No hay servidores activos.</p>
-            <p className="text-sm text-discord-text-normal hidden md:block">¡Sé el primero en crear uno!</p>
+            <p className="text-discord-text-muted mb-2 md:mb-4">{TEXTS.noActiveServers}</p>
+            <p className="text-sm text-discord-text-normal hidden md:block">{TEXTS.beTheFirst}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
@@ -222,7 +223,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
                       {server.name}
                     </h3>
                     <p className="text-xs text-discord-text-muted uppercase tracking-wider font-semibold mt-1">
-                      Impostor
+                      {TEXTS.impostor}
                     </p>
                   </div>
                   {server.hasPassword && <Lock size={16} className="text-yellow-500" />}
@@ -235,20 +236,20 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                    <span className="hidden md:inline">En espera</span>
+                    <span className="hidden md:inline">{TEXTS.waiting}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between mt-auto pt-3 border-t border-white/10">
                   <span className="text-xs text-discord-text-muted truncate max-w-[100px]">
-                    Host: {server.hostName}
+                    {TEXTS.host}: {server.hostName}
                   </span>
                   <button 
                     onClick={() => handleJoinClick(server)}
                     className="glass-btn primary w-full ml-4 py-2 text-sm"
                     disabled={server.playerCount >= server.maxPlayers}
                   >
-                    {server.playerCount >= server.maxPlayers ? 'Lleno' : 'Unirse'}
+                    {server.playerCount >= server.maxPlayers ? TEXTS.full : TEXTS.join}
                   </button>
                 </div>
               </div>

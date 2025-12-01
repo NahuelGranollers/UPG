@@ -5,6 +5,7 @@ import { getBackendUrl } from '../utils/config';
 import { toast } from 'sonner';
 import { Menu, Gamepad2, Users, Smartphone, Globe, Check, Eye, EyeOff, LogOut, Trash2, Lock, Play, Zap, Skull, User, RotateCcw, MessageSquare } from 'lucide-react';
 import Modal from './Modal';
+import { TEXTS } from '../utils/texts';
 
 interface PlayerInfo {
   id: string;
@@ -97,6 +98,8 @@ export default function ImpostorGame({
   const [guessInput, setGuessInput] = useState('');
   const [showGuessInput, setShowGuessInput] = useState(false);
   const [mobileTab, setMobileTab] = useState<'game' | 'info'>('game');
+  const [hardMode, setHardMode] = useState(false);
+  const [invitationCode, setInvitationCode] = useState<string | null>(null);
   const [gameOverInfo, setGameOverInfo] = useState<{
     winner: 'impostor' | 'crewmates';
     word: string;
@@ -309,6 +312,34 @@ export default function ImpostorGame({
         });
       }, 100); // Small delay to ensure socket is ready
     }
+
+    // Handle invitation links
+    const urlParams = new URLSearchParams(window.location.search);
+    const inviteCode = urlParams.get('invite');
+    if (inviteCode && !joined && !autoJoinRoomId) {
+      setGameMode('online');
+      setUsername(currentUser.username || '');
+      
+      setTimeout(() => {
+        const generatedUserId = currentUser?.id || `guest-${Math.random().toString(36).slice(2, 8)}`;
+        setUserId(generatedUserId);
+        socket.emit('impostor:join-by-invite', { 
+          invitationCode: inviteCode,
+          userId: generatedUserId, 
+          username: currentUser.username || ''
+        }, (res: any) => {
+          if (res && res.ok) {
+            setJoined(true);
+            setRoomId(res.roomId);
+            setStatusMessage('Te has unido a la sala por invitación');
+            // Clean up URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+          } else {
+            setStatusMessage(res?.error || 'Código de invitación inválido');
+          }
+        });
+      }, 100);
+    }
   }, [socket, currentUser, autoJoinRoomId, autoJoinPassword]);
 
   useEffect(() => {
@@ -324,6 +355,7 @@ export default function ImpostorGame({
       setJoined(true);
       setGameStarted(data.started || false);
       setCustomWords(data.customWords || []);
+      setInvitationCode(data.invitationCode || null);
       
       // Update turn info
       if (data.turnOrder) setTurnOrder(data.turnOrder);
@@ -580,6 +612,17 @@ export default function ImpostorGame({
       setTimeout(() => setNotifications(prev => prev.slice(1)), 5000);
     };
 
+    const onJoinedRoom = (data: any) => {
+      // Handle joining by invitation
+      setPlayers(data.players || []);
+      setIsHost(data.isObserver === false); // Only set as host if not observer
+      setJoined(true);
+      setGameStarted(data.gameState?.started || false);
+      setCustomWords([]);
+      setInvitationCode(data.invitationCode || null);
+      setStatusMessage('Te has unido a la sala');
+    };
+
     socket.on('impostor:room-state', onRoomState);
     socket.on('impostor:assign', onAssign);
     socket.on('impostor:started', onStarted);
@@ -593,6 +636,7 @@ export default function ImpostorGame({
     socket.on('impostor:timer-end', onTimerEnd);
     socket.on('impostor:game-over', onGameOver);
     socket.on('impostor:restarted', onRestarted);
+    socket.on('impostor:joined-room', onJoinedRoom);
     socket.on('impostor:room-deleted', onRoomDeleted);
     socket.on('impostor:game-terminated', onGameTerminated);
 
@@ -670,16 +714,18 @@ export default function ImpostorGame({
       setCardRevealed(false);
       setUserId('');
       setGameStarted(false);
+      setInvitationCode(null);
     });
   };
 
   const handleStart = () => {
     if (!socket) return;
-    console.log('Starting game with:', { roomId, userId, selectedCategory });
+    console.log('Starting game with:', { roomId, userId, selectedCategory, hardMode });
     socket.emit('impostor:start', { 
       roomId, 
       hostId: userId,
-      category: selectedCategory
+      category: selectedCategory,
+      hardMode: hardMode
     }, (res: any) => {
       console.log('Start response:', res);
       if (res && res.ok) {
@@ -1497,9 +1543,59 @@ export default function ImpostorGame({
                                 onChange={(e) => setSelectedCategory(e.target.value)}
                             />
                         </div>
+                        
+                        <div className="flex items-center justify-between p-3 bg-discord-surface rounded-lg border border-discord-hover">
+                          <div>
+                            <div className="text-sm font-semibold text-white">{TEXTS.hardMode}</div>
+                            <div className="text-xs text-discord-text-muted">{TEXTS.hardModeDescription}</div>
+                          </div>
+                          <button
+                            onClick={() => setHardMode(!hardMode)}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-discord-blurple focus:ring-offset-2 ${
+                              hardMode ? 'bg-red-600' : 'bg-gray-600'
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                hardMode ? 'translate-x-6' : 'translate-x-1'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                        
                         <button onClick={handleStart} className="discord-button success w-full">
                           🎮 Iniciar Partida
                         </button>
+                      </div>
+                    )}
+
+                    {/* Invitation Section */}
+                    {isHost && invitationCode && (
+                      <div className="w-full max-w-md space-y-3">
+                        <div className="bg-discord-surface p-4 rounded-lg border border-discord-hover">
+                          <div className="text-sm font-semibold text-white mb-2">{TEXTS.inviteFriends}</div>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={`${window.location.origin}/impostor?invite=${invitationCode}`}
+                              readOnly
+                              className="discord-input flex-1 text-xs"
+                            />
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(`${window.location.origin}/impostor?invite=${invitationCode}`);
+                                toast.success(TEXTS.inviteCopiedToClipboard);
+                              }}
+                              className="discord-button success px-3"
+                              title={TEXTS.copyLink}
+                            >
+                              📋
+                            </button>
+                          </div>
+                          <div className="text-xs text-discord-text-muted mt-2">
+                            {TEXTS.invitationCode}: <code className="bg-discord-chat px-1 py-0.5 rounded text-discord-text-normal">{invitationCode}</code>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1790,7 +1886,7 @@ export default function ImpostorGame({
                                 onClick={() => setShowGuessInput(true)}
                                 className="discord-button w-full bg-discord-blurple text-white"
                               >
-                                Adivinar Palabra
+                                {TEXTS.guessWord}
                               </button>
                             ) : (
                               <div className="flex gap-2 animate-fade-in">

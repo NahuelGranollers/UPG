@@ -290,6 +290,11 @@ def register_socket_events(socketio, app=None):
             logger.warning(f"[SOCKET] impostor:create-room failed: room {room_id} already exists")
             print(f"[SOCKET] impostor:create-room failed: room {room_id} already exists")
             return {'ok': False, 'error': 'exists'}
+        
+        # Generate unique invitation code
+        import secrets
+        invitation_code = secrets.token_urlsafe(8)
+        
         impostor_rooms[room_id] = {
             'hostId': user_id,
             'players': {user_id: {'socketId': request.sid, 'username': data.get('username')}},
@@ -297,6 +302,7 @@ def register_socket_events(socketio, app=None):
             'customWords': [],
             'name': data.get('name', f"Sala de {data.get('username')}") ,
             'password': data.get('password'),
+            'invitationCode': invitation_code,
             'createdAt': datetime.utcnow().isoformat()
         }
         public_servers['impostor'][room_id] = {
@@ -319,7 +325,8 @@ def register_socket_events(socketio, app=None):
             'started': False,
             'customWords': [],
             'name': impostor_rooms[room_id]['name'],
-            'hasPassword': bool(impostor_rooms[room_id]['password'])
+            'hasPassword': bool(impostor_rooms[room_id]['password']),
+            'invitationCode': invitation_code
         })
         logger.info(f"[SOCKET] impostor:create-room success: room {room_id} created")
         print(f"[SOCKET] impostor:create-room success: room {room_id} created")
@@ -356,6 +363,54 @@ def register_socket_events(socketio, app=None):
             'customWords': room['customWords'],
             'name': room['name'],
             'hasPassword': bool(room['password']),
+            'invitationCode': room.get('invitationCode'),
+            'turnOrder': room.get('turnOrder', []),
+            'currentTurnIndex': room.get('currentTurnIndex', 0)
+        }, room=f"impostor:{room_id}")
+        
+        return {'ok': True, 'roomId': room_id}
+
+    @socketio.on('impostor:join-by-invite')
+    def on_impostor_join_by_invite(data):
+        invitation_code = data.get('invitationCode')
+        user_id = data.get('userId')
+        
+        # Find room by invitation code
+        room_id = None
+        for rid, room in impostor_rooms.items():
+            if room.get('invitationCode') == invitation_code:
+                room_id = rid
+                break
+        
+        if not room_id:
+            logger.warning(f"Impostor join by invite failed: Invalid invitation code {invitation_code}")
+            return {'ok': False, 'error': 'invalid_invite'}
+        
+        room = impostor_rooms[room_id]
+        
+        if room['started']: 
+            logger.warning(f"Impostor join by invite failed: Room {room_id} already started")
+            return {'ok': False, 'error': 'started'}
+        if user_id in room['players']:
+            logger.warning(f"Impostor join by invite failed: User {user_id} already in room {room_id}")
+            return {'ok': False, 'error': 'already_joined'}
+            
+        room['players'][user_id] = {'socketId': request.sid, 'username': data.get('username')}
+        public_servers['impostor'][room_id]['playerCount'] = len(room['players'])
+        
+        join_room(f"impostor:{room_id}")
+        broadcast_servers(socketio)
+        
+        players_list = [{'id': pid, 'username': p['username']} for pid, p in room['players'].items()]
+        socketio.emit('impostor:room-state', {
+            'roomId': room_id,
+            'hostId': room['hostId'],
+            'players': players_list,
+            'started': room['started'],
+            'customWords': room['customWords'],
+            'name': room['name'],
+            'hasPassword': bool(room['password']),
+            'invitationCode': room.get('invitationCode'),
             'turnOrder': room.get('turnOrder', []),
             'currentTurnIndex': room.get('currentTurnIndex', 0)
         }, room=f"impostor:{room_id}")
@@ -385,6 +440,7 @@ def register_socket_events(socketio, app=None):
         
         category_input = data.get('category', '').strip()
         category = category_input if category_input else 'General'
+        hard_mode = data.get('hardMode', False)
         
         # Always use AI generation
         word = "ErrorIA"
@@ -402,6 +458,7 @@ def register_socket_events(socketio, app=None):
         room['started'] = True
         room['word'] = word
         room['impostorId'] = impostor_id
+        room['hardMode'] = hard_mode
         room['voting'] = False
         room['votes'] = {}
         room['revealedInnocents'] = set()
@@ -412,15 +469,36 @@ def register_socket_events(socketio, app=None):
         room['turnOrder'] = turn_order
         room['currentTurnIndex'] = 0
         
+        # Generate fake word for impostor in hard mode
+        fake_word = None
+        if hard_mode:
+            if app:
+                with app.app_context():
+                    fake_word = generate_impostor_word(category)
+                    # Ensure fake word is different from real word
+                    attempts = 0
+                    while fake_word.lower() == word.lower() and attempts < 5:
+                        fake_word = generate_impostor_word(category)
+                        attempts += 1
+            else:
+                fake_word = "PalabraFalsa"
+        
         for pid, p in room['players'].items():
-            role = 'impostor' if pid == impostor_id else 'crewmate'
-            assigned_word = None if pid == impostor_id else word
+            if pid == impostor_id:
+                # Impostor gets fake word in hard mode, None in normal mode
+                assigned_word = fake_word if hard_mode else None
+                role = 'impostor' if not hard_mode else 'crewmate'  # Hide role in hard mode
+            else:
+                role = 'crewmate'
+                assigned_word = word
+            
             socketio.emit('impostor:assign', {'role': role, 'word': assigned_word}, room=p['socketId'])
             
         socketio.emit('impostor:started', {
             'roomId': room_id, 
             'started': True,
             'category': category,
+            'hardMode': hard_mode,
             'turnOrder': turn_order,
             'currentTurnIndex': 0,
             'currentTurn': turn_order[0]
@@ -547,6 +625,7 @@ def register_socket_events(socketio, app=None):
             'customWords': room['customWords'],
             'name': room['name'],
             'hasPassword': bool(room['password']),
+            'invitationCode': room.get('invitationCode'),
             'turnOrder': room.get('turnOrder', []),
             'currentTurnIndex': room.get('currentTurnIndex', 0),
             'currentTurn': current_turn_id
@@ -624,6 +703,7 @@ def register_socket_events(socketio, app=None):
         room['started'] = False
         room['word'] = None
         room['impostorId'] = None
+        room['hardMode'] = False
         room['voting'] = False
         room['votes'] = {}
         room['revealedInnocents'] = set()
@@ -639,6 +719,7 @@ def register_socket_events(socketio, app=None):
             'customWords': room['customWords'],
             'name': room['name'],
             'hasPassword': bool(room['password']),
+            'invitationCode': room.get('invitationCode'),
             'turnOrder': room.get('turnOrder', []),
             'currentTurnIndex': room.get('currentTurnIndex', 0)
         }, room=f"impostor:{room_id}")
@@ -661,6 +742,7 @@ def register_socket_events(socketio, app=None):
                 'customWords': room['customWords'],
                 'name': room['name'],
                 'hasPassword': bool(room['password']),
+                'invitationCode': room.get('invitationCode'),
                 'turnOrder': room.get('turnOrder', []),
                 'currentTurnIndex': room.get('currentTurnIndex', 0)
             }, room=f"impostor:{room_id}")
@@ -694,8 +776,10 @@ def register_socket_events(socketio, app=None):
         # Simple check
         if guess == target_word:
             winner = 'impostor'
+            reason = 'correct_guess'
         else:
             winner = 'crewmates'
+            reason = 'wrong_guess'
             
         room['started'] = False
         room['word'] = None
@@ -706,7 +790,8 @@ def register_socket_events(socketio, app=None):
             'winner': winner,
             'word': target_word,
             'guess': guess,
-            'impostorName': room['players'][user_id]['username']
+            'impostorName': room['players'][user_id]['username'],
+            'reason': reason
         }, room=f"impostor:{room_id}")
         
         return {'ok': True}
@@ -723,7 +808,8 @@ def register_socket_events(socketio, app=None):
             
         socketio.emit('impostor:reveal-all', {
             'roomId': room_id,
-            'players': players_roles
+            'players': players_roles,
+            'hardMode': room.get('hardMode', False)
         }, room=f"impostor:{room_id}")
         return {'ok': True}
 
@@ -913,6 +999,7 @@ def register_socket_events(socketio, app=None):
                 'customWords': room['customWords'],
                 'name': room['name'],
                 'hasPassword': bool(room['password']),
+                'invitationCode': room.get('invitationCode'),
                 'turnOrder': room.get('turnOrder', []),
                 'currentTurnIndex': room.get('currentTurnIndex', 0)
             }, room=f"impostor:{room_id}")
@@ -1030,6 +1117,7 @@ def register_socket_events(socketio, app=None):
                         'customWords': room['customWords'],
                         'name': room['name'],
                         'hasPassword': bool(room['password']),
+                        'invitationCode': room.get('invitationCode'),
                         'turnOrder': room.get('turnOrder', []),
                         'currentTurnIndex': room.get('currentTurnIndex', 0),
                         'currentTurn': current_turn_id
