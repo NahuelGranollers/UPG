@@ -23,17 +23,21 @@ class SocketService {
 
   constructor(serverUrl?: string) {
     this.serverUrl = serverUrl || getSocketUrl();
+    console.log('[SOCKET CLIENT] Inicializando SocketService con URL:', this.serverUrl);
   }
 
   connect(): void {
     if (typeof io === 'undefined') {
-      console.warn('Socket.IO no está disponible. Asegúrate de que el script esté cargado.');
+      console.warn('[SOCKET CLIENT] Socket.IO no está disponible. Asegúrate de que el script esté cargado.');
       return;
     }
 
     if (this.socket?.connected) {
+      console.log('[SOCKET CLIENT] Ya conectado, ignorando nueva conexión');
       return;
     }
+
+    console.log('[SOCKET CLIENT] Iniciando conexión a:', this.serverUrl);
 
     try {
       this.socket = io(this.serverUrl, {
@@ -47,25 +51,43 @@ class SocketService {
       });
 
       this.socket.on('connect', () => {
-        // connected
+        console.log('[SOCKET CLIENT] ✅ Conectado exitosamente. SID:', this.socket.id);
         this.isConnected = true;
         this.connectionCallbacks.forEach(cb => cb(true));
       });
 
-      this.socket.on('disconnect', () => {
-        // disconnected
+      this.socket.on('disconnect', (reason: string) => {
+        console.log('[SOCKET CLIENT] ❌ Desconectado. Razón:', reason);
         this.isConnected = false;
         this.connectionCallbacks.forEach(cb => cb(false));
       });
 
       this.socket.on('connect_error', (error: any) => {
-        console.error('Error de conexión Socket.IO:', error);
+        console.error('[SOCKET CLIENT] ❌ Error de conexión:', error.message, 'Código:', error.code, 'Tipo:', error.type);
         this.isConnected = false;
         this.connectionCallbacks.forEach(cb => cb(false));
       });
 
+      this.socket.on('reconnect', (attemptNumber: number) => {
+        console.log('[SOCKET CLIENT] 🔄 Reconectado después de', attemptNumber, 'intentos');
+      });
+
+      this.socket.on('reconnect_attempt', (attemptNumber: number) => {
+        console.log('[SOCKET CLIENT] 🔄 Intento de reconexión #', attemptNumber);
+      });
+
+      this.socket.on('reconnect_error', (error: any) => {
+        console.error('[SOCKET CLIENT] ❌ Error en reconexión:', error.message);
+      });
+
+      this.socket.on('reconnect_failed', () => {
+        console.error('[SOCKET CLIENT] ❌ Falló la reconexión después de todos los intentos');
+      });
+
       // Escuchar mensajes
       this.socket.on('message:received', (msg: SocketMessage) => {
+        console.log('[SOCKET CLIENT] 📨 Mensaje recibido:', { channelId: msg.channelId, userId: msg.userId, content: msg.content.substring(0, 50) + '...' });
+
         // Convertir timestamp a Date si es string
         const message: SocketMessage = {
           ...msg,
@@ -91,9 +113,12 @@ class SocketService {
 
   disconnect(): void {
     if (this.socket) {
+      console.log('[SOCKET CLIENT] 🔌 Desconectando socket manualmente');
       this.socket.disconnect();
       this.socket = null;
       this.isConnected = false;
+    } else {
+      console.log('[SOCKET CLIENT] No hay socket para desconectar');
     }
   }
 
@@ -105,7 +130,7 @@ class SocketService {
     avatar?: string
   ): void {
     if (!this.isConnected || !this.socket) {
-      console.warn('Socket.IO no está conectado. No se puede enviar el mensaje.');
+      console.warn('[SOCKET CLIENT] No se puede enviar mensaje: Socket no conectado');
       return;
     }
 
@@ -119,10 +144,13 @@ class SocketService {
       avatar,
     };
 
+    console.log('[SOCKET CLIENT] 📤 Enviando mensaje:', { channelId, userId, content: content.substring(0, 50) + '...' });
     this.socket.emit('message:send', message);
   }
 
   subscribeToMessages(channelId: string, callback: (msg: SocketMessage) => void): () => void {
+    console.log('[SOCKET CLIENT] 📡 Suscribiendo a mensajes del canal:', channelId);
+
     if (!this.messageCallbacks.has(channelId)) {
       this.messageCallbacks.set(channelId, new Set());
     }
@@ -142,6 +170,7 @@ class SocketService {
   }
 
   onConnectionChange(callback: (connected: boolean) => void): () => void {
+    console.log('[SOCKET CLIENT] 👂 Agregando callback de cambio de conexión. Estado actual:', this.isConnected);
     this.connectionCallbacks.add(callback);
     // Llamar inmediatamente con el estado actual
     callback(this.isConnected);
@@ -153,7 +182,9 @@ class SocketService {
   }
 
   getConnectionStatus(): boolean {
-    return this.isConnected;
+    const status = this.isConnected;
+    console.log('[SOCKET CLIENT] 📊 Estado de conexión consultado:', status);
+    return status;
   }
 }
 
@@ -162,12 +193,16 @@ let socketServiceInstance: SocketService | null = null;
 
 export const getSocketService = (serverUrl?: string): SocketService => {
   if (!socketServiceInstance) {
+    console.log('[SOCKET CLIENT] 🆕 Creando nueva instancia de SocketService');
     socketServiceInstance = new SocketService(serverUrl);
+  } else {
+    console.log('[SOCKET CLIENT] ♻️ Reutilizando instancia existente de SocketService');
   }
   return socketServiceInstance;
 };
 
 export const initSocket = (serverUrl?: string): SocketService => {
+  console.log('[SOCKET CLIENT] 🚀 Inicializando socket con URL:', serverUrl || 'default');
   const service = getSocketService(serverUrl);
   service.connect();
   return service;

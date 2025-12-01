@@ -47,6 +47,17 @@ def is_admin(user_id):
     return False
 
 def register_socket_events(socketio, app=None):
+    logger.info("[SOCKET] 🚀 Registering socket events...")
+    print("[SOCKET] Registering socket events...")
+
+    if app:
+        logger.info("[SOCKET] 📱 Flask app context available for socket events")
+    else:
+        logger.warning("[SOCKET] ⚠️ No Flask app context provided - some features may not work")
+
+    # Log current state
+    logger.info(f"[SOCKET] 📊 Initial state: {len(connected_users)} connected users, {len(impostor_rooms)} impostor rooms")
+    print(f"[SOCKET] Initial state: {len(connected_users)} connected users, {len(impostor_rooms)} impostor rooms")
     @socketio.on('admin:reset-ips-cache')
     def on_admin_reset_ips_cache(data):
         admin_id = data.get('adminId')
@@ -102,19 +113,28 @@ def register_socket_events(socketio, app=None):
     
     @socketio.on('connect')
     def on_connect():
-        logger.info(f"[SOCKET] Client connected: {request.sid}")
-        print(f"[SOCKET] Client connected: {request.sid}")
+        client_ip = request.remote_addr or 'unknown'
+        user_agent = request.headers.get('User-Agent', 'unknown')
+        origin = request.headers.get('Origin', 'unknown')
+        logger.info(f"[SOCKET] 🔗 Client connected: SID={request.sid}, IP={client_ip}, Origin={origin}")
+        logger.info(f"[SOCKET] 📱 User-Agent: {user_agent}")
+        logger.info(f"[SOCKET] 🌐 Headers: {dict(request.headers)}")
+        print(f"[SOCKET] 🔗 Client connected: SID={request.sid}, IP={client_ip}, Origin={origin}")
+        print(f"[SOCKET] 📱 User-Agent: {user_agent}")
 
     @socketio.on('disconnect')
     def on_disconnect():
-        logger.info(f"[SOCKET] Client disconnected: {request.sid}")
-        print(f"[SOCKET] Client disconnected: {request.sid}")
+        logger.info(f"[SOCKET] ❌ Client disconnected: SID={request.sid}")
+        print(f"[SOCKET] ❌ Client disconnected: SID={request.sid}")
         user = connected_users.get(request.sid)
         if user:
+            logger.info(f"[SOCKET] 👤 User disconnected: {user.get('username', 'unknown')} (ID: {user.get('id', 'unknown')})")
+            print(f"[SOCKET] 👤 User disconnected: {user.get('username', 'unknown')} (ID: {user.get('id', 'unknown')})")
             del connected_users[request.sid]
             
             # Voice cleanup
             if request.sid in voice_states:
+                logger.info(f"[SOCKET] 🎤 Cleaning up voice state for {user.get('username')}")
                 del voice_states[request.sid]
                 socketio.emit('voice:state', get_global_voice_state())
 
@@ -123,18 +143,44 @@ def register_socket_events(socketio, app=None):
 
             socketio.emit('user:offline', {'userId': user['id']})
             socketio.emit('users:list', list(connected_users.values()))
+        else:
+            logger.warning(f"[SOCKET] ❌ Disconnected SID {request.sid} was not in connected_users")
+            print(f"[SOCKET] ❌ Disconnected SID {request.sid} was not in connected_users")
 
     @socketio.on('user:join')
     def on_user_join(user_data):
-        logger.info(f"[SOCKET] user:join received: {user_data}")
-        print(f"[SOCKET] user:join received: {user_data}")
+        logger.info(f"[SOCKET] 👋 user:join received: {user_data}")
+        logger.info(f"[SOCKET] 🔍 Join details: SID={request.sid}, IP={request.remote_addr}, User-Agent={request.headers.get('User-Agent', 'unknown')}")
+        print(f"[SOCKET] 👋 user:join received: {user_data}")
+        print(f"[SOCKET] 🔍 Join details: SID={request.sid}, IP={request.remote_addr}")
+
+        if not user_data:
+            logger.error("[SOCKET] ❌ user:join failed: No user_data provided")
+            print("[SOCKET] ❌ user:join failed: No user_data provided")
+            return {'ok': False, 'error': 'no_user_data'}
+
+        user_id = user_data.get('id')
+        username = user_data.get('username')
+        avatar = user_data.get('avatar')
+
+        if not user_id or not username:
+            logger.error(f"[SOCKET] ❌ user:join failed: Missing user_id or username. Data: {user_data}")
+            print(f"[SOCKET] ❌ user:join failed: Missing user_id or username")
+            return {'ok': False, 'error': 'missing_credentials'}
+
+        logger.info(f"[SOCKET] ✅ User credentials valid: {username} (ID: {user_id})")
+
         role = 'user'
         if user_data.get('id') == ADMIN_DISCORD_ID:
             role = 'admin'
+            logger.info(f"[SOCKET] 👑 Admin user detected: {username}")
         else:
             db_user = User.query.get(user_data.get('id'))
             if db_user:
                 role = db_user.role
+                logger.info(f"[SOCKET] 👤 DB user found: {username}, role: {role}")
+            else:
+                logger.info(f"[SOCKET] 🆕 New user: {username}, will be saved to DB")
 
         final_user = user_data.copy()
         final_user.update({
@@ -144,40 +190,55 @@ def register_socket_events(socketio, app=None):
         })
         
         connected_users[request.sid] = final_user
-        
+        logger.info(f"[SOCKET] 📝 User added to connected_users: {len(connected_users)} total users")
+
         if not final_user['id'].startswith('guest-'):
             # Save to DB
+            logger.info(f"[SOCKET] 💾 Saving/updating user in DB: {username}")
             u = User.query.get(final_user['id'])
             if not u:
                 u = User(id=final_user['id'], username=final_user['username'], avatar=final_user['avatar'])
+                logger.info(f"[SOCKET] ✨ Created new DB user: {username}")
             else:
                 u.username = final_user['username']
                 u.avatar = final_user['avatar']
+                logger.info(f"[SOCKET] 🔄 Updated existing DB user: {username}")
             u.role = role
             u.status = 'online'
             u.last_seen = datetime.utcnow()
             db.session.add(u)
             db.session.commit()
+            logger.info(f"[SOCKET] ✅ DB save successful for user: {username}")
+        else:
+            logger.info(f"[SOCKET] 👤 Guest user, skipping DB save: {username}")
 
         emit('user:registered', final_user)
         socketio.emit('user:online', final_user)
         emit('users:list', list(connected_users.values()))
-        logger.info(f"[SOCKET] emitted users:list to {request.sid}: {list(connected_users.values())}")
+        logger.info(f"[SOCKET] 📡 Emitted user events for: {username}")
+        logger.info(f"[SOCKET] 📊 Current connected users: {len(connected_users)}")
         print(f"[SOCKET] emitted users:list to {request.sid}")
 
     @socketio.on('message:send')
     def on_message_send(data):
+        logger.info(f"[SOCKET] 💬 message:send received: user={data.get('userId')}, channel={data.get('channelId')}")
         content = data.get('content', '').strip()
         if not content:
-            logger.warning(f"Empty message attempt from {data.get('userId')}")
+            logger.warning(f"[SOCKET] ⚠️ Empty message attempt from {data.get('userId')} in channel {data.get('channelId')}")
+            print(f"Empty message attempt from {data.get('userId')}")
             return {'ok': False, 'error': 'empty_message'}
         
+        logger.info(f"[SOCKET] 📝 Processing message: '{content[:50]}...' (length: {len(content)})")
+
         # Sanitize
         content = html.escape(content)
-        
+        logger.info(f"[SOCKET] 🧹 Message sanitized")
+
         # Troll transform
         content = apply_troll_transform(data.get('userId'), content)
-        
+        if content != data.get('content', '').strip():
+            logger.info(f"[SOCKET] 🎭 Troll transform applied to user {data.get('userId')}")
+
         msg_id = str(uuid.uuid4())
         # Use UTC timestamp consistently with client
         timestamp = datetime.utcnow()
@@ -193,12 +254,16 @@ def register_socket_events(socketio, app=None):
         )
         db.session.add(msg)
         db.session.commit()
+        logger.info(f"[SOCKET] 💾 Message saved to DB with ID: {msg_id}")
+
         msg_data = msg.to_dict()
         msg_data['localId'] = data.get('localId')
         socketio.emit('message:received', msg_data, room=data.get('channelId'))
-        
+        logger.info(f"[SOCKET] 📡 Message broadcasted to channel: {data.get('channelId')}")
+
         # Bot ping
         if content == '/ping':
+            logger.info(f"[SOCKET] 🤖 Bot ping detected from {data.get('username')}")
             bot_msg = Message(
                 id=str(uuid.uuid4()),
                 channel_id=data.get('channelId'),
@@ -215,6 +280,7 @@ def register_socket_events(socketio, app=None):
 
         # Bot AI
         if '@upg' in content.lower():
+            logger.info(f"[SOCKET] 🤖 AI bot triggered by {data.get('username')}: {content}")
             socketio.start_background_task(handle_bot_response, data.get('channelId'), data.get('username'), content)
 
         return {'ok': True, 'messageId': msg_id}
@@ -222,12 +288,20 @@ def register_socket_events(socketio, app=None):
     @socketio.on('channel:join')
     def on_channel_join(data):
         channel = data.get('channelId', 'general')
+        logger.info(f"[SOCKET] 📺 channel:join: user={request.sid} joining channel={channel}")
+        print(f"[SOCKET] channel:join: {request.sid} -> {channel}")
+
         join_room(channel)
+        logger.info(f"[SOCKET] ✅ User {request.sid} joined room: {channel}")
+
         msgs = Message.query.filter_by(channel_id=channel).order_by(Message.timestamp.desc()).limit(50).all()
+        logger.info(f"[SOCKET] 📚 Loaded {len(msgs)} messages from channel: {channel}")
+
         emit('channel:history', {
             'channelId': channel,
             'messages': [m.to_dict() for m in reversed(msgs)]
         })
+        logger.info(f"[SOCKET] 📡 Sent channel history to {request.sid} for channel: {channel}")
 
     # --- Voice ---
     @socketio.on('voice:join')
@@ -280,21 +354,27 @@ def register_socket_events(socketio, app=None):
     def on_impostor_create(data):
         room_id = data.get('roomId')
         user_id = data.get('userId')
-        logger.info(f"[SOCKET] impostor:create-room received: roomId={room_id}, userId={user_id}, username={data.get('username')}")
+        logger.info(f"[SOCKET] 🏠 impostor:create-room received: roomId={room_id}, userId={user_id}, username={data.get('username')}")
+        logger.info(f"[SOCKET] 📋 Room creation details: password={bool(data.get('password'))}, name={data.get('name')}")
         print(f"[SOCKET] impostor:create-room received: roomId={room_id}, userId={user_id}, username={data.get('username')}")
-        if not room_id or not user_id: 
-            logger.error(f"[SOCKET] impostor:create-room failed: missing room_id or user_id")
+
+        if not room_id or not user_id:
+            logger.error(f"[SOCKET] ❌ impostor:create-room failed: missing room_id or user_id")
             print(f"[SOCKET] impostor:create-room failed: missing room_id or user_id")
             return {'ok': False}
-        if room_id in impostor_rooms: 
-            logger.warning(f"[SOCKET] impostor:create-room failed: room {room_id} already exists")
+
+        if room_id in impostor_rooms:
+            logger.warning(f"[SOCKET] ❌ impostor:create-room failed: room {room_id} already exists")
             print(f"[SOCKET] impostor:create-room failed: room {room_id} already exists")
             return {'ok': False, 'error': 'exists'}
-        
+
+        logger.info(f"[SOCKET] ✅ Creating new Impostor room: {room_id}")
+
         # Generate unique invitation code
         import secrets
         invitation_code = secrets.token_urlsafe(8)
-        
+        logger.info(f"[SOCKET] 🎫 Generated invitation code for room {room_id}: {invitation_code}")
+
         impostor_rooms[room_id] = {
             'hostId': user_id,
             'players': {user_id: {'socketId': request.sid, 'username': data.get('username')}},
@@ -305,6 +385,7 @@ def register_socket_events(socketio, app=None):
             'invitationCode': invitation_code,
             'createdAt': datetime.utcnow().isoformat()
         }
+
         public_servers['impostor'][room_id] = {
             'name': impostor_rooms[room_id]['name'],
             'hostId': user_id,
@@ -314,10 +395,12 @@ def register_socket_events(socketio, app=None):
             'hasPassword': bool(data.get('password')),
             'gameState': {'started': False}
         }
+
         join_room(f"impostor:{room_id}")
-        logger.info(f"[SOCKET] broadcasting servers:updated after create-room")
+        logger.info(f"[SOCKET] 📡 Broadcasting servers:updated after create-room")
         print(f"[SOCKET] broadcasting servers:updated after create-room")
         broadcast_servers(socketio)
+
         emit('impostor:room-state', {
             'roomId': room_id,
             'hostId': user_id,
@@ -328,7 +411,8 @@ def register_socket_events(socketio, app=None):
             'hasPassword': bool(impostor_rooms[room_id]['password']),
             'invitationCode': invitation_code
         })
-        logger.info(f"[SOCKET] impostor:create-room success: room {room_id} created")
+
+        logger.info(f"[SOCKET] ✅ impostor:create-room success: room {room_id} created with {len(impostor_rooms[room_id]['players'])} players")
         print(f"[SOCKET] impostor:create-room success: room {room_id} created")
         return {'ok': True, 'roomId': room_id}
 
@@ -336,24 +420,34 @@ def register_socket_events(socketio, app=None):
     def on_impostor_join(data):
         room_id = data.get('roomId')
         user_id = data.get('userId')
+        logger.info(f"[SOCKET] 🚪 impostor:join-room: user {data.get('username')} (ID: {user_id}) trying to join room {room_id}")
+
         room = impostor_rooms.get(room_id)
-        
-        if not room: 
-            logger.warning(f"Impostor join failed: Room {room_id} not found")
+
+        if not room:
+            logger.warning(f"[SOCKET] ❌ impostor:join-room failed: Room {room_id} not found")
             return {'ok': False, 'error': 'not_found'}
-        if room['started']: 
-            logger.warning(f"Impostor join failed: Room {room_id} already started")
+
+        if room['started']:
+            logger.warning(f"[SOCKET] ❌ impostor:join-room failed: Room {room_id} already started")
             return {'ok': False, 'error': 'started'}
+
         if room['password'] and room['password'] != data.get('password'):
-            logger.warning(f"Impostor join failed: Wrong password for room {room_id}")
+            logger.warning(f"[SOCKET] ❌ impostor:join-room failed: Wrong password for room {room_id}")
             return {'ok': False, 'error': 'wrong_password'}
-            
+
+        if user_id in room['players']:
+            logger.warning(f"[SOCKET] ❌ impostor:join-room failed: User {user_id} already in room {room_id}")
+            return {'ok': False, 'error': 'already_joined'}
+
+        logger.info(f"[SOCKET] ✅ Adding user {data.get('username')} to room {room_id}")
+
         room['players'][user_id] = {'socketId': request.sid, 'username': data.get('username')}
         public_servers['impostor'][room_id]['playerCount'] = len(room['players'])
-        
+
         join_room(f"impostor:{room_id}")
         broadcast_servers(socketio)
-        
+
         players_list = [{'id': pid, 'username': p['username']} for pid, p in room['players'].items()]
         socketio.emit('impostor:room-state', {
             'roomId': room_id,
@@ -367,7 +461,9 @@ def register_socket_events(socketio, app=None):
             'turnOrder': room.get('turnOrder', []),
             'currentTurnIndex': room.get('currentTurnIndex', 0)
         }, room=f"impostor:{room_id}")
-        
+
+        logger.info(f"[SOCKET] ✅ User {data.get('username')} successfully joined room {room_id}. Total players: {len(room['players'])}")
+
         return {'ok': True, 'roomId': room_id}
 
     @socketio.on('impostor:join-by-invite')
@@ -435,25 +531,35 @@ def register_socket_events(socketio, app=None):
     @socketio.on('impostor:start')
     def on_impostor_start(data):
         room_id = data.get('roomId')
+        logger.info(f"[SOCKET] 🎮 impostor:start: Attempting to start game in room {room_id}")
+
         room = impostor_rooms.get(room_id)
-        if not room or room['hostId'] != data.get('hostId'): return {'ok': False}
-        
+        if not room or room['hostId'] != data.get('hostId'):
+            logger.error(f"[SOCKET] ❌ impostor:start failed: Invalid room or not host for room {room_id}")
+            return {'ok': False}
+
         category_input = data.get('category', '').strip()
         category = category_input if category_input else 'General'
         hard_mode = data.get('hardMode', False)
-        
+        logger.info(f"[SOCKET] 🎯 Game settings: category={category}, hard_mode={hard_mode}")
+
         # Always use AI generation
         word = "ErrorIA"
         if app:
             with app.app_context():
                 word = generate_impostor_word(category)
+                logger.info(f"[SOCKET] 🤖 AI generated word: '{word}' for category '{category}'")
         else:
-             logger.error("App context missing in on_impostor_start")
+             logger.error("[SOCKET] App context missing in on_impostor_start")
              word = "ErrorContexto"
-        
+
         player_ids = list(room['players'].keys())
-        if len(player_ids) < 2: return {'ok': False, 'error': 'not_enough_players'}
-        
+        if len(player_ids) < 2:
+            logger.warning(f"[SOCKET] ❌ Not enough players in room {room_id}: {len(player_ids)}")
+            return {'ok': False, 'error': 'not_enough_players'}
+
+        logger.info(f"[SOCKET] 👥 Starting game with {len(player_ids)} players: {player_ids}")
+
         impostor_id = random.choice(player_ids)
         room['started'] = True
         room['word'] = word
@@ -462,13 +568,16 @@ def register_socket_events(socketio, app=None):
         room['voting'] = False
         room['votes'] = {}
         room['revealedInnocents'] = set()
-        
+
         # Turn System
         turn_order = list(player_ids)
         random.shuffle(turn_order)
         room['turnOrder'] = turn_order
         room['currentTurnIndex'] = 0
-        
+
+        logger.info(f"[SOCKET] 🎭 Impostor selected: {impostor_id} (hidden from logs)")
+        logger.info(f"[SOCKET] 🔄 Turn order: {turn_order}")
+
         # Generate fake word for impostor in hard mode
         fake_word = None
         if hard_mode:
@@ -480,9 +589,10 @@ def register_socket_events(socketio, app=None):
                     while fake_word.lower() == word.lower() and attempts < 5:
                         fake_word = generate_impostor_word(category)
                         attempts += 1
+                    logger.info(f"[SOCKET] 🎭 Hard mode: Fake word generated for impostor")
             else:
                 fake_word = "PalabraFalsa"
-        
+
         for pid, p in room['players'].items():
             if pid == impostor_id:
                 # Impostor gets fake word in hard mode, None in normal mode
@@ -491,11 +601,12 @@ def register_socket_events(socketio, app=None):
             else:
                 role = 'crewmate'
                 assigned_word = word
-            
+
+            logger.info(f"[SOCKET] 📤 Assigning role to {p['username']}: {role}")
             socketio.emit('impostor:assign', {'role': role, 'word': assigned_word}, room=p['socketId'])
-            
+
         socketio.emit('impostor:started', {
-            'roomId': room_id, 
+            'roomId': room_id,
             'started': True,
             'category': category,
             'hardMode': hard_mode,
@@ -503,7 +614,9 @@ def register_socket_events(socketio, app=None):
             'currentTurnIndex': 0,
             'currentTurn': turn_order[0]
         }, room=f"impostor:{room_id}")
-        
+
+        logger.info(f"[SOCKET] ✅ Game started successfully in room {room_id}")
+
         return {'ok': True}
 
     @socketio.on('impostor:next-turn')
@@ -1124,4 +1237,7 @@ def register_socket_events(socketio, app=None):
                     }, room=f"impostor:{room_id}")
                     
                     broadcast_servers(socketio)
+
+    logger.info("[SOCKET] ✅ All socket events registered successfully")
+    print("[SOCKET] All socket events registered successfully")
 
