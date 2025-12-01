@@ -1,0 +1,142 @@
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import * as storage from '../utils/storageService';
+import { getBackendUrl } from '../utils/config';
+import { User, UserRole } from '../types';
+
+interface AuthContextType {
+  currentUser: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  loginWithDiscord: () => void;
+  loginAsGuest: (username: string) => void;
+  logout: () => Promise<void>;
+  updateUser: (user: User) => void;
+}
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
+  return context;
+};
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Inicializar usuario
+  useEffect(() => {
+    const initAuth = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const authStatus = urlParams.get('auth');
+
+      if (authStatus === 'success') {
+        // Limpiar URL
+        window.history.replaceState({}, document.title, '/');
+
+        // Fetch user from backend
+        try {
+          const API_URL = getBackendUrl();
+          const res = await fetch(`${API_URL}/auth/user`, { credentials: 'include' });
+          if (res.ok) {
+            const discordUser = await res.json();
+            
+            // Fix: Check if avatar is already a full URL (from DB) or just a hash
+            let avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(discordUser.username || 'U')}&background=random`;
+            if (discordUser.avatar) {
+              if (discordUser.avatar.startsWith('http')) {
+                avatarUrl = discordUser.avatar;
+              } else if (discordUser.id) {
+                // Handle animated avatars (start with a_)
+                const format = discordUser.avatar.startsWith('a_') ? 'gif' : 'png';
+                avatarUrl = `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.${format}`;
+              }
+            }
+
+            const newUser: User = {
+              id: discordUser.id,
+              username: discordUser.username,
+              avatar: avatarUrl,
+              status: 'online',
+              online: true,
+              role: discordUser.role || UserRole.USER,
+              color: discordUser.color || (discordUser.role === 'admin' ? '#ff4d0a' : '#5865F2'),
+              isGuest: false,
+            };
+            setCurrentUser(newUser);
+            storage.saveUserData(newUser);
+            setIsLoading(false);
+            return;
+          }
+        } catch (e) {
+          console.error('Auth check failed', e);
+        }
+      }
+
+      // Fallback: LocalStorage
+      const saved = storage.loadUserData();
+      if (saved) {
+        setCurrentUser({ ...saved, online: true, status: 'online' });
+      }
+      // No auto-guest creation anymore
+      setIsLoading(false);
+    };
+
+    initAuth();
+  }, []);
+
+  const loginWithDiscord = useCallback(() => {
+    const API_URL = getBackendUrl();
+    window.location.href = `${API_URL}/auth/discord`;
+  }, []);
+
+  const loginAsGuest = useCallback((username: string) => {
+    const randomId = Math.floor(Math.random() * 10000).toString();
+    const guest: User = {
+      id: `guest-${randomId}`,
+      username: username,
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random`,
+      status: 'online',
+      online: true,
+      color: '#808080',
+      isGuest: true,
+      role: UserRole.USER,
+    };
+    setCurrentUser(guest);
+    storage.saveUserData(guest);
+  }, []);
+
+  const logout = useCallback(async () => {
+    const API_URL = getBackendUrl();
+    try {
+      await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+    } catch (e) {
+      console.error('Logout failed', e);
+    } finally {
+      storage.clearUserData();
+      window.location.reload();
+    }
+  }, []);
+
+  const updateUser = useCallback((user: User) => {
+    setCurrentUser(user);
+    storage.saveUserData(user);
+  }, []);
+
+  return (
+    <AuthContext.Provider
+      value={{
+        currentUser,
+        isAuthenticated: !!currentUser,
+        isLoading,
+        loginWithDiscord,
+        loginAsGuest,
+        logout,
+        updateUser,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};

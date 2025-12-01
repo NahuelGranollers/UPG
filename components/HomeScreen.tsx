@@ -5,6 +5,7 @@ import MinecraftServerStatus from './MinecraftServerStatus';
 import { getBackendUrl } from '../utils/config';
 import CookieClicker from './CookieClicker';
 import { FaCookieBite } from 'react-icons/fa';
+import CreateServerModal from './CreateServerModal';
 
 interface HomeScreenProps {
   onGoToChat: () => void;
@@ -28,6 +29,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
   const [servers, setServers] = useState<GameServer[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCookieClicker, setShowCookieClicker] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     const fetchServers = async () => {
@@ -54,6 +56,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
     const interval = setInterval(fetchServers, 10000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleCreateServer = (serverData: {
+    name: string;
+    password?: string;
+    botCount?: number;
+  }) => {
+    // For now, just call the original onCreateServer to maintain compatibility
+    onCreateServer('impostor');
+    setShowCreateModal(false);
+  };
 
   const handleJoinClick = (server: GameServer) => {
     if (server.hasPassword) {
@@ -122,7 +134,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
         </div>
       )}
 
-      <div className="flex-1 custom-scrollbar p-4 md:p-8 lg:p-12 flex flex-col items-center justify-center">
+      <div className="flex-1 custom-scrollbar p-4 md:p-8 lg:p-12 flex flex-col items-center md:justify-center">
         {/* Responsive Hero Section - always fully visible */}
         <div
           className="liquid-glass mb-8 mt-8 md:mt-0 p-6 sm:p-10 md:p-14 flex flex-col items-center text-center"
@@ -152,7 +164,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
               Entrar al Chat
             </button>
             <button 
-              onClick={() => onCreateServer('impostor')}
+              onClick={() => setShowCreateModal(true)}
               className="glass-btn w-full md:w-auto px-8 py-3 text-lg font-bold relative overflow-hidden group"
             >
               <div className="flex items-center justify-center gap-2">
@@ -245,6 +257,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onGoToChat, onGoToWhoWeAre, onJ
         )}
       </div>
       </div>
+
+      {/* Create Server Modal */}
+      {showCreateModal && (
+        <CreateServerModal
+          gameType="impostor"
+          onCreate={handleCreateServer}
+          onCancel={() => setShowCreateModal(false)}
+          onJoinServer={onJoinServer}
+        />
+      )}
     </div>
   );
 };

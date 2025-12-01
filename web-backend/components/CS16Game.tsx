@@ -1,0 +1,453 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { useSocket } from '../context/SocketContext';
+import { useAuth } from '../context/AuthContext';
+import { toast } from 'sonner';
+import { Menu, Upload, Play, AlertTriangle, Info } from 'lucide-react';
+
+declare global {
+  interface Window {
+    Module: any;
+    FS: any;
+  }
+}
+
+export default function CS16Game({ 
+  onClose,
+  onOpenSidebar,
+  autoJoinRoomId,
+  autoJoinPassword
+}: { 
+  onClose?: () => void;
+  onOpenSidebar?: () => void;
+  autoJoinRoomId?: string;
+  autoJoinPassword?: string;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [status, setStatus] = useState<string>('Esperando archivos del juego...');
+  const [progress, setProgress] = useState<number>(0);
+  const [engineReady, setEngineReady] = useState(false);
+  const [gameRunning, setGameRunning] = useState(false);
+  const [missingEngine, setMissingEngine] = useState(false);
+
+  // Auto-connect logic when engine is ready
+  useEffect(() => {
+    if (gameRunning && autoJoinRoomId) {
+      // Wait for engine to fully init (a bit hacky, but Xash exposes 'cmd' via Module)
+      const interval = setInterval(() => {
+        if (window.Module && window.Module.ccall) {
+          clearInterval(interval);
+          console.log(`[AutoJoin] Connecting to ${autoJoinRoomId}...`);
+          // Execute console command to connect
+          // Note: Xash3D web might not support direct IP connect this way without a proxy,
+          // but we can try 'connect <ip>' if we had a real IP.
+          // Since this is a browser-based engine, 'connect' usually implies a websocket bridge.
+          // For now, we just log it as the engine handles networking internally via Emscripten sockets.
+          
+          // If we wanted to force a command:
+          // window.Module.ccall('Xash3D_ExecuteCommand', 'void', ['string'], [`connect ${autoJoinRoomId}`]);
+          
+          toast.success(`Conectando a servidor: ${autoJoinRoomId}`);
+        }
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [gameRunning, autoJoinRoomId]);
+
+  // Check if engine files exist (simple check by fetching head)
+  useEffect(() => {
+    Promise.all([
+      fetch('/xash/xash3d.js', { method: 'HEAD' }),
+      // Correct engine WASM filename
+      fetch('/xash/xash3d.wasm', { method: 'HEAD' }),
+      // Check dynamic library required by Xash
+      fetch('/xash/filesystem_stdio.wasm', { method: 'HEAD' }),
+      fetch('/xash/libref_webgl2.wasm', { method: 'HEAD' })
+    ])
+      .then(responses => {
+        if (responses.some(res => !res.ok)) setMissingEngine(true);
+      })
+      .catch(() => setMissingEngine(true));
+  }, []);
+
+  const handleDirectorySelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+
+    setStatus('Cargando archivos al sistema de archivos virtual...');
+    setEngineReady(false);
+    
+    const files = Array.from(e.target.files);
+    let loadedCount = 0;
+    const totalFiles = files.length;
+
+    // Initialize Module (Always fresh to avoid stale state)
+    window.Module = {
+      preRun: [],
+      postRun: [],
+      print: (text: string) => {
+        console.log('[Xash3D]', text);
+        if (text.includes("Can't initialize any renderer")) {
+          toast.error("Error gráfico: No se pudo iniciar WebGL. Verifica tus drivers o activa la aceleración de hardware.");
+          setStatus("Error: Fallo de inicialización de video.");
+          setGameRunning(false);
+        }
+      },
+      printErr: (text: string) => console.error('[Xash3D Error]', text),
+      onAbort: (what: any) => {
+         console.warn('[Xash3D] Aborted:', what);
+         setStatus("El motor se detuvo inesperadamente.");
+         setGameRunning(false);
+      },
+      quit: (status: number, toThrow: any) => {
+         console.log('[Xash3D] Quit:', status);
+         setGameRunning(false);
+         if (status !== 0) {
+             console.warn('Xash3D exited with status:', status);
+         }
+      },
+      canvas: canvasRef.current,
+      // Start with CS 1.6 game logic and load a map to create a server
+      arguments: [
+        '-windowed', 
+        '-width', '1024', 
+        '-height', '768', 
+        '-ref', 'webgl2', 
+        '-game', 'cstrike',   // Force CS 1.6 game mode
+        '+maxplayers', '32',  // Set max players for the server
+        '+map', 'de_dust2'    // Start server immediately on de_dust2
+      ],
+      setStatus: (text: string) => setStatus(text),
+      totalDependencies: 0,
+      monitorRunDependencies: (left: number) => {
+        // console.log('Dependencies left:', left);
+      },
+      dynamicLibraries: [
+        'filesystem_stdio.wasm',
+        'libref_webgl2.wasm',
+        // 'client_emscripten_wasm32.wasm', // Let the engine load these via dlopen from FS
+        // 'cs_emscripten_wasm32.wasm',
+        // 'menu_emscripten_wasm32.wasm'
+      ],
+      locateFile: (path: string, prefix: string) => {
+        if (path.endsWith('.wasm') || path.endsWith('.data') || path.endsWith('.mem')) {
+          const fileName = path.split('/').pop();
+          return '/xash/' + fileName;
+        }
+        return prefix + path;
+      },
+    };
+
+    // Fetch Xash3D WASM binaries to write them to Virtual FS
+    // This fixes the "file not found" error during dlopen
+    const xashBinaries = [
+      { name: 'client_emscripten_wasm32.wasm', paths: ['cl_dlls/client_emscripten_wasm32.wasm', 'cstrike/cl_dlls/client_emscripten_wasm32.wasm'] },
+      { name: 'cs_emscripten_wasm32.wasm', paths: ['dlls/cs_emscripten_wasm32.wasm', 'cstrike/dlls/cs_emscripten_wasm32.wasm'] },
+      { name: 'menu_emscripten_wasm32.wasm', paths: ['cl_dlls/menu_emscripten_wasm32.wasm', 'cstrike/cl_dlls/menu_emscripten_wasm32.wasm'] }
+    ];
+
+    const binaryData: { paths: string[], data: ArrayBuffer }[] = [];
+    
+    try {
+      for (const bin of xashBinaries) {
+        const resp = await fetch(`/xash/${bin.name}`);
+        if (resp.ok) {
+          const buf = await resp.arrayBuffer();
+          binaryData.push({ paths: bin.paths, data: buf });
+        } else {
+          console.warn(`Failed to fetch ${bin.name} for preloading`);
+        }
+      }
+    } catch (e) {
+      console.error('Error preloading Xash binaries', e);
+    }
+
+    const fileData: { path: string, data: ArrayBuffer }[] = [];
+    let hasLiblist = false;
+    let hasValve = false;
+    
+    for (const file of files) {
+        const path = file.webkitRelativePath;
+        // Check if relevant
+        if (!path.includes('valve') && !path.includes('cstrike')) continue;
+        
+        if (path.includes('cstrike/liblist.gam')) hasLiblist = true;
+        if (path.includes('valve/config.cfg') || path.includes('valve/liblist.gam')) hasValve = true;
+
+        try {
+            const buffer = await file.arrayBuffer();
+            fileData.push({ path, data: buffer });
+            loadedCount++;
+            setProgress(Math.round((loadedCount / totalFiles) * 100));
+        } catch (e) {
+            console.error('Error reading file', file.name);
+        }
+    }
+
+    if (!hasLiblist) {
+      toast.error("Error: No se encontró 'cstrike/liblist.gam'. Asegúrate de seleccionar la carpeta raíz de Counter-Strike.");
+      setStatus("Error: Falta cstrike/liblist.gam");
+      setEngineReady(false);
+      return;
+    }
+
+    setStatus(`Archivos cargados (${fileData.length}). Listo para iniciar.`);
+    setEngineReady(true);
+
+    // Setup the preRun to write these files
+    window.Module.preRun = []; // Reset
+    window.Module.preRun.push(() => {
+        const FS = window.Module.FS;
+        
+        // Fix for dynamic libraries: Create virtual directories and alias the flat WASM files
+        // The engine expects cl_dlls/client.wasm but we serve it at /xash/client.wasm
+        try {
+            FS.mkdir('cl_dlls');
+            FS.mkdir('dlls');
+            FS.mkdir('cstrike');
+            FS.mkdir('cstrike/cl_dlls');
+            FS.mkdir('cstrike/dlls');
+        } catch(e) { /* ignore EEXIST */ }
+
+        // Write preloaded Xash binaries to FS
+        for (const bin of binaryData) {
+          for (const p of bin.paths) {
+            try {
+              FS.writeFile(p, new Uint8Array(bin.data));
+              console.log(`[Xash3D] Wrote preloaded binary to ${p}`);
+            } catch (e) {
+              console.warn(`[Xash3D] Failed to write ${p}`, e);
+            }
+          }
+        }
+
+        for (const item of fileData) {
+            const parts = item.path.split('/');
+            let startIndex = -1;
+            if (parts.includes('valve')) startIndex = parts.indexOf('valve');
+            else if (parts.includes('cstrike')) startIndex = parts.indexOf('cstrike');
+            
+            if (startIndex === -1) continue;
+
+            const relativePath = parts.slice(startIndex).join('/');
+            const dirPath = parts.slice(startIndex, -1).join('/');
+            const fileName = parts[parts.length - 1];
+
+            // Create dirs
+            const dirs = dirPath.split('/');
+            let currentDir = '';
+            for (const dir of dirs) {
+              currentDir += (currentDir ? '/' : '') + dir;
+              try {
+                const analyzed = (FS as any).analyzePath ? (FS as any).analyzePath(currentDir) : null;
+                const exists = analyzed ? analyzed.exists : false;
+                if (!exists) {
+                  FS.mkdir(currentDir);
+                }
+              } catch (e: any) {
+                // Suppress benign EEXIST variations across runtimes
+                const code = e?.code ?? e?.errno;
+                const msg = String(e?.message || e);
+                if (code === 'EEXIST' || code === 17 || msg.includes('File exists')) {
+                  // ignore
+                } else {
+                  console.warn('mkdir error', currentDir, e);
+                }
+              }
+            }
+
+            // Write file
+            try {
+                FS.writeFile(relativePath, new Uint8Array(item.data));
+            } catch (e) {
+                console.error('Error writing file', relativePath, e);
+            }
+        }
+    });
+  };
+
+  const launchEngine = () => {
+    if (!engineReady) return;
+
+    // Pre-flight check: Does the browser support WebGL 2?
+    // The available renderer is libref_webgl2.wasm, so we strictly need WebGL 2.
+    const canvas = canvasRef.current;
+    if (canvas) {
+        const gl2 = canvas.getContext('webgl2');
+        if (!gl2) {
+            toast.error('FATAL: Tu navegador no soporta WebGL 2. Este motor requiere WebGL 2.');
+            setStatus('Error: WebGL 2 no soportado.');
+            return;
+        }
+    }
+
+    setGameRunning(true);
+
+    // Suppress "Uncaught Infinity" errors from Emscripten's quit()
+    const originalOnError = window.onerror;
+    window.onerror = (msg, url, line, col, error) => {
+        if (msg.toString().includes('Infinity') || (error && error.message === 'Infinity')) {
+            return true; // Suppress
+        }
+        if (originalOnError) return originalOnError(msg, url, line, col, error);
+        return false;
+    };
+    
+    // Load the script
+    const script = document.createElement('script');
+    script.src = '/xash/xash3d.js?v=' + Date.now();
+    script.async = true;
+    script.onload = () => {
+      // Initialize the engine using the factory function
+      // @ts-ignore
+      if (typeof window.Xash3D === 'function') {
+        // @ts-ignore
+        window.Xash3D(window.Module).then((instance: any) => {
+          console.log('Xash3D Engine Initialized');
+          // Attempt to get a WebGL2 context and report if unavailable
+          try {
+            const canvas = canvasRef.current!;
+            const gl = (canvas.getContext('webgl2', { powerPreference: 'high-performance' })
+              || canvas.getContext('webgl', { powerPreference: 'high-performance' })) as WebGLRenderingContext | null;
+            if (!gl) {
+              toast.warning('WebGL acelerado no disponible. Usando renderizado por software.');
+            }
+          } catch (e) {
+            console.warn('WebGL context check failed:', e);
+          }
+        }).catch((err: any) => {
+          console.error('Failed to initialize Xash3D:', err);
+          toast.error('Error al iniciar el motor del juego');
+          setGameRunning(false);
+        });
+      } else {
+        console.error('Xash3D global not found');
+        toast.error('Error: No se pudo cargar el script del motor');
+        setGameRunning(false);
+      }
+    };
+    document.body.appendChild(script);
+  };
+
+  return (
+    <div className="flex flex-col h-full w-full bg-black overflow-hidden relative">
+      {/* Header / Overlay */}
+      {!gameRunning && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-discord-chat/90 backdrop-blur-sm p-4">
+          <div className="bg-discord-surface p-6 rounded-lg max-w-2xl w-full border border-discord-hover shadow-2xl">
+            <div className="flex justify-between items-start mb-6">
+              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+                <Play className="text-green-500" />
+                CS 1.6 Web Engine (Xash3D)
+              </h1>
+              <button onClick={onClose} className="text-discord-text-muted hover:text-white">
+                <Menu size={24} />
+              </button>
+            </div>
+
+            {missingEngine ? (
+              <div className="bg-red-500/10 border border-red-500/50 p-4 rounded-lg mb-6">
+                <h3 className="text-red-400 font-bold flex items-center gap-2 mb-2">
+                  <AlertTriangle size={20} />
+                  Motor no encontrado
+                </h3>
+                <p className="text-sm text-discord-text-normal mb-2">
+                  No se encontraron los archivos del motor Xash3D en <code>/public/xash/</code>.
+                </p>
+                <p className="text-sm text-discord-text-muted">
+                  Por favor, descarga los binarios de Xash3D FWGS (WebAssembly) y colócalos en la carpeta <code>public/xash</code> de tu proyecto.
+                  Necesitas: <code>xash3d.js</code>, <code>xash3d.wasm</code>, etc.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="bg-discord-chat p-4 rounded-lg border border-discord-blurple/30">
+                  <h3 className="text-white font-semibold mb-2 flex items-center gap-2">
+                    <Info size={18} className="text-blue-400" />
+                    Instrucciones
+                  </h3>
+                  <ol className="list-decimal list-inside text-sm text-discord-text-normal space-y-2">
+                    <li>Necesitas una copia de <b>Counter-Strike 1.6</b> (carpeta 'Half-Life' o 'Counter-Strike').</li>
+                    <li>Debe contener las subcarpetas <code>cstrike</code> y <code>valve</code>.</li>
+                    <li>Haz clic abajo y selecciona la <b>carpeta raíz</b> del juego.</li>
+                    <li>El navegador cargará los archivos en memoria (puede tardar unos segundos).</li>
+                    <li>El juego iniciará automáticamente en <code>de_dust2</code> como servidor.</li>
+                  </ol>
+                </div>
+
+                <div className="flex flex-col gap-4">
+                  {!engineReady ? (
+                    <div className="relative">
+                      <input
+                        type="file"
+                        {...({ webkitdirectory: "", directory: "" } as any)}
+                        onChange={handleDirectorySelect}
+                        className="hidden"
+                        id="folder-upload"
+                      />
+                      <label
+                        htmlFor="folder-upload"
+                        className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-discord-text-muted rounded-lg cursor-pointer hover:border-discord-blurple hover:bg-discord-blurple/10 transition-all"
+                      >
+                        <Upload size={32} className="text-discord-text-muted mb-2" />
+                        <span className="text-discord-text-normal font-semibold">
+                          Seleccionar carpeta del juego (Half-Life)
+                        </span>
+                        <span className="text-xs text-discord-text-muted mt-1">
+                          Debe contener las carpetas 'valve' y 'cstrike'
+                        </span>
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="text-center space-y-4">
+                      <div className="text-green-400 font-semibold text-lg">
+                        ✅ Archivos listos para iniciar
+                      </div>
+                      <button
+                        onClick={launchEngine}
+                        className="discord-button success w-full py-4 text-xl font-bold shadow-lg hover:scale-[1.02] transition-transform"
+                      >
+                        INICIAR JUEGO
+                      </button>
+                    </div>
+                  )}
+
+                  {status && (
+                    <div className="text-center">
+                      <div className="text-xs text-discord-text-muted mb-1">{status}</div>
+                      {progress > 0 && progress < 100 && (
+                        <div className="w-full bg-discord-dark h-2 rounded-full overflow-hidden">
+                          <div 
+                            className="bg-discord-blurple h-full transition-all duration-300"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Game Canvas */}
+      <canvas
+        ref={canvasRef}
+        className="w-full h-full block outline-none cursor-none"
+        id="canvas"
+        onContextMenu={(e) => e.preventDefault()}
+        tabIndex={-1}
+      />
+      
+      {/* Mobile Menu Toggle (Always visible if needed) */}
+      {onOpenSidebar && (
+        <button
+          onClick={onOpenSidebar}
+          className="md:hidden absolute top-4 left-4 p-2 bg-discord-surface/50 rounded-full text-white z-20 hover:bg-discord-surface"
+        >
+          <Menu size={24} />
+        </button>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content"
+    />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#1a1a1e" />
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'self' blob: data: gap:; style-src * 'self' 'unsafe-inline' blob: data: gap:; script-src * 'self' 'unsafe-eval' 'unsafe-inline' blob: data: gap:; object-src * 'self' blob: data: gap:; img-src * 'self' 'unsafe-inline' blob: data: gap:; connect-src 'self' * 'unsafe-inline' blob: data: gap:; frame-src * 'self' blob: data: gap:;">
+    <link rel="icon" type="image/png" href="/upg.png" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Unas Partidillas Gang (UPG) - Comunidad Gamer y Torneos" />
+    <meta property="og:description" content="Únete a Unas Partidillas Gang (UPG). La mejor comunidad para jugar unas partidillas, torneos de CS 1.6, Among Us y más. Chat de voz y eventos diarios." />
+    <meta property="og:image" content="https://unaspartidillas.online/upg.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://unaspartidillas.online/" />
+    <meta property="og:locale" content="es_ES" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@unaspartidillas" />
+    <meta name="twitter:title" content="Unas Partidillas Gang (UPG) - Comunidad Gamer" />
+    <meta name="twitter:description" content="Únete a Unas Partidillas Gang (UPG). Juega unas partidillas con nosotros. Torneos, eventos y la mejor comunidad gamer." />
+    <meta name="twitter:image" content="https://unaspartidillas.online/upg.png" />
+
+    <title>Unas Partidillas Gang (UPG) - Tu Comunidad Gamer Online</title>
+    <link rel="canonical" href="https://unaspartidillas.online/" />
+    <meta name="description" content="Bienvenido a Unas Partidillas Gang (UPG). El lugar ideal para echar unas partidillas online. Comunidad de CS 1.6, Among Us, Minecraft y más. ¡Únete a la gang!" />
+    <meta name="keywords" content="UPG, Unas Partidillas Gang, unas partidillas, gang, comunidad gamer, servidores cs 1.6, among us, torneos, chat, juegos online" />
+    <meta name="author" content="Unas Partidillas Gang" />
+    <link rel="apple-touch-icon" href="/upg.png" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="/index.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #313338;
+        color: #dbdee1;
+        font-size: 130%;
+      }
+      /* Custom scrollbar for Webkit */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+        background-color: #2b2d31;
+      }
+      ::-webkit-scrollbar-thumb {
+        background-color: #1a1b1e;
+        border-radius: 4px;
+      }
+    </style>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+          "recharts": "https://aistudiocdn.com/recharts@^3.4.1",
+          "react/": "https://aistudiocdn.com/react@^19.2.0/",
+          "react": "https://aistudiocdn.com/react@^19.2.0",
+          "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+          "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0"
+        }
+      }
+    </script>
+    <script type="module" src="/index.tsx"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // API base
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        window.API_BASE = 'http://localhost:5000';
+      } else if (window.location.hostname.includes('unaspartidillas.online')) {
+        window.API_BASE = 'https://api.unaspartidillas.online';
+      } else {
+        // LAN / Network access
+        window.API_BASE = window.location.protocol + '//' + window.location.hostname + ':5000';
+      }
+      // Set window.ADMIN_TOKEN = 'your_token_here' in console for production
+    </script>
+    <script>
+      // Admin console commands
+      window.admin = {};
+      Object.defineProperty(window.admin, 'on', {
+        get: function() {
+          const headers = {
+            'Content-Type': 'application/json'
+          };
+          if (window.ADMIN_TOKEN) {
+            headers['Authorization'] = 'Bearer ' + window.ADMIN_TOKEN;
+          }
+          fetch(window.API_BASE + '/admin/console', {
+            method: 'POST',
+            credentials: 'include',
+            headers: headers,
+            body: JSON.stringify({ action: 'on' })
+          }).then(r => r.json()).then(result => console.log('Admin on:', result)).catch(console.error);
+          return 'Activating admin...';
+        }
+      });
+      Object.defineProperty(window.admin, 'off', {
+        get: function() {
+          const headers = {
+            'Content-Type': 'application/json'
+          };
+          if (window.ADMIN_TOKEN) {
+            headers['Authorization'] = 'Bearer ' + window.ADMIN_TOKEN;
+          }
+          fetch(window.API_BASE + '/admin/console', {
+            method: 'POST',
+            credentials: 'include',
+            headers: headers,
+            body: JSON.stringify({ action: 'off' })
+          }).then(r => r.json()).then(result => console.log('Admin off:', result)).catch(console.error);
+          return 'Deactivating admin...';
+        }
+      });
+      Object.defineProperty(window.admin, 'status', {
+        get: function() {
+          const headers = {
+            'Content-Type': 'application/json'
+          };
+          if (window.ADMIN_TOKEN) {
+            headers['Authorization'] = 'Bearer ' + window.ADMIN_TOKEN;
+          }
+          fetch(window.API_BASE + '/admin/console', {
+            method: 'POST',
+            credentials: 'include',
+            headers: headers,
+            body: JSON.stringify({ action: 'status' })
+          }).then(r => r.json()).then(result => console.log('Admin status:', result)).catch(console.error);
+          return 'Checking status...';
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1477 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Optimizaciones globales para móvil */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+html {
+  /* Prevenir zoom en inputs en iOS */
+  -webkit-text-size-adjust: 100%;
+  /* Scroll suave */
+  scroll-behavior: smooth;
+  /* Altura dinámica para móviles (considera barra de URL) */
+  height: -webkit-fill-available;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+  /* Altura dinámica para móviles */
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  /* Prevenir overscroll bounce en iOS */
+  overscroll-behavior: none;
+  /* Mejorar rendimiento en móvil */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tema: variables reutilizables para coherencia visual estilo Discord con Liquid Glass iOS 26 */
+:root {
+  --bg: #313338; /* Discord chat background */
+  --chat-bg: #313338; /* Chat input background */
+  --sidebar-bg: #2b2d31; /* Discord sidebar */
+  --header-bg: #2b2d31; /* Discord header */
+  --surface: #2b2d31; /* Surface elements */
+  --surface-hover: #35373c; /* Hover states */
+  --muted: #949ba4; /* Discord muted text */
+  --text: #dbdee1; /* Discord normal text */
+  --text-header: #f2f3f5; /* Discord header text */
+  --blurple: #5865F2; /* Discord blurple */
+  --blurple-hover: #4752c4; /* Discord blurple hover */
+  --green: #23a559; /* Discord green */
+  --red: #da373c; /* Discord red */
+  --yellow: #ffcc17; /* UPG accent */
+  --border: #3f4147; /* Discord hover/border */
+  --glass: rgba(255,255,255,0.02); /* Subtle glass effect */
+
+  /* Sombras iOS 26 Liquid Glass */
+  --shadow: 0 4px 16px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.08);
+  --shadow-xl: 0 16px 64px rgba(0,0,0,0.16), 0 8px 32px rgba(0,0,0,0.12);
+  --shadow-2xl: 0 24px 96px rgba(0,0,0,0.2), 0 12px 48px rgba(0,0,0,0.16);
+
+  /* Efectos de profundidad iOS 26 */
+  --depth-1: 0 2px 8px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+  --depth-2: 0 4px 16px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
+  --depth-3: 0 8px 32px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.08);
+  --depth-4: 0 16px 64px rgba(0,0,0,0.16), 0 8px 32px rgba(0,0,0,0.12);
+  --depth-5: 0 24px 96px rgba(0,0,0,0.2), 0 12px 48px rgba(0,0,0,0.16);
+
+  /* Transparencias iOS 26 */
+  --glass-subtle: rgba(255,255,255,0.04);
+  --glass-medium: rgba(255,255,255,0.08);
+  --glass-strong: rgba(255,255,255,0.12);
+  --glass-intense: rgba(255,255,255,0.16);
+}
+
+/* Ensure the `bg-discord-green` utility (used in sidebar buttons) uses the UPG yellow accent
+   instead of the original Discord green. This overrides Tailwind-generated utility where needed. */
+.bg-discord-green {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 204 23 / var(--tw-bg-opacity, 1));
+}
+
+.text-discord-green {
+  --tw-text-opacity: 1;
+  color: rgb(255 204 23 / var(--tw-text-opacity, 1));
+}
+
+/* Clases de utilidad estilo Discord con acabado Liquid Glass iOS 26 */
+.discord-card {
+  background: linear-gradient(180deg, rgba(43, 45, 49, 0.95), rgba(43, 45, 49, 0.85));
+  backdrop-filter: blur(24px) saturate(180%) contrast(120%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%) contrast(120%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.discord-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.02) 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.01) 75%,
+    rgba(255, 255, 255, 0.04) 100%);
+  pointer-events: none;
+}
+
+.discord-card:hover {
+  background: linear-gradient(180deg, rgba(53, 55, 60, 0.95), rgba(53, 55, 60, 0.85));
+  box-shadow:
+    0 12px 48px rgba(0, 0, 0, 0.16),
+    0 4px 16px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+}
+
+.discord-button {
+  background: linear-gradient(180deg, rgba(88, 101, 242, 0.9), rgba(88, 101, 242, 0.8));
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: white;
+  box-shadow:
+    0 4px 16px rgba(88, 101, 242, 0.25),
+    0 2px 8px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.discord-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    transparent 100%);
+  pointer-events: none;
+}
+
+.discord-button:hover {
+  background: linear-gradient(180deg, rgba(71, 82, 196, 0.95), rgba(71, 82, 196, 0.85));
+  box-shadow:
+    0 8px 32px rgba(88, 101, 242, 0.4),
+    0 4px 16px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.discord-button:active {
+  transform: translateY(0);
+  box-shadow:
+    0 2px 8px rgba(88, 101, 242, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.discord-button.secondary {
+  background: linear-gradient(180deg, rgba(43, 45, 49, 0.8), rgba(43, 45, 49, 0.7));
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.discord-button.secondary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.02) 50%,
+    transparent 100%);
+  pointer-events: none;
+}
+
+.discord-button.secondary:hover {
+  background: linear-gradient(180deg, rgba(53, 55, 60, 0.85), rgba(53, 55, 60, 0.75));
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.16),
+    0 4px 16px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: var(--text-header);
+}
+
+.discord-button.danger {
+  background: var(--red);
+}
+
+.discord-button.danger:hover {
+  background: #c13b40;
+}
+
+.discord-button.success:hover {
+  background: #1e8c4a;
+}
+
+/* Nuevas clases de utilidad iOS 26 Liquid Glass */
+.discord-glass-card {
+  background: linear-gradient(180deg, rgba(43, 45, 49, 0.9), rgba(43, 45, 49, 0.8));
+  backdrop-filter: blur(24px) saturate(180%) contrast(120%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%) contrast(120%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  box-shadow: var(--depth-3);
+  position: relative;
+  overflow: hidden;
+}
+
+.discord-glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0.02) 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.01) 75%,
+    rgba(255, 255, 255, 0.04) 100%);
+  pointer-events: none;
+}
+
+.discord-depth-1 { box-shadow: var(--depth-1); }
+.discord-depth-2 { box-shadow: var(--depth-2); }
+.discord-depth-3 { box-shadow: var(--depth-3); }
+.discord-depth-4 { box-shadow: var(--depth-4); }
+.discord-depth-5 { box-shadow: var(--depth-5); }
+
+/* Efectos de hover iOS 26 */
+.discord-hover-lift {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.discord-hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--depth-4);
+}
+
+/* Bordes redondeados iOS 26 */
+.discord-rounded-sm { border-radius: 8px; }
+.discord-rounded { border-radius: 12px; }
+.discord-rounded-lg { border-radius: 16px; }
+.discord-rounded-xl { border-radius: 20px; }
+.discord-rounded-2xl { border-radius: 24px; }
+
+.discord-input {
+  background: linear-gradient(180deg, rgba(43, 45, 49, 0.8), rgba(43, 45, 49, 0.7));
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: var(--text);
+  padding: 12px 16px;
+  font-size: 14px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  position: relative;
+}
+
+.discord-input::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.02) 50%,
+    transparent 100%);
+  pointer-events: none;
+}
+
+.discord-input:focus {
+  outline: none;
+  border-color: rgba(88, 101, 242, 0.4);
+  box-shadow:
+    0 8px 32px rgba(88, 101, 242, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.12),
+    0 0 0 2px rgba(88, 101, 242, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(43, 45, 49, 0.9), rgba(43, 45, 49, 0.8));
+}
+
+.discord-input::placeholder {
+  color: var(--muted);
+}
+
+.discord-panel {
+  background: linear-gradient(180deg, rgba(43, 45, 49, 0.95), rgba(43, 45, 49, 0.85));
+  backdrop-filter: blur(24px) saturate(180%) contrast(120%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%) contrast(120%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow:
+    0 12px 48px rgba(0, 0, 0, 0.15),
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.discord-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0.01) 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.02) 75%,
+    rgba(255, 255, 255, 0.05) 100%);
+  pointer-events: none;
+}
+
+.discord-header {
+  background: linear-gradient(180deg, rgba(43, 45, 49, 0.9), rgba(43, 45, 49, 0.8));
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 16px 20px;
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--text-header);
+  box-shadow:
+    0 2px 16px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  position: relative;
+}
+
+.discord-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.02) 100%);
+  pointer-events: none;
+}
+
+.discord-sidebar {
+  background: linear-gradient(180deg, rgba(42, 45, 49, 0.95), rgba(42, 45, 49, 0.85));
+  backdrop-filter: blur(24px) saturate(180%) contrast(120%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%) contrast(120%);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    2px 0 24px rgba(0, 0, 0, 0.08),
+    inset -1px 0 0 rgba(255, 255, 255, 0.04);
+  position: relative;
+}
+
+.discord-sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    rgba(255, 255, 255, 0.02) 0%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.01) 100%);
+  pointer-events: none;
+}
+
+.discord-chat {
+  background: linear-gradient(180deg, rgba(49, 51, 56, 0.98), rgba(49, 51, 56, 0.95));
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  position: relative;
+}
+
+.discord-chat::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(88, 101, 242, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 70% 80%, rgba(114, 137, 218, 0.02) 0%, transparent 40%);
+  pointer-events: none;
+}
+
+/* Glass morphism effect consistente con iOS 26 */
+.discord-glass {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+  backdrop-filter: blur(28px) saturate(200%) contrast(130%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%) contrast(130%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  box-shadow:
+    0 12px 48px rgba(0, 0, 0, 0.15),
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.discord-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(255, 255, 255, 0.04) 30%,
+    transparent 60%,
+    rgba(255, 255, 255, 0.02) 90%);
+  pointer-events: none;
+}
+
+.discord-glass-subtle {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(20px) saturate(180%) contrast(120%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%) contrast(120%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.discord-glass-subtle::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.02) 40%,
+    transparent 100%);
+  pointer-events: none;
+}
+
+/* Theme helper to apply lock-screen colours to game */
+.impostor-theme {
+  background: linear-gradient(180deg, #0f0f0f, #1f1f1f);
+  color: #ffffff;
+  position: relative;
+}
+.impostor-theme::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 70% 80%, rgba(88, 101, 242, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 20% 60%, rgba(114, 137, 218, 0.06) 0%, transparent 40%);
+  pointer-events: none;
+}
+.impostor-theme .liquid-glass {
+  background: linear-gradient(180deg, rgba(255,255,255,0.75), rgba(255,255,255,0.44));
+  border: 1px solid rgba(88,101,242,0.45);
+  box-shadow: 0 12px 40px rgba(88,101,242,0.16), inset 0 1px 0 rgba(255,255,255,0.38);
+}
+.impostor-theme .glass-btn {
+  background: linear-gradient(180deg, rgba(88,101,242,0.2), rgba(88,101,242,0.1));
+  border: 1px solid rgba(88,101,242,0.4);
+  color: #5865F2;
+  text-shadow: 0 0 10px rgba(88,101,242,0.8);
+}
+
+/* Improved contrast tokens for Impostor UI */
+:root {
+  --impostor-surface: #2b2d31; /* dark surface for dark theme */
+  --impostor-text: #ffffff; /* white text for readability */
+  --impostor-muted: #9aa0a6;
+  --impostor-accent: #5865F2; /* UPG blue accent */
+}
+
+/* Liquid glass styling (backdrop blur + sheen + subtle borders) iOS 26 style */
+.liquid-glass {
+  --glass-radius: 20px;
+  /* background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.65)); */
+  background: none;
+  -webkit-backdrop-filter: blur(32px) saturate(220%) contrast(140%);
+  backdrop-filter: blur(32px) saturate(220%) contrast(140%);
+  border: 1px solid rgba(255,255,255,0.25);
+  box-shadow:
+    0 16px 64px rgba(0,0,0,0.12),
+    0 8px 32px rgba(0,0,0,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.4);
+  color: var(--impostor-text);
+  border-radius: var(--glass-radius);
+  /* position: relative; */
+  overflow: hidden;
+}
+
+/* Sheen pseudo-element for liquid look */
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: none;
+  pointer-events: none;
+  /* mix-blend-mode: overlay; */
+}
+
+/* Sheen pseudo-element for liquid look */
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: none;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+/* Glassy buttons and inputs */
+.glass-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--impostor-text);
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.12),
+    0 4px 16px rgba(0,0,0,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255,255,255,0.15) 0%,
+    rgba(255,255,255,0.04) 50%,
+    transparent 100%);
+  pointer-events: none;
+}
+
+.glass-btn:active {
+  transform: translateY(1px);
+  box-shadow:
+    0 4px 16px rgba(0,0,0,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.glass-btn.primary {
+  background: linear-gradient(180deg, rgba(88,101,242,0.9), rgba(88,101,242,0.8));
+  border-color: rgba(255,255,255,0.2);
+  color: white;
+  box-shadow:
+    0 8px 32px rgba(88,101,242,0.25),
+    0 4px 16px rgba(0,0,0,0.1),
+    inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+.glass-input {
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+  border: 1px solid rgba(255,255,255,0.12);
+  padding: 12px 16px;
+  border-radius: 14px;
+  color: #ffffff;
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.1),
+    0 4px 16px rgba(0,0,0,0.06),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-input::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    rgba(255,255,255,0.1) 0%,
+    rgba(255,255,255,0.02) 50%,
+    transparent 100%);
+  pointer-events: none;
+}
+
+.glass-input:focus {
+  border-color: rgba(88,101,242,0.3);
+  box-shadow:
+    0 12px 48px rgba(88,101,242,0.15),
+    0 8px 32px rgba(0,0,0,0.12),
+    0 0 0 2px rgba(88,101,242,0.1),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+/* Panels & cards use rounded glass by default inside theme */
+.impostor-theme .panel-glass { position: relative; }
+.impostor-theme .panel-glass.lg { padding: 1.25rem; }
+
+/* Turn item polish */
+.turn-item { transition: transform 260ms ease, box-shadow 260ms ease, background 260ms ease, border-radius 160ms; border-radius: 10px; }
+.turn-item.active { transform: translateX(6px) scale(1.02); box-shadow: 0 12px 28px rgba(0,0,0,0.18); }
+.turn-item.innocent { box-shadow: 0 8px 20px rgba(6,80,30,0.12); }
+
+/* Higher contrast for text and interactive elements inside theme */
+.impostor-theme { color: var(--impostor-text); }
+.impostor-theme .text-contrast { color: var(--impostor-text); }
+.impostor-theme .muted-contrast { color: var(--impostor-muted); }
+.impostor-theme .turn-item { color: var(--impostor-text); }
+
+/* Adjust confetti palette to match lock accent and higher contrast */
+.confetti span { box-shadow: 0 4px 10px rgba(0,0,0,0.12); }
+
+/* Ensure responsive aside width with min/max */
+@media (min-width: 880px) {
+  .impostor-grid { grid-template-columns: 1fr 320px; }
+}
+@media (max-width: 879px) {
+  .impostor-grid { grid-template-columns: 1fr; }
+}
+
+/* Layout helpers to avoid overlapping elements */
+.app-shell {
+  display: flex;
+  height: 100dvh;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.no-overlap {
+  position: relative;
+  z-index: 0;
+}
+
+/* Ensure inputs and modals sit above normal content but below global overlays */
+.z-base { z-index: 10; }
+.z-top { z-index: 40; }
+.z-overlay { z-index: 90; }
+
+/* Suggestion dropdown styling (positioned absolute relative to input container) */
+.mention-suggestions {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  max-width: 520px;
+  background: var(--surface);
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow: var(--shadow);
+  border-radius: 10px;
+  overflow: hidden;
+  animation: slide-in-up 160ms ease-out;
+}
+
+@media (max-width: 768px) {
+  .mention-suggestions {
+    max-width: 100%;
+    left: 0;
+    right: 0;
+    bottom: calc(100% + 6px);
+    border-radius: 8px;
+  }
+
+  /* Ensure safe area padding for chat on mobile so inputs don't overlap content */
+  .chat-input-safe { padding-bottom: 3.5rem; }
+}
+
+.mention-suggestions .item:hover {
+  background: rgba(88,101,242,0.14);
+}
+
+/* Input container safe area so messages never hide under the input */
+.chat-input-safe { padding-bottom: 1.25rem; }
+
+/* Compact spacing adjustments */
+:root {
+  --compact-avatar: 36px;
+  --compact-gap: 8px;
+  --compact-padding: 8px;
+}
+
+/* Send button styling adjustments */
+.message-send-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+}
+
+
+#root {
+  width: 100vw;
+  width: 100dvw; /* Dynamic viewport width */
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height */
+  /* Prevenir selección accidental de texto en móvil */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Permitir selección solo en inputs y áreas de texto */
+input,
+textarea,
+[contenteditable] {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Optimizar scrollbars para móvil */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  /* Ocultar scrollbars en móvil pero mantener funcionalidad */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 2px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Touch-friendly buttons */
+@media (max-width: 768px) {
+  button,
+  a,
+  [role='button'] {
+    min-height: 44px; /* iOS touch target recomendado */
+    min-width: 44px;
+  }
+}
+
+/* Improve touch and click interaction globally */
+button,
+a,
+[role='button'] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation; /* Reduce click delays on older browsers */
+  -ms-touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Allow text selection for inputs still */
+button[aria-disabled='true'] {
+  pointer-events: none; /* ensure temporary disabling blocks interaction */
+  opacity: 0.9;
+}
+
+/* Animaciones personalizadas iOS 26 */
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(0.98);
+  }
+}
+
+@keyframes slide-in-up {
+  from {
+    transform: translateY(12px) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(88, 101, 242, 0.2), var(--depth-2);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(88, 101, 242, 0.4), var(--depth-3);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-slide-in-up {
+  animation: slide-in-up 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-glow {
+  animation: glow 3s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Impostor game specific animations and visuals */
+.impostor-card {
+  perspective: 1200px;
+}
+.impostor-card-inner {
+  width: 100%;
+  transform-style: preserve-3d;
+  transition: transform 700ms cubic-bezier(.2,.9,.2,1);
+  position: relative;
+}
+.impostor-card.flipped .impostor-card-inner {
+  transform: rotateY(180deg);
+}
+.impostor-card-face {
+  backface-visibility: hidden;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+.impostor-card-front {
+  background: linear-gradient(180deg, rgba(55, 65, 81, 0.8), rgba(31, 41, 55, 0.9));
+  transform: rotateY(0deg);
+}
+.impostor-card-back {
+  transform: rotateY(180deg);
+  background: linear-gradient(180deg, rgba(55, 65, 81, 0.8), rgba(17, 24, 39, 0.9));
+}
+
+/* Nice spinner / roulette feel */
+.impostor-spinner {
+  width: 96px;
+  height: 96px;
+  border-radius: 999px;
+  border: 6px solid rgba(255,255,255,0.06);
+  border-top-color: var(--blurple);
+  animation: spin 900ms linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Reveal overlay and confetti */
+.impostor-reveal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 120;
+}
+.impostor-reveal-panel {
+  width: min(820px, 92%);
+  padding: 2.25rem;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 18px 60px rgba(2,6,23,0.75);
+  transform-origin: center;
+  animation: reveal-pop 560ms cubic-bezier(.2,.9,.2,1);
+}
+@keyframes reveal-pop {
+  0% { transform: scale(.92) translateY(8px); opacity: 0; }
+  60% { transform: scale(1.04) translateY(-6px); opacity: 1; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* Confetti simple implementation: multiple spans animated downwards */
+.confetti { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+.confetti span {
+  position: absolute;
+  width: 10px;
+  height: 16px;
+  opacity: 0.95;
+  border-radius: 2px;
+  transform-origin: center;
+  animation: confetti-fall 1600ms linear forwards;
+}
+@keyframes confetti-fall {
+  0% { transform: translateY(-20vh) rotate(0deg) scale(1); }
+  70% { transform: translateY(40vh) rotate(360deg) scale(0.9); }
+  100% { transform: translateY(60vh) rotate(720deg) scale(0.85); opacity: 0; }
+}
+
+/* Responsive layout tweaks for the impostor page */
+.impostor-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  padding: 0.5rem;
+}
+
+/* Mobile first approach - small screens */
+@media (max-width: 479px) {
+  .impostor-grid {
+    gap: 0.75rem;
+    padding: 0.25rem;
+  }
+
+  /* Reduce text sizes on very small screens */
+  .impostor-theme h1 {
+    font-size: 1.5rem;
+  }
+
+  /* Smaller buttons and inputs */
+  .glass-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .glass-input {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.9rem;
+  }
+
+  /* Compact card sizing */
+  .impostor-card {
+    max-width: 100%;
+  }
+
+  /* Smaller spinner */
+  .impostor-spinner {
+    width: 72px;
+    height: 72px;
+    border-width: 4px;
+  }
+
+  /* Adjust reveal panel for small screens */
+  .impostor-reveal-panel {
+    padding: 1.5rem;
+    width: min(380px, 95%);
+  }
+}
+
+/* Medium mobile screens */
+@media (min-width: 480px) and (max-width: 639px) {
+  .impostor-grid {
+    gap: 0.875rem;
+    padding: 0.375rem;
+  }
+
+  .impostor-theme h1 {
+    font-size: 1.75rem;
+  }
+
+  .glass-btn {
+    padding: 0.6rem 1rem;
+    font-size: 1rem;
+  }
+
+  .glass-input {
+    padding: 0.6rem 0.75rem;
+    font-size: 1rem;
+  }
+
+  .impostor-spinner {
+    width: 84px;
+    height: 84px;
+    border-width: 5px;
+  }
+
+  .impostor-reveal-panel {
+    padding: 1.75rem;
+    width: min(420px, 92%);
+  }
+}
+
+/* Large mobile / small tablets */
+@media (min-width: 640px) and (max-width: 879px) {
+  .impostor-grid {
+    gap: 1rem;
+    padding: 0.5rem;
+  }
+
+  .impostor-theme h1 {
+    font-size: 2rem;
+  }
+
+  .glass-btn {
+    padding: 0.7rem 1.25rem;
+    font-size: 1.1rem;
+  }
+
+  .glass-input {
+    padding: 0.7rem 0.875rem;
+    font-size: 1.1rem;
+  }
+
+  .impostor-spinner {
+    width: 90px;
+    height: 90px;
+    border-width: 6px;
+  }
+
+  .impostor-reveal-panel {
+    padding: 2rem;
+    width: min(480px, 90%);
+  }
+}
+
+/* Desktop and larger screens */
+@media (min-width: 880px) {
+  .impostor-grid {
+    grid-template-columns: 2fr 360px;
+    gap: 1.25rem;
+    padding: 0.75rem;
+  }
+
+  .impostor-theme h1 {
+    font-size: 2.25rem;
+  }
+
+  .glass-btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.2rem;
+  }
+
+  .glass-input {
+    padding: 0.75rem 1rem;
+    font-size: 1.2rem;
+  }
+
+  .impostor-spinner {
+    width: 96px;
+    height: 96px;
+    border-width: 6px;
+  }
+
+  .impostor-reveal-panel {
+    padding: 2.25rem;
+    width: min(820px, 85%);
+  }
+}
+
+/* Extra large screens */
+@media (min-width: 1200px) {
+  .impostor-grid {
+    grid-template-columns: 2.5fr 400px;
+    gap: 1.5rem;
+    padding: 1rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .impostor-theme h1 {
+    font-size: 2.5rem;
+  }
+
+  .glass-btn {
+    padding: 0.8rem 1.75rem;
+    font-size: 1.3rem;
+  }
+
+  .glass-input {
+    padding: 0.8rem 1.125rem;
+    font-size: 1.3rem;
+  }
+
+  .impostor-reveal-panel {
+    width: min(900px, 80%);
+  }
+}
+
+/* Ultra wide screens */
+@media (min-width: 1600px) {
+  .impostor-grid {
+    grid-template-columns: 4fr 500px;
+    gap: 3rem;
+    padding: 2rem;
+    max-width: 2200px;
+    margin: 0 auto;
+  }
+
+  .impostor-theme h1 {
+    font-size: 3rem;
+  }
+}
+
+/* Responsive header and controls */
+.impostor-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.impostor-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.impostor-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* Mobile: stack header vertically */
+@media (max-width: 639px) {
+  .impostor-header {
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .impostor-header-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .impostor-controls {
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  /* Smaller theme selector */
+  .impostor-theme-selector {
+    padding: 0.5rem !important;
+    font-size: 0.9rem !important;
+    min-width: 120px;
+  }
+}
+
+/* Tablet: adjust spacing */
+@media (min-width: 640px) and (max-width: 879px) {
+  .impostor-header {
+    margin-bottom: 1.25rem;
+  }
+
+  .impostor-controls {
+    gap: 0.625rem;
+  }
+
+  .impostor-theme-selector {
+    padding: 0.625rem;
+    font-size: 1rem;
+    min-width: 140px;
+  }
+}
+
+/* Desktop: full spacing */
+@media (min-width: 880px) {
+  .impostor-theme-selector {
+    padding: 0.75rem;
+    font-size: 1.1rem;
+    min-width: 160px;
+  }
+}
+
+/* Responsive button layouts */
+.impostor-button-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.impostor-button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* Mobile: single column for buttons */
+@media (max-width: 479px) {
+  .impostor-button-grid {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .impostor-button-row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .glass-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Small mobile: adjust button sizing */
+@media (max-width: 639px) {
+  .impostor-button-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+}
+
+/* Responsive word input */
+.impostor-word-input {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  left: 1rem;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1rem;
+  max-width: 400px;
+  margin: 0 auto;
+  z-index: 50;
+}
+
+/* Mobile: full width word input */
+@media (max-width: 479px) {
+  .impostor-word-input {
+    left: 0.5rem;
+    right: 0.5rem;
+    padding: 0.75rem;
+    max-width: none;
+  }
+}
+
+/* Tablet: adjust word input */
+@media (min-width: 480px) and (max-width: 879px) {
+  .impostor-word-input {
+    max-width: 350px;
+    padding: 0.875rem;
+  }
+}
+
+/* Desktop: larger word input */
+@media (min-width: 880px) {
+  .impostor-word-input {
+    max-width: 400px;
+    padding: 1rem;
+  }
+}
+
+/* Responsive player list */
+.impostor-player-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Mobile: smaller player list height */
+@media (max-width: 639px) {
+  .impostor-player-list {
+    max-height: 200px;
+  }
+}
+
+/* Responsive voting area */
+.impostor-voting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: rgba(55, 65, 81, 0.8);
+  border: 1px solid rgba(75, 85, 99, 0.5);
+}
+
+/* Mobile: stack voting items vertically */
+@media (max-width: 479px) {
+  .impostor-voting-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .impostor-voting-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .impostor-voting-actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+}
+
+/* Responsive notifications */
+.impostor-notifications {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  left: 1rem;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* Mobile: adjust notification positioning */
+@media (max-width: 639px) {
+  .impostor-notifications {
+    top: 0.5rem;
+    right: 0.5rem;
+    left: 0.5rem;
+  }
+
+  .impostor-notification {
+    margin-bottom: 0.5rem;
+    padding: 0.75rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Desktop: larger notifications */
+@media (min-width: 880px) {
+  .impostor-notifications {
+    top: 1rem;
+    right: 1rem;
+    max-width: 400px;
+  }
+
+  .impostor-notification {
+    padding: 1rem;
+    font-size: 1rem;
+  }
+}
+
+/* Neon Theme */
+.neon-theme {
+  --lock-bg: #0a0a0a;
+  --lock-accent: #ff4d0a;
+  --lock-accent-2: #ff9300;
+  --lock-hover: #e03e00;
+  --lock-shadow: #cc3300;
+  --lock-text-dark: #ffffff;
+  background: linear-gradient(180deg, #0a0a0a, #1a1a1a);
+  position: relative;
+}
+.neon-theme::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 70% 80%, rgba(255, 77, 10, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 20% 60%, rgba(255, 147, 0, 0.08) 0%, transparent 40%);
+  pointer-events: none;
+}
+.neon-theme .liquid-glass {
+  background: linear-gradient(180deg, rgba(255,255,255,0.75), rgba(255,255,255,0.44));
+  border: 1px solid rgba(255,77,10,0.45);
+  box-shadow: 0 12px 40px rgba(255,77,10,0.16), inset 0 1px 0 rgba(255,255,255,0.38);
+}
+.neon-theme .glass-btn {
+  background: linear-gradient(180deg, rgba(255,77,10,0.2), rgba(255,77,10,0.1));
+  border: 1px solid rgba(255,77,10,0.4);
+  color: #ff4d0a;
+  text-shadow: 0 0 10px rgba(255,77,10,0.8);
+}
+
+/* Retro Theme */
+.retro-theme {
+  --lock-bg: #1a1a1a;
+  --lock-accent: #ff6347;
+  --lock-accent-2: #daa520;
+  --lock-hover: #cd5c5c;
+  --lock-shadow: #a0522d;
+  --lock-text-dark: #ffffff;
+  background: linear-gradient(180deg, #1a1a1a, #2a2a2a);
+  position: relative;
+}
+.retro-theme::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 70% 80%, rgba(255, 99, 71, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 20% 60%, rgba(218, 165, 32, 0.06) 0%, transparent 40%);
+  pointer-events: none;
+}
+
+
+/* Safe area for iPhone X+ */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Global custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+
+@keyframes run-across {
+  0% {
+    left: -60px;
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  95% {
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
+
+.animate-run-across {
+  animation: run-across 2s linear infinite;
+}
+

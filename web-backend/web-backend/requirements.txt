@@ -1,0 +1,11 @@
+flask
+flask-cors
+flask-sqlalchemy
+flask-compress
+flask-socketio
+eventlet
+requests
+python-dotenv
+waitress
+google-generativeai>=0.8.0
+psutil
