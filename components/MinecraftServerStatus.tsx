@@ -109,8 +109,8 @@ const MinecraftServerStatus: React.FC = () => {
               </button>
             </div>
 
-            {/* MOTD */}
-            <div className="bg-black/30 rounded-xl p-4 mb-4 border border-white/5 font-minecraft text-gray-300 text-sm leading-relaxed shadow-inner">
+            {/* MOTD - REMOVED as requested */}
+            {/* <div className="bg-black/30 rounded-xl p-4 mb-4 border border-white/5 font-minecraft text-gray-300 text-sm leading-relaxed shadow-inner">
               {isOnline && status?.motd?.clean ? (
                 status.motd.clean.map((line, i) => (
                   <div key={i} className="whitespace-pre-wrap text-center md:text-left">{line}</div>
@@ -118,7 +118,7 @@ const MinecraftServerStatus: React.FC = () => {
               ) : (
                 <div className="text-white/40 italic">El servidor está desconectado actualmente.</div>
               )}
-            </div>
+            </div> */}
 
             {/* Player Count & Version */}
             {isOnline && (

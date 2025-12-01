@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import SafeImage from './SafeImage';
-import { ArrowRight, Gamepad2, Users, Lock, Plus, Menu, Zap, Shield, Globe } from 'lucide-react';
+import { ArrowRight, Gamepad2, Users, Lock, Plus, Menu, Zap, Globe } from 'lucide-react';
 import MinecraftServerStatus from './MinecraftServerStatus';
 import { getBackendUrl } from '../utils/config';
 import CookieClicker from './CookieClicker';
@@ -159,7 +159,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                   className="btn btn-secondary w-full group relative overflow-hidden"
                 >
                   <Plus size={20} />
-                  {TEXTS.createImpostor}
+                  Jugar al Impostor
                   <img
                     src="/among-us.gif"
                     alt="Among Us"
@@ -179,8 +179,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
           </section>
 
-          {/* Features Section */}
-          <section className="grid-responsive max-w-6xl mx-auto animate-slide-in">
+          {/* Features Section - REMOVED as requested */}
+          {/* <section className="grid-responsive max-w-6xl mx-auto animate-slide-in">
             <div className="card text-center">
               <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Gamepad2 className="w-6 h-6 text-accent" />
@@ -210,7 +210,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                 Ambiente seguro con moderación activa y herramientas de administración.
               </p>
             </div>
-          </section>
+          </section> */}
 
           {/* Minecraft Server Status */}
           <section className="animate-slide-in">
@@ -232,14 +232,15 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                 </p>
               </div>
 
-              <button
+              {/* Create Server Button - REMOVED as requested */}
+              {/* <button
                 onClick={() => setShowCreateModal(true)}
                 className="btn btn-secondary group"
               >
                 <Plus size={20} />
                 {TEXTS.createServer}
                 <ArrowRight size={16} className="ml-2 group-hover:translate-x-1 transition-transform" />
-              </button>
+              </button> */}
             </div>
 
             {loading ? (
@@ -252,13 +253,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                 <Gamepad2 className="w-16 h-16 text-muted mx-auto mb-4 opacity-50" />
                 <h3 className="text-lg font-semibold mb-2">{TEXTS.noActiveServers}</h3>
                 <p className="text-secondary mb-6">{TEXTS.beTheFirst}</p>
-                <button
+                {/* Create First Server Button - REMOVED as requested */}
+                {/* <button
                   onClick={() => setShowCreateModal(true)}
                   className="btn btn-primary"
                 >
                   <Plus size={20} />
                   {TEXTS.createFirstServer}
-                </button>
+                </button> */}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-w-7xl mx-auto">
