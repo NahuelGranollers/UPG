@@ -927,12 +927,12 @@ export default function ImpostorGame({
   const allAliveVoted = totalVotes >= alivePlayersCount;
 
   return (
-    <div className="flex flex-col h-screen w-full bg-discord-chat overflow-y-auto custom-scrollbar" style={{ paddingTop: 'calc(4.5rem + env(safe-area-inset-top, 0px))', paddingLeft: 'calc(1rem + env(safe-area-inset-left, 0px))' }}>
+    <div className="flex flex-col min-h-screen w-full bg-discord-chat overflow-y-auto custom-scrollbar" style={{ paddingTop: 'calc(3rem + env(safe-area-inset-top, 0px))', paddingLeft: 'calc(1rem + env(safe-area-inset-left, 0px))', paddingRight: 'calc(1rem + env(safe-area-inset-right, 0px))', paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
       {/* Header - Fixed */}
-      <div className="w-full py-4 px-2 sm:py-4 sm:px-4 lg:py-4 lg:px-6 flex-shrink-0 z-10 bg-discord-chat">
+      <div className="w-full py-2 px-2 sm:py-3 sm:px-4 lg:py-3 lg:px-6 flex-shrink-0 z-10 bg-discord-chat" style={{ marginTop: 'calc(-3rem - env(safe-area-inset-top, 0px))' }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-discord-text-header">
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-extrabold text-discord-text-header">
               🎭 Impostor
             </h1>
           </div>
@@ -942,7 +942,7 @@ export default function ImpostorGame({
                 if (joined) handleLeave();
                 if (onClose) onClose();
               }}
-              className="discord-button secondary"
+              className="discord-button secondary px-3 py-2 min-h-[44px] flex items-center justify-center"
             >
               Cerrar
             </button>

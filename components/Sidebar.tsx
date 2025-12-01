@@ -37,7 +37,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
     // Obtener socket desde el contexto
     const { socket, isConnected } = useSocket();
     return (
-      <div className="sidebar w-20 flex flex-col items-center py-5 space-y-4 overflow-y-auto custom-scrollbar h-full">
+      <div className="sidebar w-24 flex flex-col items-center py-5 space-y-4 overflow-y-auto custom-scrollbar h-full">
         {/* Profile/Config Button removed as requested */}
         {/* Direct Messages / Home */}
         {(() => {
@@ -52,7 +52,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                   if (onNavigate) onNavigate('home');
                   if (onHomeClick) onHomeClick();
                 }}
-                className={`touch-target rounded-2xl transition-all duration-200 flex items-center justify-center hover-lift ${
+                className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift ${
                   active
                     ? 'bg-accent text-white shadow-lg'
                     : 'bg-surface text-secondary hover:bg-accent hover:text-white'
@@ -80,9 +80,9 @@ const Sidebar: React.FC<SidebarProps> = memo(
                   if (onNavigate) onNavigate('chat');
                   if (onUPGClick) onUPGClick();
                 }}
-                className={`touch-target rounded-2xl transition-all duration-200 flex items-center justify-center hover-lift ${
+                className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift ${
                   active
-                    ? 'bg-success text-white shadow-lg'
+                    ? 'bg-[#ffcc17] text-white shadow-lg'
                     : 'bg-surface text-success hover:bg-warning hover:text-white'
                 }`}
                 title="UPG"
@@ -111,7 +111,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
               )}
               <button
                 onClick={() => onNavigate && onNavigate('impostor')}
-                className={`touch-target rounded-2xl transition-all duration-200 flex items-center justify-center hover-lift ${
+                className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift ${
                   active
                     ? 'bg-accent text-white shadow-lg'
                     : 'bg-surface text-secondary hover:bg-accent hover:text-white'
@@ -143,7 +143,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                   onClick={() => {
                     if (onNavigate) onNavigate('who');
                   }}
-                  className={`touch-target rounded-2xl transition-all duration-200 flex items-center justify-center hover-lift ${
+                  className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift ${
                     active
                       ? 'bg-accent text-white shadow-lg'
                       : 'bg-surface text-secondary hover:bg-surface-hover hover:text-white'
@@ -168,7 +168,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                   onClick={() => {
                     if (onNavigate) onNavigate('voting');
                   }}
-                  className={`touch-target rounded-2xl transition-all duration-200 flex items-center justify-center hover-lift ${
+                  className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift ${
                     active
                       ? 'bg-accent text-white shadow-lg'
                       : 'bg-surface text-secondary hover:bg-surface-hover hover:text-white'
@@ -193,7 +193,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                   onClick={() => {
                     if (onNavigate) onNavigate('news');
                   }}
-                  className={`touch-target rounded-2xl transition-all duration-200 flex items-center justify-center hover-lift ${
+                  className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift ${
                     active
                       ? 'bg-accent text-white shadow-lg'
                       : 'bg-surface text-secondary hover:bg-surface-hover hover:text-white'
@@ -218,7 +218,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                   onClick={() => {
                     if (onNavigate) onNavigate('hall_of_fame');
                   }}
-                  className={`touch-target rounded-2xl transition-all duration-200 flex items-center justify-center hover-lift ${
+                  className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift ${
                     active
                       ? 'bg-accent text-white shadow-lg'
                       : 'bg-surface text-secondary hover:bg-surface-hover hover:text-white'
@@ -240,7 +240,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
             <div className="w-8 h-px bg-border rounded-lg mx-auto mt-auto" />
             <button
               onClick={onOpenAdmin}
-              className="touch-target bg-danger hover:bg-danger text-white rounded-2xl transition-all duration-200 flex items-center justify-center hover-lift shadow-lg"
+              className="touch-target bg-danger hover:bg-danger text-white rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift shadow-lg"
               title="Panel de Administración"
             >
               <Shield size={24} />

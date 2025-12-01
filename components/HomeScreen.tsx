@@ -130,12 +130,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                 >
                   <Plus size={20} />
                   Jugar al Impostor
-                  <img
-                    src="/among-us.gif"
-                    alt="Among Us"
-                    className="absolute top-0 h-full w-auto pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity animate-run-across"
-                    style={{ left: '-60px' }}
-                  />
                 </button>
 
                 <button

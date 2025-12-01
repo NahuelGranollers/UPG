@@ -175,17 +175,12 @@ const ChannelList: React.FC<ChannelListProps> = ({
   // micActive is now controlled by parent via props; keep local for fallback
   const [localMicActive, setLocalMicActive] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [textChannelsCollapsed, setTextChannelsCollapsed] = useState(false);
-  const [voiceChannelsCollapsed, setVoiceChannelsCollapsed] = useState(false);
   const { updateUser } = useAuth();
   const { socket } = useSocket();
 
   // Define available text channels
   const textChannels = [
     { id: 'general', name: 'general', description: 'Chat general de UPG' },
-    { id: 'juegos', name: 'juegos', description: 'Discusiones sobre juegos' },
-    { id: 'ayuda', name: 'ayuda', description: 'Preguntas y soporte técnico' },
-    { id: 'off-topic', name: 'off-topic', description: 'Conversaciones casuales' },
   ];
 
   // Define available voice channels
@@ -219,21 +214,15 @@ const ChannelList: React.FC<ChannelListProps> = ({
       <div className="flex-1 overflow-y-auto p-3 custom-scrollbar space-y-5 pb-4 md:pb-24">
         {/* Category: Text Channels */}
         <div>
-          <div 
-            className="flex items-center justify-between px-0.5 mb-1 text-xs font-bold text-discord-text-muted hover:text-discord-text-header uppercase tracking-wide cursor-pointer"
-            onClick={() => setTextChannelsCollapsed(!textChannelsCollapsed)}
-          >
+          <div className="flex items-center justify-between px-0.5 mb-1 text-xs font-bold text-discord-text-muted hover:text-discord-text-header uppercase tracking-wide cursor-pointer">
             <div className="flex items-center">
-              <ChevronDown 
-                size={10} 
-                className={`mr-0.5 transition-transform ${textChannelsCollapsed ? 'rotate-[-90deg]' : ''}`} 
-              />
+              <ChevronDown size={10} className="mr-0.5" />
               CANALES DE TEXTO
             </div>
             <span className="text-xl leading-none relative top-[1px]">+</span>
           </div>
 
-          {!textChannelsCollapsed && textChannels.map(channel => (
+          {textChannels.map(channel => (
             <TextChannelItem 
               key={channel.id}
               id={channel.id} 
@@ -248,20 +237,14 @@ const ChannelList: React.FC<ChannelListProps> = ({
 
         {/* Category: Voice Channels */}
         <div>
-          <div 
-            className="flex items-center justify-between px-0.5 mb-1 text-xs font-bold text-discord-text-muted hover:text-discord-text-header uppercase tracking-wide cursor-pointer"
-            onClick={() => setVoiceChannelsCollapsed(!voiceChannelsCollapsed)}
-          >
+          <div className="flex items-center justify-between px-0.5 mb-1 text-xs font-bold text-discord-text-muted hover:text-discord-text-header uppercase tracking-wide cursor-pointer">
             <div className="flex items-center">
-              <ChevronDown 
-                size={10} 
-                className={`mr-0.5 transition-transform ${voiceChannelsCollapsed ? 'rotate-[-90deg]' : ''}`} 
-              />
+              <ChevronDown size={10} className="mr-0.5" />
               CANALES DE VOZ
             </div>
           </div>
 
-          {!voiceChannelsCollapsed && voiceChannels.map(channel => (
+          {voiceChannels.map(channel => (
             <VoiceChannelItem 
               key={channel.id}
               name={channel.name} 

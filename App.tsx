@@ -298,7 +298,7 @@ function MainApp() {
         {/* Centralized Menu Button (only when sidebar is closed) */}
         {!mobileSidebarOpen && (
           <button
-            className="md:hidden fixed top-3 left-3 p-3 liquid-glass rounded-full shadow-lg z-[100] text-discord-text-normal hover:text-white"
+            className="md:hidden fixed top-3 left-3 p-3 liquid-glass rounded-lg shadow-lg z-[100] text-discord-text-normal hover:text-white border border-discord-hover"
             style={{
               paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))',
               paddingLeft: 'max(0.75rem, env(safe-area-inset-left, 0px))',
@@ -308,7 +308,7 @@ function MainApp() {
             aria-label="Abrir menú"
             onClick={() => setMobileSidebarOpen(true)}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-menu" aria-hidden="true"><path d="M4 5h16"></path><path d="M4 12h16"></path><path d="M4 19h16"></path></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-menu mx-auto" aria-hidden="true"><path d="M4 5h16"></path><path d="M4 12h16"></path><path d="M4 19h16"></path></svg>
           </button>
         )}
         {showHome ? (
