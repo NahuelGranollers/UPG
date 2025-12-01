@@ -40,6 +40,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const sorted = combined.sort((a, b) => {
       const ta = new Date(a.timestamp).getTime();
       const tb = new Date(b.timestamp).getTime();
+
+      // If timestamps are equal, prioritize user messages over bot messages
+      if (ta === tb) {
+        if (a.userId === 'bot' && b.userId !== 'bot') return 1;
+        if (a.userId !== 'bot' && b.userId === 'bot') return -1;
+        return 0;
+      }
+
       return ta - tb;
     });
     // Limitar a los últimos 100 mensajes para performance
@@ -49,13 +57,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   // Auto-scroll to bottom when new messages arrive (only if user is near bottom)
   useEffect(() => {
     const container = messagesEndRef.current?.parentElement?.parentElement;
-    if (container && messagesEndRef.current) {
-      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-      if (isNearBottom) {
-        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (container && messagesEndRef.current && orderedMessages.length > 0) {
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+      const isAtBottom = container.scrollHeight - container.scrollTop === container.clientHeight;
+
+      // Only auto-scroll if user is near bottom or at bottom, or if it's a new message from the current user
+      const lastMessage = orderedMessages[orderedMessages.length - 1];
+      const shouldAutoScroll = isNearBottom || isAtBottom ||
+        (lastMessage && lastMessage.userId === currentUser.id);
+
+      if (shouldAutoScroll) {
+        // Use requestAnimationFrame for smoother scrolling
+        requestAnimationFrame(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        });
       }
     }
-  }, [orderedMessages]);
+  }, [orderedMessages, currentUser.id]);
 
   // Scroll to bottom when changing channels
   useEffect(() => {
@@ -219,7 +237,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         username: currentUser.username,
         avatar: currentUser.avatar,
         content: inputText,
-        timestamp: new Date(Date.now()).toISOString(), // Timestamp actual para asegurar orden correcto con respuestas del bot
+        timestamp: new Date().toISOString(), // Use current time consistently
         channelId: currentChannel.id,
         status: 'sending',
       } as any;
@@ -447,22 +465,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       />
 
       {/* Input */}
-      <div className="w-full px-4 pb-4 safe-bottom bg-transparent">
-        <MessageInput
-          inputText={inputText}
-          setInputText={setInputText}
-          handleSendMessage={handleSendMessage}
-          inputRef={inputRef}
-          showMentionSuggestions={showMentionSuggestions}
-          mentionSuggestions={mentionSuggestions}
-          selectedSuggestionIndex={selectedSuggestionIndex}
-          setSelectedSuggestionIndex={setSelectedSuggestionIndex}
-          completeMention={completeMention}
-          renderInputPreview={renderInputPreview}
-          currentChannel={currentChannel}
-          onInputChange={handleInputChange}
-        />
-      </div>
+      <MessageInput
+        inputText={inputText}
+        setInputText={setInputText}
+        handleSendMessage={handleSendMessage}
+        inputRef={inputRef}
+        showMentionSuggestions={showMentionSuggestions}
+        mentionSuggestions={mentionSuggestions}
+        selectedSuggestionIndex={selectedSuggestionIndex}
+        setSelectedSuggestionIndex={setSelectedSuggestionIndex}
+        completeMention={completeMention}
+        renderInputPreview={renderInputPreview}
+        currentChannel={currentChannel}
+        onInputChange={handleInputChange}
+      />
     </div>
   );
 };

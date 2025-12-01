@@ -327,7 +327,7 @@ body {
   flex-direction: column;
 }
 
-/* Área de contenido scrollable */
+/* Área de contenido scrollable mejorada para móviles */
 .scroll-area {
   flex: 1;
   overflow-y: auto;
@@ -335,6 +335,45 @@ body {
   -webkit-overflow-scrolling: touch; /* Smooth scrolling en iOS */
   overscroll-behavior-y: contain; /* Prevenir scroll chain */
   scroll-behavior: smooth;
+  /* Mejorar rendimiento en móviles */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* Chat específico - asegurar que llegue al bottom real */
+.chat-messages-container {
+  min-height: 100%;
+  padding-bottom: 120px; /* Espacio para el input */
+}
+
+/* Input del chat fijo en el bottom */
+.chat-input-fixed {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  padding: var(--space-md) var(--space-lg);
+  z-index: 10;
+}
+
+/* Mejorar scroll en móviles */
+@media (max-width: 768px) {
+  .scroll-area {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: auto; /* Desactivar smooth scroll en móviles para mejor rendimiento */
+  }
+
+  /* Asegurar que el contenido llegue al bottom real */
+  .chat-messages-container {
+    padding-bottom: 140px; /* Más espacio en móviles */
+  }
+
+  /* Input más grande en móviles */
+  .chat-input-fixed {
+    padding: var(--space-lg) var(--space-md);
+  }
 }
 
 /* Scrollbars personalizadas */
@@ -556,6 +595,7 @@ body {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 var(--space-xl);
+  box-sizing: border-box;
 }
 
 /* Mejor centrado para móviles */
@@ -570,6 +610,15 @@ body {
   .container-responsive {
     padding: 0 var(--space-2xl);
   }
+}
+
+/* Asegurar que el layout principal esté centrado */
+.app-container {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
 }
 
 .grid-responsive {

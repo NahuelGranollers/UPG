@@ -125,7 +125,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
       )}
 
       <div className="scroll-area custom-scrollbar">
-        <div className="container-responsive py-6 md:py-8 space-y-6 md:space-y-8">
+        <div className="container-responsive py-6 md:py-8 space-y-6 md:space-y-8 w-full">
           {/* Hero Section */}
           <section className="text-center space-y-6 animate-fade-in">
             <div className="glass p-6 md:p-8 lg:p-12 max-w-4xl mx-auto">

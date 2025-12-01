@@ -89,7 +89,7 @@ const MessageList: React.FC<MessageListProps> = memo(({
   }, [orderedMessages, users, userColors]);
 
   return (
-    <div className="flex-1 overflow-y-auto px-2 sm:px-4 pt-2 sm:pt-4 flex flex-col custom-scrollbar" style={{ maxHeight: '100%', minHeight: '100%', overscrollBehaviorY: 'contain' }}>
+    <div className="flex-1 overflow-y-auto px-2 sm:px-4 pt-2 sm:pt-4 flex flex-col custom-scrollbar chat-messages-container" style={{ maxHeight: '100%', minHeight: '100%', overscrollBehaviorY: 'contain' }}>
       <div className="flex-1 flex flex-col justify-start min-h-full">
         <div className="mb-4 sm:mb-6 mt-2 sm:mt-4">
           <div className="w-10 h-10 sm:w-12 sm:h-12 bg-discord-text-muted/20 rounded-full flex items-center justify-center mb-2 sm:mb-3">
