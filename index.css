@@ -343,7 +343,7 @@ body {
 /* Chat específico - asegurar que llegue al bottom real */
 .chat-messages-container {
   min-height: 100%;
-  padding-bottom: 120px; /* Espacio para el input */
+  padding-bottom: 20px; /* Espacio mínimo para el input dentro del contenedor */
 }
 
 /* Input del chat (ahora dentro del contenedor scrollable) */
@@ -362,7 +362,7 @@ body {
 
   /* Asegurar que el contenido llegue al bottom real */
   .chat-messages-container {
-    padding-bottom: 140px; /* Más espacio en móviles */
+    padding-bottom: 20px; /* Espacio mínimo para el input dentro del contenedor */
   }
 
   /* Input más grande en móviles */

@@ -52,7 +52,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                   if (onNavigate) onNavigate('home');
                   if (onHomeClick) onHomeClick();
                 }}
-                className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift ${
+                className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift w-12 h-12 ${
                   active
                     ? 'bg-accent text-white shadow-lg'
                     : 'bg-surface text-secondary hover:bg-accent hover:text-white'
@@ -111,7 +111,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
               )}
               <button
                 onClick={() => onNavigate && onNavigate('impostor')}
-                className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift ${
+                className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift w-12 h-12 ${
                   active
                     ? 'bg-accent text-white shadow-lg'
                     : 'bg-surface text-secondary hover:bg-accent hover:text-white'
@@ -122,7 +122,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                 <SafeImage
                   src="/amogus.png"
                   alt="Impostor"
-                  className="object-cover w-10 h-10"
+                  className="object-cover w-full h-full rounded-xl"
                   fallbackSrc="https://ui-avatars.com/api/?name=Impostor&background=5865f2&color=ffffff&size=128"
                 />
               </button>
@@ -143,7 +143,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                   onClick={() => {
                     if (onNavigate) onNavigate('who');
                   }}
-                  className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift ${
+                  className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift w-12 h-12 ${
                     active
                       ? 'bg-accent text-white shadow-lg'
                       : 'bg-surface text-secondary hover:bg-surface-hover hover:text-white'
@@ -168,7 +168,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                   onClick={() => {
                     if (onNavigate) onNavigate('voting');
                   }}
-                  className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift ${
+                  className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift w-12 h-12 ${
                     active
                       ? 'bg-accent text-white shadow-lg'
                       : 'bg-surface text-secondary hover:bg-surface-hover hover:text-white'
@@ -193,7 +193,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                   onClick={() => {
                     if (onNavigate) onNavigate('news');
                   }}
-                  className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift ${
+                  className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift w-12 h-12 ${
                     active
                       ? 'bg-accent text-white shadow-lg'
                       : 'bg-surface text-secondary hover:bg-surface-hover hover:text-white'
@@ -218,7 +218,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                   onClick={() => {
                     if (onNavigate) onNavigate('hall_of_fame');
                   }}
-                  className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift ${
+                  className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift w-12 h-12 ${
                     active
                       ? 'bg-accent text-white shadow-lg'
                       : 'bg-surface text-secondary hover:bg-surface-hover hover:text-white'
@@ -240,7 +240,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
             <div className="w-8 h-px bg-border rounded-lg mx-auto mt-auto" />
             <button
               onClick={onOpenAdmin}
-              className="touch-target bg-danger hover:bg-danger text-white rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift shadow-lg"
+              className="touch-target bg-danger hover:bg-danger text-white rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift shadow-lg w-12 h-12"
               title="Panel de Administración"
             >
               <Shield size={24} />
