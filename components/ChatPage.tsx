@@ -72,7 +72,15 @@ const ChatPage: React.FC = () => {
   if (!currentUser) {
     return (
       <div className="flex h-screen items-center justify-center bg-discord-bg text-white">
-        Debes iniciar sesión para acceder al chat
+        <div className="text-center">
+          <p className="mb-4">Debes iniciar sesión para acceder al chat</p>
+          <button
+            onClick={() => window.location.href = '/'}
+            className="px-4 py-2 bg-discord-blurple text-white rounded hover:bg-discord-blurple/80"
+          >
+            Ir al inicio
+          </button>
+        </div>
       </div>
     );
   }
