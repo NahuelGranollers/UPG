@@ -37,7 +37,10 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       console.warn('Socket not initialized, ignoring disconnect');
     },
     connected: false,
+    disconnected: true,
+    active: false,
     id: null,
+    auth: {},
     io: {
       engine: {
         transport: {
