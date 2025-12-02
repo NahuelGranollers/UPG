@@ -18,7 +18,7 @@ const RealTimeLogs = ({ socket }: { socket: Socket | null }) => {
   const [isSubscribed, setIsSubscribed] = useState(false);
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !socket.connected) return;
 
     const handleLog = (logData: any) => {
       const timestamp = new Date().toLocaleTimeString();
@@ -89,6 +89,10 @@ const SystemStatus = ({ socket }: { socket: Socket | null }) => {
             .catch(() => setBackendLatency(-1));
     }, []);
 
+    const isSocketConnected = socket?.connected ?? false;
+    const socketId = socket?.id || '-';
+    const transportName = socket?.io?.engine?.transport?.name || 'Unknown';
+
     return (
         <div className="space-y-6 animate-fadeIn">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -137,13 +141,13 @@ const SystemStatus = ({ socket }: { socket: Socket | null }) => {
                     <div className="space-y-2">
                         <div className="flex justify-between items-center">
                             <span className="text-discord-text-muted">Socket.IO</span>
-                            <span className={`px-2 py-0.5 rounded text-xs font-bold ${socket?.connected ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                                {socket?.connected ? 'CONECTADO' : 'DESCONECTADO'}
+                            <span className={`px-2 py-0.5 rounded text-xs font-bold ${isSocketConnected ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                                {isSocketConnected ? 'CONECTADO' : 'DESCONECTADO'}
                             </span>
                         </div>
                         <div className="flex justify-between items-center">
                             <span className="text-discord-text-muted">ID de Sesión</span>
-                            <span className="text-discord-text-normal font-mono text-xs truncate max-w-[150px]">{socket?.id || '-'}</span>
+                            <span className="text-discord-text-normal font-mono text-xs truncate max-w-[150px]">{socketId}</span>
                         </div>
                         <div className="flex justify-between items-center">
                             <span className="text-discord-text-muted">Latencia API</span>
@@ -153,7 +157,7 @@ const SystemStatus = ({ socket }: { socket: Socket | null }) => {
                         </div>
                         <div className="flex justify-between items-center">
                             <span className="text-discord-text-muted">Transporte</span>
-                            <span className="text-discord-text-normal text-xs uppercase">{socket?.io?.engine?.transport?.name || 'Unknown'}</span>
+                            <span className="text-discord-text-normal text-xs uppercase">{transportName}</span>
                         </div>
                     </div>
                 </div>
