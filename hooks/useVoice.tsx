@@ -282,7 +282,7 @@ export function useVoice() {
 
     // Close all peer connections
     Object.entries(peersRef.current).forEach(([uid, pc]) => {
-      pc.close();
+      (pc as RTCPeerConnection).close();
       const audioEl = document.getElementById(`audio-${uid}`);
       if (audioEl) audioEl.remove();
     });

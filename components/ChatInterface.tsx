@@ -21,6 +21,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 }) => {
   const { users, userColors } = useUsers();
   const { messages, sendMessage } = useChat(currentChannel.id);
+  const { socket } = useSocket();
 
   // State
   const [inputText, setInputText] = useState('');
@@ -109,9 +110,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }, [mentionSearch, mentionableUsers]);
 
   const isAdmin = useMemo(() => currentUser?.role === UserRole.ADMIN, [currentUser?.role]);
-
-  // Socket.IO reference
-  const getSocket = useCallback(() => socket, [socket]);
 
   // Handle input change for mentions
   const handleInputChange = useCallback((value: string) => {
@@ -259,117 +257,99 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   // Funciones de administrador
   const handleDeleteMessage = useCallback(
     (messageId: string) => {
-      if (!isAdmin || !currentUser) return;
-      const socket = getSocket();
-      if (socket) {
-        socket.emit('admin:delete-message', {
-          messageId,
-          channelId: currentChannel.id,
-          adminId: currentUser.id,
-        });
-      }
+      if (!isAdmin || !currentUser || !socket) return;
+      socket.emit('admin:delete-message', {
+        messageId,
+        channelId: currentChannel.id,
+        adminId: currentUser.id,
+      });
     },
-    [isAdmin, currentUser, currentChannel.id, getSocket]
+    [isAdmin, currentUser, currentChannel.id, socket]
   );
 
   const handleBanUser = useCallback(
     (userId: string, username: string) => {
-      if (!isAdmin || !currentUser || userId === currentUser.id) return;
+      if (!isAdmin || !currentUser || userId === currentUser.id || !socket) return;
       if (
         window.confirm(
           `¿Estás seguro de que quieres banear a ${username}? Esta acción también bloqueará su IP.`
         )
       ) {
-        const socket = getSocket();
-        if (socket) {
-          socket.emit('admin:ban-user', {
-            userId,
-            username,
-            adminId: currentUser.id,
-          });
-        }
+        socket.emit('admin:ban-user', {
+          userId,
+          username,
+          adminId: currentUser.id,
+        });
       }
     },
-    [isAdmin, currentUser, getSocket]
+    [isAdmin, currentUser, socket]
   );
 
   const handleKickUser = useCallback(
     (userId: string, username: string) => {
-      if (!isAdmin || !currentUser || userId === currentUser.id) return;
+      if (!isAdmin || !currentUser || userId === currentUser.id || !socket) return;
       if (window.confirm(`¿Estás seguro de que quieres expulsar a ${username}?`)) {
-        const socket = getSocket();
-        if (socket) {
-          socket.emit('admin:kick-user', {
-            userId,
-            username,
-            adminId: currentUser.id,
-          });
-        }
+        socket.emit('admin:kick-user', {
+          userId,
+          username,
+          adminId: currentUser.id,
+        });
       }
     },
-    [isAdmin, currentUser, getSocket]
+    [isAdmin, currentUser, socket]
   );
 
   // Nueva acción: silenciar usuario
   const handleSilenceUser = useCallback(
     (userId: string, username: string) => {
-      if (!isAdmin || !currentUser || userId === currentUser.id) return;
+      if (!isAdmin || !currentUser || userId === currentUser.id || !socket) return;
       if (
         window.confirm(
           `¿Silenciar a ${username}? No podrá enviar mensajes hasta que lo des-silencies.`
         )
       ) {
-        const socket = getSocket();
-        if (socket) {
-          socket.emit('admin:silence-user', {
-            userId,
-            adminId: currentUser.id,
-          });
-        }
+        socket.emit('admin:silence-user', {
+          userId,
+          adminId: currentUser.id,
+        });
       }
     },
-    [isAdmin, currentUser, getSocket]
+    [isAdmin, currentUser, socket]
   );
 
   // Nueva acción: cambiar color de usuario
   const handleChangeColor = useCallback(
     (userId: string, username: string) => {
-      if (!isAdmin || !currentUser || userId === currentUser.id) return;
+      if (!isAdmin || !currentUser || userId === currentUser.id || !socket) return;
       const newColor = prompt(
         `Nuevo color HEX para ${username} (ejemplo: #ff0000):`,
         '#' + Math.floor(Math.random() * 16777215).toString(16)
       );
       if (newColor && /^#[0-9A-Fa-f]{6}$/.test(newColor)) {
-        const socket = getSocket();
-        if (socket) {
-          socket.emit('admin:change-color', {
-            userId,
-            color: newColor,
-            adminId: currentUser.id,
-          });
-        }
+        socket.emit('admin:change-color', {
+          userId,
+          color: newColor,
+          adminId: currentUser.id,
+        });
       } else {
         alert('Color inválido. Usa formato HEX (#RRGGBB)');
       }
     },
-    [isAdmin, currentUser, getSocket]
+    [isAdmin, currentUser, socket]
   );
 
   // Nueva acción: modo troll
   const handleTrollMode = useCallback(
     (userId: string, username: string) => {
-      if (!isAdmin || !currentUser || userId === currentUser.id) return;
+      if (!isAdmin || !currentUser || userId === currentUser.id || !socket) return;
       if (window.confirm(`¿Activar modo troll para ${username}?`)) {
-        const socket = getSocket();
-        if (socket) {
-          socket.emit('admin:troll-mode', {
-            userId,
-            adminId: currentUser.id,
-          });
-        }
+        socket.emit('admin:troll-mode', {
+          userId,
+          adminId: currentUser.id,
+        });
       }
     },
-    [isAdmin, currentUser, getSocket]
+    [isAdmin, currentUser, socket]
   );
 
   // Render
