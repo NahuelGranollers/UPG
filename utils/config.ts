@@ -3,6 +3,9 @@ export const getBackendUrl = () => {
   // If a specific URL is defined in env (e.g. production build), use it
   if (import.meta.env.VITE_API_URL && !import.meta.env.DEV) {
     url = import.meta.env.VITE_API_URL;
+  } else if (import.meta.env.DEV) {
+    // Use local backend in development
+    url = 'http://localhost:5000';
   } else {
     // Always use the remote API for now
     url = 'https://api.unaspartidillas.online';

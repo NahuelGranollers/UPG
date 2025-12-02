@@ -40,10 +40,12 @@ class SocketService {
 
     console.log('[SOCKET CLIENT] Iniciando conexión a:', this.serverUrl);
 
+    const isSecure = this.serverUrl.startsWith('https');
+
     try {
       this.socket = io(this.serverUrl, {
-        transports: ['polling'], // Force polling to test
-        secure: true,
+        transports: ['websocket', 'polling'],
+        secure: isSecure,
         withCredentials: true,
         path: '/socket.io/',
         reconnection: true,
