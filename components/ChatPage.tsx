@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useEffect, memo } from 'react';
-import { useChat } from '../hooks/useChat';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { AppView, ChannelData } from '../types';
@@ -25,9 +24,6 @@ const ChatPage: React.FC = () => {
   // Estado para móvil
   const [isMobile, setIsMobile] = useState(false);
   const [activeMobileTab, setActiveMobileTab] = useState<'channels' | 'chat' | 'users'>('chat');
-
-  // Hook de chat para el canal actual
-  const { messages, setMessages, sendMessage } = useChat(currentChannel.id);
 
   const voice = useVoice();
 
@@ -113,9 +109,6 @@ const ChatPage: React.FC = () => {
           <ChatInterface
             currentUser={currentUser}
             currentChannel={currentChannel}
-            onSendMessage={sendMessage}
-            messages={messages}
-            setMessages={setMessages}
             onMenuToggle={() => {}}
           />
           <UserList
@@ -153,9 +146,6 @@ const ChatPage: React.FC = () => {
             <ChatInterface
               currentUser={currentUser}
               currentChannel={currentChannel}
-              onSendMessage={sendMessage}
-              messages={messages}
-              setMessages={setMessages}
               onMenuToggle={() => setActiveMobileTab('channels')}
             />
           )}
