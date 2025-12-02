@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useChat } from '../hooks/useChat';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
@@ -9,6 +9,7 @@ import useVoice from '../hooks/useVoice';
 import ChannelList from './ChannelList';
 import ChatInterface from './ChatInterface';
 import UserList from './UserList';
+import MobileTabBar from './MobileTabBar';
 
 const ChatPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -21,10 +22,24 @@ const ChatPage: React.FC = () => {
     description: 'Chat general',
   });
 
+  // Estado para móvil
+  const [isMobile, setIsMobile] = useState(false);
+  const [activeMobileTab, setActiveMobileTab] = useState<'channels' | 'chat' | 'users'>('chat');
+
   // Hook de chat para el canal actual
   const { messages, setMessages, sendMessage } = useChat(currentChannel.id);
 
   const voice = useVoice();
+
+  // Detectar si es móvil
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
 
   const handleVoiceJoin = useCallback(
     async (channelId: string) => {
@@ -63,38 +78,92 @@ const ChatPage: React.FC = () => {
 
   return (
     <div className="flex w-full h-full">
-      <ChannelList
-        activeView={activeView}
-        currentChannelId={currentChannel.id}
-        onChannelSelect={(view, channel) => {
-          if (view && channel) {
-            setCurrentChannel(channel);
-          } else if (channel) {
-            setCurrentChannel(channel);
-          }
-        }}
-        currentUser={currentUser}
-        activeVoiceChannel={voice.inChannel}
-        micActive={!voice.isMuted}
-        voiceLevel={voice.voiceLevel}
-        onVoiceJoin={handleVoiceJoin}
-        onLoginWithDiscord={() => {}}
-        onLogoutDiscord={() => {}}
-        onToggleMic={handleToggleMute}
-        onVoiceLeave={handleVoiceLeave}
-      />
-      <ChatInterface
-        currentUser={currentUser}
-        currentChannel={currentChannel}
-        onSendMessage={sendMessage}
-        messages={messages}
-        setMessages={setMessages}
-        onMenuToggle={() => {}}
-      />
-      <UserList
-        currentUserId={currentUser.id}
-        currentUser={currentUser}
-      />
+      {/* Desktop Layout */}
+      {!isMobile && (
+        <>
+          <ChannelList
+            activeView={activeView}
+            currentChannelId={currentChannel.id}
+            onChannelSelect={(view, channel) => {
+              if (view && channel) {
+                setCurrentChannel(channel);
+              } else if (channel) {
+                setCurrentChannel(channel);
+              }
+            }}
+            currentUser={currentUser}
+            activeVoiceChannel={voice.inChannel}
+            micActive={!voice.isMuted}
+            voiceLevel={voice.voiceLevel}
+            onVoiceJoin={handleVoiceJoin}
+            onLoginWithDiscord={() => {}}
+            onLogoutDiscord={() => {}}
+            onToggleMic={handleToggleMute}
+            onVoiceLeave={handleVoiceLeave}
+          />
+          <ChatInterface
+            currentUser={currentUser}
+            currentChannel={currentChannel}
+            onSendMessage={sendMessage}
+            messages={messages}
+            setMessages={setMessages}
+            onMenuToggle={() => {}}
+          />
+          <UserList
+            currentUserId={currentUser.id}
+            currentUser={currentUser}
+          />
+        </>
+      )}
+
+      {/* Mobile Layout */}
+      {isMobile && (
+        <div className="flex flex-col w-full h-full">
+          {activeMobileTab === 'channels' && (
+            <ChannelList
+              activeView={activeView}
+              currentChannelId={currentChannel.id}
+              onChannelSelect={(view, channel) => {
+                if (view && channel) {
+                  setCurrentChannel(channel);
+                } else if (channel) {
+                  setCurrentChannel(channel);
+                }
+                setActiveMobileTab('chat'); // Switch to chat after selecting
+              }}
+              currentUser={currentUser}
+              activeVoiceChannel={voice.inChannel}
+              micActive={!voice.isMuted}
+              voiceLevel={voice.voiceLevel}
+              onVoiceJoin={handleVoiceJoin}
+              onLoginWithDiscord={() => {}}
+              onLogoutDiscord={() => {}}
+              onToggleMic={handleToggleMute}
+              onVoiceLeave={handleVoiceLeave}
+            />
+          )}
+          {activeMobileTab === 'chat' && (
+            <ChatInterface
+              currentUser={currentUser}
+              currentChannel={currentChannel}
+              onSendMessage={sendMessage}
+              messages={messages}
+              setMessages={setMessages}
+              onMenuToggle={() => setActiveMobileTab('channels')}
+            />
+          )}
+          {activeMobileTab === 'users' && (
+            <UserList
+              currentUserId={currentUser.id}
+              currentUser={currentUser}
+            />
+          )}
+          <MobileTabBar
+            activeTab={activeMobileTab}
+            onTabChange={setActiveMobileTab}
+          />
+        </div>
+      )}
     </div>
   );
 };
