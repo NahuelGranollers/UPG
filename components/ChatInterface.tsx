@@ -38,7 +38,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   // Ordenar mensajes: más antiguo arriba, más reciente abajo
   const orderedMessages = useMemo(() => {
     const combined = [...(messages || []), ...localMessages];
-    const sorted = combined.sort((a, b) => {
+    
+    // Filter out messages with invalid timestamps or missing content
+    const validMessages = combined.filter(msg => {
+      if (!msg || !msg.timestamp) return false;
+      const date = new Date(msg.timestamp);
+      return !isNaN(date.getTime());
+    });
+
+    const sorted = validMessages.sort((a, b) => {
       const ta = new Date(a.timestamp).getTime();
       const tb = new Date(b.timestamp).getTime();
 

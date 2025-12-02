@@ -87,14 +87,19 @@ const MessageList: React.FC<MessageListProps> = memo(({
 
     for (let i = 0; i < orderedMessages.length; i++) {
       const msg = orderedMessages[i];
+      if (!msg || !msg.timestamp) continue; // Skip invalid messages
+
       const msgUser = localUserMap.get(msg.userId);
       const msgTimestamp = new Date(msg.timestamp);
+      
+      if (isNaN(msgTimestamp.getTime())) continue; // Skip invalid dates
 
       // Si es el primer mensaje o el usuario cambió o pasaron más de 5 minutos
+      const lastGroup = groups[groups.length - 1];
       const shouldStartNewGroup =
         groups.length === 0 ||
-        groups[groups.length - 1].userId !== msg.userId ||
-        (msgTimestamp.getTime() - groups[groups.length - 1].timestamp.getTime()) > 5 * 60 * 1000; // 5 minutos
+        lastGroup.userId !== msg.userId ||
+        (msgTimestamp.getTime() - lastGroup.timestamp.getTime()) > 5 * 60 * 1000; // 5 minutos
 
       if (shouldStartNewGroup) {
         groups.push({
