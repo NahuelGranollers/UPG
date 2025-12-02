@@ -273,23 +273,7 @@ export default function App() {
               <AuthProvider>
                 <SocketProvider>
                   <UserProvider>
-                    <Layout activeSection="home" onActiveSectionChange={(section) => {
-                      // Handle navigation from sidebar in home page
-                      if (section === 'chat') {
-                        window.location.href = '/chat';
-                      } else if (section === 'impostor') {
-                        window.location.href = '/impostor';
-                      } else if (section === 'who') {
-                        // Stay on home page but show "who we are" content
-                        // This will be handled by the Home component's internal state
-                      } else if (section === 'voting') {
-                        window.location.href = '/votaciones';
-                      } else if (section === 'news') {
-                        window.location.href = '/noticias';
-                      } else if (section === 'hall_of_fame') {
-                        window.location.href = '/salon-fama';
-                      }
-                    }}>
+                    <Layout activeSection="home">
                       <Home />
                     </Layout>
                     <Toaster position="top-right" theme="dark" richColors />
