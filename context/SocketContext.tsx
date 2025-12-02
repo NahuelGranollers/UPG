@@ -1,21 +1,8 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
-// import { io, Socket } from 'socket.io-client';
-import { useAuth } from './AuthContext';
+import { io, Socket } from 'socket.io-client';
+import { useAuth } from './context/AuthContext';
 import { toast } from 'sonner';
 import { getSocketUrl } from '../utils/config';
-
-// Declare io as any to use from CDN or npm
-declare const io: any;
-interface Socket {
-  emit: (event: string, ...args: any[]) => void;
-  on: (event: string, callback: (...args: any[]) => void) => void;
-  off: (event: string, callback?: (...args: any[]) => void) => void;
-  disconnect: () => void;
-  connected: boolean;
-  disconnected: boolean;
-  id: string | null;
-  io: any;
-}
 
 interface SocketContextType {
   socket: Socket | null;
@@ -69,10 +56,10 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     console.log('Attempting to create socket with URL:', SOCKET_URL);
 
     try {
-      if (typeof io === 'undefined') {
-        console.error('Socket.IO is not available. Make sure the CDN script is loaded.');
-        return;
-      }
+      // if (typeof io === 'undefined') {
+      //   console.error('Socket.IO is not available. Make sure the CDN script is loaded.');
+      //   return;
+      // }
 
       const socket = io(SOCKET_URL, {
         transports: ['polling'], // Use polling for compatibility

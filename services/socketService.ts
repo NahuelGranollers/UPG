@@ -1,8 +1,9 @@
 import { getSocketUrl } from '../utils/config';
+import { io } from 'socket.io-client';
 
 // Servicio para manejar Socket.IO
 // Declarar tipos para Socket.IO desde el CDN
-declare const io: any;
+// declare const io: any;
 
 interface SocketMessage {
   id: string;
@@ -27,10 +28,10 @@ class SocketService {
   }
 
   connect(): void {
-    if (typeof io === 'undefined') {
-      console.warn('[SOCKET CLIENT] Socket.IO no está disponible. Asegúrate de que el script esté cargado.');
-      return;
-    }
+    // if (typeof io === 'undefined') {
+    //   console.warn('[SOCKET CLIENT] Socket.IO no está disponible. Asegúrate de que el script esté cargado.');
+    //   return;
+    // }
 
     if (this.socket?.connected) {
       console.log('[SOCKET CLIENT] Ya conectado, ignorando nueva conexión');
