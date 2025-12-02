@@ -44,18 +44,20 @@ const Sidebar: React.FC<SidebarProps> = memo(
           const active = activeSection === 'home';
           return (
             <div className="relative group">
-              {active && (
-                <div className="absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1 animate-fade-in" />
-              )}
+              <div
+                className={`absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1 transition-all duration-150 ease-out ${
+                  active ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
+                }`}
+              />
               <button
                 onClick={() => {
                   if (onNavigate) onNavigate('home');
                   if (onHomeClick) onHomeClick();
                 }}
-                className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift w-12 h-12 ${
+                className={`touch-target rounded-2xl transition-all duration-200 ease-out flex items-center justify-center w-12 h-12 transform-gpu ${
                   active
-                    ? 'bg-accent text-white shadow-lg'
-                    : 'bg-surface text-secondary hover:bg-accent hover:text-white'
+                    ? 'bg-accent text-white shadow-lg scale-105'
+                    : 'bg-surface text-secondary hover:bg-accent hover:text-white hover:scale-105 active:scale-95'
                 }`}
                 aria-pressed={active}
               >
@@ -72,18 +74,20 @@ const Sidebar: React.FC<SidebarProps> = memo(
           const active = activeSection === 'chat' || activeSection === 'upg';
           return (
             <div className="relative">
-              {active && (
-                <div className="absolute left-0 bg-white rounded-r-md w-1 h-12 top-1/2 -translate-y-1/2 -ml-1 animate-fade-in" />
-              )}
+              <div
+                className={`absolute left-0 bg-white rounded-r-md w-1 h-12 top-1/2 -translate-y-1/2 -ml-1 transition-all duration-150 ease-out ${
+                  active ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
+                }`}
+              />
               <button
                 onClick={() => {
                   if (onNavigate) onNavigate('chat');
                   if (onUPGClick) onUPGClick();
                 }}
-                className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift w-12 h-12 ${
+                className={`touch-target rounded-2xl transition-all duration-200 ease-out flex items-center justify-center w-12 h-12 transform-gpu ${
                   active
-                    ? 'bg-[#ffcc17] text-white shadow-lg'
-                    : 'bg-surface text-success hover:bg-warning hover:text-white'
+                    ? 'bg-[#ffcc17] text-white shadow-lg scale-105'
+                    : 'bg-surface text-success hover:bg-warning hover:text-white hover:scale-105 active:scale-95'
                 }`}
                 title="UPG"
                 aria-pressed={active}
@@ -91,7 +95,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                 <SafeImage
                   src="/upg.png"
                   alt="UPG"
-                  className="object-cover w-full h-full rounded-xl"
+                  className="object-cover w-full h-full rounded-xl transition-transform duration-200 ease-out"
                   fallbackSrc="https://ui-avatars.com/api/?name=UPG&background=ffcc17&color=ffcc17&size=128"
                 />
               </button>
@@ -106,15 +110,17 @@ const Sidebar: React.FC<SidebarProps> = memo(
           const active = activeSection === 'impostor';
           return (
             <div className="relative">
-              {active && (
-                <div className="absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1 animate-fade-in" />
-              )}
+              <div
+                className={`absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1 transition-all duration-150 ease-out ${
+                  active ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
+                }`}
+              />
               <button
                 onClick={() => onNavigate && onNavigate('impostor')}
-                className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift w-12 h-12 ${
+                className={`touch-target rounded-2xl transition-all duration-200 ease-out flex items-center justify-center w-12 h-12 transform-gpu ${
                   active
-                    ? 'bg-accent text-white shadow-lg'
-                    : 'bg-surface text-secondary hover:bg-accent hover:text-white'
+                    ? 'bg-accent text-white shadow-lg scale-105'
+                    : 'bg-surface text-secondary hover:bg-accent hover:text-white hover:scale-105 active:scale-95'
                 }`}
                 title="Impostor"
                 aria-pressed={active}
@@ -122,7 +128,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                 <SafeImage
                   src="/amogus.png"
                   alt="Impostor"
-                  className="object-cover w-full h-full rounded-xl"
+                  className="object-cover w-full h-full rounded-xl transition-transform duration-200 ease-out"
                   fallbackSrc="https://ui-avatars.com/api/?name=Impostor&background=5865f2&color=ffffff&size=128"
                 />
               </button>
@@ -136,17 +142,19 @@ const Sidebar: React.FC<SidebarProps> = memo(
             const active = activeSection === 'who';
             return (
               <div className="relative">
-                {active && (
-                  <div className="absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1 animate-fade-in" />
-                )}
+                <div
+                  className={`absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1 transition-all duration-150 ease-out ${
+                    active ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
+                  }`}
+                />
                 <button
                   onClick={() => {
                     if (onNavigate) onNavigate('who');
                   }}
-                  className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift w-12 h-12 ${
+                  className={`touch-target rounded-2xl transition-all duration-200 ease-out flex items-center justify-center w-12 h-12 transform-gpu ${
                     active
-                      ? 'bg-accent text-white shadow-lg'
-                      : 'bg-surface text-secondary hover:bg-surface-hover hover:text-white'
+                      ? 'bg-accent text-white shadow-lg scale-105'
+                      : 'bg-surface text-secondary hover:bg-accent hover:text-white hover:scale-105 active:scale-95'
                   }`}
                   title="Quiénes somos"
                   aria-pressed={active}
@@ -161,17 +169,19 @@ const Sidebar: React.FC<SidebarProps> = memo(
             const active = activeSection === 'voting';
             return (
               <div className="relative">
-                {active && (
-                  <div className="absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1 animate-fade-in" />
-                )}
+                <div
+                  className={`absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1 transition-all duration-150 ease-out ${
+                    active ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
+                  }`}
+                />
                 <button
                   onClick={() => {
                     if (onNavigate) onNavigate('voting');
                   }}
-                  className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift w-12 h-12 ${
+                  className={`touch-target rounded-2xl transition-all duration-200 ease-out flex items-center justify-center w-12 h-12 transform-gpu ${
                     active
-                      ? 'bg-accent text-white shadow-lg'
-                      : 'bg-surface text-secondary hover:bg-surface-hover hover:text-white'
+                      ? 'bg-accent text-white shadow-lg scale-105'
+                      : 'bg-surface text-secondary hover:bg-accent hover:text-white hover:scale-105 active:scale-95'
                   }`}
                   title="Votaciones"
                   aria-pressed={active}
@@ -186,17 +196,19 @@ const Sidebar: React.FC<SidebarProps> = memo(
             const active = activeSection === 'news';
             return (
               <div className="relative">
-                {active && (
-                  <div className="absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1 animate-fade-in" />
-                )}
+                <div
+                  className={`absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1 transition-all duration-150 ease-out ${
+                    active ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
+                  }`}
+                />
                 <button
                   onClick={() => {
                     if (onNavigate) onNavigate('news');
                   }}
-                  className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift w-12 h-12 ${
+                  className={`touch-target rounded-2xl transition-all duration-200 ease-out flex items-center justify-center w-12 h-12 transform-gpu ${
                     active
-                      ? 'bg-accent text-white shadow-lg'
-                      : 'bg-surface text-secondary hover:bg-surface-hover hover:text-white'
+                      ? 'bg-accent text-white shadow-lg scale-105'
+                      : 'bg-surface text-secondary hover:bg-accent hover:text-white hover:scale-105 active:scale-95'
                   }`}
                   title="Noticias UPG"
                   aria-pressed={active}
@@ -211,17 +223,19 @@ const Sidebar: React.FC<SidebarProps> = memo(
             const active = activeSection === 'hall_of_fame';
             return (
               <div className="relative">
-                {active && (
-                  <div className="absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1 animate-fade-in" />
-                )}
+                <div
+                  className={`absolute left-0 bg-white rounded-r w-1 h-12 top-1/2 -translate-y-1/2 -ml-1 transition-all duration-150 ease-out ${
+                    active ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
+                  }`}
+                />
                 <button
                   onClick={() => {
                     if (onNavigate) onNavigate('hall_of_fame');
                   }}
-                  className={`touch-target rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift w-12 h-12 ${
+                  className={`touch-target rounded-2xl transition-all duration-200 ease-out flex items-center justify-center w-12 h-12 transform-gpu ${
                     active
-                      ? 'bg-accent text-white shadow-lg'
-                      : 'bg-surface text-secondary hover:bg-surface-hover hover:text-white'
+                      ? 'bg-accent text-white shadow-lg scale-105'
+                      : 'bg-surface text-secondary hover:bg-accent hover:text-white hover:scale-105 active:scale-95'
                   }`}
                   title="Salón de la Fama"
                   aria-pressed={active}
@@ -240,7 +254,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
             <div className="w-8 h-px bg-border rounded-lg mx-auto mt-auto" />
             <button
               onClick={onOpenAdmin}
-              className="touch-target bg-danger hover:bg-danger text-white rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-center hover-lift shadow-lg w-12 h-12"
+              className="touch-target bg-danger hover:bg-danger text-white rounded-2xl transition-all duration-200 ease-out flex items-center justify-center shadow-lg w-12 h-12 transform-gpu hover:scale-105 active:scale-95"
               title="Panel de Administración"
             >
               <Shield size={24} />

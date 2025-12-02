@@ -19,16 +19,17 @@ import UserList from './components/UserList';
 import UsernamePrompt from './components/UsernamePrompt';
 import UserProfileModal from './components/UserProfileModal';
 
-const HomeScreen = React.lazy(() => import('./components/HomeScreen'));
-const ImpostorGame = React.lazy(() => import('./components/ImpostorGame'));
-const Impostor = React.lazy(() => import('./components/Impostor'));
-const WhoWeAre = React.lazy(() => import('./components/WhoWeAre'));
-const Voting = React.lazy(() => import('./components/Voting'));
-const UPGNews = React.lazy(() => import('./components/UPGNews'));
-const HallOfFame = React.lazy(() => import('./components/HallOfFame'));
-const AdminPanel = React.lazy(() => import('./components/AdminPanel'));
-const Layout = React.lazy(() => import('./components/Layout'));
-const ChatPage = React.lazy(() => import('./components/ChatPage'));
+// Componentes principales (carga inmediata para mejor rendimiento)
+import HomeScreen from './components/HomeScreen';
+import ImpostorGame from './components/ImpostorGame';
+import Impostor from './components/Impostor';
+import WhoWeAre from './components/WhoWeAre';
+import Voting from './components/Voting';
+import UPGNews from './components/UPGNews';
+import HallOfFame from './components/HallOfFame';
+import AdminPanel from './components/AdminPanel';
+import Layout from './components/Layout';
+import ChatPage from './components/ChatPage';
 
 function Home() {
   const navigate = useNavigate();
@@ -186,9 +187,7 @@ function Home() {
     );
 
   return (
-    <Suspense
-      fallback={<div className="flex-1 flex items-center justify-center">Cargando...</div>}
-    >
+    <div className="flex w-full h-full">
       {showHome ? (
         <HomeScreen
           onGoToChat={() => {
@@ -260,7 +259,7 @@ function Home() {
       ) : activeView === AppView.HALL_OF_FAME ? (
         <HallOfFame />
       ) : null}
-    </Suspense>
+    </div>
   );
 }
 
@@ -274,27 +273,25 @@ export default function App() {
               <AuthProvider>
                 <SocketProvider>
                   <UserProvider>
-                    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-discord-bg text-white">Cargando...</div>}>
-                      <Layout activeSection="home" onActiveSectionChange={(section) => {
-                        // Handle navigation from sidebar in home page
-                        if (section === 'chat') {
-                          window.location.href = '/chat';
-                        } else if (section === 'impostor') {
-                          window.location.href = '/impostor';
-                        } else if (section === 'who') {
-                          // Stay on home page but show "who we are" content
-                          // This will be handled by the Home component's internal state
-                        } else if (section === 'voting') {
-                          window.location.href = '/votaciones';
-                        } else if (section === 'news') {
-                          window.location.href = '/noticias';
-                        } else if (section === 'hall_of_fame') {
-                          window.location.href = '/salon-fama';
-                        }
-                      }}>
-                        <Home />
-                      </Layout>
-                    </Suspense>
+                    <Layout activeSection="home" onActiveSectionChange={(section) => {
+                      // Handle navigation from sidebar in home page
+                      if (section === 'chat') {
+                        window.location.href = '/chat';
+                      } else if (section === 'impostor') {
+                        window.location.href = '/impostor';
+                      } else if (section === 'who') {
+                        // Stay on home page but show "who we are" content
+                        // This will be handled by the Home component's internal state
+                      } else if (section === 'voting') {
+                        window.location.href = '/votaciones';
+                      } else if (section === 'news') {
+                        window.location.href = '/noticias';
+                      } else if (section === 'hall_of_fame') {
+                        window.location.href = '/salon-fama';
+                      }
+                    }}>
+                      <Home />
+                    </Layout>
                     <Toaster position="top-right" theme="dark" richColors />
                   </UserProvider>
                 </SocketProvider>
@@ -306,11 +303,9 @@ export default function App() {
               <AuthProvider>
                 <SocketProvider>
                   <UserProvider>
-                    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-discord-bg text-white">Cargando...</div>}>
-                      <Layout activeSection="chat">
-                        <ChatPage />
-                      </Layout>
-                    </Suspense>
+                    <Layout activeSection="chat">
+                      <ChatPage />
+                    </Layout>
                     <Toaster position="top-right" theme="dark" richColors />
                   </UserProvider>
                 </SocketProvider>
@@ -322,11 +317,9 @@ export default function App() {
               <AuthProvider>
                 <SocketProvider>
                   <UserProvider>
-                    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-discord-bg text-white">Cargando...</div>}>
-                      <Layout activeSection="impostor">
-                        <Impostor />
-                      </Layout>
-                    </Suspense>
+                    <Layout activeSection="impostor">
+                      <Impostor />
+                    </Layout>
                     <Toaster position="top-right" theme="dark" richColors />
                   </UserProvider>
                 </SocketProvider>
@@ -338,11 +331,9 @@ export default function App() {
               <AuthProvider>
                 <SocketProvider>
                   <UserProvider>
-                    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-discord-bg text-white">Cargando...</div>}>
-                      <Layout activeSection="who">
-                        <WhoWeAre />
-                      </Layout>
-                    </Suspense>
+                    <Layout activeSection="who">
+                      <WhoWeAre />
+                    </Layout>
                     <Toaster position="top-right" theme="dark" richColors />
                   </UserProvider>
                 </SocketProvider>
@@ -354,11 +345,9 @@ export default function App() {
               <AuthProvider>
                 <SocketProvider>
                   <UserProvider>
-                    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-discord-bg text-white">Cargando...</div>}>
-                      <Layout activeSection="voting">
-                        <Voting />
-                      </Layout>
-                    </Suspense>
+                    <Layout activeSection="voting">
+                      <Voting />
+                    </Layout>
                     <Toaster position="top-right" theme="dark" richColors />
                   </UserProvider>
                 </SocketProvider>
@@ -370,11 +359,9 @@ export default function App() {
               <AuthProvider>
                 <SocketProvider>
                   <UserProvider>
-                    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-discord-bg text-white">Cargando...</div>}>
-                      <Layout activeSection="news">
-                        <UPGNews />
-                      </Layout>
-                    </Suspense>
+                    <Layout activeSection="news">
+                      <UPGNews />
+                    </Layout>
                     <Toaster position="top-right" theme="dark" richColors />
                   </UserProvider>
                 </SocketProvider>
@@ -386,11 +373,9 @@ export default function App() {
               <AuthProvider>
                 <SocketProvider>
                   <UserProvider>
-                    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-discord-bg text-white">Cargando...</div>}>
-                      <Layout activeSection="hall_of_fame">
-                        <HallOfFame />
-                      </Layout>
-                    </Suspense>
+                    <Layout activeSection="hall_of_fame">
+                      <HallOfFame />
+                    </Layout>
                     <Toaster position="top-right" theme="dark" richColors />
                   </UserProvider>
                 </SocketProvider>
