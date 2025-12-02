@@ -11,8 +11,33 @@ from socket_events import register_socket_events
 import logging, os, sys
 
 os.makedirs('logs', exist_ok=True)
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('logs/app.log'), logging.StreamHandler()])
+
+# Configure logging with UTF-8 encoding for Windows compatibility
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# File handler (always UTF-8)
+file_handler = logging.FileHandler('logs/app.log', encoding='utf-8')
+file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+
+# Stream handler with error handling for Windows console
+stream_handler = logging.StreamHandler(sys.stdout)
+stream_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+
+# Add filter to handle Unicode encoding errors
+class UnicodeFilter(logging.Filter):
+    def filter(self, record):
+        try:
+            record.getMessage()
+            return True
+        except UnicodeEncodeError:
+            # Replace problematic characters
+            record.msg = str(record.msg).encode('ascii', 'replace').decode('ascii')
+            return True
+
+stream_handler.addFilter(UnicodeFilter())
+logger.addHandler(file_handler)
+logger.addHandler(stream_handler)
 
 app = Flask(__name__)
 app.config.from_object(Config)
