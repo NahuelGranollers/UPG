@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, memo } from 'react';
 import { useChat } from '../hooks/useChat';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
@@ -34,7 +34,8 @@ const ChatPage: React.FC = () => {
   // Detectar si es móvil
   useEffect(() => {
     const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      const mobile = window.innerWidth < 768;
+      setIsMobile(prev => prev !== mobile ? mobile : prev); // Only update if changed
     };
     checkIsMobile();
     window.addEventListener('resize', checkIsMobile);
@@ -79,7 +80,7 @@ const ChatPage: React.FC = () => {
   return (
     <div className="flex w-full h-full">
       {/* Desktop Layout */}
-      {!isMobile && (
+      {!isMobile ? (
         <>
           <ChannelList
             activeView={activeView}
@@ -114,10 +115,8 @@ const ChatPage: React.FC = () => {
             currentUser={currentUser}
           />
         </>
-      )}
-
-      {/* Mobile Layout */}
-      {isMobile && (
+      ) : (
+        /* Mobile Layout */
         <div className="flex flex-col w-full h-full">
           {activeMobileTab === 'channels' && (
             <ChannelList
@@ -156,6 +155,7 @@ const ChatPage: React.FC = () => {
             <UserList
               currentUserId={currentUser.id}
               currentUser={currentUser}
+              isMobileView={true}
             />
           )}
           <MobileTabBar
@@ -168,4 +168,4 @@ const ChatPage: React.FC = () => {
   );
 };
 
-export default ChatPage;
+export default memo(ChatPage);

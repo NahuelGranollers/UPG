@@ -84,63 +84,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }, 100);
   }, [currentChannel.id]);
 
-  // Actualizar chat al recibir channel:history y nuevos mensajes
-  const { socket, isConnected } = useSocket();
-  useEffect(() => {
-    if (!socket || !isConnected) return;
-    const handleChannelHistory = (data: { channelId: string; messages: Message[] }) => {
-      if (data.channelId === currentChannel.id) {
-        setInputText('');
-        setShowMentionSuggestions(false);
-      }
-    };
-    const handleNewMessage = (msg: Message) => {
-      // Clear bot typing if bot sends a message
-      if (msg.userId === 'bot') {
-        setIsBotTyping(false);
-      }
-
-      if (msg.channelId === currentChannel.id && msg.userId === currentUser.id) {
-        // Limpiar input cuando llega la confirmación del mensaje del usuario
-        setInputText('');
-        setShowMentionSuggestions(false);
-        // Remover mensaje local duplicado: preferir match por localId si viene desde servidor
-        setLocalMessages(prev =>
-          prev.filter(local => {
-            // If server returned localId, remove matching local
-            if (
-              (msg as any).localId &&
-              (local as any).localId &&
-              (local as any).localId === (msg as any).localId
-            )
-              return false;
-            // Fallback: match by content + proximity in timestamp (5s)
-            try {
-              const localTime = new Date((local as any).timestamp).getTime();
-              const serverTime = new Date(msg.timestamp).getTime();
-              if (
-                (local as any).id &&
-                (local as any).id.startsWith('local-') &&
-                local.userId === msg.userId &&
-                local.content === msg.content &&
-                Math.abs(localTime - serverTime) < 5000
-              ) {
-                return false;
-              }
-            } catch (e) {}
-            return true;
-          })
-        );
-      }
-    };
-    socket.on('channel:history', handleChannelHistory);
-    socket.on('message:received', handleNewMessage);
-    return () => {
-      socket.off('channel:history', handleChannelHistory);
-      socket.off('message:received', handleNewMessage);
-    };
-  }, [socket, isConnected, currentChannel.id, currentUser]);
-
   // Lista de usuarios mencionables (bot + TODOS los usuarios, incluso offline y el usuario actual)
   const mentionableUsers = useMemo(() => {
     const botUser = {

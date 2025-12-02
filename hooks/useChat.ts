@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { Message } from '../types';
@@ -104,7 +104,7 @@ export const useChat = (channelId: string) => {
         }
       });
     },
-    [socket, isConnected, channelId, currentUser]
+    [socket, isConnected, channelId, currentUser?.id, currentUser?.username, currentUser?.avatar]
   );
 
   return { messages, setMessages, sendMessage };
