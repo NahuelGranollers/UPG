@@ -1,7 +1,7 @@
 import React, { useState, memo, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
 import { X, Trash2, MessageSquare, Shield, AlertTriangle, Zap, Palette, VolumeX, Activity, Server, Cpu, Globe, Wifi, Users, Eye, StopCircle } from 'lucide-react';
-import { Socket } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
 import { User } from '../types';
 import { useUsers } from '../context/UserContext';
 import { getBackendUrl } from '../utils/config';

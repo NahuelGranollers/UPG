@@ -37,12 +37,7 @@ export default defineConfig(({ mode }) => {
       // Asegurar que las rutas funcionen correctamente en GitHub Pages
       rollupOptions: {
         output: {
-          manualChunks: {
-            vendor: ['react', 'react-dom'],
-            babylon: ['babylonjs'],
-            socket: ['socket.io-client'],
-            ui: ['lucide-react', 'sonner']
-          },
+          // manualChunks removed to let Vite handle chunking automatically and avoid 404s
         },
       },
     },
