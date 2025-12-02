@@ -1,11 +1,11 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
 import { getSocketUrl } from '../utils/config';
 
 interface SocketContextType {
-  socket: Socket | null;
+  socket: Socket;
   isConnected: boolean;
 }
 
@@ -23,7 +23,15 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      // Reset socket when user logs out
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+        setIsConnected(false);
+      }
+      return;
+    }
 
     const SOCKET_URL = getSocketUrl();
 
@@ -70,8 +78,34 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
   }, [currentUser]);
 
+  // Provide a safe socket proxy that won't cause errors
+  const safeSocket = useMemo(() => {
+    if (!socketRef.current) {
+      // Return a proxy object with safe methods that do nothing when socket is not available
+      return {
+        emit: (...args: any[]) => {
+          console.warn('Socket not available, ignoring emit:', args[0]);
+        },
+        on: (...args: any[]) => {
+          console.warn('Socket not available, ignoring on:', args[0]);
+        },
+        off: (...args: any[]) => {
+          console.warn('Socket not available, ignoring off:', args[0]);
+        },
+        disconnect: () => {
+          console.warn('Socket not available, ignoring disconnect');
+        },
+        connected: false,
+        id: null,
+      } as Socket;
+    }
+    return socketRef.current;
+  }, [socketRef.current]);
+
+  const safeIsConnected = isConnected && !!socketRef.current;
+
   return (
-    <SocketContext.Provider value={{ socket: socketRef.current, isConnected }}>
+    <SocketContext.Provider value={{ socket: safeSocket, isConnected: safeIsConnected }}>
       {children}
     </SocketContext.Provider>
   );
