@@ -1,8 +1,21 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+// import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
 import { getSocketUrl } from '../utils/config';
+
+// Declare io as any to use from CDN or npm
+declare const io: any;
+interface Socket {
+  emit: (event: string, ...args: any[]) => void;
+  on: (event: string, callback: (...args: any[]) => void) => void;
+  off: (event: string, callback?: (...args: any[]) => void) => void;
+  disconnect: () => void;
+  connected: boolean;
+  disconnected: boolean;
+  id: string | null;
+  io: any;
+}
 
 interface SocketContextType {
   socket: Socket | null;
