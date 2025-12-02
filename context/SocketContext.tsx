@@ -53,51 +53,90 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     // Always create a socket, even if user is not logged in
     const SOCKET_URL = getSocketUrl();
+    console.log('Attempting to create socket with URL:', SOCKET_URL);
 
-    const socket = io(SOCKET_URL, {
-      transports: ['websocket', 'polling'],
-      secure: true,
-      withCredentials: true,
-      path: '/socket.io/',
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    });
+    try {
+      const socket = io(SOCKET_URL, {
+        transports: ['websocket', 'polling'], // Try websocket first, fallback to polling
+        path: '/socket.io/',
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 20000, // Increase timeout
+        forceNew: true, // Force new connection
+      });
 
-    socketRef.current = socket;
+      console.log('Socket.IO instance created successfully:', socket);
+      console.log('Socket initial state:', {
+        connected: socket.connected,
+        disconnected: socket.disconnected,
+        id: socket.id
+      });
+      socketRef.current = socket;
+      socketRef.current = socket;
 
-    socket.on('connect', () => {
-      setIsConnected(true);
+      socket.on('connect', () => {
+        console.log('🎉 Socket connected successfully! ID:', socket.id);
+        console.log('Socket transport:', socket.io.engine.transport.name);
+        setIsConnected(true);
 
-      // Only identify if we have a current user
-      if (currentUser) {
-        socket.emit('user:join', {
-          ...currentUser,
-          socketId: socket.id,
+        // Only identify if we have a current user
+        if (currentUser) {
+          console.log('Identifying user:', currentUser.username);
+          socket.emit('user:join', {
+            ...currentUser,
+            socketId: socket.id,
+          });
+        } else {
+          console.log('No current user to identify');
+        }
+      });
+
+      // Listen for auto-join requests from server
+      socket.on('game:auto-join', (data: { type: string, roomId: string }) => {
+        console.log('Auto-joining game:', data);
+        // Dispatch a custom event that App.tsx or HomeScreen can listen to
+        window.dispatchEvent(new CustomEvent('game:auto-join', { detail: data }));
+      });
+
+      socket.on('disconnect', (reason) => {
+        console.log('Socket disconnected, reason:', reason);
+        setIsConnected(false);
+      });
+
+      socket.on('connect_error', (err) => {
+        console.error('❌ Socket connection error:', err.message, err);
+        console.error('Error details:', {
+          type: err.type,
+          description: err.description,
+          context: err.context
         });
-      }
-    });
+        setIsConnected(false);
+        // toast.error('Error de conexión con el chat');
+      });
 
-    // Listen for auto-join requests from server
-    socket.on('game:auto-join', (data: { type: string, roomId: string }) => {
-      console.log('Auto-joining game:', data);
-      // Dispatch a custom event that App.tsx or HomeScreen can listen to
-      window.dispatchEvent(new CustomEvent('game:auto-join', { detail: data }));
-    });
+      socket.on('reconnect', (attemptNumber) => {
+        console.log('Socket reconnected after', attemptNumber, 'attempts');
+        setIsConnected(true);
+      });
 
-    socket.on('disconnect', () => {
-      setIsConnected(false);
-    });
+      socket.on('reconnect_error', (err) => {
+        console.error('Socket reconnection error:', err.message, err);
+      });
 
-    socket.on('connect_error', err => {
-      console.error('Socket error:', err);
-      // toast.error('Error de conexión con el chat');
-    });
+      socket.on('reconnect_failed', () => {
+        console.error('Socket reconnection failed completely');
+      });
 
-    return () => {
-      socket.disconnect();
-      socketRef.current = null;
-    };
+      return () => {
+        socket.disconnect();
+        socketRef.current = null;
+      };
+    } catch (error) {
+      console.error('Failed to create socket instance:', error);
+      console.error('Socket.IO may not be available. Check if socket.io-client is properly imported.');
+      // Don't set socketRef.current, so it stays null and dummy is used
+    }
   }, []); // Remove currentUser dependency - socket is always created
 
   // When user logs in/out, update identification
