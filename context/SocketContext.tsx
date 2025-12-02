@@ -69,6 +69,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     console.log('Attempting to create socket with URL:', SOCKET_URL);
 
     try {
+      if (typeof io === 'undefined') {
+        console.error('Socket.IO is not available. Make sure the CDN script is loaded.');
+        return;
+      }
+
       const socket = io(SOCKET_URL, {
         transports: ['polling'], // Use polling for compatibility
         path: '/socket.io',
@@ -79,6 +84,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         forceNew: true, // Force new connection
       });
 
+      // Socket created successfully
       console.log('Socket.IO instance created successfully:', socket);
       console.log('Socket initial state:', {
         connected: socket.connected,
