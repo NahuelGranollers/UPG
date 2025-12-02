@@ -47,7 +47,7 @@ export function useVoice() {
 
   // Handle incoming WebRTC signals
   useEffect(() => {
-    if (!socket || !currentUser) return;
+    if (!socket || !socket.connected || !currentUser) return;
 
     const handleSignal = async ({ fromUserId, data }: { fromUserId: string; data: any }) => {
       if (!localStreamRef.current) return;

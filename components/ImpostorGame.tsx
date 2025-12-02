@@ -343,7 +343,7 @@ export default function ImpostorGame({
   }, [socket, currentUser, autoJoinRoomId, autoJoinPassword]);
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !socket.connected) return;
 
     const onRoomState = (data: any) => {
       setPlayers(data.players || []);
@@ -825,7 +825,7 @@ export default function ImpostorGame({
 
   // Listen for real-time updates from backend
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !socket.connected) return;
     const handler = (payload: any) => {
       console.log('ImpostorGame: servers:updated received', payload);
       try {

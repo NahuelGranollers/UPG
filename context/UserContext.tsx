@@ -19,7 +19,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [activeEffect, setActiveEffect] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!socket) return;
+    // Only set up listeners when we have a real socket (not the dummy)
+    if (!socket || !socket.connected) return;
 
     const handleUsersList = (list: User[]) => {
       if (!Array.isArray(list)) {
