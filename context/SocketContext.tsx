@@ -57,8 +57,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     try {
       const socket = io(SOCKET_URL, {
-        transports: ['websocket', 'polling'], // Try websocket first, fallback to polling
-        path: '/socket.io/',
+        transports: ['polling'], // Use polling for compatibility
+        path: '/socket.io',
         reconnection: true,
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
@@ -72,7 +72,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         disconnected: socket.disconnected,
         id: socket.id
       });
-      socketRef.current = socket;
       socketRef.current = socket;
 
       socket.on('connect', () => {
