@@ -58,7 +58,7 @@ class ErrorBoundary extends Component<Props, State> {
             <p className="text-discord-text-muted mb-4">
               Ocurrió un error inesperado. Por favor, intenta recargar la página.
             </p>
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {import.meta.env.DEV && this.state.error && (
               <details className="mb-4">
                 <summary className="text-sm text-discord-text-muted cursor-pointer mb-2 hover:text-discord-text-normal transition-colors">
                   Detalles del error (solo en desarrollo)
