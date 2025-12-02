@@ -38,6 +38,13 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     },
     connected: false,
     id: null,
+    io: {
+      engine: {
+        transport: {
+          name: 'disconnected'
+        }
+      }
+    },
   } as Socket), []);
 
   useEffect(() => {
