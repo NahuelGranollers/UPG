@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { getSocketUrl } from '../utils/config';
 
 interface SocketContextType {
-  socket: Socket;
+  socket: Socket | null;
   isConnected: boolean;
 }
 
@@ -22,17 +22,26 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
 
-  useEffect(() => {
-    if (!currentUser) {
-      // Reset socket when user logs out
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-        setIsConnected(false);
-      }
-      return;
-    }
+  // Create a dummy socket that does nothing until the real socket is available
+  const dummySocket = useMemo(() => ({
+    emit: (...args: any[]) => {
+      console.warn('Socket not initialized, ignoring emit:', args[0]);
+    },
+    on: (...args: any[]) => {
+      console.warn('Socket not initialized, ignoring on:', args[0]);
+    },
+    off: (...args: any[]) => {
+      console.warn('Socket not initialized, ignoring off:', args[0]);
+    },
+    disconnect: () => {
+      console.warn('Socket not initialized, ignoring disconnect');
+    },
+    connected: false,
+    id: null,
+  } as Socket), []);
 
+  useEffect(() => {
+    // Always create a socket, even if user is not logged in
     const SOCKET_URL = getSocketUrl();
 
     const socket = io(SOCKET_URL, {
@@ -50,11 +59,13 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     socket.on('connect', () => {
       setIsConnected(true);
 
-      // Identificarse
-      socket.emit('user:join', {
-        ...currentUser,
-        socketId: socket.id,
-      });
+      // Only identify if we have a current user
+      if (currentUser) {
+        socket.emit('user:join', {
+          ...currentUser,
+          socketId: socket.id,
+        });
+      }
     });
 
     // Listen for auto-join requests from server
@@ -75,37 +86,28 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     return () => {
       socket.disconnect();
+      socketRef.current = null;
     };
-  }, [currentUser]);
+  }, []); // Remove currentUser dependency - socket is always created
 
-  // Provide a safe socket proxy that won't cause errors
-  const safeSocket = useMemo(() => {
-    if (!socketRef.current) {
-      // Return a proxy object with safe methods that do nothing when socket is not available
-      return {
-        emit: (...args: any[]) => {
-          console.warn('Socket not available, ignoring emit:', args[0]);
-        },
-        on: (...args: any[]) => {
-          console.warn('Socket not available, ignoring on:', args[0]);
-        },
-        off: (...args: any[]) => {
-          console.warn('Socket not available, ignoring off:', args[0]);
-        },
-        disconnect: () => {
-          console.warn('Socket not available, ignoring disconnect');
-        },
-        connected: false,
-        id: null,
-      } as Socket;
+  // When user logs in/out, update identification
+  useEffect(() => {
+    if (!socketRef.current) return;
+
+    if (currentUser && isConnected) {
+      // User logged in and socket is connected - identify
+      socketRef.current.emit('user:join', {
+        ...currentUser,
+        socketId: socketRef.current.id,
+      });
+    } else if (!currentUser && isConnected) {
+      // User logged out - we could emit a leave event here if needed
+      // For now, just keep the socket connected but not identified
     }
-    return socketRef.current;
-  }, [socketRef.current]);
-
-  const safeIsConnected = isConnected && !!socketRef.current;
+  }, [currentUser, isConnected]);
 
   return (
-    <SocketContext.Provider value={{ socket: safeSocket, isConnected: safeIsConnected }}>
+    <SocketContext.Provider value={{ socket: socketRef.current || dummySocket, isConnected }}>
       {children}
     </SocketContext.Provider>
   );
