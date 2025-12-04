@@ -86,9 +86,6 @@ function Home() {
     touchState.current.started = false;
   };
 
-  // Hook de chat para el canal actual
-  const { messages, setMessages, sendMessage } = useChat(currentChannel.id);
-
   const voice = useVoice();
 
   // Función helper para navegación para reducir duplicación
@@ -240,9 +237,6 @@ function Home() {
           <ChatInterface
             currentUser={currentUser}
             currentChannel={currentChannel}
-            onSendMessage={sendMessage}
-            messages={messages}
-            setMessages={setMessages}
             onMenuToggle={() => {}}
           />
           <UserList
