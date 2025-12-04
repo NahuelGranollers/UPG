@@ -221,17 +221,12 @@ const MessageList: React.FC<MessageListProps> = memo(({
                           </div>
                         )}
 
-                        {/* Timestamp para mensajes consecutivos (no el primero del grupo) */}
-                        {!isFirstInGroup && (
+                        {/* Timestamp para mensajes consecutivos (no el primero del grupo) - OCULTO */}
+                        {!isFirstInGroup && msg.status === 'error' && (
                           <div className="flex items-center mb-1">
-                            <span className="text-[11px] sm:text-xs text-discord-text-muted ml-1 sm:ml-2 font-medium hover:underline cursor-pointer">
-                              {msgTimestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            <span className="ml-2 text-[10px] text-red-500 italic">
+                              Error al enviar
                             </span>
-                            {msg.status === 'error' && (
-                              <span className="ml-2 text-[10px] text-red-500 italic">
-                                Error al enviar
-                              </span>
-                            )}
                           </div>
                         )}
 
