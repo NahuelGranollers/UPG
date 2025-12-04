@@ -85,7 +85,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     return sorted.slice(-100);
   }, [messages, localMessages]);
 
-  // Auto-scroll to bottom when new messages arrive (only if user is near bottom)
+  // Auto-scroll disabled by user request
+  /*
   useEffect(() => {
     const container = messagesEndRef.current?.parentElement?.parentElement;
     if (container && messagesEndRef.current && orderedMessages.length > 0) {
@@ -105,6 +106,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       }
     }
   }, [orderedMessages, currentUser.id]);
+  */
 
   // Scroll to bottom when changing channels
   useEffect(() => {
