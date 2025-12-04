@@ -141,10 +141,10 @@
         }
       }(window.location))
     </script>
-    <script type="module" src="/index.tsx"></script>
+    <script type="module" src="/entry-client.tsx"></script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><!--app-html--></div>
     <script>
       // API base
       if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {

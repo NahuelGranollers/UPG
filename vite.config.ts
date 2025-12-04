@@ -41,5 +41,8 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    ssr: {
+      noExternal: ['react-router-dom'],
+    },
   };
 });
