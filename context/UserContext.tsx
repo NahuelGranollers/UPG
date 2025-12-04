@@ -20,7 +20,17 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     // Only set up listeners when we have a real socket (not the dummy)
-    if (!socket || !socket.connected) return;
+    // The dummy socket has connected=false, so this check works
+    if (!socket || !socket.connected) {
+      // If socket is not connected, we might still want to request users list once it connects
+      // But we can't attach listeners to the dummy socket because it warns.
+      // However, the dummy socket's .on() method warns.
+      // We need to wait for the real socket.
+      return;
+    }
+
+    // Request initial data
+    socket.emit('users:request');
 
     const handleUsersList = (list: User[]) => {
       if (!Array.isArray(list)) {
@@ -105,7 +115,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     socket.on('admin:effect-triggered', handleAdminEffect);
     socket.on('admin:user-color-changed', handleAdminUserColorChanged);
 
-    socket.emit('users:request');
+    // Request moved to top of effect
+    // socket.emit('users:request');
 
     return () => {
       socket.off('users:list', handleUsersList);

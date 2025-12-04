@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { useAuth } from './context/AuthContext';
+import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
 import { getSocketUrl } from '../utils/config';
 
@@ -20,6 +20,7 @@ export const useSocket = () => {
 export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
+  const [socketInstance, setSocketInstance] = useState<Socket | null>(null);
   const socketRef = useRef<Socket | null>(null);
 
   // Create a dummy socket that does nothing until the real socket is available
@@ -56,11 +57,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     console.log('Attempting to create socket with URL:', SOCKET_URL);
 
     try {
-      // if (typeof io === 'undefined') {
-      //   console.error('Socket.IO is not available. Make sure the CDN script is loaded.');
-      //   return;
-      // }
-
       const socket = io(SOCKET_URL, {
         transports: ['polling'], // Use polling for compatibility
         path: '/socket.io',
@@ -73,34 +69,16 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       // Socket created successfully
       console.log('Socket.IO instance created successfully:', socket);
-      console.log('Socket initial state:', {
-        connected: socket.connected,
-        disconnected: socket.disconnected,
-        id: socket.id
-      });
       socketRef.current = socket;
+      setSocketInstance(socket);
 
       socket.on('connect', () => {
         console.log('🎉 Socket connected successfully! ID:', socket.id);
-        console.log('Socket transport:', socket.io.engine.transport.name);
         setIsConnected(true);
-
-        // Only identify if we have a current user
-        if (currentUser) {
-          console.log('Identifying user:', currentUser.username);
-          socket.emit('user:join', {
-            ...currentUser,
-            socketId: socket.id,
-          });
-        } else {
-          console.log('No current user to identify');
-        }
       });
 
-      // Listen for auto-join requests from server
       socket.on('game:auto-join', (data: { type: string, roomId: string }) => {
         console.log('Auto-joining game:', data);
-        // Dispatch a custom event that App.tsx or HomeScreen can listen to
         window.dispatchEvent(new CustomEvent('game:auto-join', { detail: data }));
       });
 
@@ -111,13 +89,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       socket.on('connect_error', (err) => {
         console.error('❌ Socket connection error:', err.message, err);
-        console.error('Error details:', {
-          type: err.type,
-          description: err.description,
-          context: err.context
-        });
         setIsConnected(false);
-        // toast.error('Error de conexión con el chat');
       });
 
       socket.on('reconnect', (attemptNumber) => {
@@ -125,43 +97,32 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setIsConnected(true);
       });
 
-      socket.on('reconnect_error', (err) => {
-        console.error('Socket reconnection error:', err.message, err);
-      });
-
-      socket.on('reconnect_failed', () => {
-        console.error('Socket reconnection failed completely');
-      });
-
       return () => {
         socket.disconnect();
         socketRef.current = null;
+        setSocketInstance(null);
       };
     } catch (error) {
       console.error('Failed to create socket instance:', error);
-      console.error('Socket.IO may not be available. Check if socket.io-client is properly imported.');
-      // Don't set socketRef.current, so it stays null and dummy is used
     }
-  }, []); // Remove currentUser dependency - socket is always created
+  }, []); // Run once on mount
 
   // When user logs in/out, update identification
   useEffect(() => {
-    if (!socketRef.current) return;
+    if (!socketInstance) return;
 
     if (currentUser && isConnected) {
       // User logged in and socket is connected - identify
-      socketRef.current.emit('user:join', {
+      console.log('Identifying user:', currentUser.username);
+      socketInstance.emit('user:join', {
         ...currentUser,
-        socketId: socketRef.current.id,
+        socketId: socketInstance.id,
       });
-    } else if (!currentUser && isConnected) {
-      // User logged out - we could emit a leave event here if needed
-      // For now, just keep the socket connected but not identified
     }
-  }, [currentUser, isConnected]);
+  }, [currentUser, isConnected, socketInstance]);
 
   return (
-    <SocketContext.Provider value={{ socket: socketRef.current || dummySocket, isConnected }}>
+    <SocketContext.Provider value={{ socket: socketInstance || dummySocket, isConnected }}>
       {children}
     </SocketContext.Provider>
   );
