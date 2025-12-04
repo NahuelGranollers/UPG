@@ -25,7 +25,7 @@ interface MessageListProps {
   inputText: string;
   setInputText: (text: string) => void;
   handleSendMessage: (e?: React.FormEvent, file?: File) => void;
-  inputRef: React.RefObject<HTMLTextAreaElement>;
+  inputRef: React.RefObject<HTMLInputElement>;
   showMentionSuggestions: boolean;
   mentionSuggestions: User[];
   selectedSuggestionIndex: number;
@@ -33,7 +33,7 @@ interface MessageListProps {
   completeMention: (user: User) => void;
   renderInputPreview: () => React.ReactNode;
   currentChannel: any;
-  onInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 const MessageList: React.FC<MessageListProps> = memo(({
@@ -124,8 +124,8 @@ const MessageList: React.FC<MessageListProps> = memo(({
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-gradient-to-b from-discord-dark via-discord-dark to-discord-dark/95">
       <div className="flex-1 overflow-y-auto px-2 sm:px-4 pt-2 sm:pt-4 flex flex-col custom-scrollbar chat-messages-container">
-        <div className="flex-1 flex flex-col justify-start min-h-full">
-          <div className="mb-4 sm:mb-6 mt-2 sm:mt-4">
+        <div className="flex-1 flex flex-col justify-end min-h-0">
+          <div className="mb-4 sm:mb-6 mt-4">
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-discord-text-muted/20 rounded-full flex items-center justify-center mb-2 sm:mb-3">
               <Shield size={24} className="text-white sm:w-8 sm:h-8" />
             </div>
@@ -134,7 +134,7 @@ const MessageList: React.FC<MessageListProps> = memo(({
           </div>
           <div className="h-[1px] bg-discord-text-muted/20 w-full my-2" />
 
-          <div className="flex-1 space-y-1">
+          <div className="space-y-1">
             {groupedMessages.map((group, groupIndex) => (
               <div key={`${group.userId}-${group.timestamp.getTime()}`} className="mb-2">
                 {group.messages.map((msg, msgIndex) => {
