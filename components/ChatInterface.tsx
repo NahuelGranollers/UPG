@@ -398,7 +398,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   // Render
   return (
-    <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden w-full relative">
+    <div className="flex flex-col h-full min-h-0 overflow-hidden w-full relative">
       {/* Header */}
       <header className="header flex items-center justify-between px-4 shrink-0 h-14 border-b border-discord-hover">
         <div className="flex items-center text-header font-bold truncate">
