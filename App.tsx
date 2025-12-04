@@ -1,259 +1,62 @@
-﻿import React, { useState, useCallback, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, useNavigate, useSearchParams } from 'react-router-dom';
+﻿import React from 'react';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { SocketProvider, useSocket } from './context/SocketContext';
-import { UserProvider, useUsers } from './context/UserContext';
-import { useChat } from './hooks/useChat';
-import { AppView, ChannelData, User, UserRole } from './types';
-import useVoice from './hooks/useVoice';
-
-// Componentes críticos (carga inmediata)
+import { SocketProvider } from './context/SocketContext';
+import { UserProvider } from './context/UserContext';
 import ErrorBoundary from './components/ErrorBoundary';
-import MobileSidebar from './components/MobileSidebar';
-import MobileTabBar from './components/MobileTabBar';
-import Sidebar from './components/Sidebar';
-import ChannelList from './components/ChannelList';
-import ChatInterface from './components/ChatInterface';
-import UserList from './components/UserList';
-import UsernamePrompt from './components/UsernamePrompt';
-import UserProfileModal from './components/UserProfileModal';
 
-// Componentes principales (carga inmediata para mejor rendimiento)
+// Componentes principales
 import HomeScreen from './components/HomeScreen';
-import ImpostorGame from './components/ImpostorGame';
 import Impostor from './components/Impostor';
 import WhoWeAre from './components/WhoWeAre';
 import Voting from './components/Voting';
 import UPGNews from './components/UPGNews';
 import HallOfFame from './components/HallOfFame';
-import AdminPanel from './components/AdminPanel';
 import Layout from './components/Layout';
 import ChatPage from './components/ChatPage';
+import UsernamePrompt from './components/UsernamePrompt';
 
 function Home() {
   const navigate = useNavigate();
-  const [showProfileModal, setShowProfileModal] = useState(false);
-  const { currentUser, isLoading, loginWithDiscord, loginAsGuest, logout } = useAuth();
-  const { isConnected, socket } = useSocket();
-  const { activeEffect } = useUsers();
+  const { currentUser, isLoading, loginWithDiscord, loginAsGuest } = useAuth();
 
-  const [activeView, setActiveView] = useState<AppView>(AppView.CHAT);
-  const [showHome, setShowHome] = useState(true);
-  const [showAdminPanel, setShowAdminPanel] = useState(false);
-  const [currentChannel, setCurrentChannel] = useState<ChannelData>({
-    id: 'general',
-    name: 'general',
-    description: 'Chat general',
-  });
-  const [activeSection, setActiveSection] = useState<
-    'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor' | 'news' | 'hall_of_fame'
-  >('home');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [mobileActiveTab, setMobileActiveTab] = useState<'channels' | 'chat' | 'users' | 'news'>(
-    'chat'
-  );
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-
-  // Auto-join state
-  const [autoJoinRoomId, setAutoJoinRoomId] = useState<string | undefined>(undefined);
-  const [autoJoinPassword, setAutoJoinPassword] = useState<string | undefined>(undefined);
-
-  const touchState = React.useRef({ startX: 0, startY: 0, started: false });
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    const t = e.touches[0];
-    touchState.current = { startX: t.clientX, startY: t.clientY, started: true };
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!touchState.current.started) return;
-    const t = e.touches[0];
-    const dx = t.clientX - touchState.current.startX;
-    const dy = Math.abs(t.clientY - touchState.current.startY);
-    if (dy > 75) return; // ignore vertical drags
-    if (touchState.current.startX < 80 && dx > 60) {
-      setMobileSidebarOpen(true);
-      touchState.current.started = false;
-    }
-    if (mobileSidebarOpen && dx < -40) {
-      setMobileSidebarOpen(false);
-      touchState.current.started = false;
-    }
-  };
-
-  const handleTouchEnd = () => {
-    touchState.current.started = false;
-  };
-
-  const voice = useVoice();
-
-  // Función helper para navegación para reducir duplicación
-  const navigateToSection = useCallback((section: string, setMobileTab = false) => {
-    if (section === 'home') {
-      setShowHome(true);
-      setActiveSection('home');
-    } else {
-      setShowHome(false);
-      switch (section) {
-        case 'chat':
-          navigate('/chat');
-          break;
-        case 'impostor':
-          navigate('/impostor');
-          break;
-        case 'who':
-          navigate('/quienes-somos');
-          break;
-        case 'voting':
-          navigate('/votaciones');
-          break;
-        case 'news':
-          navigate('/noticias');
-          break;
-        case 'hall_of_fame':
-          navigate('/salon-fama');
-          break;
-      }
-      if (setMobileTab) setMobileActiveTab('chat');
-    }
-  }, [navigate]);
-
-  const handleHomeClick = useCallback(() => {
-    setShowHome(true);
-    setActiveSection('home');
-  }, []);
-
-  const handleUPGClick = useCallback(() => {
-    navigate('/chat');
-  }, [navigate]);
-
-  const handleJoinServer = useCallback((gameType: string, roomId: string, password?: string) => {
-    setAutoJoinRoomId(roomId);
-    setAutoJoinPassword(password);
-    navigate('/impostor');
-  }, [navigate]);
-
-  const handleCreateServer = useCallback((gameType: string) => {
-    setAutoJoinRoomId(undefined);
-    setAutoJoinPassword(undefined);
-    navigate('/impostor');
-  }, [navigate]);
-
-  const handleVoiceJoin = useCallback(
-    async (channelId: string) => {
-      try {
-        await voice.joinChannel(channelId);
-      } catch (err) {
-        console.error('Failed to join voice channel', err);
-      }
-    },
-    [voice]
-  );
-
-  const handleVoiceLeave = useCallback(async () => {
-    try {
-      if ((voice as any).closeAll) (voice as any).closeAll();
-    } catch (e) {
-      console.error('Failed to leave voice channel', e);
-    }
-  }, [voice]);
-
-  const handleToggleMute = useCallback(() => {
-    try {
-      if ((voice as any).toggleMute) (voice as any).toggleMute();
-    } catch (e) {
-      console.error('Failed to toggle mute', e);
-    }
-  }, [voice]);
-
-  if (isLoading)
+  if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-discord-bg text-white">
         Cargando...
       </div>
     );
+  }
 
-  // Si no hay usuario (caso raro tras isLoading), mostrar loading o error
-  if (!currentUser)
+  if (!currentUser) {
     return (
       <UsernamePrompt
         onSubmit={loginAsGuest}
         onLoginWithDiscord={loginWithDiscord}
       />
     );
+  }
+
+  const handleJoinServer = (gameType: string, roomId: string, password?: string) => {
+    navigate('/impostor', { state: { autoJoinRoomId: roomId, autoJoinPassword: password } });
+  };
+
+  const handleCreateServer = (gameType: string) => {
+    navigate('/impostor', { state: { createServer: true, gameType } });
+  };
 
   return (
-    <div className="flex w-full h-full">
-      {showHome ? (
-        <HomeScreen
-          onGoToChat={() => {
-            navigate('/chat');
-          }}
-          onGoToWhoWeAre={() => {
-            setShowHome(false);
-            setActiveView(AppView.WHO_WE_ARE);
-            setActiveSection('who');
-          }}
-          onJoinServer={handleJoinServer}
-          onCreateServer={handleCreateServer}
-          onOpenSidebar={() => setMobileSidebarOpen(true)}
-        />
-      ) : activeView === AppView.IMPOSTOR ? (
-        <ImpostorGame
-          onClose={() => {
-            setShowHome(true);
-            setActiveView(AppView.CHAT);
-            setActiveSection('home');
-            setAutoJoinRoomId(undefined);
-            setAutoJoinPassword(undefined);
-          }}
-          autoJoinRoomId={autoJoinRoomId}
-          autoJoinPassword={autoJoinPassword}
-        />
-      ) : activeView === AppView.CHAT ? (
-        <div className="flex w-full h-full">
-          <ChannelList
-            activeView={activeView}
-            currentChannelId={currentChannel.id}
-            onChannelSelect={(view, channel) => {
-              if (view && channel) {
-                setActiveView(view);
-                setCurrentChannel(channel);
-              } else if (channel) {
-                setCurrentChannel(channel);
-              }
-            }}
-            currentUser={currentUser}
-            activeVoiceChannel={voice.inChannel}
-            micActive={!voice.isMuted}
-            voiceLevel={voice.voiceLevel}
-            onVoiceJoin={handleVoiceJoin}
-            onLoginWithDiscord={loginWithDiscord}
-            onLogoutDiscord={logout}
-            onToggleMic={handleToggleMute}
-            onVoiceLeave={handleVoiceLeave}
-          />
-          <ChatInterface
-            currentUser={currentUser}
-            currentChannel={currentChannel}
-            onMenuToggle={() => {}}
-          />
-          <UserList
-            currentUserId={currentUser.id}
-            currentUser={currentUser}
-          />
-        </div>
-      ) : activeView === AppView.WHO_WE_ARE ? (
-        <WhoWeAre />
-      ) : activeView === AppView.VOTING ? (
-        <Voting />
-      ) : activeView === AppView.NEWS ? (
-        <UPGNews />
-      ) : activeView === AppView.HALL_OF_FAME ? (
-        <HallOfFame />
-      ) : null}
-    </div>
+    <HomeScreen
+      onGoToChat={() => navigate('/chat')}
+      onGoToWhoWeAre={() => navigate('/quienes-somos')}
+      onJoinServer={handleJoinServer}
+      onCreateServer={handleCreateServer}
+      onOpenSidebar={() => {
+        // Sidebar control is handled by Layout currently.
+        console.log("Open sidebar requested");
+      }}
+    />
   );
 }
 

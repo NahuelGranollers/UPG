@@ -1,10 +1,15 @@
 import React, { Suspense } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const ImpostorGame = React.lazy(() => import('../components/ImpostorGame'));
 
 function Impostor() {
-  const { currentUser, isLoading, loginWithDiscord, loginAsGuest } = useAuth();
+  const { currentUser, isLoading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const { autoJoinRoomId, autoJoinPassword } = location.state || {};
 
   if (isLoading)
     return (
@@ -27,9 +32,10 @@ function Impostor() {
     >
       <ImpostorGame
         onClose={() => {
-          // Redirect to home or main app
-          window.location.href = '/';
+          navigate('/');
         }}
+        autoJoinRoomId={autoJoinRoomId}
+        autoJoinPassword={autoJoinPassword}
       />
     </Suspense>
   );
