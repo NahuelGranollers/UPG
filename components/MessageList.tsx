@@ -123,6 +123,7 @@ const MessageList: React.FC<MessageListProps> = memo(({
 
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-gradient-to-b from-discord-dark via-discord-dark to-discord-dark/95">
+      {/* Messages Area - Flex 1 to take available space */}
       <div className="flex-1 overflow-y-auto px-2 sm:px-4 pt-2 sm:pt-4 flex flex-col custom-scrollbar chat-messages-container">
         <div className="flex-1 flex flex-col justify-end min-h-0">
           <div className="mb-4 sm:mb-6 mt-4">
@@ -226,12 +227,6 @@ const MessageList: React.FC<MessageListProps> = memo(({
                             <span className="text-[11px] sm:text-xs text-discord-text-muted ml-1 sm:ml-2 font-medium hover:underline cursor-pointer">
                               {msgTimestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
-                            {msg.status === 'sending' && (
-                              <span className="ml-2 text-[10px] text-discord-text-muted italic flex items-center gap-1">
-                                <span className="w-2 h-2 border-2 border-discord-text-muted border-t-transparent rounded-full animate-spin" />
-                                Enviando...
-                              </span>
-                            )}
                             {msg.status === 'error' && (
                               <span className="ml-2 text-[10px] text-red-500 italic">
                                 Error al enviar
@@ -241,15 +236,8 @@ const MessageList: React.FC<MessageListProps> = memo(({
                         )}
 
                         {/* Contenido del mensaje */}
-                        <p className={`text-sm sm:text-base text-discord-text-normal whitespace-pre-wrap leading-[1.3rem] sm:leading-[1.375rem] ${msg.status === 'sending' ? 'opacity-70' : ''} ${!isFirstInGroup ? 'ml-0' : ''}`}>
+                        <p className={`text-sm sm:text-base text-discord-text-normal whitespace-pre-wrap leading-[1.3rem] sm:leading-[1.375rem] ${!isFirstInGroup ? 'ml-0' : ''}`}>
                           {renderMessageContent()}
-                          {/* Estado de envío solo para el primer mensaje del grupo si está enviando */}
-                          {isFirstInGroup && msg.status === 'sending' && (
-                            <span className="ml-2 text-[10px] text-discord-text-muted italic flex items-center gap-1">
-                              <span className="w-2 h-2 border-2 border-discord-text-muted border-t-transparent rounded-full animate-spin" />
-                              Enviando...
-                            </span>
-                          )}
                           {isFirstInGroup && msg.status === 'error' && (
                             <span className="ml-2 text-[10px] text-red-500 italic">
                               Error al enviar
