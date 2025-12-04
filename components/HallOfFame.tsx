@@ -155,12 +155,12 @@ const HallOfFame: React.FC<HallOfFameProps> = ({ onOpenSidebar }) => {
   const handleMouseLeave = () => setReflect({ x: 0, y: 0, opacity: 0 });
 
   return (
-    <div className="flex flex-col h-full w-full bg-discord-chat overflow-hidden relative" style={{ paddingTop: 'calc(4.5rem + env(safe-area-inset-top, 0px))', paddingLeft: 'calc(1rem + env(safe-area-inset-left, 0px))' }}>
+    <div className="flex flex-col h-full w-full bg-discord-chat overflow-hidden relative" style={{ paddingTop: 'calc(3.5rem + env(safe-area-inset-top, 0px))' }}>
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-8">
         <div className="max-w-7xl mx-auto">
           <header className="discord-header discord-glass-card p-4 mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-discord-text-header mb-2">Salón de la Fama — UPG</h1>
+            <h1 className="text-3xl sm:text-4xl font-black text-discord-text-header mb-4">Salón de la Fama — UPG</h1>
             <p className="text-sm sm:text-base text-discord-text-muted">
               Los logros de la comunidad, preservados en vitrina
             </p>

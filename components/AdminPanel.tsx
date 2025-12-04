@@ -13,12 +13,12 @@ interface AdminPanelProps {
   socket: Socket | null;
 }
 
-const RealTimeLogs = ({ socket }: { socket: Socket | null }) => {
+const RealTimeLogs = ({ socket, currentUser }: { socket: Socket | null, currentUser: User | null }) => {
   const [logs, setLogs] = useState<string[]>([]);
   const [isSubscribed, setIsSubscribed] = useState(false);
 
   useEffect(() => {
-    if (!socket || !socket.connected) return;
+    if (!socket || !socket.connected || !currentUser) return;
 
     const handleLog = (logData: any) => {
       const timestamp = new Date().toLocaleTimeString();
@@ -27,19 +27,19 @@ const RealTimeLogs = ({ socket }: { socket: Socket | null }) => {
     };
 
     if (!isSubscribed) {
-      socket.emit('admin:subscribe-logs');
+      socket.emit('admin:subscribe-logs', { adminId: currentUser.id });
       socket.on('admin:log-entry', handleLog);
       setIsSubscribed(true);
     }
 
     return () => {
       if (socket && isSubscribed) {
-        socket.emit('admin:unsubscribe-logs');
+        socket.emit('admin:unsubscribe-logs', { adminId: currentUser.id });
         socket.off('admin:log-entry', handleLog);
         setIsSubscribed(false);
       }
     };
-  }, [socket, isSubscribed]);
+  }, [socket, isSubscribed, currentUser]);
 
   return (
     <div className="discord-glass-subtle p-4">
@@ -67,7 +67,7 @@ const RealTimeLogs = ({ socket }: { socket: Socket | null }) => {
   );
 };
 
-const SystemStatus = ({ socket }: { socket: Socket | null }) => {
+const SystemStatus = ({ socket, currentUser }: { socket: Socket | null, currentUser: User | null }) => {
     const [mcStatus, setMcStatus] = useState<any>(null);
     const [loadingMc, setLoadingMc] = useState(true);
     const [backendLatency, setBackendLatency] = useState<number | null>(null);
@@ -164,7 +164,7 @@ const SystemStatus = ({ socket }: { socket: Socket | null }) => {
             </div>
 
             {/* Real-time Backend Logs */}
-            <RealTimeLogs socket={socket} />
+            <RealTimeLogs socket={socket} currentUser={currentUser} />
         </div>
     );
 };
@@ -453,7 +453,7 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ isOpen, onClose, currentUs
                         Volver
                     </button>
                 </div>
-                <SystemStatus socket={socket} />
+                <SystemStatus socket={socket} currentUser={currentUser} />
             </div>
         );
     }

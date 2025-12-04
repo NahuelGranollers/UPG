@@ -8,13 +8,14 @@ interface Props {
   onNavigate: (section: 'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor' | 'news' | 'hall_of_fame') => void;
   currentUser: User | null;
   activeSection: 'home' | 'chat' | 'who' | 'voting' | 'upg' | 'impostor' | 'news' | 'hall_of_fame';
+  onOpenAdmin?: () => void;
+  onEditProfile?: () => void;
 }
 
-const MobileSidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate, currentUser, activeSection }) => {
+const MobileSidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate, currentUser, activeSection, onOpenAdmin, onEditProfile }) => {
   return (
     <div
-      className={`fixed inset-0 z-50 transition-opacity ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-      aria-hidden={!isOpen}
+      className={`fixed inset-0 z-50 transition-all duration-300 ${isOpen ? 'opacity-100 visible pointer-events-auto' : 'opacity-0 invisible pointer-events-none'}`}
     >
       <div className={`absolute inset-0 bg-black/50`} onClick={onClose} />
 
@@ -28,6 +29,14 @@ const MobileSidebar: React.FC<Props> = ({ isOpen, onClose, onNavigate, currentUs
           activeSection={activeSection}
           onNavigate={(section) => {
             onNavigate(section);
+            onClose();
+          }}
+          onOpenAdmin={() => {
+            if (onOpenAdmin) onOpenAdmin();
+            onClose();
+          }}
+          onEditProfile={() => {
+            if (onEditProfile) onEditProfile();
             onClose();
           }}
         />

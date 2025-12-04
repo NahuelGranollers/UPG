@@ -1,5 +1,4 @@
 User-agent: *
+Allow: /
 Disallow: /server/
 Sitemap: https://unaspartidillas.online/sitemap.xml
-# Crawl-delay is optional and only respected by some crawlers
-# Crawl-delay: 10

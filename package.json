@@ -14,7 +14,12 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "dev:ssr": "node server.js",
+    "build:client": "vite build --outDir dist/client",
+    "build:server": "vite build --ssr entry-server.tsx --outDir dist/server",
+    "build:ssr": "npm run build:client && npm run build:server",
+    "serve:ssr": "cross-env NODE_ENV=production node server.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",

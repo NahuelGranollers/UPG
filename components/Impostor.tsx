@@ -1,15 +1,25 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import UsernamePrompt from './UsernamePrompt';
 
 const ImpostorGame = React.lazy(() => import('../components/ImpostorGame'));
 
 function Impostor() {
-  const { currentUser, isLoading } = useAuth();
+  const { currentUser, isLoading, loginAsGuest, loginWithDiscord } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Parse query params for direct links
+  const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const queryRoomId = queryParams.get('roomId');
+  const queryPassword = queryParams.get('password');
+
   const { autoJoinRoomId, autoJoinPassword } = location.state || {};
+
+  // Determine final join params (state takes precedence, or query params if state is missing)
+  const finalRoomId = autoJoinRoomId || queryRoomId;
+  const finalPassword = autoJoinPassword || queryPassword;
 
   if (isLoading)
     return (
@@ -18,13 +28,15 @@ function Impostor() {
       </div>
     );
 
-  // Si no hay usuario (caso raro tras isLoading), mostrar loading o error
-  if (!currentUser)
+  // Si no hay usuario, mostrar el prompt de nombre
+  if (!currentUser) {
     return (
-      <div className="flex h-screen items-center justify-center bg-discord-bg text-white">
-        Usuario no encontrado
-      </div>
+      <UsernamePrompt
+        onSubmit={loginAsGuest}
+        onLoginWithDiscord={loginWithDiscord}
+      />
     );
+  }
 
   return (
     <Suspense
@@ -34,8 +46,8 @@ function Impostor() {
         onClose={() => {
           navigate('/');
         }}
-        autoJoinRoomId={autoJoinRoomId}
-        autoJoinPassword={autoJoinPassword}
+        autoJoinRoomId={finalRoomId}
+        autoJoinPassword={finalPassword}
       />
     </Suspense>
   );

@@ -105,6 +105,19 @@ const Layout: React.FC<LayoutProps> = ({ children, activeSection = 'home', onAct
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
+      {/* Mobile Menu Button - Moved to root to ensure z-index works properly */}
+      <button
+        className="md:hidden fixed top-3 left-3 z-[200] p-2 text-gray-200 hover:text-white transition-colors"
+        aria-label={mobileSidebarOpen ? "Cerrar menú" : "Abrir menú"}
+        onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+      >
+        {mobileSidebarOpen ? (
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x mx-auto" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-menu mx-auto" aria-hidden="true"><path d="M4 5h16"></path><path d="M4 12h16"></path><path d="M4 19h16"></path></svg>
+        )}
+      </button>
+
       {/* Desktop Layout */}
       <div className="hidden md:flex w-full h-full">
         {/* Sidebar (single instance, fixed left) */}
@@ -119,24 +132,18 @@ const Layout: React.FC<LayoutProps> = ({ children, activeSection = 'home', onAct
           onEditProfile={() => setShowProfileModal(true)}
         />
         <div className="flex flex-1 min-w-0 relative">
-          {children}
+          <main className="w-full h-full">
+            {children}
+          </main>
         </div>
       </div>
 
       {/* Mobile Layout */}
       <div className="flex md:hidden h-full w-full flex-col relative overflow-hidden">
-        {/* Centralized Menu Button (only when sidebar is closed) */}
-        {!mobileSidebarOpen && (
-          <button
-            className="md:hidden fixed top-3 left-3 aspect-square w-12 liquid-glass rounded-lg shadow-lg z-[100] text-discord-text-normal hover:text-white border border-discord-hover flex items-center justify-center"
-            aria-label="Abrir menú"
-            onClick={() => setMobileSidebarOpen(true)}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-menu mx-auto" aria-hidden="true"><path d="M4 5h16"></path><path d="M4 12h16"></path><path d="M4 19h16"></path></svg>
-          </button>
-        )}
         <div className="flex-1 w-full overflow-hidden relative">
-          {children}
+          <main className="w-full h-full">
+            {children}
+          </main>
         </div>
 
         {/* Mobile Sidebar available in all views */}
@@ -146,6 +153,8 @@ const Layout: React.FC<LayoutProps> = ({ children, activeSection = 'home', onAct
           onNavigate={navigateToSection}
           currentUser={currentUser}
           activeSection={activeSection}
+          onOpenAdmin={() => setShowAdminPanel(true)}
+          onEditProfile={() => setShowProfileModal(true)}
         />
       </div>
 
@@ -162,14 +171,16 @@ const Layout: React.FC<LayoutProps> = ({ children, activeSection = 'home', onAct
       )}
 
       {/* User Profile Modal */}
-      <Suspense fallback={null}>
-        <UserProfileModal
-          isOpen={showProfileModal}
-          onClose={() => setShowProfileModal(false)}
-          user={currentUser}
-          onLoginWithDiscord={loginWithDiscord}
-        />
-      </Suspense>
+      {showProfileModal && (
+        <Suspense fallback={null}>
+          <UserProfileModal
+            isOpen={showProfileModal}
+            onClose={() => setShowProfileModal(false)}
+            user={currentUser}
+            onLoginWithDiscord={loginWithDiscord}
+          />
+        </Suspense>
+      )}
 
       {/* Effects Overlay */}
       {activeEffect === 'jumpscare' && (

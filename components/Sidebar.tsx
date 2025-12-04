@@ -60,6 +60,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                     : 'bg-surface text-secondary hover:bg-accent hover:text-white hover:scale-105 active:scale-95'
                 }`}
                 aria-pressed={active}
+                aria-label="Inicio"
               >
                 <Home size={28} />
               </button>
@@ -91,6 +92,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                 }`}
                 title="UPG"
                 aria-pressed={active}
+                aria-label="Chat UPG"
               >
                 <SafeImage
                   src="/upg.png"
@@ -124,6 +126,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                 }`}
                 title="Impostor"
                 aria-pressed={active}
+                aria-label="Juego Impostor"
               >
                 <SafeImage
                   src="/amogus.png"
@@ -158,6 +161,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                   }`}
                   title="Quiénes somos"
                   aria-pressed={active}
+                  aria-label="Quiénes somos"
                 >
                   <Users size={24} />
                 </button>
@@ -185,6 +189,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                   }`}
                   title="Votaciones"
                   aria-pressed={active}
+                  aria-label="Votaciones"
                 >
                   <Vote size={24} />
                 </button>
@@ -212,6 +217,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                   }`}
                   title="Noticias UPG"
                   aria-pressed={active}
+                  aria-label="Noticias UPG"
                 >
                   <Newspaper size={24} />
                 </button>
@@ -239,6 +245,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                   }`}
                   title="Salón de la Fama"
                   aria-pressed={active}
+                  aria-label="Salón de la Fama"
                 >
                   <Trophy size={24} />
                 </button>

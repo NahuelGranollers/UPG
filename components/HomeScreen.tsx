@@ -83,17 +83,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
 
   return (
     <div className="app-container">
-      {/* Mobile Menu Button */}
-      {onOpenSidebar && (
-        <button
-          onClick={onOpenSidebar}
-          className="md:hidden fixed top-4 left-4 z-50 btn-ghost touch-target safe-top safe-left"
-          aria-label="Abrir menú"
-        >
-          <Menu size={24} />
-        </button>
-      )}
-
       <div className="scroll-area custom-scrollbar">
         <div className="container-responsive py-6 md:py-8 space-y-6 md:space-y-8 w-full">
           {/* Hero Section */}

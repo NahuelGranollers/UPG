@@ -1,0 +1,9 @@
+tunnel: c7101584-7961-4841-a391-340d16f273d5
+credentials-file: /home/nahuel/.cloudflared/c7101584-7961-4841-a391-340d16f273d5.json
+
+ingress:
+  - hostname: unaspartidillas.online
+    service: http://localhost:3000
+  - hostname: api.unaspartidillas.online
+    service: http://localhost:5000
+  - service: http_status:404
