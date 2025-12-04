@@ -5,7 +5,6 @@ import { useUsers } from '../context/UserContext';
 import { useChat } from '../hooks/useChat';
 import { Message, User, UserRole } from '../types';
 import { Hash, Menu } from 'lucide-react';
-import MessageInput from './MessageInput';
 import { MessageList } from './MessageList';
 
 interface ChatInterfaceProps {
@@ -407,24 +406,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         currentChannel={currentChannel}
         onInputChange={handleInputChange}
       />
-
-      {/* Chat Input */}
-      <div className="p-4 bg-discord-dark-light shrink-0">
-        <MessageInput
-          inputText={inputText}
-          setInputText={setInputText}
-          handleSendMessage={handleSendMessage}
-          inputRef={inputRef}
-          showMentionSuggestions={showMentionSuggestions}
-          mentionSuggestions={mentionSuggestions}
-          selectedSuggestionIndex={selectedSuggestionIndex}
-          setSelectedSuggestionIndex={setSelectedSuggestionIndex}
-          completeMention={completeMention}
-          renderInputPreview={renderInputPreview}
-          currentChannel={currentChannel}
-          onInputChange={handleInputChange}
-        />
-      </div>
     </div>
   );
 };
