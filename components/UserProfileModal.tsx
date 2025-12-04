@@ -6,7 +6,7 @@ import SafeImage from './SafeImage';
 interface UserProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  user: User;
+  user: User | null;
   onLoginWithDiscord: () => void;
 }
 
@@ -16,10 +16,11 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
   user,
   onLoginWithDiscord,
 }) => {
-  const [editName, setEditName] = useState(user.username);
-  const [editColor, setEditColor] = useState(user.color || '#5865F2');
+  const [editName, setEditName] = useState(user?.username || '');
+  const [editColor, setEditColor] = useState(user?.color || '#5865F2');
   const [editing, setEditing] = useState(false);
-  if (!isOpen) return null;
+  
+  if (!isOpen || !user) return null;
 
   const isGuest = user.isGuest || user.username.startsWith('Invitado');
 
