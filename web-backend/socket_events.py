@@ -237,6 +237,21 @@ def register_socket_events(socketio, app=None):
 
         logger.info(f"[SOCKET] ✅ User credentials valid: {username} (ID: {user_id})")
 
+        # Cleanup existing sessions for this user to prevent duplicates
+        sids_to_remove = []
+        for sid, u in connected_users.items():
+            if u.get('id') == user_id:
+                sids_to_remove.append(sid)
+        
+        for sid in sids_to_remove:
+            logger.info(f"[SOCKET] 🧹 Removing stale session for user {username} (SID: {sid})")
+            # Remove from connected_users
+            if sid in connected_users:
+                del connected_users[sid]
+            # Also clean up voice state if present
+            if sid in voice_states:
+                del voice_states[sid]
+
         role = 'user'
         if user_data.get('id') == ADMIN_DISCORD_ID:
             role = 'admin'

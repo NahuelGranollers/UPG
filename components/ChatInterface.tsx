@@ -11,12 +11,14 @@ interface ChatInterfaceProps {
   currentUser: User;
   currentChannel: { id: string; name: string };
   onMenuToggle: () => void;
+  isMobile?: boolean;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
   currentUser,
   currentChannel,
   onMenuToggle,
+  isMobile = false,
 }) => {
   const { users, userColors } = useUsers();
   const { messages, sendMessage } = useChat(currentChannel.id);
@@ -216,6 +218,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   // Auto-enfocar el input cuando se entra al chat o cambia de canal
   useEffect(() => {
+    // No auto-enfocar en móviles para evitar que el teclado salte y mueva la UI
+    if (isMobile) return;
+
     // Pequeño delay para asegurar que el componente esté completamente renderizado
     const timeoutId = setTimeout(() => {
       if (inputRef.current) {
@@ -229,7 +234,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }, 100);
 
     return () => clearTimeout(timeoutId);
-  }, [currentChannel.id]);
+  }, [currentChannel.id, isMobile]);
 
   // Check if bot is typing (only if last message wasn't from bot)
   const shouldShowBotTyping =
@@ -361,7 +366,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   // Render
   return (
-    <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+    <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
       {/* Header */}
       <header className="header flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center text-header font-bold truncate">

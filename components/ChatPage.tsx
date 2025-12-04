@@ -147,6 +147,7 @@ const ChatPage: React.FC = () => {
               currentUser={currentUser}
               currentChannel={currentChannel}
               onMenuToggle={() => setActiveMobileTab('channels')}
+              isMobile={true}
             />
           )}
           {activeMobileTab === 'users' && (
