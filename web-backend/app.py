@@ -53,6 +53,27 @@ CORS(app, resources={r"/*": {"origins": Config.CORS_ORIGINS}}, supports_credenti
 Compress(app)
 socketio = SocketIO(app, cors_allowed_origins=Config.CORS_ORIGINS, async_mode=None)
 
+@app.after_request
+def set_security_headers(response):
+    # CSP que permite tu aplicación
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://cdn.socket.io https://static.cloudflareinsights.com; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: https:; "
+        "connect-src 'self' https://api.unaspartidillas.online wss://api.unaspartidillas.online https://static.cloudflareinsights.com; "
+        "font-src 'self' data:; "
+        "frame-ancestors 'self'"
+    )
+    
+    # Otros headers de seguridad recomendados
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    
+    return response
+
 app.register_blueprint(api)
 app.register_blueprint(auth)
 app.register_blueprint(bot_bp)
