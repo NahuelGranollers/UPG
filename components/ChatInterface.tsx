@@ -393,20 +393,25 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         handleTrollMode={handleTrollMode}
         isBotTyping={shouldShowBotTyping}
         messagesEndRef={messagesEndRef}
-        // MessageInput props
-        inputText={inputText}
-        setInputText={setInputText}
-        handleSendMessage={handleSendMessage}
-        inputRef={inputRef}
-        showMentionSuggestions={showMentionSuggestions}
-        mentionSuggestions={mentionSuggestions}
-        selectedSuggestionIndex={selectedSuggestionIndex}
-        setSelectedSuggestionIndex={setSelectedSuggestionIndex}
-        completeMention={completeMention}
-        renderInputPreview={renderInputPreview}
-        currentChannel={currentChannel}
-        onInputChange={handleInputChange}
       />
+
+      {/* Input */}
+      <div className="px-4 pb-4">
+        <MessageInput
+          inputText={inputText}
+          setInputText={setInputText}
+          handleSendMessage={handleSendMessage}
+          inputRef={inputRef}
+          showMentionSuggestions={showMentionSuggestions}
+          mentionSuggestions={mentionSuggestions}
+          selectedSuggestionIndex={selectedSuggestionIndex}
+          setSelectedSuggestionIndex={setSelectedSuggestionIndex}
+          completeMention={completeMention}
+          renderInputPreview={renderInputPreview}
+          currentChannel={currentChannel}
+          onInputChange={handleInputChange}
+        />
+      </div>
     </div>
   );
 };
