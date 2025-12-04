@@ -261,106 +261,50 @@ export default function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={
-            <ErrorBoundary>
-              <AuthProvider>
-                <SocketProvider>
-                  <UserProvider>
-                    <Layout activeSection="home">
-                      <Home />
-                    </Layout>
-                    <Toaster position="top-right" theme="dark" richColors />
-                  </UserProvider>
-                </SocketProvider>
-              </AuthProvider>
-            </ErrorBoundary>
-          } />
-          <Route path="/chat" element={
-            <ErrorBoundary>
-              <AuthProvider>
-                <SocketProvider>
-                  <UserProvider>
-                    <Layout activeSection="chat">
-                      <ChatPage />
-                    </Layout>
-                    <Toaster position="top-right" theme="dark" richColors />
-                  </UserProvider>
-                </SocketProvider>
-              </AuthProvider>
-            </ErrorBoundary>
-          } />
-          <Route path="/impostor" element={
-            <ErrorBoundary>
-              <AuthProvider>
-                <SocketProvider>
-                  <UserProvider>
-                    <Layout activeSection="impostor">
-                      <Impostor />
-                    </Layout>
-                    <Toaster position="top-right" theme="dark" richColors />
-                  </UserProvider>
-                </SocketProvider>
-              </AuthProvider>
-            </ErrorBoundary>
-          } />
-          <Route path="/quienes-somos" element={
-            <ErrorBoundary>
-              <AuthProvider>
-                <SocketProvider>
-                  <UserProvider>
-                    <Layout activeSection="who">
-                      <WhoWeAre />
-                    </Layout>
-                    <Toaster position="top-right" theme="dark" richColors />
-                  </UserProvider>
-                </SocketProvider>
-              </AuthProvider>
-            </ErrorBoundary>
-          } />
-          <Route path="/votaciones" element={
-            <ErrorBoundary>
-              <AuthProvider>
-                <SocketProvider>
-                  <UserProvider>
-                    <Layout activeSection="voting">
-                      <Voting />
-                    </Layout>
-                    <Toaster position="top-right" theme="dark" richColors />
-                  </UserProvider>
-                </SocketProvider>
-              </AuthProvider>
-            </ErrorBoundary>
-          } />
-          <Route path="/noticias" element={
-            <ErrorBoundary>
-              <AuthProvider>
-                <SocketProvider>
-                  <UserProvider>
-                    <Layout activeSection="news">
-                      <UPGNews />
-                    </Layout>
-                    <Toaster position="top-right" theme="dark" richColors />
-                  </UserProvider>
-                </SocketProvider>
-              </AuthProvider>
-            </ErrorBoundary>
-          } />
-          <Route path="/salon-fama" element={
-            <ErrorBoundary>
-              <AuthProvider>
-                <SocketProvider>
-                  <UserProvider>
-                    <Layout activeSection="hall_of_fame">
-                      <HallOfFame />
-                    </Layout>
-                    <Toaster position="top-right" theme="dark" richColors />
-                  </UserProvider>
-                </SocketProvider>
-              </AuthProvider>
-            </ErrorBoundary>
-          } />
-        </Routes>
+        <AuthProvider>
+          <SocketProvider>
+            <UserProvider>
+              <Routes>
+                <Route path="/" element={
+                  <Layout activeSection="home">
+                    <Home />
+                  </Layout>
+                } />
+                <Route path="/chat" element={
+                  <Layout activeSection="chat">
+                    <ChatPage />
+                  </Layout>
+                } />
+                <Route path="/impostor" element={
+                  <Layout activeSection="impostor">
+                    <Impostor />
+                  </Layout>
+                } />
+                <Route path="/quienes-somos" element={
+                  <Layout activeSection="who">
+                    <WhoWeAre />
+                  </Layout>
+                } />
+                <Route path="/votaciones" element={
+                  <Layout activeSection="voting">
+                    <Voting />
+                  </Layout>
+                } />
+                <Route path="/noticias" element={
+                  <Layout activeSection="news">
+                    <UPGNews />
+                  </Layout>
+                } />
+                <Route path="/salon-fama" element={
+                  <Layout activeSection="hall_of_fame">
+                    <HallOfFame />
+                  </Layout>
+                } />
+              </Routes>
+              <Toaster position="top-right" theme="dark" richColors />
+            </UserProvider>
+          </SocketProvider>
+        </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>
   );
