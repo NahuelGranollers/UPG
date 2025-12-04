@@ -209,6 +209,11 @@ def register_socket_events(socketio, app=None):
             logger.warning(f"[SOCKET] ❌ Disconnected SID {request.sid} was not in connected_users")
             print(f"[SOCKET] ❌ Disconnected SID {request.sid} was not in connected_users")
 
+    @socketio.on('users:request')
+    def on_users_request():
+        logger.info(f"[SOCKET] 📋 users:request received from {request.sid}")
+        emit('users:list', list(connected_users.values()))
+
     @socketio.on('user:join')
     def on_user_join(user_data):
         logger.info(f"[SOCKET] 👋 user:join received: {user_data}")

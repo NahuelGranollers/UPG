@@ -12,7 +12,7 @@ interface UserContextType {
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const { socket } = useSocket();
+  const { socket, isConnected } = useSocket();
   const [users, setUsers] = useState<User[]>([]);
   const [userColors, setUserColors] = useState<Record<string, string>>({});
   const [voiceStates, setVoiceStates] = useState<Record<string, string>>({});
@@ -21,7 +21,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Only set up listeners when we have a real socket (not the dummy)
     // The dummy socket has connected=false, so this check works
-    if (!socket || !socket.connected) {
+    if (!socket || !isConnected) {
       // If socket is not connected, we might still want to request users list once it connects
       // But we can't attach listeners to the dummy socket because it warns.
       // However, the dummy socket's .on() method warns.
@@ -30,9 +30,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
 
     // Request initial data
+    console.log('Requesting users list...');
     socket.emit('users:request');
 
     const handleUsersList = (list: User[]) => {
+      console.log('Received users list:', list);
       if (!Array.isArray(list)) {
         console.warn('Received invalid users list:', list);
         return;
@@ -129,7 +131,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       socket.off('admin:effect-triggered', handleAdminEffect);
       socket.off('admin:user-color-changed', handleAdminUserColorChanged);
     };
-  }, [socket]);
+  }, [socket, isConnected]);
 
   return (
     <UserContext.Provider value={{ users, userColors, voiceStates, activeEffect }}>
