@@ -98,8 +98,6 @@ const Layout: React.FC<LayoutProps> = ({ children, activeSection = 'home', onAct
     if (onActiveSectionChange) onActiveSectionChange('chat');
   }, [navigate, onActiveSectionChange]);
 
-  if (!currentUser) return null; // This shouldn't happen as auth is required
-
   return (
     <div
       className="flex h-[100dvh] w-full bg-discord-bg font-sans antialiased overflow-hidden relative text-white"
