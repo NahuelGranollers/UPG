@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import SafeImage from './SafeImage';
-import { ArrowRight, Gamepad2, Users, Lock, Plus, Menu, Zap, Globe } from 'lucide-react';
-import MinecraftServerStatus from './MinecraftServerStatus';
-import { getBackendUrl } from '../utils/config';
-import CreateServerModal from './CreateServerModal';
+import { ArrowRight, Gamepad2, Shield, Zap, Globe, Users, Lock } from 'lucide-react';
 import { TEXTS } from '../utils/texts';
+import { useNavigate } from 'react-router-dom';
+import { getBackendUrl } from '../utils/config';
 
 interface HomeScreenProps {
   onGoToChat: () => void;
@@ -31,9 +30,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
   onCreateServer,
   onOpenSidebar
 }) => {
+  const navigate = useNavigate();
   const [servers, setServers] = useState<GameServer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     const fetchServers = async () => {
@@ -60,15 +59,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
     const interval = setInterval(fetchServers, 10000);
     return () => clearInterval(interval);
   }, []);
-
-  const handleCreateServer = (serverData: {
-    name: string;
-    password?: string;
-    botCount?: number;
-  }) => {
-    onCreateServer('impostor');
-    setShowCreateModal(false);
-  };
 
   const handleJoinClick = (server: GameServer) => {
     if (server.hasPassword) {
@@ -114,10 +104,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                 </button>
 
                 <button
-                  onClick={() => setShowCreateModal(true)}
+                  onClick={() => navigate('/impostor')}
                   className="btn btn-secondary w-full group relative overflow-hidden"
                 >
-                  <Plus size={20} />
+                  <Gamepad2 size={20} />
                   Jugar al Impostor
                 </button>
 
@@ -129,46 +119,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                   {TEXTS.whatIsUPG}
                 </button>
               </div>
-            </div>
-          </section>
-
-          {/* Features Section - REMOVED as requested */}
-          {/* <section className="grid-responsive max-w-6xl mx-auto animate-slide-in">
-            <div className="card text-center">
-              <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Gamepad2 className="w-6 h-6 text-accent" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Juegos Multijugador</h3>
-              <p className="text-secondary text-sm">
-                Disfruta de partidas emocionantes de Impostor y CS16 con amigos en tiempo real.
-              </p>
-            </div>
-
-            <div className="card text-center">
-              <div className="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="w-6 h-6 text-success" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Comunidad Activa</h3>
-              <p className="text-secondary text-sm">
-                Únete a una comunidad vibrante en nuestro chat integrado.
-              </p>
-            </div>
-
-            <div className="card text-center">
-              <div className="w-12 h-12 bg-warning/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Shield className="w-6 h-6 text-warning" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Seguro y Moderado</h3>
-              <p className="text-secondary text-sm">
-                Ambiente seguro con moderación activa y herramientas de administración.
-              </p>
-            </div>
-          </section> */}
-
-          {/* Minecraft Server Status */}
-          <section className="animate-slide-in">
-            <div className="max-w-5xl mx-auto">
-              <MinecraftServerStatus />
             </div>
           </section>
 
@@ -184,16 +134,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                   {servers.length} {servers.length === 1 ? 'servidor activo' : 'servidores activos'}
                 </p>
               </div>
-
-              {/* Create Server Button - REMOVED as requested */}
-              {/* <button
-                onClick={() => setShowCreateModal(true)}
-                className="btn btn-secondary group"
-              >
-                <Plus size={20} />
-                {TEXTS.createServer}
-                <ArrowRight size={16} className="ml-2 group-hover:translate-x-1 transition-transform" />
-              </button> */}
             </div>
 
             {loading ? (
@@ -206,14 +146,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                 <Gamepad2 className="w-16 h-16 text-muted mx-auto mb-4 opacity-50" />
                 <h3 className="text-lg font-semibold mb-2">{TEXTS.noActiveServers}</h3>
                 <p className="text-secondary mb-6">{TEXTS.beTheFirst}</p>
-                {/* Create First Server Button - REMOVED as requested */}
-                {/* <button
-                  onClick={() => setShowCreateModal(true)}
+                <button
+                  onClick={() => navigate('/impostor')}
                   className="btn btn-primary"
                 >
-                  <Plus size={20} />
-                  {TEXTS.createFirstServer}
-                </button> */}
+                  <Gamepad2 size={20} />
+                  Crear Partida
+                </button>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-w-7xl mx-auto">
@@ -287,16 +226,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
           </section>
         </div>
       </div>
-
-      {/* Create Server Modal */}
-      {showCreateModal && (
-        <CreateServerModal
-          gameType="impostor"
-          onCreate={handleCreateServer}
-          onCancel={() => setShowCreateModal(false)}
-          onJoinServer={onJoinServer}
-        />
-      )}
     </div>
   );
 };

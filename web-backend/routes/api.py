@@ -1,4 +1,8 @@
 from flask import Blueprint, jsonify
+import psutil
+import platform
+import time
+import os
 
 api = Blueprint('api', __name__)
 
@@ -6,15 +10,17 @@ api = Blueprint('api', __name__)
 def get_servers():
     # Example static response, replace with your actual server logic
     return jsonify({
-        'servers': [
-            {
-                'id': 'mc',
-                'name': 'Minecraft',
-                'ip': 'mc.unaspartidillas.online',
-                'port': 25565,
-                'status': 'online',
-                'players': {'online': 0, 'max': 100},
-                'version': '1.21.10'
-            }
-        ]
+        'servers': []
+    })
+
+@api.route('/api/stats')
+def get_stats():
+    process = psutil.Process(os.getpid())
+    return jsonify({
+        'cpu': psutil.cpu_percent(interval=None),
+        'ram': psutil.virtual_memory().percent,
+        'process_ram': process.memory_info().rss / 1024 / 1024, # MB
+        'uptime': int(time.time() - process.create_time()),
+        'platform': f"{platform.system()} {platform.release()}",
+        'python_version': platform.python_version()
     })

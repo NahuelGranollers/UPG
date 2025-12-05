@@ -12,6 +12,8 @@ import hashlib
 import json
 import os
 import psutil
+import platform
+import time
 
 # --- Admin Routes ---
 @api.route('/admin/unlock', methods=['POST'])
@@ -56,19 +58,18 @@ def admin_unlock():
 def health():
     return {'status': 'ok'}, 200
 
-@api.route('/system-stats', methods=['GET'])
+@api.route('/stats', methods=['GET'])
 def system_stats():
     try:
-        cpu_percent = psutil.cpu_percent(interval=None)
-        memory = psutil.virtual_memory()
-        return {
-            'cpu': cpu_percent,
-            'memory': {
-                'percent': memory.percent,
-                'used': memory.used,
-                'total': memory.total
-            }
-        }, 200
+        process = psutil.Process(os.getpid())
+        return jsonify({
+            'cpu': psutil.cpu_percent(interval=None),
+            'ram': psutil.virtual_memory().percent,
+            'process_ram': process.memory_info().rss / 1024 / 1024, # MB
+            'uptime': int(time.time() - process.create_time()),
+            'platform': f"{platform.system()} {platform.release()}",
+            'python_version': platform.python_version()
+        })
     except Exception as e:
         current_app.logger.error(f"Error getting system stats: {e}")
         return {'error': 'Failed to get stats'}, 500

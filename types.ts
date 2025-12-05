@@ -33,6 +33,7 @@ export interface Message {
   channelId: string;
   attachments?: string[];
   status?: 'sending' | 'sent' | 'error';
+  reactions?: Record<string, string[]>;
 }
 
 export interface Channel {

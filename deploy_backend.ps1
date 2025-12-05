@@ -10,14 +10,15 @@ Write-Host "Deteniendo servicio en el servidor remoto..."
 ssh -t nahuel@192.168.1.93 "echo nahuel | sudo -S systemctl stop web-backend"
 
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "Eliminando archivos antiguos del servidor remoto..."
-    ssh -t nahuel@192.168.1.93 "cd /home/nahuel && rm -rf web-backend/*"
+    Write-Host "Eliminando archivos antiguos del servidor remoto (preservando base de datos)..."
+    # Usamos find para borrar todo EXCEPTO database.sqlite y sus archivos WAL/SHM
+    ssh -t nahuel@192.168.1.93 "cd /home/nahuel/web-backend && find . -maxdepth 1 ! -name 'database.sqlite' ! -name 'database.sqlite-wal' ! -name 'database.sqlite-shm' ! -name '.' ! -name '..' -exec rm -rf {} +"
 
     if ($LASTEXITCODE -eq 0) {
-        # Seleccionar archivos y carpetas a copiar, EXCLUYENDO venv y otros innecesarios
-        # Esto evita el error "Permission denied" al intentar sobrescribir el python del servidor con el de Windows
+        # Seleccionar archivos y carpetas a copiar, EXCLUYENDO venv y archivos de base de datos
+        # Esto evita sobrescribir la DB del servidor con la local
         $itemsToCopy = Get-ChildItem -Path $localDir | Where-Object {
-            $_.Name -notin @("venv", "__pycache__", "instance", "logs", ".vscode", "database.sqlite", ".git")
+            $_.Name -notin @("venv", "__pycache__", "instance", "logs", ".vscode", "database.sqlite", "database.sqlite-wal", "database.sqlite-shm", ".git")
         } | Select-Object -ExpandProperty FullName
 
         Write-Host "Copiando archivos al servidor..."
@@ -33,7 +34,7 @@ if ($LASTEXITCODE -eq 0) {
             # 3. Instalar requirements
             # 4. Configurar servicio y reiniciar
             # NOTA: Usamos ';' después de apt-get update para que continúe aunque falle algún repo (como cloudflare i386)
-            $remoteScript = "cd /home/nahuel/web-backend && echo nahuel | sudo -S apt-get update; echo nahuel | sudo -S apt-get install -y python3-venv python3-full python3-dev build-essential && rm -rf venv && python3 -m venv venv && ./venv/bin/pip install -r requirements.txt && echo nahuel | sudo -S cp web-backend.service /etc/systemd/system/ && echo nahuel | sudo -S chmod 644 /etc/systemd/system/web-backend.service && echo nahuel | sudo -S systemctl daemon-reload && echo nahuel | sudo -S systemctl restart web-backend"
+            $remoteScript = "cd /home/nahuel/web-backend && echo nahuel | sudo -S apt-get update; echo nahuel | sudo -S apt-get install -y python3-venv python3-full python3-dev build-essential && rm -rf venv && python3 -m venv venv && ./venv/bin/pip install -r requirements.txt && ./venv/bin/python add_reactions_column.py && echo nahuel | sudo -S cp web-backend.service /etc/systemd/system/ && echo nahuel | sudo -S chmod 644 /etc/systemd/system/web-backend.service && echo nahuel | sudo -S systemctl daemon-reload && echo nahuel | sudo -S systemctl restart web-backend"
 
             # Ejecutar todo en una sesión SSH
             ssh -t nahuel@192.168.1.93 $remoteScript

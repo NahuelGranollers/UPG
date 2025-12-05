@@ -14,6 +14,7 @@ import random
 import time
 import html
 import os
+import json
 
 # Custom logging handler for real-time log broadcasting
 class SocketIOLogHandler(logging.Handler):
@@ -367,6 +368,46 @@ def register_socket_events(socketio, app=None):
 
         return {'ok': True, 'messageId': msg_id}
 
+    @socketio.on('message:react')
+    def on_message_react(data):
+        try:
+            message_id = data.get('messageId')
+            emoji = data.get('emoji')
+            user_id = data.get('userId')
+            
+            if not message_id or not emoji or not user_id:
+                return {'ok': False, 'error': 'missing_data'}
+                
+            message = Message.query.get(message_id)
+            if not message:
+                return {'ok': False, 'error': 'message_not_found'}
+
+            reactions = json.loads(message.reactions) if message.reactions else {}
+            
+            # Initialize emoji list if not exists
+            if emoji not in reactions:
+                reactions[emoji] = []
+                
+            # Toggle reaction
+            if user_id in reactions[emoji]:
+                reactions[emoji].remove(user_id)
+                if not reactions[emoji]:
+                    del reactions[emoji]
+            else:
+                reactions[emoji].append(user_id)
+                
+            message.reactions = json.dumps(reactions)
+            db.session.commit()
+            
+            # Broadcast update
+            socketio.emit('message:update', message.to_dict(), room=message.channel_id)
+            return {'ok': True}
+            
+        except Exception as e:
+            logger.error(f"Error in message:react: {e}")
+            db.session.rollback()
+            return {'ok': False, 'error': str(e)}
+
     @socketio.on('channel:join')
     def on_channel_join(data):
         channel = data.get('channelId', 'general')
@@ -462,6 +503,7 @@ def register_socket_events(socketio, app=None):
             'players': {user_id: {'socketId': request.sid, 'username': data.get('username')}},
             'started': False,
             'customWords': [],
+            'usedWords': [],
             'name': data.get('name', f"Sala de {data.get('username')}") ,
             'password': data.get('password'),
             'invitationCode': invitation_code,
@@ -629,8 +671,14 @@ def register_socket_events(socketio, app=None):
         word = "ErrorIA"
         if app:
             with app.app_context():
-                word = generate_impostor_word(category)
+                used_words = room.get('usedWords', [])
+                word = generate_impostor_word(category, used_words)
                 logger.info(f"[SOCKET] 🤖 AI generated word: '{word}' for category '{category}'")
+                
+                # Add to used words if valid
+                if word and word != "ErrorIA":
+                    if 'usedWords' not in room: room['usedWords'] = []
+                    room['usedWords'].append(word)
         else:
              logger.error("[SOCKET] App context missing in on_impostor_start")
              word = "ErrorContexto"
@@ -647,6 +695,7 @@ def register_socket_events(socketio, app=None):
         room['word'] = word
         room['impostorId'] = impostor_id
         room['hardMode'] = hard_mode
+        room['category'] = category
         room['voting'] = False
         room['votes'] = {}
         room['revealedInnocents'] = set()
@@ -919,6 +968,24 @@ def register_socket_events(socketio, app=None):
             'currentTurnIndex': room.get('currentTurnIndex', 0)
         }, room=f"impostor:{room_id}")
         return {'ok': True}
+
+    @socketio.on('impostor:play-again')
+    def on_impostor_play_again(data):
+        room_id = data.get('roomId')
+        room = impostor_rooms.get(room_id)
+        if not room or room['hostId'] != data.get('hostId'): return {'ok': False}
+        
+        # Reuse settings from previous game
+        category = room.get('category', 'General')
+        hard_mode = room.get('hardMode', False)
+        
+        # Call start logic directly
+        return on_impostor_start({
+            'roomId': room_id,
+            'hostId': data.get('hostId'),
+            'category': category,
+            'hardMode': hard_mode
+        })
 
     @socketio.on('impostor:add-word')
     def on_impostor_add_word(data):

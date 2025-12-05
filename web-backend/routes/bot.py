@@ -135,13 +135,20 @@ def generate_demonio_response(message, username='Usuario', session_id='default')
         error_msg = f"¡SERVIDOR EXPLOTÓ COMO TNT EN EL CULO DE TU MADRE, TRONCOMÁN! 💣💀 {str(e)}"
         return error_msg, "Gemini 2.0 Flash (Error)"
 
-def generate_impostor_word(category="General"):
+def generate_impostor_word(category="General", excluded_words=None):
     """
     Generates a random word for the Impostor game using Gemini AI.
     """
     try:
+        exclusion_text = ""
+        if excluded_words and len(excluded_words) > 0:
+            # Limit excluded words to last 50 to avoid huge prompts
+            recent_excluded = excluded_words[-50:]
+            exclusion_text = f"NO uses ninguna de estas palabras: {', '.join(recent_excluded)}."
+
         prompt = f"""Genera UNA SOLA palabra (sustantivo) en español para un juego tipo 'Impostor' o 'Pictionary'.
 Categoría deseada: {category}.
+{exclusion_text}
 La palabra debe ser algo que todos conozcan pero no demasiado obvia.
 SOLO responde con la palabra, sin puntos ni explicaciones.
 Ejemplo: 'Manzana' o 'Astronauta'."""

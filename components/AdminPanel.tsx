@@ -68,71 +68,41 @@ const RealTimeLogs = ({ socket, currentUser }: { socket: Socket | null, currentU
 };
 
 const SystemStatus = ({ socket, currentUser }: { socket: Socket | null, currentUser: User | null }) => {
-    const [mcStatus, setMcStatus] = useState<any>(null);
-    const [loadingMc, setLoadingMc] = useState(true);
+    const [stats, setStats] = useState<any>(null);
     const [backendLatency, setBackendLatency] = useState<number | null>(null);
 
     useEffect(() => {
-        // Fetch MC Status
-        fetch('https://api.mcsrvstat.us/2/mc.unaspartidillas.online')
-            .then(res => res.json())
-            .then(data => {
-                setMcStatus(data);
-                setLoadingMc(false);
-            })
-            .catch(() => setLoadingMc(false));
+        const fetchStats = () => {
+            const start = Date.now();
+            fetch(`${getBackendUrl()}/api/stats`)
+                .then(res => res.json())
+                .then(data => {
+                    setStats(data);
+                    setBackendLatency(Date.now() - start);
+                })
+                .catch(() => setBackendLatency(-1));
+        };
 
-        // Measure Latency
-        const start = Date.now();
-        fetch(`${getBackendUrl()}/api/health`) // Assuming health endpoint or just root
-            .then(() => setBackendLatency(Date.now() - start))
-            .catch(() => setBackendLatency(-1));
+        fetchStats();
+        const interval = setInterval(fetchStats, 5000);
+        return () => clearInterval(interval);
     }, []);
 
     const isSocketConnected = socket?.connected ?? false;
     const socketId = socket?.id || '-';
     const transportName = socket?.io?.engine?.transport?.name || 'Unknown';
 
+    const formatUptime = (seconds: number) => {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        return `${h}h ${m}m ${s}s`;
+    };
+
     return (
         <div className="space-y-6 animate-fadeIn">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Minecraft Server */}
-                <div className="discord-glass-subtle p-4">
-                    <div className="flex items-center gap-2 mb-3 text-discord-text-header font-bold">
-                        <Server className="text-green-400" size={20} />
-                        <h3>Servidor Minecraft</h3>
-                    </div>
-                    {loadingMc ? (
-                        <div className="animate-pulse h-20 bg-discord-surface rounded"></div>
-                    ) : (
-                        <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                                <span className="text-discord-text-muted">Estado</span>
-                                <span className={`px-2 py-0.5 rounded text-xs font-bold ${mcStatus?.online ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                                    {mcStatus?.online ? 'ONLINE' : 'OFFLINE'}
-                                </span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-discord-text-muted">IP</span>
-                                <span className="text-discord-text-normal font-mono text-sm">mc.unaspartidillas.online</span>
-                            </div>
-                            {mcStatus?.online && (
-                                <>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-discord-text-muted">Jugadores</span>
-                                        <span className="text-discord-text-normal">{mcStatus.players.online} / {mcStatus.players.max}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-discord-text-muted">Versión</span>
-                                        <span className="text-discord-text-normal text-xs">1.20.4 - 1.21.10</span>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    )}
-                </div>
-
-                {/* Web Server */}
+                {/* Web Server & Socket */}
                 <div className="discord-glass-subtle p-4">
                     <div className="flex items-center gap-2 mb-3 text-discord-text-header font-bold">
                         <Globe className="text-blue-400" size={20} />
@@ -160,6 +130,44 @@ const SystemStatus = ({ socket, currentUser }: { socket: Socket | null, currentU
                             <span className="text-discord-text-normal text-xs uppercase">{transportName}</span>
                         </div>
                     </div>
+                </div>
+
+                {/* System Resources */}
+                <div className="discord-glass-subtle p-4">
+                    <div className="flex items-center gap-2 mb-3 text-discord-text-header font-bold">
+                        <Cpu className="text-purple-400" size={20} />
+                        <h3>Recursos del Sistema</h3>
+                    </div>
+                    {stats ? (
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                                <span className="text-discord-text-muted">CPU</span>
+                                <span className="text-discord-text-normal font-mono">{stats.cpu}%</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-discord-text-muted">RAM (Total)</span>
+                                <span className="text-discord-text-normal font-mono">{stats.ram}%</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-discord-text-muted">RAM (Proceso)</span>
+                                <span className="text-discord-text-normal font-mono">{stats.process_ram?.toFixed(1) || '0.0'} MB</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-discord-text-muted">Uptime</span>
+                                <span className="text-discord-text-normal font-mono text-xs">{formatUptime(stats.uptime || 0)}</span>
+                            </div>
+                             <div className="flex justify-between items-center">
+                                <span className="text-discord-text-muted">Plataforma</span>
+                                <span className="text-discord-text-normal text-xs truncate max-w-[150px]" title={stats.platform}>{stats.platform}</span>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="animate-pulse space-y-2">
+                            <div className="h-4 bg-discord-surface rounded w-3/4"></div>
+                            <div className="h-4 bg-discord-surface rounded w-1/2"></div>
+                            <div className="h-4 bg-discord-surface rounded w-2/3"></div>
+                        </div>
+                    )}
                 </div>
             </div>
 

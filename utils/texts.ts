@@ -88,17 +88,6 @@ export const TEXTS = {
   invalidInviteCode: 'Código de invitación inválido',
   inviteCopiedToClipboard: 'Invitación copiada al portapapeles',
 
-  // Minecraft
-  minecraftServer: 'Servidor Minecraft',
-  copyIp: 'Copiar IP',
-  copied: 'Copiado!',
-  more: 'más',
-  loadingServerStatus: 'Cargando estado del servidor...',
-  stableSignal: '● Señal estable',
-  onlinePlayers: 'Jugadores en Línea',
-  serverOffline: 'Servidor fuera de línea',
-  playersOnline: 'jugadores en línea',
-
   // General
   loading: 'Cargando...',
   error: 'Error',

@@ -1,4 +1,5 @@
 import React, { memo, useMemo } from 'react';
+import { useSocket } from '../context/SocketContext';
 import { readableTextColor } from '../utils/colorUtils';
 import { Message, User, UserRole } from '../types';
 import { Trash2, Shield, Ban, UserX, VolumeX, Palette, Zap } from 'lucide-react';
@@ -64,7 +65,13 @@ const MessageList: React.FC<MessageListProps> = memo(({
   currentChannel,
   onInputChange,
 }) => {
+  const { socket } = useSocket();
   const { users, userColors } = useUsers();
+
+  const handleReaction = (messageId: string, emoji: string) => {
+    if (!socket) return;
+    socket.emit('message:react', { messageId, emoji, userId: currentUser.id });
+  };
 
   // Agrupar mensajes como en Discord: mensajes consecutivos del mismo usuario dentro de 5 minutos
   const groupedMessages = useMemo(() => {
@@ -122,9 +129,9 @@ const MessageList: React.FC<MessageListProps> = memo(({
   }, [orderedMessages, users, userColors]);
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-hidden bg-gradient-to-b from-discord-dark via-discord-dark to-discord-dark/95">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden bg-gradient-to-b from-discord-dark via-discord-dark to-discord-dark/95 relative">
       {/* Messages Area - Flex 1 to take available space */}
-      <div className="flex-1 overflow-y-auto px-2 sm:px-4 pt-2 sm:pt-4 flex flex-col custom-scrollbar chat-messages-container">
+      <div className="flex-1 overflow-y-auto px-2 sm:px-4 pt-2 sm:pt-4 pb-[80px] flex flex-col custom-scrollbar chat-messages-container">
         <div className="flex-1 flex flex-col justify-end min-h-0">
           <div className="mb-4 sm:mb-6 mt-4">
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-discord-text-muted/20 rounded-full flex items-center justify-center mb-2 sm:mb-3">
@@ -135,9 +142,9 @@ const MessageList: React.FC<MessageListProps> = memo(({
           </div>
           <div className="h-[1px] bg-discord-text-muted/20 w-full my-2" />
 
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {groupedMessages.map((group, groupIndex) => (
-              <div key={`${group.userId}-${group.timestamp.getTime()}`} className="mb-2">
+              <div key={`${group.userId}-${group.timestamp.getTime()}`} className="mb-0.5">
                 {group.messages.map((msg, msgIndex) => {
                   const isFirstInGroup = msgIndex === 0;
                   const msgTimestamp = new Date(msg.timestamp);
@@ -168,7 +175,7 @@ const MessageList: React.FC<MessageListProps> = memo(({
                   return (
                     <div
                       key={msg.id}
-                      className={`group flex pr-2 sm:pr-4 py-0.5 relative transition-all ${mentioned ? 'bg-yellow-500/10 border-l-4 border-yellow-500 pl-2 -ml-1 hover:bg-yellow-500/15' : 'hover:bg-[#2e3035]'}`}
+                      className={`group flex pr-2 sm:pr-4 py-[1px] relative transition-all ${mentioned ? 'bg-yellow-500/10 border-l-4 border-yellow-500 pl-2 -ml-1 hover:bg-yellow-500/15' : 'hover:bg-[#2e3035]'}`}
                       onMouseEnter={() => setHoveredMessageId(msg.id)}
                       onMouseLeave={() => setHoveredMessageId(null)}
                     >
@@ -239,53 +246,89 @@ const MessageList: React.FC<MessageListProps> = memo(({
                             </span>
                           )}
                         </p>
+
+                        {/* Reactions Display */}
+                        {msg.reactions && Object.keys(msg.reactions).length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1 ml-0">
+                            {Object.entries(msg.reactions).map(([emoji, userIds]) => (
+                              <button
+                                key={emoji}
+                                onClick={() => handleReaction(msg.id, emoji)}
+                                className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border transition-colors ${
+                                  userIds.includes(currentUser.id)
+                                    ? 'bg-blue-500/20 border-blue-500/50 text-blue-200'
+                                    : 'bg-discord-surface border-transparent text-discord-text-muted hover:border-discord-text-muted/50'
+                                }`}
+                              >
+                                <span>{emoji}</span>
+                                <span className="font-bold">{userIds.length}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
-                      {/* Admin Actions */}
-                      {isAdmin && hoveredMessageId === msg.id && msg.userId !== currentUser.id && (
-                        <div className="absolute right-2 sm:right-4 top-1 bg-discord-sidebar rounded shadow-lg flex gap-0.5 sm:gap-1 p-1 border border-gray-700">
-                          <button
-                            onClick={() => handleDeleteMessage(msg.id)}
-                            className="p-2 sm:p-1.5 hover:bg-red-500/20 rounded text-red-400 hover:text-red-300 transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
-                            title="Eliminar mensaje"
-                          >
-                            <Trash2 size={16} className="sm:w-3.5 sm:h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleKickUser(msg.userId, msg.username)}
-                            className="p-2 sm:p-1.5 hover:bg-orange-500/20 rounded text-orange-400 hover:text-orange-300 transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
-                            title="Expulsar usuario"
-                          >
-                            <UserX size={16} className="sm:w-3.5 sm:h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleBanUser(msg.userId, msg.username)}
-                            className="p-2 sm:p-1.5 hover:bg-red-500/20 rounded text-red-500 hover:text-red-400 transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
-                            title="Banear usuario y su IP"
-                          >
-                            <Ban size={16} className="sm:w-3.5 sm:h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleSilenceUser(msg.userId, msg.username)}
-                            className="p-2 sm:p-1.5 hover:bg-gray-500/20 rounded text-gray-400 hover:text-gray-300 transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
-                            title="Silenciar usuario"
-                          >
-                            <VolumeX size={16} className="sm:w-3.5 sm:h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleChangeColor(msg.userId, msg.username)}
-                            className="p-2 sm:p-1.5 hover:bg-blue-500/20 rounded text-blue-400 hover:text-blue-300 transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
-                            title="Cambiar color de usuario"
-                          >
-                            <Palette size={16} className="sm:w-3.5 sm:h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleTrollMode(msg.userId, msg.username)}
-                            className="p-2 sm:p-1.5 hover:bg-pink-500/20 rounded text-pink-400 hover:text-pink-300 transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
-                            title="Modo troll"
-                          >
-                            <Zap size={16} className="sm:w-3.5 sm:h-3.5" />
-                          </button>
+                      {/* Message Actions (Reactions + Admin) */}
+                      {hoveredMessageId === msg.id && (
+                        <div className="absolute right-2 sm:right-4 top-1 bg-discord-sidebar rounded shadow-lg flex gap-0.5 sm:gap-1 p-1 border border-gray-700 z-10">
+                          {/* Reactions */}
+                          <button onClick={() => handleReaction(msg.id, '👍')} className="p-1.5 hover:bg-gray-700 rounded text-gray-400 hover:text-white transition-colors" title="Me gusta">👍</button>
+                          <button onClick={() => handleReaction(msg.id, '❤️')} className="p-1.5 hover:bg-gray-700 rounded text-gray-400 hover:text-white transition-colors" title="Me encanta">❤️</button>
+                          <button onClick={() => handleReaction(msg.id, '😂')} className="p-1.5 hover:bg-gray-700 rounded text-gray-400 hover:text-white transition-colors" title="Me divierte">😂</button>
+                          <button onClick={() => handleReaction(msg.id, '😮')} className="p-1.5 hover:bg-gray-700 rounded text-gray-400 hover:text-white transition-colors" title="Me asombra">😮</button>
+                          <button onClick={() => handleReaction(msg.id, '😢')} className="p-1.5 hover:bg-gray-700 rounded text-gray-400 hover:text-white transition-colors" title="Me entristece">😢</button>
+                          <button onClick={() => handleReaction(msg.id, '😡')} className="p-1.5 hover:bg-gray-700 rounded text-gray-400 hover:text-white transition-colors" title="Me enoja">😡</button>
+
+                          {/* Admin Actions Separator */}
+                          {isAdmin && msg.userId !== currentUser.id && <div className="w-px bg-gray-700 mx-1" />}
+
+                          {/* Admin Actions */}
+                          {isAdmin && msg.userId !== currentUser.id && (
+                            <>
+                              <button
+                                onClick={() => handleDeleteMessage(msg.id)}
+                                className="p-2 sm:p-1.5 hover:bg-red-500/20 rounded text-red-400 hover:text-red-300 transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
+                                title="Eliminar mensaje"
+                              >
+                                <Trash2 size={16} className="sm:w-3.5 sm:h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleKickUser(msg.userId, msg.username || 'User')}
+                                className="p-2 sm:p-1.5 hover:bg-orange-500/20 rounded text-orange-400 hover:text-orange-300 transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
+                                title="Expulsar usuario"
+                              >
+                                <UserX size={16} className="sm:w-3.5 sm:h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleBanUser(msg.userId, msg.username || 'User')}
+                                className="p-2 sm:p-1.5 hover:bg-red-500/20 rounded text-red-500 hover:text-red-400 transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
+                                title="Banear usuario y su IP"
+                              >
+                                <Ban size={16} className="sm:w-3.5 sm:h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleSilenceUser(msg.userId, msg.username || 'User')}
+                                className="p-2 sm:p-1.5 hover:bg-gray-500/20 rounded text-gray-400 hover:text-gray-300 transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
+                                title="Silenciar usuario"
+                              >
+                                <VolumeX size={16} className="sm:w-3.5 sm:h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleChangeColor(msg.userId, msg.username || 'User')}
+                                className="p-2 sm:p-1.5 hover:bg-blue-500/20 rounded text-blue-400 hover:text-blue-300 transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
+                                title="Cambiar color de usuario"
+                              >
+                                <Palette size={16} className="sm:w-3.5 sm:h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleTrollMode(msg.userId, msg.username || 'User')}
+                                className="p-2 sm:p-1.5 hover:bg-pink-500/20 rounded text-pink-400 hover:text-pink-300 transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
+                                title="Modo troll"
+                              >
+                                <Zap size={16} className="sm:w-3.5 sm:h-3.5" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
@@ -339,7 +382,7 @@ const MessageList: React.FC<MessageListProps> = memo(({
       </div>
 
       {/* Input Area - Fixed at bottom inside MessageList */}
-      <div className="p-3 sm:p-4 bg-discord-dark-light shrink-0 z-10">
+      <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 bg-discord-dark-light z-20 border-t border-discord-hover shadow-lg">
         <MessageInput
           inputText={inputText}
           setInputText={setInputText}

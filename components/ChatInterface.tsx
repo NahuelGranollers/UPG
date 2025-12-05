@@ -34,35 +34,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [isBotTyping, setIsBotTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [localMessages, setLocalMessages] = useState<Message[]>([]);
 
   // Ordenar mensajes: más antiguo arriba, más reciente abajo
   const orderedMessages = useMemo(() => {
-    // Filter out local messages that have been confirmed by server
-    // We do this by checking if any server message has the same localId or matches content/timestamp
-    const filteredLocalMessages = localMessages.filter(localMsg => {
-      const isConfirmed = messages.some(serverMsg => {
-        // Check by explicit localId if available
-        if ((serverMsg as any).localId && (serverMsg as any).localId === (localMsg as any).localId) {
-          return true;
-        }
-        // Fallback: check by content and approximate timestamp (within 5s)
-        if (
-          serverMsg.userId === localMsg.userId &&
-          serverMsg.content === localMsg.content &&
-          Math.abs(new Date(serverMsg.timestamp).getTime() - new Date(localMsg.timestamp).getTime()) < 5000
-        ) {
-          return true;
-        }
-        return false;
-      });
-      return !isConfirmed;
-    });
-
-    const combined = [...(messages || []), ...filteredLocalMessages];
-    
     // Filter out messages with invalid timestamps or missing content
-    const validMessages = combined.filter(msg => {
+    const validMessages = messages.filter(msg => {
       if (!msg || !msg.timestamp) return false;
       const date = new Date(msg.timestamp);
       return !isNaN(date.getTime());
@@ -83,7 +59,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     });
     // Limitar a los últimos 100 mensajes para performance
     return sorted.slice(-100);
-  }, [messages, localMessages]);
+  }, [messages]);
 
   // Auto-scroll disabled by user request
   /*
@@ -201,53 +177,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       if (!inputText.trim()) return;
       const lowerInput = inputText.toLowerCase();
       const mentionsBot = lowerInput.includes('@upg');
-      const localId = 'local-' + Date.now();
-      // Agregar mensaje local inmediatamente para feedback visual
-      const localMessage: Message & { localId?: string } = {
-        id: localId,
-        localId,
-        userId: currentUser.id,
-        username: currentUser.username,
-        avatar: currentUser.avatar,
-        content: inputText,
-        timestamp: new Date().toISOString(), // Use current time consistently
-        channelId: currentChannel.id,
-        status: 'sending',
-      } as any;
-      setLocalMessages(prev => [...prev, localMessage]);
+      
       // Clear input immediately for better UX
+      const textToSend = inputText;
       setInputText('');
       setShowMentionSuggestions(false);
       if (mentionsBot) setIsBotTyping(true);
 
       try {
-        const res = await sendMessage(inputText, localId);
+        const res = await sendMessage(textToSend);
         if (res && res.ok === false) {
-          // Remove optimistic local message on failure
-          setLocalMessages(prev =>
-            prev.filter(m => !(m as any).localId || (m as any).localId !== localId)
-          );
           toast.error(res.error || 'Mensaje no enviado');
-        } else {
-          // Success: Remove local message immediately as server message should arrive via socket
-          // However, to prevent flicker, we might want to keep it until the socket event arrives.
-          // The useMemo filter above handles the deduplication, so we can keep it here
-          // or we can rely on the socket event to replace it.
-          // If we clear it here, there might be a gap.
-          // If we don't clear it, the useMemo filter handles it.
-          // But we should eventually clear old local messages to prevent memory leaks.
-          setTimeout(() => {
-             setLocalMessages(prev => prev.filter(m => (m as any).localId !== localId));
-          }, 10000); // Clear after 10s anyway
         }
       } catch (e) {
-        setLocalMessages(prev =>
-          prev.filter(m => !(m as any).localId || (m as any).localId !== localId)
-        );
         toast.error('Error enviando mensaje');
       }
     },
-    [inputText, sendMessage, currentUser, currentChannel.id]
+    [inputText, sendMessage]
   );
 
   // Auto-enfocar el input cuando se entra al chat o cambia de canal

@@ -44,7 +44,7 @@ class SocketService {
 
     try {
       this.socket = io(this.serverUrl, {
-        transports: ['websocket', 'polling'],
+        transports: ['websocket'], // Force WebSocket for better performance
         secure: isSecure,
         withCredentials: true,
         path: '/socket.io/',

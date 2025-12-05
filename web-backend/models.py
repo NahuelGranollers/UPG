@@ -62,8 +62,15 @@ class Message(db.Model):
     content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     is_system = db.Column(db.Boolean, default=False)
+    reactions = db.Column(db.Text, default='{}') # JSON string: {"emoji": ["userId1", "userId2"]}
 
     def to_dict(self):
+        import json
+        try:
+            reactions_data = json.loads(self.reactions) if self.reactions else {}
+        except:
+            reactions_data = {}
+            
         return {
             'id': self.id,
             'channelId': self.channel_id,
@@ -72,6 +79,7 @@ class Message(db.Model):
             'avatar': self.avatar,
             'content': self.content,
             'timestamp': self.timestamp.isoformat(),
-            'isSystem': self.is_system
+            'isSystem': self.is_system,
+            'reactions': reactions_data
         }
 

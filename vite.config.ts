@@ -14,6 +14,8 @@ export default defineConfig(({ mode }) => {
   // Firebase config (las variables VITE_ se exponen automáticamente al cliente)
   // No necesitamos definirlas aquí, Vite las expone automáticamente con import.meta.env
 
+  const isSSR = process.argv.includes('--ssr');
+
   return {
     base,
     server: {
@@ -37,7 +39,13 @@ export default defineConfig(({ mode }) => {
       // Asegurar que las rutas funcionen correctamente en GitHub Pages
       rollupOptions: {
         output: {
-          // manualChunks removed to let Vite handle chunking automatically and avoid 404s
+          manualChunks: isSSR ? undefined : {
+            vendor: ['react', 'react-dom', 'react-router-dom'],
+            babylon: ['babylonjs', 'babylonjs-gui', 'babylonjs-loaders', 'babylonjs-materials'],
+            firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+            socket: ['socket.io-client'],
+            ui: ['lucide-react', 'react-icons', 'sonner'],
+          },
         },
       },
     },

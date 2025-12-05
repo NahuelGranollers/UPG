@@ -45,6 +45,7 @@ export default function ImpostorGame({
   const [offlineRevealingPlayer, setOfflineRevealingPlayer] = useState<string | null>(null);
   const [offlineWord, setOfflineWord] = useState('');
   const [offlineImpostorName, setOfflineImpostorName] = useState('');
+  const [offlineUsedWords, setOfflineUsedWords] = useState<string[]>([]);
 
   const [roomId, setRoomId] = useState('');
   const [username, setUsername] = useState(currentUser?.username || '');
@@ -158,7 +159,10 @@ export default function ImpostorGame({
         const response = await fetch(`${API_URL}/api/generate-word`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ category: categoryToUse })
+            body: JSON.stringify({ 
+              category: categoryToUse,
+              excludedWords: offlineUsedWords 
+            })
         });
 
         if (!response.ok) throw new Error('Network response was not ok');
@@ -167,6 +171,7 @@ export default function ImpostorGame({
         toast.dismiss(toastId);
 
         if (data && data.word) {
+            setOfflineUsedWords(prev => [...prev, data.word]);
             startWithWord(data.word);
         } else {
             throw new Error('Invalid response');
@@ -177,10 +182,26 @@ export default function ImpostorGame({
         toast.error("Error conectando con IA. Usando palabras locales.");
         
         // Fallback
-        const category = OFFLINE_WORDS[Math.floor(Math.random() * OFFLINE_WORDS.length)];
-        const word = category.words[Math.floor(Math.random() * category.words.length)];
+        const category = OFFLINE_WORDS.find(c => c.category === categoryToUse) || OFFLINE_WORDS[0];
+        let word = category.words[Math.floor(Math.random() * category.words.length)];
+        
+        // Simple local retry
+        let attempts = 0;
+        while (offlineUsedWords.includes(word) && attempts < 10) {
+             word = category.words[Math.floor(Math.random() * category.words.length)];
+             attempts++;
+        }
+        
+        setOfflineUsedWords(prev => [...prev, word]);
         startWithWord(word);
     }
+  };
+
+  const handleOfflinePlayAgain = () => {
+      // Reset game state but keep players
+      setOfflinePhase('setup'); // Or directly to reveal if we want to skip setup
+      // Actually, let's go directly to start game logic
+      handleStartOfflineGame();
   };
 
   const handleOfflineReveal = (playerId: string) => {
@@ -785,6 +806,17 @@ export default function ImpostorGame({
         setStatusMessage('Ronda reiniciada');
       } else {
         setStatusMessage(res?.error || 'Error reiniciando ronda');
+      }
+    });
+  };
+
+  const handlePlayAgain = () => {
+    if (!socket) return;
+    socket.emit('impostor:play-again', { roomId, hostId: userId }, (res: any) => {
+      if (res && res.ok) {
+        setStatusMessage('Nueva ronda iniciada');
+      } else {
+        setStatusMessage(res?.error || 'Error iniciando nueva ronda');
       }
     });
   };
@@ -1492,12 +1524,30 @@ export default function ImpostorGame({
                         )}
                       </div>
 
-                      <button
-                        onClick={() => setGameOverInfo(null)}
-                        className="discord-button w-full py-3 text-lg"
-                      >
-                        Cerrar
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                            onClick={() => setGameOverInfo(null)}
+                            className="discord-button secondary flex-1 py-3 text-lg"
+                        >
+                            Cerrar
+                        </button>
+                        
+                        {(gameMode === 'offline' || (gameMode === 'online' && isHost)) && (
+                            <button
+                                onClick={() => {
+                                    setGameOverInfo(null);
+                                    if (gameMode === 'offline') {
+                                        handleOfflinePlayAgain();
+                                    } else {
+                                        handlePlayAgain();
+                                    }
+                                }}
+                                className="discord-button success flex-1 py-3 text-lg"
+                            >
+                                Jugar otra vez
+                            </button>
+                        )}
+                      </div>
                     </div>
                     {gameOverInfo.winner === 'crewmates' && (
                       <div className="confetti fixed inset-0 pointer-events-none">
@@ -1687,13 +1737,20 @@ export default function ImpostorGame({
                                 </div>
                             </div>
                             
-                            <div className="mt-auto pt-4 border-t border-discord-hover">
+                            <div className="mt-auto pt-4 border-t border-discord-hover flex gap-2">
                                 <button 
                                     onClick={() => setShowExitModal(true)}
-                                    className="discord-button secondary w-full flex items-center justify-center gap-2 py-3"
+                                    className="discord-button secondary flex-1 flex items-center justify-center gap-2 py-3"
                                 >
                                     <LogOut size={18} />
-                                    Salir de la Partida
+                                    Salir
+                                </button>
+                                <button 
+                                    onClick={handleOfflinePlayAgain}
+                                    className="discord-button success flex-1 flex items-center justify-center gap-2 py-3"
+                                >
+                                    <RotateCcw size={18} />
+                                    Reiniciar
                                 </button>
                             </div>
                         </div>
@@ -1959,6 +2016,11 @@ export default function ImpostorGame({
                             className={`discord-button danger ${allAliveVoted ? '' : 'opacity-50 cursor-not-allowed'}`}
                           >
                             Terminar votación ({totalVotes}/{alivePlayersCount})
+                          </button>
+                        )}
+                        {isHost && (
+                          <button onClick={handlePlayAgain} className="discord-button success">
+                            Jugar otra vez
                           </button>
                         )}
                         {isHost && (

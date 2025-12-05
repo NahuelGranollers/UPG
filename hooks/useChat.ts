@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { Message } from '../types';
@@ -8,6 +8,7 @@ export const useChat = (channelId: string) => {
   const { socket, isConnected } = useSocket();
   const { currentUser } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
+  const processedMessageIds = useRef<Set<string>>(new Set());
 
   // Unirse al canal y escuchar mensajes
   useEffect(() => {
@@ -25,51 +26,67 @@ export const useChat = (channelId: string) => {
       messages: Message[];
     }) => {
       if (cid === channelId || cid === null) {
-        setMessages(history);
+        // Reset processed IDs on history load
+        processedMessageIds.current = new Set(history.map(m => m.id));
+        
+        setMessages(prev => {
+          // Keep local messages that haven't been confirmed yet
+          const localMessages = prev.filter(m => 
+            (m as any).localId && 
+            !history.some(h => h.id === m.id || (h as any).localId === (m as any).localId)
+          );
+          
+          // Combine history with pending local messages
+          // Sort by timestamp to be safe
+          const combined = [...history, ...localMessages].sort((a, b) => 
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          );
+          
+          return combined;
+        });
       }
     };
 
     // Escuchar mensajes nuevos en tiempo real
     const handleNewMessage = (message: Message) => {
-      if (message.channelId === channelId) {
-        setMessages(prev => {
-          // Remover mensaje local duplicado si existe
-          const filtered = prev.filter(local => {
-            // If local message has a localId and server returned same localId, drop local
-            if (
-              local.id &&
-              local.id.startsWith('local-') &&
-              (message as any).localId &&
-              local.id === (message as any).localId
-            )
-              return false;
-            // Fallback: match by userId + content + timestamp proximity (5s)
-            try {
-              const localTime = new Date(local.timestamp).getTime();
-              const serverTime = new Date(message.timestamp).getTime();
-              if (
-                local.id &&
-                local.id.startsWith('local-') &&
-                local.userId === message.userId &&
-                local.content === message.content &&
-                Math.abs(localTime - serverTime) < 5000
-              ) {
-                return false;
-              }
-            } catch (e) {}
-            return true;
-          });
-          return [...filtered, message];
-        });
+      if (message.channelId !== channelId) return;
+
+      setMessages(prev => {
+        // Check if we already have this message (by ID or localId)
+        const existingIndex = prev.findIndex(m => 
+          m.id === message.id || 
+          ((m as any).localId && (m as any).localId === (message as any).localId)
+        );
+
+        if (existingIndex !== -1) {
+          // Replace existing (optimistic) message with confirmed one
+          const newMessages = [...prev];
+          newMessages[existingIndex] = message;
+          return newMessages;
+        }
+
+        // Add new message
+        return [...prev, message];
+      });
+    };
+
+    // Escuchar actualizaciones de mensajes (reacciones, ediciones)
+    const handleMessageUpdate = (updatedMessage: Message) => {
+      if (updatedMessage.channelId === channelId) {
+        setMessages(prev => prev.map(msg => 
+          msg.id === updatedMessage.id ? updatedMessage : msg
+        ));
       }
     };
 
     socket.on('channel:history', handleHistory);
     socket.on('message:received', handleNewMessage);
+    socket.on('message:update', handleMessageUpdate);
 
     return () => {
       socket.off('channel:history', handleHistory);
       socket.off('message:received', handleNewMessage);
+      socket.off('message:update', handleMessageUpdate);
     };
   }, [socket, isConnected, channelId, currentUser]);
 
@@ -81,30 +98,51 @@ export const useChat = (channelId: string) => {
           resolve({ ok: false, error: 'no_connection' });
           return;
         }
-        // Forzar unión al canal antes de enviar el mensaje
-        socket.emit('channel:join', { channelId, userId: currentUser.id });
+
+        // Optimistic update
+        const tempId = localId || `local-${Date.now()}`;
+        const optimisticMessage: Message = {
+          id: tempId,
+          channelId,
+          userId: currentUser.id,
+          username: currentUser.username,
+          avatar: currentUser.avatar,
+          content,
+          timestamp: new Date().toISOString(),
+          isSystem: false,
+          reactions: {},
+          // @ts-ignore
+          localId: tempId
+        };
+
+        setMessages(prev => [...prev, optimisticMessage]);
+
         const payload: any = {
           channelId,
           content,
           userId: currentUser.id,
           username: currentUser.username,
           avatar: currentUser.avatar,
+          localId: tempId
         };
-        if (localId) payload.localId = localId;
+
         try {
-          socket.emit('message:send', payload, (res: any) => {
-            if (res && res.ok === false) {
-              toast.error(res.error || 'Error enviando mensaje');
+          socket.emit('message:send', payload, (response: any) => {
+            if (response && response.ok === false) {
+              toast.error(response.error || 'Error enviando mensaje');
+              // Remove optimistic message on failure
+              setMessages(prev => prev.filter(m => m.id !== tempId));
             }
-            resolve(res || { ok: true });
+            resolve(response || { ok: true });
           });
         } catch (e) {
           toast.error('Error enviando mensaje');
+          setMessages(prev => prev.filter(m => m.id !== tempId));
           resolve({ ok: false, error: 'emit_exception' });
         }
       });
     },
-    [socket, isConnected, channelId, currentUser?.id, currentUser?.username, currentUser?.avatar]
+    [socket, isConnected, currentUser, channelId]
   );
 
   return { messages, setMessages, sendMessage };

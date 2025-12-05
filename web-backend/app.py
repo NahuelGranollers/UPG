@@ -5,7 +5,6 @@ from flask_socketio import SocketIO
 from models import db
 from config import Config
 from routes import api, auth
-from routes.api import api as servers_api
 from routes.bot import bot_bp
 from socket_events import register_socket_events
 import logging, os, sys
